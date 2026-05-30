@@ -279,24 +279,6 @@ useEffect(() => {
           </div>
 
 
-{/* Display Tips */}
-<div className="mt-8">
-  <h3 className="text-white font-bold mb-4">Live Tips</h3>
-  
-  {loading && <p className="text-gray-400">Loading...</p>}
-  
-  {tips.length === 0 && !loading && (
-    <p className="text-gray-400">No tips yet. Broadcast one!</p>
-  )}
-  
-  {tips.map(tip => (
-    <div key={tip.id} className="bg-gray-900 p-4 rounded-lg mb-3 border-gray-800">
-      <p className="text-white font-bold">{tip.match_name}</p>
-      <p className="text-gray-400 text-sm">{tip.tip_text}</p>
-      <p className="text-emerald-400 text-sm">Odds: {tip.odds} | KSh {tip.price}</p>
-    </div>
-  ))}
-</div>
 
 
 
