@@ -175,8 +175,9 @@ console.log('Tips from DB:', tips)
 
   }
   return (
-    <div
-  className="min-h-screen w-full relative overflow-hidden"
+   <div
+  className="relative min-h-screen w-full overflow-x-hidden"
+
   style={{
     background: `
       radial-gradient(circle at top left, rgba(59,130,246,0.25), transparent 35%),
@@ -187,7 +188,7 @@ console.log('Tips from DB:', tips)
 >
   <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl" />
   <div className="absolute bottom-0 right-0 w-72 h-72 bg-cyan-400/20 rounded-full blur-3xl" />
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto bg-white/10 backdrop-blur-2xl min-h-screen px-4 sm:px-6 border-x border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.35)] relative z-10">
+      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto bg-white/10 backdrop-blur-2xl min-h-screen px-4 sm:px-6 border-x border-white/10 shadow-[0_0_60px_rgba(0,0,0,0.35)]">
 
 <Header
   activeTab={activeTab}
@@ -200,8 +201,8 @@ console.log('Tips from DB:', tips)
 
 
         {/* CONTENT */}
-        <div className="pt-48 pb-8">
-          
+    <main className="pt-52 pb-32">
+
 <div className="py-6 sm:py-8" style={{
   display: activeTab === 'wallet' ? 'block' : 'none'
 }}>
@@ -342,9 +343,10 @@ console.log('Tips from DB:', tips)
               </div>
 
             </div>
-          )}
-        </div>
+           )}
+        </main>
       </div>
+
 
       {/* 3 BOTTOM BUTTONS - responsive */}
 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
@@ -495,7 +497,6 @@ console.log('Tips from DB:', tips)
     </div>
   </div>
 )}
-
     </div>
   )
 }

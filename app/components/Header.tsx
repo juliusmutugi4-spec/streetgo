@@ -1,6 +1,4 @@
 "use client"
-"use client"
-
 interface HeaderProps {
   activeTab: "wallet" | "profile"
   user: any
@@ -22,8 +20,17 @@ export default function Header({
   openAuth
 }: HeaderProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-[999]">
-      <div className="bg-black border-b border-red-600/40 shadow-[0_10px_40px_rgba(0,0,0,0.8)]">
+    <header className="sticky top-4 z-50 w-[95%] max-w-2xl mx-auto">
+      <div
+  className="
+    bg-black/70
+    backdrop-blur-2xl
+    border border-red-600/30
+    rounded-3xl
+    shadow-[0_15px_50px_rgba(0,0,0,0.55)]
+    overflow-hidden
+  "
+>
 
         {/* Red glow line */}
         <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-red-500 to-transparent" />
@@ -111,8 +118,8 @@ export default function Header({
 
         </div>
 
-        {/* Bottom curved edge */}
-        <div className="h-4 bg-black rounded-b-3xl" />
+        
+
       </div>
     </header>
   )
