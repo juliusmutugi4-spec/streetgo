@@ -15,62 +15,43 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handlePost = async () => {
-    if (!content.trim() &&!video) {
-      alert('Create a post or upload a video')
-      return
-    }
+    if (!content.trim()) return
+    setUploading(true)
 
     try {
-      setUploading(true)
-      let videoUrl: string | null = null
+      const { data } = await supabase.auth.getUser()
+      const user = data.user
+      if (!user) throw new Error('Not logged in')
 
+      let videoUrl = null
+
+      // Upload video if exists
       if (video) {
-        // File size check - Supabase free tier limit
-        if (video.size > 50 * 1024 * 1024) {
-          alert('Video must be under 50MB')
-          setUploading(false)
-          return
-        }
-
-        // Sanitize filename - remove spaces/special chars
         const fileExt = video.name.split('.').pop()
-        const cleanName = video.name.replace(/[^a-zA-Z0-9.]/g, '_')
-        const fileName = `${userId}/${Date.now()}-${cleanName}`
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`
 
-        console.log('Uploading to bucket: posts-media, file:', fileName)
-
-        // Upload to Storage
         const { error: uploadError } = await supabase.storage
-         .from('posts-media') // Must match bucket name in Supabase exactly
+         .from('videos')
          .upload(fileName, video)
 
-        if (uploadError) {
-          console.error('UPLOAD ERROR:', uploadError)
-          throw new Error(`Upload failed: ${uploadError.message}`)
-        }
+        if (uploadError) throw uploadError
 
-        // Get public URL - fixed destructuring
-        const { data } = supabase.storage
-         .from('posts-media')
-         .getPublicUrl(fileName)
-
+        const { data } = supabase.storage.from('videos').getPublicUrl(fileName)
         videoUrl = data.publicUrl
-        console.log('Video URL:', videoUrl)
       }
 
-      // Insert post
-      const { error: insertError } = await supabase
-       .from('posts')
-       .insert({
-          user_id: userId,
-          content: content.trim(),
-          video_url: videoUrl,
-        })
+      // Get username from auth metadata or email
+      const username = user.user_metadata?.name || user.user_metadata?.username || user.email?.split('@')[0]
 
-      if (insertError) {
-        console.error('INSERT ERROR:', insertError)
-        throw new Error(`Post failed: ${insertError.message}`)
-      }
+      // Insert post with username
+      const { error: insertError } = await supabase.from('posts').insert({
+        content: content,
+        user_id: user.id,
+        username: username,
+        video_url: videoUrl
+      })
+
+      if (insertError) throw insertError
 
       // Reset form
       setContent('')
@@ -79,13 +60,12 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
         fileInputRef.current.value = ''
       }
 
+      // Refresh feed
       onPosted()
-      alert('Posted successfully!')
 
-    } catch (error: any) {
-      console.error('POST ERROR:', error)
-      console.error('Error code:', error.code)
-      alert(error.message || 'Failed to create post. Check console F12 for details.')
+    } catch (error) {
+      console.error('Error posting:', error)
+      alert('Failed to post. Try again.')
     } finally {
       setUploading(false)
     }
@@ -135,7 +115,10 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
                 <p className="text-xs text-gray-400">{(video.size / 1024 / 1024).toFixed(2)} MB</p>
               </div>
               <button
-                onClick={() => { setVideo(null); if(fileInputRef.current) fileInputRef.current.value = '' }}
+                onClick={() => {
+                  setVideo(null)
+                  if (fileInputRef.current) fileInputRef.current.value = ''
+                }}
                 className="text-red-400 hover:text-red-300 text-sm"
               >
                 Remove
@@ -145,7 +128,7 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
         )}
 
         {/* Bottom Actions */}
-        <div className="mt-5 flex-col gap-3 sm:flex-row">
+        <div className="mt-5 flex-col sm:flex-row gap-3">
           <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-white/10 bg-white/5 px-5 py-3 transition hover:bg-white/10">
             <ImagePlus size={18} />
             <span>Upload Video</span>

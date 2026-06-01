@@ -1,5 +1,4 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -29,16 +28,11 @@ export default function Post({ post }: PostProps) {
     try {
       const { count } = await supabase
         .from('likes')
-        .select('*', {
-          count: 'exact',
-          head: true,
-        })
+        .select('*', { count: 'exact', head: true })
         .eq('post_id', post.id)
-
       setLikes(count || 0)
 
       const { data: auth } = await supabase.auth.getUser()
-
       if (auth.user) {
         const { data } = await supabase
           .from('likes')
@@ -46,7 +40,6 @@ export default function Post({ post }: PostProps) {
           .eq('post_id', post.id)
           .eq('user_id', auth.user.id)
           .maybeSingle()
-
         setLiked(!!data)
       }
     } catch (error) {
@@ -58,21 +51,13 @@ export default function Post({ post }: PostProps) {
     try {
       const { data, error } = await supabase
         .from('comments')
-        .select(`
-          *,
-          profiles (
-            username,
-            avatar_url
-          )
-        `)
+        .select(`*, profiles ( username, avatar_url )`)
         .eq('post_id', post.id)
         .order('created_at', { ascending: false })
-
       if (error) {
-        console.error(error)
+        console.error('Load comments error:', JSON.stringify(error, null, 2))
         return
       }
-
       setComments(data || [])
     } catch (error) {
       console.error('Comment load error:', error)
@@ -81,12 +66,10 @@ export default function Post({ post }: PostProps) {
 
   const toggleLike = async () => {
     const { data } = await supabase.auth.getUser()
-
     if (!data.user) {
       alert('Login first')
       return
     }
-
     try {
       if (liked) {
         await supabase
@@ -94,7 +77,6 @@ export default function Post({ post }: PostProps) {
           .delete()
           .eq('post_id', post.id)
           .eq('user_id', data.user.id)
-
         setLiked(false)
         setLikes(prev => Math.max(0, prev - 1))
       } else {
@@ -102,7 +84,6 @@ export default function Post({ post }: PostProps) {
           post_id: post.id,
           user_id: data.user.id,
         })
-
         setLiked(true)
         setLikes(prev => prev + 1)
       }
@@ -113,14 +94,11 @@ export default function Post({ post }: PostProps) {
 
   const addComment = async () => {
     if (!commentText.trim()) return
-
     const { data: auth } = await supabase.auth.getUser()
-
     if (!auth.user) {
       alert('Login first')
       return
     }
-
     try {
       const { data, error } = await supabase
         .from('comments')
@@ -129,20 +107,12 @@ export default function Post({ post }: PostProps) {
           user_id: auth.user.id,
           content: commentText,
         })
-        .select(`
-          *,
-          profiles (
-            username,
-            avatar_url
-          )
-        `)
+        .select(`*`)
         .single()
-
       if (error) {
-        console.error(error)
+        console.error('Add comment error:', JSON.stringify(error, null, 2))
         return
       }
-
       if (data) {
         setComments(prev => [data, ...prev])
         setCommentText('')
@@ -159,19 +129,14 @@ export default function Post({ post }: PostProps) {
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <img
-          src={
-            post.profiles?.avatar_url ||
-            'https://i.pravatar.cc/100'
-          }
+          src={post.avatar_url || 'https://i.pravatar.cc/100'}
           alt="avatar"
           className="w-10 h-10 rounded-full object-cover"
         />
-
         <div>
           <p className="font-semibold text-white">
-            {post.profiles?.username || 'Anonymous'}
+            {post.username || 'Anonymous'}
           </p>
-
           <p className="text-xs text-gray-400">
             {new Date(post.created_at).toLocaleString()}
           </p>
@@ -216,7 +181,6 @@ export default function Post({ post }: PostProps) {
             onChange={(e) => setCommentText(e.target.value)}
             className="flex-1 bg-slate-700 rounded-lg px-3 py-2 text-sm text-white outline-none"
           />
-
           <button
             onClick={addComment}
             className="bg-blue-600 hover:bg-blue-700 px-4 rounded-lg text-white text-sm"
@@ -232,21 +196,16 @@ export default function Post({ post }: PostProps) {
           <div key={comment.id} className="flex gap-2">
             <img
               src={
-                comment.profiles?.avatar_url ||
-                'https://i.pravatar.cc/100'
+                comment.profiles?.avatar_url || 'https://i.pravatar.cc/100'
               }
               alt="avatar"
               className="w-8 h-8 rounded-full object-cover"
             />
-
             <div className="bg-slate-700 rounded-lg px-3 py-2 flex-1">
               <p className="font-semibold text-sm text-white">
                 {comment.profiles?.username || 'Anonymous'}
               </p>
-
-              <p className="text-sm text-gray-200">
-                {comment.content}
-              </p>
+              <p className="text-sm text-gray-200">{comment.content}</p>
             </div>
           </div>
         ))}
