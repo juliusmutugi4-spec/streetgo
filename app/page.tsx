@@ -185,8 +185,7 @@ return (
                  linear-gradient(180deg, #0f172a 0%, #172554 40%, #1e3a8a 100%)`
     }}
   >
-    <div className="absolute top-0 left-0 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl" />
-    <div className="absolute bottom-0 right-0 w-72 h-72 bg-cyan-400/20 rounded-full blur-3xl" />
+ 
 
 <div
   className="
@@ -212,7 +211,7 @@ return (
         {/* WALLET TAB */}
         <div style={{ display: activeTab === 'wallet'? 'block' : 'none' }}>
           <div className="py-6 sm:py-8">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 px-4 pb-32">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 pb-32">
               {tips.map(tip => (
                 <Card key={tip.id} tip={tip} />
               ))}
