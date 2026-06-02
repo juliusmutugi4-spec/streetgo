@@ -14,7 +14,15 @@ export default function LoginModal({ onClose, onLogin }: { onClose: () => void, 
     
     if (isSignup) {
       // 1. Create auth user
-      const { data, error } = await supabase.auth.signUp({ email, password })
+      const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    data: {
+      username
+    }
+  }
+})
       if (error) {
         setLoading(false)
         return alert(error.message)

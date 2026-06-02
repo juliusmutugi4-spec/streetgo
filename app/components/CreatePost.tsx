@@ -41,15 +41,33 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
       }
 
       // Get username from auth metadata or email
-      const username = user.user_metadata?.name || user.user_metadata?.username || user.email?.split('@')[0]
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('username, avatar_url')
+  .eq('id', user.id)
+  .single()
+
+const avatar_url =
+  profile?.avatar_url ||
+  `https://i.pravatar.cc/150?u=${user.id}`
+
+
+const username =
+
+  profile?.username ||
+  user.email?.split('@')[0] ||
+  'Anonymous'
 
       // Insert post with username
-      const { error: insertError } = await supabase.from('posts').insert({
-        content: content,
-        user_id: user.id,
-        username: username,
-        video_url: videoUrl
-      })
+const { error: insertError } = await supabase
+  .from('posts')
+  .insert({
+    content: content,
+    user_id: user.id,
+    username: username,
+    avatar_url: avatar_url,
+    video_url: videoUrl
+  })
 
       if (insertError) throw insertError
 
@@ -70,68 +88,98 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
       setUploading(false)
     }
   }
-return (
-  <div className="group relative overflow-hidden rounded-xl border border-zinc-900 bg-[#09090b]/40 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-zinc-800">
-    {/* Futuristic Background Matrix Gradients - Green and Fading Red */}
-    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
-    <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-emerald-500/10 blur-[100px] pointer-events-none animate-pulse" />
-    <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-red-600/5 blur-[120px] pointer-events-none" />
+  return (
+  <div className="group relative overflow-hidden rounded-xl border border-zinc-900 bg-[#05070b]/60 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-cyan-500/30">
+
+    {/* Neon Ambient Glow (Teal + Blue + Orange) */}
+    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
+    <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-[100px]" />
+    <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-orange-500/10 blur-[120px]" />
 
     <div className="relative p-5 z-10">
-      {/* Header */}
+
+      {/* HEADER */}
       <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-zinc-950 border border-zinc-800 font-mono font-black text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+        
+        <div className="flex h-11 w-11 items-center justify-center rounded-lg 
+          bg-[#0b1220] border border-cyan-500/30 font-mono font-black text-cyan-400
+          shadow-[0_0_15px_rgba(34,211,238,0.15)]">
           C
         </div>
+
         <div>
-          <h3 className="font-bold text-zinc-100 text-sm tracking-wide uppercase">Create Transmission</h3>
-          <p className="text-xs text-zinc-500 font-mono tracking-tight mt-0.5">Broadcast to the cWV cluster matrix</p>
+          <h3 className="font-bold text-cyan-100 text-sm tracking-wide uppercase">
+            Create Transmission
+          </h3>
+          <p className="text-xs text-blue-400/70 font-mono">
+            Broadcast to neural grid
+          </p>
         </div>
-        <div className="ml-auto flex items-center gap-1.5 bg-zinc-900/40 border border-zinc-800/60 px-2.5 py-1 rounded-full backdrop-blur-md">
-          <Sparkles size={12} className="text-emerald-400 animate-pulse" />
-          <span className="text-[10px] font-mono font-bold tracking-widest text-emerald-400">LIVE_NODE</span>
+
+        <div className="ml-auto flex items-center gap-1.5 
+          bg-orange-500/10 border border-orange-500/30 px-2.5 py-1 rounded-full">
+          <span className="text-[10px] font-mono font-bold text-orange-400 tracking-widest">
+            LIVE STREAM
+          </span>
         </div>
       </div>
 
-      {/* Text Area Content Module */}
-      <div className="rounded-xl border border-zinc-900 bg-zinc-950/40 p-4 transition-all duration-300 focus-within:border-emerald-500/30 focus-within:shadow-[0_0_20px_rgba(16,185,129,0.02)]">
+      {/* INPUT */}
+      <div className="rounded-xl border border-cyan-500/20 bg-[#070b14]/60 p-4
+        focus-within:border-orange-400/40 transition-all">
+
         <textarea
           rows={4}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Initialize terminal signal output..."
+          placeholder="Transmit your signal into the network..."
           maxLength={500}
-          className="w-full resize-none bg-transparent text-sm text-zinc-200 outline-none placeholder:text-zinc-700 placeholder:font-mono placeholder:tracking-wide leading-relaxed selection:bg-emerald-500/30"
+          className="w-full resize-none bg-transparent text-sm text-cyan-100
+            outline-none placeholder:text-blue-500/40"
         />
       </div>
 
-      {/* Video Preview Matrix */}
+      {/* VIDEO */}
       {video && (
-        <div className="mt-4 rounded-xl border border-red-950/40 bg-red-950/5 p-4 backdrop-blur-xs animate-in fade-in zoom-in-95 duration-200">
+        <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-500/5 p-4">
+
           <div className="flex items-center gap-3">
-            <Video size={16} className="text-red-400 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
+
+            <Video size={16} className="text-orange-400" />
+
             <div className="flex-1 overflow-hidden">
-              <p className="truncate text-xs font-mono font-semibold text-zinc-300">{video.name}</p>
-              <p className="text-[10px] font-mono text-zinc-500 mt-0.5">{(video.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="truncate text-xs font-mono text-cyan-100">
+                {video.name}
+              </p>
+              <p className="text-[10px] font-mono text-blue-400">
+                {(video.size / 1024 / 1024).toFixed(2)} MB
+              </p>
             </div>
+
             <button
               onClick={() => {
                 setVideo(null)
                 if (fileInputRef.current) fileInputRef.current.value = ''
               }}
-              className="text-xs font-mono font-bold tracking-wider uppercase text-red-500 hover:text-red-400 transition-colors duration-200"
+              className="text-xs font-mono text-orange-400 hover:text-orange-300"
             >
-              [purge]
+              remove
             </button>
           </div>
         </div>
       )}
 
-      {/* Bottom Actions Interface */}
+      {/* ACTIONS */}
       <div className="mt-5 flex flex-col sm:flex-row gap-3">
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/40 px-5 py-2.5 text-xs font-bold tracking-wide uppercase text-zinc-400 transition-all duration-300 hover:bg-zinc-900 hover:text-zinc-200 hover:border-zinc-700 active:scale-95">
-          <ImagePlus size={14} className="text-zinc-500" />
-          <span>Attach Payload</span>
+
+        {/* FILE */}
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg
+          border border-cyan-500/20 bg-[#0b1220] px-5 py-2.5 text-xs font-bold uppercase
+          text-cyan-300 hover:text-orange-300 hover:border-orange-400/40 transition">
+
+          <ImagePlus size={14} />
+          Attach Signal
+
           <input
             ref={fileInputRef}
             type="file"
@@ -141,29 +189,39 @@ return (
           />
         </label>
 
+        {/* SEND */}
         <button
           onClick={handlePost}
           disabled={uploading}
-          className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-600 via-red-600 to-red-700 text-white py-2.5 text-xs font-black tracking-widest uppercase transition-all duration-300 active:scale-95 shadow-[0_0_25px_rgba(220,38,38,0.15)] hover:shadow-[0_0_35px_rgba(220,38,38,0.35)] hover:from-red-500 hover:to-red-600 disabled:opacity-40 disabled:hover:scale-100 disabled:hover:shadow-none"
+          className="flex-1 flex items-center justify-center gap-2 rounded-lg
+            bg-gradient-to-r from-cyan-500 via-blue-500 to-orange-500
+            text-white py-2.5 text-xs font-black uppercase
+            shadow-[0_0_25px_rgba(34,211,238,0.15)]
+            hover:shadow-[0_0_40px_rgba(249,115,22,0.25)]
+            transition-all active:scale-95 disabled:opacity-40"
         >
           {uploading ? (
             <>
-              <Loader2 size={14} className="animate-spin text-white" />
-              <span>Broadcasting...</span>
+              <Loader2 size={14} className="animate-spin" />
+              Broadcasting...
             </>
           ) : (
             <>
               <Send size={14} />
-              <span>Transmit to cWV</span>
+              Transmit
             </>
           )}
         </button>
+
       </div>
 
-      {/* Character Terminal Matrix Tracker */}
+      {/* COUNTER */}
       <div className="mt-3 text-right">
-        <span className="text-[10px] font-mono font-bold tracking-widest text-zinc-600">{content.length} / 500 PKTS</span>
+        <span className="text-[10px] font-mono text-blue-400/60">
+          {content.length} / 500
+        </span>
       </div>
+
     </div>
   </div>
 )

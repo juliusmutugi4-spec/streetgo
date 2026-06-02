@@ -19,10 +19,17 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [showLogin, setShowLogin] = useState(false)
 
+
+
+
+
 useEffect(() => {
   const checkUser = async () => {
-    const { data } = await supabase.auth.getUser()
-    setUser(data.user)
+const {
+  data: { session },
+} = await supabase.auth.getSession()
+
+setUser(session?.user ?? null)
     fetchPosts() // 👈 Moved inside
   }
   checkUser()

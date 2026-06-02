@@ -1,5 +1,5 @@
 'use client'
-
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
@@ -13,9 +13,32 @@ export default function Post({ post, user }: PostProps) {
   const [liked, setLiked] = useState(false)
   const [comments, setComments] = useState<any[]>([])
   const [commentText, setCommentText] = useState('')
+const router = useRouter()
+useEffect(() => {
+  const channel = supabase
+    .channel(`comments-${post.id}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'comments',
+        filter: `post_id=eq.${post.id}`,
+      },
+      (payload) => {
+        setComments((prev) => [payload.new, ...prev])
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [post.id])
+
 
   useEffect(() => {
-    loadPostData()
+    setCommentText('')
   }, [post.id, user])
 
   const loadPostData = async () => {
@@ -49,6 +72,15 @@ const { data: commentsData } = await supabase
       console.error(error)
     }
   }
+
+const followUser = async (targetUserId: string) => {
+  const { data: user } = await supabase.auth.getUser()
+
+  await supabase.from('follows').insert({
+    follower_id: user.user?.id,
+    following_id: targetUserId,
+  })
+}
 
   const toggleLike = async () => {
     if (!user) {
@@ -91,13 +123,19 @@ const { data: commentsData } = await supabase
     }
 
     try {
+const username =
+  user.user_metadata?.username ||
+  user.user_metadata?.name ||
+  user.email?.split('@')[0] ||
+  'Anonymous'
+
 const { data, error } = await supabase
   .from('comments')
   .insert({
     post_id: post.id,
     user_id: user.id,
     content: commentText,
-    username: user.user_metadata?.username || 'Anonymous'
+    username
   })
   .select()
   .single()
@@ -112,10 +150,10 @@ const { data, error } = await supabase
   return
 }
 
-      if (data) {
-        setComments((prev) => [data, ...prev])
-        setCommentText('')
-      }
+ if (data) {
+  setCommentText('')
+  loadPostData()
+}
     }
     
 catch (error: any) {
@@ -123,112 +161,126 @@ catch (error: any) {
   alert(error?.message || 'Unknown error')
 }
   }
-return (
-  <div className="group relative bg-[#09090b]/40 border border-zinc-900 overflow-hidden rounded-xl p-4 transition-all duration-300 hover:border-zinc-800 hover:shadow-2xl hover:shadow-black/60">
-    {/* Tech Ambient Interface Highlights */}
-    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/0 to-transparent group-hover:via-emerald-500/20 transition-all duration-500" />
-    <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/0 to-transparent group-hover:via-red-500/10 transition-all duration-500" />
+  return (
+  <div className="group relative bg-[#09090b]/60 border border-zinc-900/80 overflow-hidden rounded-xl p-4 transition-all duration-300 hover:border-cyan-500/30 hover:shadow-2xl hover:shadow-black/60">
 
-    {/* Header */}
+    {/* Ambient Glow Layer */}
+    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/30 to-transparent" />
+    <div className="absolute -top-20 -left-20 h-64 w-64 bg-cyan-500/10 blur-[110px] pointer-events-none" />
+    <div className="absolute -bottom-20 -right-20 h-64 w-64 bg-orange-500/10 blur-[120px] pointer-events-none" />
+
+    {/* HEADER */}
     <div className="flex items-center gap-3 mb-4 relative z-10">
-      <div className="relative group/avatar">
+
+      {/* Avatar */}
+      <div className="relative">
         <img
-          src="https://i.pravatar.cc/100"
+          src={`https://i.pravatar.cc/150?u=${post.user_id}`}
           alt="avatar"
-          className="w-10 h-10 rounded-lg object-cover ring-1 ring-zinc-800 transition-all duration-300 group-hover/avatar:ring-emerald-500/30"
+          className="w-10 h-10 rounded-lg object-cover ring-1 ring-zinc-800 group-hover:ring-cyan-500/40 transition"
         />
-        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[#09090b] shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse" />
+        <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-orange-400 rounded-full animate-pulse border border-black" />
       </div>
 
+      {/* User */}
       <div>
-        <p className="font-bold text-sm tracking-wide text-zinc-100 transition-colors duration-200 hover:text-emerald-400 cursor-pointer">
+        <button
+          onClick={() => router.push(`/profile/${post.username}`)}
+          className="font-bold text-sm text-zinc-100 hover:text-cyan-400 transition"
+        >
           {post.username || 'ANONYMOUS_NODE'}
-        </p>
-        <p className="text-[10px] font-mono font-semibold tracking-wider text-zinc-500 uppercase mt-0.5">
+        </button>
+
+        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
           {new Date(post.created_at).toLocaleString()}
         </p>
       </div>
     </div>
 
-    {/* Content */}
+    {/* CONTENT */}
     {post.content && (
-      <p className="text-sm leading-relaxed text-zinc-300 mb-4 whitespace-pre-wrap selection:bg-emerald-500/30 relative z-10">
+      <p className="text-sm leading-relaxed text-zinc-300 mb-4 whitespace-pre-wrap">
         {post.content}
       </p>
     )}
 
-    {/* Video Container */}
+    {/* VIDEO */}
     {post.video_url && (
-      <div className="relative rounded-xl border border-zinc-900 bg-black/40 overflow-hidden mb-4 max-h-[500px] group/video shadow-inner">
+      <div className="mb-4 rounded-xl overflow-hidden border border-zinc-900 bg-black/40">
         <video
           src={post.video_url}
           controls
-          className="w-full h-full object-contain mix-blend-screen opacity-90 transition-opacity duration-300 group-hover/video:opacity-100"
+          className="w-full object-cover opacity-90 hover:opacity-100 transition"
         />
       </div>
     )}
 
-    {/* Actions Interface */}
-    <div className="flex items-center gap-3 border-y border-zinc-900/60 py-2.5 my-4 relative z-10">
+    {/* ACTIONS */}
+    <div className="flex items-center gap-3 border-t border-zinc-900/60 pt-3 mb-3">
+
       <button
         onClick={toggleLike}
-        className={`group/btn px-3 py-1.5 rounded-lg text-xs font-mono font-bold tracking-wider uppercase transition-all duration-300 active:scale-95 flex items-center gap-2 border ${
+        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition border ${
           liked
-            ? 'bg-red-500/10 border-red-500/30 text-red-400 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
-            : 'bg-zinc-900/40 border-zinc-800 text-zinc-400 hover:text-red-400 hover:border-red-900/40 hover:bg-red-950/10'
+            ? "bg-orange-500/10 border-orange-500/30 text-orange-400"
+            : "bg-zinc-900/40 border-zinc-800 text-zinc-400 hover:text-cyan-400 hover:border-cyan-500/30"
         }`}
       >
-        <span className={`text-sm transition-transform duration-300 ${liked ? 'scale-110' : 'group-hover/btn:scale-110 group-hover/btn:rotate-12'}`}>
-          {liked ? '❤️' : '🤍'}
-        </span> 
-        <span>{likes} REAX</span>
+        <span className={`transition-transform ${liked ? "scale-110" : "group-hover:rotate-12"}`}>
+          {liked ? "🔥" : "🤍"}
+        </span>
+        {likes} REACTIONS
       </button>
+
     </div>
 
-    {/* Comment Stream Area */}
-    <div className="space-y-3 relative z-10">
-      {/* Input Module */}
-      {user && (
-        <div className="flex gap-2 group/input">
-          <input
-            type="text"
-            placeholder="Initialize response terminal..."
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            className="flex-1 bg-zinc-950/60 border border-zinc-900 rounded-lg px-3 py-2 text-xs font-medium text-zinc-200 placeholder:text-zinc-600 placeholder:font-mono placeholder:tracking-wide focus:outline-none focus:border-emerald-500/40 focus:bg-zinc-950 transition-all duration-300 focus:shadow-[0_0_15px_rgba(16,185,129,0.03)]"
-          />
+    {/* COMMENT INPUT */}
+    {user && (
+      <div className="flex gap-2 mb-3">
 
-          <button
-            onClick={addComment}
-            className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 px-4 rounded-lg text-xs font-black tracking-widest uppercase text-white transition-all duration-300 active:scale-95 shadow-[0_0_15px_rgba(220,38,38,0.15)] hover:shadow-[0_0_20px_rgba(220,38,38,0.3)]"
+        <input
+          type="text"
+          placeholder="Write comment..."
+          value={commentText}
+          onChange={(e) => setCommentText(e.target.value)}
+          className="flex-1 bg-zinc-950/60 border border-zinc-900 rounded-lg px-3 py-2 text-xs text-zinc-200 placeholder:text-zinc-600 focus:border-cyan-500/40 outline-none"
+        />
+
+        <button
+          onClick={addComment}
+          className="px-4 rounded-lg text-xs font-black uppercase bg-gradient-to-r from-cyan-500 to-orange-500 text-white hover:opacity-90 transition"
+        >
+          Send
+        </button>
+
+      </div>
+    )}
+
+    {/* COMMENTS */}
+    {comments.length > 0 && (
+      <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 border-t border-zinc-900/40 pt-2">
+
+        {comments.map((comment) => (
+          <div
+            key={comment.id}
+            className="flex gap-2 p-2 rounded-lg bg-zinc-950/30 border border-zinc-900/30 hover:border-cyan-500/20 transition"
           >
-            Transmit
-          </button>
-        </div>
-      )}
+            <div className="w-1 h-full bg-cyan-500/40 rounded" />
 
-      {/* Embedded Comments Display */}
-      {comments.length > 0 && (
-        <div className="space-y-2 pt-2 border-t border-zinc-900/30 max-h-[240px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
-          {comments.map((comment) => (
-            <div
-              key={comment.id}
-              className="group/item flex gap-2 relative bg-zinc-950/20 border border-transparent hover:border-zinc-900/40 hover:bg-zinc-950/40 rounded-lg p-2.5 transition-all duration-200"
-            >
-              <div className="absolute top-2 left-0 w-[2px] h-3 bg-zinc-800 group-hover/item:bg-emerald-500/40 transition-colors duration-300" />
-              <div className="flex-1 pl-1">
-                <p className="font-bold text-xs text-zinc-300 tracking-wide transition-colors duration-200 group-hover/item:text-zinc-200">
-                  {comment.username || 'ANONYMOUS_NODE'}
-                </p>
-                <p className="text-xs text-zinc-400 mt-1 leading-relaxed selection:bg-emerald-500/20">
-                  {comment.content}
-                </p>
-              </div>
+            <div>
+              <p className="text-xs font-bold text-zinc-200">
+                {comment.username || "anonymous"}
+              </p>
+              <p className="text-xs text-zinc-400">
+                {comment.content}
+              </p>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
+          </div>
+        ))}
+
+      </div>
+    )}
+
   </div>
 )
 }
