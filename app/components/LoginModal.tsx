@@ -14,14 +14,9 @@ export default function LoginModal({ onClose, onLogin }: { onClose: () => void, 
     
     if (isSignup) {
       // 1. Create auth user
-      const { data, error } = await supabase.auth.signUp({
+const { data, error } = await supabase.auth.signUp({
   email,
-  password,
-  options: {
-    data: {
-      username
-    }
-  }
+  password
 })
       if (error) {
         setLoading(false)
@@ -29,13 +24,18 @@ export default function LoginModal({ onClose, onLogin }: { onClose: () => void, 
       }
       
       // 2. Create profile in profiles table
-      if (data.user) {
-        await supabase.from('profiles').insert({
-          id: data.user.id,
-          username: username,
-          avatar_url: 'https://i.pravatar.cc/150'
-        })
-      }
+if (data.user) {
+  const { error: profileError } = await supabase.from('profiles').insert({
+    id: data.user.id,
+    username: username.trim(),
+    avatar_url: `https://i.pravatar.cc/150?u=${data.user.id}`,
+    created_at: new Date().toISOString()
+  })
+
+  if (profileError) {
+    console.log('PROFILE INSERT ERROR:', profileError)
+  }
+}
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) {

@@ -52,11 +52,7 @@ const avatar_url =
   `https://i.pravatar.cc/150?u=${user.id}`
 
 
-const username =
-
-  profile?.username ||
-  user.email?.split('@')[0] ||
-  'Anonymous'
+const username = profile?.username
 
       // Insert post with username
 const { error: insertError } = await supabase

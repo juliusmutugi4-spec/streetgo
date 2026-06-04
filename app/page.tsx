@@ -10,6 +10,8 @@ type PostType = {
   content: string
   video_url: string | null
   username: string
+  avatar_url?: string | null
+  user_id: string
   created_at: string
 }
 
@@ -42,16 +44,20 @@ setUser(session?.user ?? null)
   return () => sub.subscription.unsubscribe()
 }, [])
 
-  const fetchPosts = async () => {
-    const { data, error } = await supabase
+const fetchPosts = async () => {
+  const { data, error } = await supabase
     .from('posts')
     .select('*')
     .order('created_at', { ascending: false })
-    if (error) console.error('Fetch error:', error)
-    setPosts(data || [])
-    setLoading(false)
+
+  if (error) {
+    console.error(error)
+    return
   }
 
+  setPosts(data || [])
+  setLoading(false)
+}
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
