@@ -12,6 +12,25 @@ export default function Post({ post, user }: any) {
   const [comments, setComments] = useState<any[]>([])
   const [commentText, setCommentText] = useState('')
 
+  const [author, setAuthor] = useState<any>(null)
+
+  // ✅ LOAD AUTHOR PROFILE (THIS FIXES "ANONYMOUS")
+  useEffect(() => {
+    const loadAuthor = async () => {
+      if (!post.user_id) return
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', post.user_id)
+        .maybeSingle()
+
+      setAuthor(data)
+    }
+
+    loadAuthor()
+  }, [post.user_id])
+
   // LIVE COMMENTS
   useEffect(() => {
     const channel = supabase
@@ -35,7 +54,7 @@ export default function Post({ post, user }: any) {
     }
   }, [post.id])
 
-  // LOAD DATA
+  // LOAD POST DATA
   const loadPostData = async () => {
     const { count } = await supabase
       .from('likes')
@@ -92,15 +111,18 @@ export default function Post({ post, user }: any) {
     }
   }
 
-  // COMMENT
+  // COMMENT (FIXED: USE PROFILE NAME NOT AUTH)
   const addComment = async () => {
     if (!commentText.trim()) return
     if (!user) return alert('Login first')
 
-    const username =
-      user.user_metadata?.username ||
-      user.email?.split('@')[0] ||
-      'Anonymous'
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    const username = profile?.username || 'Anonymous'
 
     await supabase.from('comments').insert({
       post_id: post.id,
@@ -115,9 +137,7 @@ export default function Post({ post, user }: any) {
 
   // PROFILE NAV FIXED
   const goToProfile = () => {
-const username =
-  post.username?.trim()?.toLowerCase()
-
+    const username = author?.username?.trim()?.toLowerCase()
     if (!username) return
     router.push(`/profile/${username}`)
   }
@@ -128,7 +148,10 @@ const username =
       {/* HEADER */}
       <div className="flex items-center gap-3 mb-3">
         <img
-          src={`https://i.pravatar.cc/150?u=${post.user_id}`}
+          src={
+            author?.avatar_url ||
+            `https://i.pravatar.cc/150?u=${post.user_id}`
+          }
           className="w-10 h-10 rounded-lg"
         />
 
@@ -137,7 +160,7 @@ const username =
             onClick={goToProfile}
             className="font-bold text-sm text-white hover:text-cyan-400"
           >
-            {post.username || 'ANONYMOUS'}
+            {author?.username || 'Loading...'}
           </button>
 
           <p className="text-xs text-zinc-500">
@@ -147,13 +170,12 @@ const username =
       </div>
 
       {/* CONTENT */}
-      <p className="text-sm text-zinc-300 mb-3">{post.content}</p>
+      <p className="text-sm text-zinc-300 mb-3">
+        {post.content}
+      </p>
 
-      {/* ACTIONS */}
-      <button
-        onClick={toggleLike}
-        className="text-xs text-zinc-400"
-      >
+      {/* LIKE */}
+      <button onClick={toggleLike} className="text-xs text-zinc-400">
         {liked ? '🔥' : '🤍'} {likes}
       </button>
 

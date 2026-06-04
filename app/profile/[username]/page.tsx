@@ -6,7 +6,10 @@ import { supabase } from '../../lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 export default function ProfilePage() {
   const params = useParams()
-  const username = decodeURIComponent(params.username as string)
+  const username =
+  decodeURIComponent(params.username as string)
+    .trim()
+    .toLowerCase()
 
   const [profile, setProfile] = useState<any>(null)
   const [posts, setPosts] = useState<any[]>([])
@@ -32,46 +35,51 @@ useEffect(() => {
     mounted = false
   }
 }, [username])
+const loadProfile = async () => {
+  setLoading(true)
 
-  const loadProfile = async () => {
-    setLoading(true)
+  // Get current session
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  setCurrentUser(session?.user ?? null)
 
-const {
-  data: { session },
-} = await supabase.auth.getSession()
+  const searchUsername = username.trim().toLowerCase()
 
-setCurrentUser(session?.user ?? null)
+  // Fetch profile from database
+  const { data: profileData, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('username', searchUsername)
+    .maybeSingle()  // Use maybeSingle to avoid breaking if not found
 
-const {
-  data: profileData,
-  error
-} = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('username', username)
-  .maybeSingle()
-
-console.log('PROFILE:', profileData)
-console.log('ERROR:', error)
-    if (profileData) {
-      setProfile(profileData)
-
-      setNewUsername(profileData.username || '')
-setNewBio(profileData.bio || '')
-
-
-      const { data: userPosts } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('user_id', profileData.id)
-        .order('created_at', { ascending: false })
-
-      setPosts(userPosts || [])
-    }
-
+  if (!profileData) {
+    setProfile(null)
     setLoading(false)
+    return
   }
 
+  // Redirect to correct URL if username differs
+  if (profileData.username.toLowerCase() !== searchUsername) {
+    router.replace(`/profile/${profileData.username}`)
+    return
+  }
+
+  // Set profile data in state
+  setProfile(profileData)
+  setNewUsername(profileData.username || '')
+  setNewBio(profileData.bio || '')
+
+  // Load posts for this user
+  const { data: userPosts } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('user_id', profileData.id)
+    .order('created_at', { ascending: false })
+
+  setPosts(userPosts || [])
+  setLoading(false)
+}
   if (loading) {
 
 
@@ -142,7 +150,15 @@ if (existing) {
 
   setEditing(false)
 
-  router.push(`/profile/${username}`)
+  setProfile({
+  ...profile,
+  username,
+  bio: newBio,
+})
+
+setEditing(false)
+
+router.replace(`/profile/${username}`)
 }
 
 
@@ -163,15 +179,11 @@ if (existing) {
           <div className="relative p-8">
 
             <div className="flex flex-col md:flex-row md:items-center gap-6">
-
-              <img
-                src={
-                  profile.avatar_url ||
-                  `https://i.pravatar.cc/150?u=${profile.id}`
-                }
-                alt=""
-                className="w-32 h-32 rounded-3xl object-cover border border-cyan-500/20 shadow-2xl"
-              />
+<img
+  src={profile.avatar_url || '/avatar-placeholder.png'}
+  alt="Profile"
+  className="w-32 h-32 rounded-3xl object-cover border border-cyan-500/20 shadow-2xl"
+/>
 
               <div className="flex-1">
 
@@ -303,14 +315,10 @@ if (existing) {
                 <div className="p-5">
 
                   <div className="flex items-center gap-3 mb-4">
-
-                    <img
-                      src={
-                        profile.avatar_url ||
-                        `https://i.pravatar.cc/150?u=${profile.id}`
-                      }
-                      className="w-10 h-10 rounded-xl"
-                    />
+<img
+  src={profile.avatar_url || '/avatar-placeholder.png'}
+  className="w-10 h-10 rounded-xl object-cover"
+/>
 
                     <div>
                       <p className="font-bold">
