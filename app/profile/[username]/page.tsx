@@ -50,7 +50,7 @@ const loadProfile = async () => {
   const { data: profileData, error } = await supabase
     .from('profiles')
     .select('*')
-    .eq('username', searchUsername)
+    .ilike('username', searchUsername)
     .maybeSingle()  // Use maybeSingle to avoid breaking if not found
 
   if (!profileData) {

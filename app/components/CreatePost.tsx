@@ -62,7 +62,10 @@ const { error: insertError } = await supabase
     avatar_url: avatar_url,
     video_url: videoUrl
   })
-      if (insertError) throw insertError
+      if (insertError) {
+  console.log(insertError)
+  throw insertError
+}
 
       // Reset form
       setContent('')

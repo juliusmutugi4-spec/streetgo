@@ -28,10 +28,9 @@ if (data.user) {
   const { error: profileError } = await supabase.from('profiles').insert({
     id: data.user.id,
     username: username.trim(),
-    avatar_url: `https://i.pravatar.cc/150?u=${data.user.id}`,
+    avatar_url: null,
     created_at: new Date().toISOString()
   })
-
   if (profileError) {
     console.log('PROFILE INSERT ERROR:', profileError)
   }

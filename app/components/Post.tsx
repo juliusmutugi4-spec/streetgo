@@ -147,13 +147,11 @@ export default function Post({ post, user }: any) {
 
       {/* HEADER */}
       <div className="flex items-center gap-3 mb-3">
-        <img
-          src={
-            author?.avatar_url ||
-            `https://i.pravatar.cc/150?u=${post.user_id}`
-          }
-          className="w-10 h-10 rounded-lg"
-        />
+<img
+  src={author?.avatar_url || '/avatar-placeholder.png'}
+  className="w-10 h-10 rounded-lg object-cover"
+  alt="Profile"
+/>
 
         <div>
           <button
