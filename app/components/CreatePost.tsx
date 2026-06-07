@@ -18,17 +18,15 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
     if (!content.trim()) return
     setUploading(true)
 
-    try {
-      const { data } = await supabase.auth.getUser()
-      const user = data.user
-      if (!user) throw new Error('Not logged in')
+try {
+  if (!userId) throw new Error('Not logged in')
 
-      let videoUrl = null
+  let videoUrl = null
 
       // Upload video if exists
       if (video) {
         const fileExt = video.name.split('.').pop()
-        const fileName = `${user.id}-${Date.now()}.${fileExt}`
+        const fileName = `${userId}-${Date.now()}.${fileExt}`
 
         const { error: uploadError } = await supabase.storage
          .from('videos')
@@ -44,7 +42,7 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
 const { data: profile, error: profileError } = await supabase
   .from('profiles')
   .select('username, avatar_url')
-  .eq('id', user.id)
+  .eq('id', userId)
   .maybeSingle()
 
 console.log('PROFILE:', profile)
@@ -61,7 +59,7 @@ const { data: insertedPost, error: insertError } = await supabase
   .from('posts')
   .insert({
     content: content,
-    user_id: user.id,
+    user_id: userId,
     avatar_url: avatar_url,
     video_url: videoUrl
   })

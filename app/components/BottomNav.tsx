@@ -22,7 +22,7 @@ export default function BottomNav({
   const navigate = (path: string) => router.push(path)
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#060608]/95 backdrop-blur-xl border-t border-zinc-800 shadow-md">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#060608]/95 backdrop-blur-xl border-t border-zinc-800 shadow-md">
       <div className="max-w-xl mx-auto h-16 flex items-center justify-around">
 
         {/* Feed */}

@@ -19,7 +19,10 @@ export default function MessagesPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
-  const [conversations, setConversations] = useState<Conversation[]>([])
+const [conversations, setConversations] = useState<Conversation[]>([])
+const [messages, setMessages] = useState<any[]>([])
+const [messageText, setMessageText] = useState('')
+
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Conversation | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
@@ -32,7 +35,18 @@ export default function MessagesPage() {
       .eq('receiver_id', userId)
     setUnreadCount(count || 0)
   }
+useEffect(() => {
+  if (
+    conversations.length > 0 &&
+    user?.id &&
+    !selectedChat
+  ) {
+    const firstChat = conversations[0]
 
+    setSelectedChat(firstChat)
+    fetchMessages(firstChat.userId)
+  }
+}, [conversations, user])
   // Initialize user and conversations
   useEffect(() => {
     const init = async () => {
@@ -48,6 +62,7 @@ export default function MessagesPage() {
         setProfile(profileData)
 
         await fetchUnread(session.user.id)
+        console.log('LOGGED IN USER:', session.user.id)
         await fetchConversations(session.user.id)
       }
 
@@ -57,12 +72,19 @@ export default function MessagesPage() {
   }, [])
 
   const fetchConversations = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('messages')
-      .select('*')
+const { data, error } = await supabase
+  .from('chat_messages')
+  .select('*')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .order('created_at', { ascending: false })
+
+console.log('CHAT DATA:', data)
+console.log('TOTAL MESSAGES:', data?.length)
+
     if (error) return console.error(error)
+
+
+
 
     const uniqueUsers = new Map()
     for (const msg of data || []) {
@@ -83,7 +105,95 @@ export default function MessagesPage() {
       }
     }
     setConversations(Array.from(uniqueUsers.values()))
+console.log('CONVERSATIONS:')
+console.log(Array.from(uniqueUsers.values()))
+console.log("MESSAGES:", data?.length)
+console.log("UNIQUE USERS:", uniqueUsers.size)
+console.log(Array.from(uniqueUsers.values()))
+
   }
+const fetchMessages = async (otherUserId: string) => {
+  if (!user?.id) return
+
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .or(
+      `and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`
+    )
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  const uniqueMessages = Array.from(
+  new Map(
+    (data || []).map((m) => [m.id, m])
+  ).values()
+)
+
+setMessages(uniqueMessages)
+}
+const sendMessage = async () => {
+  if (!messageText.trim() || !user || !selectedChat) return
+
+  const text = messageText.trim()
+
+  setMessageText('')
+
+  const { data, error } = await supabase
+    .from('chat_messages')
+    .insert({
+      sender_id: user.id,
+      receiver_id: selectedChat.userId,
+      content: text,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  setMessages((prev) => [...prev, data])
+}
+
+useEffect(() => {
+  const channel = supabase
+    .channel('chat-messages')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+      },
+      (payload) => {
+        const msg = payload.new as any
+
+        if (
+          msg.sender_id === selectedChat?.userId ||
+          msg.receiver_id === selectedChat?.userId
+        ) {
+          setMessages((prev) => {
+  const exists = prev.some((m) => m.id === msg.id)
+
+  if (exists) return prev
+
+  return [...prev, msg]
+})
+        }
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [selectedChat])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -91,119 +201,227 @@ export default function MessagesPage() {
     setUnreadCount(0)
   }
 
-  return (
-  <main className="min-h-screen bg-[#060608] text-white">
-    <TopNav user={user} onLogin={() => {}} onLogout={handleLogout} />
+return (
+  <main className="h-screen overflow-hidden flex flex-col bg-[#060608] text-white">
 
-    <div className="pt-20 pb-24 h-[calc(100vh-80px)] lg:grid lg:grid-cols-12 overflow-hidden">
+    {/* TOP NAV */}
+    <TopNav
+      user={user}
+      onLogin={() => {}}
+      onLogout={handleLogout}
+    />
 
-      {/* LEFT PANEL: Conversations */}
-      <div className="lg:col-span-4 border-r border-zinc-800 overflow-y-auto bg-[#0b141a]">
-        <div className="px-4 py-6">
-          <h1 className="text-3xl font-black mb-2">Messages</h1>
-          <p className="text-zinc-500 text-sm mb-4">Recent conversations</p>
+{/* CONTENT */}
+<div className="flex-1 flex overflow-hidden min-h-0">
 
-          {loading ? (
-            <div className="text-center py-10">Loading...</div>
-          ) : conversations.length === 0 ? (
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-8 text-center">
-              <p className="text-zinc-400">No conversations yet</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {conversations.map((conv) => (
-                <button
-                  key={conv.userId}
-                  onClick={() => {
-                    if (window.innerWidth >= 1024) {
-                      setSelectedChat(conv)
-                    } else {
-                      router.push(`/chat/${conv.userId}`)
-                    }
-                  }}
-                  className="w-full flex items-center gap-4 p-4 rounded-2xl bg-zinc-900 border border-zinc-800 hover:border-emerald-500/30 hover:bg-zinc-800/50 transition"
-                >
-                  {conv.avatar_url ? (
-                    <img
-                      src={conv.avatar_url}
-                      alt=""
-                      className="w-14 h-14 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center font-bold">
-                      {conv.username?.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+  {/* DESKTOP SIDEBAR */}
+  <div className="hidden lg:flex w-60 bg-zinc-950 border-r border-zinc-800 flex-col">
 
-                  <div className="flex-1 text-left min-w-0">
-                    <h2 className="font-semibold text-white truncate">{conv.username}</h2>
-                    <p className="text-sm text-zinc-400 truncate">{conv.lastMessage}</p>
-                  </div>
+    {/* Profile Card */}
+    <div className="p-4">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
 
-                  <div className="text-xs text-zinc-500">
-                    {new Date(conv.created_at).toLocaleDateString()}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+        <div className="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold text-xl">
+          {profile?.username?.charAt(0) || 'T'}
+        </div>
+
+        <h2 className="mt-3 font-semibold">
+          {profile?.username || 'Tunda User'}
+        </h2>
+
+        <p className="text-xs text-emerald-400">
+          Online
+        </p>
+
+      </div>
+    </div>
+
+    {/* MENU */}
+    <div className="px-3 space-y-2">
+
+      <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-zinc-900">
+        🏠 Feed
+      </button>
+
+      <button className="w-full text-left px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+        💬 Messages
+      </button>
+
+      <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-zinc-900">
+        👤 Profile
+      </button>
+
+      <button className="w-full text-left px-4 py-3 rounded-xl hover:bg-zinc-900">
+        ⚙️ Settings
+      </button>
+
+    </div>
+
+  </div>
+
+      {/* CHAT LIST */}
+      <div className="w-[380px] border-r border-zinc-800 bg-[#111b21] flex flex-col">
+
+        <div className="px-5 py-4 border-b border-zinc-800">
+          <h2 className="text-xl font-semibold">
+            Chats
+          </h2>
+        </div>
+
+        <div className="p-3 border-b border-zinc-800">
+          <input
+            placeholder="Search chats..."
+            className="w-full bg-[#202c33] rounded-lg px-4 py-2 outline-none"
+          />
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {conversations.map((conv) => (
+            <button
+              key={conv.userId}
+              onClick={() => {
+                setSelectedChat(conv)
+                fetchMessages(conv.userId)
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition ${
+                selectedChat?.userId === conv.userId
+                  ? 'bg-[#202c33]'
+                  : 'hover:bg-[#1b2730]'
+              }`}
+            >
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
+                {conv.username.charAt(0)}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium truncate">
+                  {conv.username}
+                </h3>
+
+                <p className="text-sm text-zinc-400 truncate">
+                  {conv.lastMessage}
+                </p>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* RIGHT PANEL: Chat area */}
-      <div className="hidden lg:flex lg:col-span-8 flex-col bg-[#0b141a]">
+      {/* CHAT AREA */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+
         {selectedChat ? (
           <>
-            {/* Chat header */}
-            <div className="h-20 border-b border-zinc-800 flex items-center px-6 bg-[#111b21]">
-              <div className="flex items-center gap-4">
-                {selectedChat.avatar_url ? (
-                  <img
-                    src={selectedChat.avatar_url}
-                    alt=""
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center">
-                    {selectedChat.username?.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <h2 className="font-bold">{selectedChat.username}</h2>
-                  <p className="text-xs text-zinc-500">Active now</p>
+            {/* HEADER */}
+            <div className="h-16 shrink-0 bg-[#202c33] border-b border-zinc-800 flex items-center justify-between px-5">
+
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
+                  {selectedChat.username.charAt(0)}
                 </div>
+
+                <div>
+                  <h2 className="font-semibold">
+                    {selectedChat.username}
+                  </h2>
+
+                  <p className="text-xs text-emerald-400">
+                    Online
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-4 text-zinc-400">
+                <button>📞</button>
+                <button>📹</button>
+                <button>⋮</button>
               </div>
             </div>
 
-            {/* Chat messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {/* Example static messages */}
-              <div className="text-sm text-zinc-300">Chat messages will appear here</div>
+            {/* MESSAGES */}
+            <div
+  className="flex-1 min-h-0 overflow-y-auto p-6 space-y-3"
+              style={{
+                backgroundImage:
+                  "url('https://www.transparenttextures.com/patterns/asfalt-dark.png')",
+              }}
+            >
+              {messages.map((msg) => {
+                const mine = msg.sender_id === user?.id
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={
+                      mine
+                        ? 'flex justify-end'
+                        : 'flex justify-start'
+                    }
+                  >
+                    <div
+                      className={`max-w-[420px] px-4 py-2 rounded-xl ${
+                        mine
+                          ? 'bg-[#005c4b]'
+                          : 'bg-[#202c33]'
+                      }`}
+                    >
+                      <p>{msg.content}</p>
+
+                      <p className="text-[11px] text-zinc-400 mt-1 text-right">
+                        {new Date(msg.created_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
-            {/* Chat input */}
-            <div className="h-20 border-t border-zinc-800 bg-[#111b21] flex items-center px-4">
+            {/* INPUT */}
+            <div className="shrink-0 bg-[#202c33] border-t border-zinc-800 p-3 flex items-center gap-3">
+
+              <button>😊</button>
+
+              <button>📎</button>
+
               <input
+                value={messageText}
+                onChange={(e) =>
+                  setMessageText(e.target.value)
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter')
+                    sendMessage()
+                }}
                 placeholder="Type a message..."
-                className="flex-1 bg-zinc-900 rounded-xl px-4 py-3 outline-none"
+                className="flex-1 bg-[#2a3942] rounded-lg px-4 py-3 outline-none"
               />
-              <button className="ml-3 px-5 py-3 rounded-xl bg-emerald-500 text-black font-bold">
-                Send
+
+              <button
+                onClick={sendMessage}
+                className="w-12 h-12 rounded-full bg-emerald-500 text-black font-bold"
+              >
+                ➤
               </button>
             </div>
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <h2 className="text-3xl font-bold">Tunda Chat</h2>
-              <p className="text-zinc-500 mt-2">Select a conversation</p>
-            </div>
+            Select a chat
           </div>
         )}
       </div>
     </div>
 
-    <BottomNav user={user} profile={profile} unreadCount={unreadCount} />
+<div className="lg:hidden">
+  <BottomNav
+    user={user}
+    profile={profile}
+    unreadCount={unreadCount}
+  />
+</div>
   </main>
 )
 }
