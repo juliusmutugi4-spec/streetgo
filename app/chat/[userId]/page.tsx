@@ -163,16 +163,14 @@ if (data) {
 
 
       {/* CHAT AREA */}
-      <div
-        className="
-          flex-1
-          overflow-y-auto
-          px-4
-          py-6
-          space-y-3
-          bg-[#111b21]
-        "
-      >
+<div
+  className="flex-1 overflow-y-auto px-6 py-6 space-y-3"
+  style={{
+    backgroundColor: '#0b141a',
+    backgroundImage:
+      "url('https://www.transparenttextures.com/patterns/asfalt-dark.png')",
+  }}
+>
         {messages.map((m) => {
           const mine =
             m.sender_id === user?.id
@@ -190,7 +188,7 @@ if (data) {
                 className={
                   mine
                     ? `
-                    max-w-[75%]
+                    max-w-[420px]
                     bg-[#005c4b]
                     px-4
                     py-2
@@ -199,7 +197,7 @@ if (data) {
                     shadow-lg
                   `
                     : `
-                    max-w-[80%]
+                    max-w-[420px]
                     bg-[#202c33]
                     px-4
                     py-2
