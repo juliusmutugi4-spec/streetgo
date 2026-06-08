@@ -5,10 +5,11 @@ import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 
 interface PostProps {
-  post: {
-    id: string
-    content: string
-    video_url?: string | null
+post: {
+  id: string
+  content: string
+  image_url?: string | null
+  video_url?: string | null
     user_id: string
     created_at: string
     username?: string
@@ -134,7 +135,27 @@ await supabase.from('comments').insert({
   }
 
   return (
-    <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+    <div
+  className="
+    group
+    relative
+    overflow-hidden
+    rounded-3xl
+    border
+    border-cyan-500/10
+    bg-[#05070b]/80
+    backdrop-blur-xl
+    shadow-2xl
+    transition-all
+    duration-300
+    hover:border-cyan-500/30
+  "
+>
+  <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+  <div className="absolute -top-20 -left-20 w-48 h-48 bg-cyan-500/10 blur-[80px]" />
+  <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-orange-500/10 blur-[80px]" />
+
+  <div className="relative p-5">
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
         <img
@@ -156,7 +177,128 @@ await supabase.from('comments').insert({
       </div>
 
       {/* Content */}
-      <p className="text-sm text-zinc-300 mb-3">{post.content}</p>
+      {/* Content */}
+{post.content && (
+  <p
+    className="
+      text-zinc-200
+      leading-relaxed
+      text-sm
+      mb-4
+    "
+  >
+    {post.content}
+  </p>
+)}
+
+{/* Image */}
+{post.image_url && (
+  <div className="relative mt-3 overflow-hidden rounded-2xl group">
+
+    {/* Glow */}
+    <div
+      className="
+        absolute
+        inset-0
+        bg-gradient-to-r
+        from-cyan-500/20
+        via-blue-500/10
+        to-orange-500/20
+        blur-2xl
+      "
+    />
+
+    <img
+      src={post.image_url}
+      alt="Post"
+      className="
+        relative
+        w-full
+        rounded-2xl
+        max-h-[600px]
+        object-cover
+        border
+        border-cyan-500/20
+        transition-all
+        duration-500
+        group-hover:scale-[1.02]
+      "
+    />
+
+    <div
+      className="
+        absolute
+        inset-0
+        bg-gradient-to-t
+        from-black/50
+        via-transparent
+        to-transparent
+      "
+    />
+
+    <div
+      className="
+        absolute
+        top-3
+        right-3
+        px-3
+        py-1
+        rounded-full
+        bg-cyan-500/20
+        backdrop-blur-xl
+        border
+        border-cyan-500/30
+        text-cyan-300
+        text-[10px]
+        font-bold
+        uppercase
+      "
+    >
+      Visual Signal
+    </div>
+
+  </div>
+)}
+
+{/* Video */}
+{post.video_url && (
+  <div
+    className="
+      mt-4
+      overflow-hidden
+      rounded-2xl
+      border
+      border-orange-500/20
+      bg-zinc-950
+    "
+  >
+    <video
+      src={post.video_url}
+      controls
+      className="
+        w-full
+        max-h-[600px]
+        object-cover
+      "
+    />
+
+    <div
+      className="
+        px-4
+        py-2
+        text-[10px]
+        uppercase
+        tracking-widest
+        text-orange-400
+        border-t
+        border-orange-500/20
+      "
+    >
+      Video Transmission
+    </div>
+  </div>
+)}
+
 
       {/* Likes */}
       <button onClick={toggleLike} className="text-xs text-zinc-400">
@@ -186,6 +328,7 @@ await supabase.from('comments').insert({
           </div>
         ))}
       </div>
-    </div>
+      </div>
+</div>
   )
 }
