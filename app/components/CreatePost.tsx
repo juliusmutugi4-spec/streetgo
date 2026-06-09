@@ -1,7 +1,7 @@
 'use client'
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { ImagePlus, Video, Send, Loader2, Sparkles } from 'lucide-react'
+import { ImagePlus, Video, Send, Loader2, Image, Sparkles } from 'lucide-react'
 
 interface CreatePostProps {
   userId: string
@@ -11,17 +11,24 @@ interface CreatePostProps {
 export default function CreatePost({ userId, onPosted }: CreatePostProps) {
   const [content, setContent] = useState('')
   const [video, setVideo] = useState<File | null>(null)
+  const [image, setImage] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handlePost = async () => {
-    if (!content.trim()) return
+    if (
+  !content.trim() &&
+  !video &&
+  !image
+)
+  return
     setUploading(true)
 
-try {
-  if (!userId) throw new Error('Not logged in')
+    try {
+      if (!userId) throw new Error('Not logged in')
 
-  let videoUrl = null
+      let videoUrl = null
+      let imageUrl = null
 
       // Upload video if exists
       if (video) {
@@ -29,8 +36,8 @@ try {
         const fileName = `${userId}-${Date.now()}.${fileExt}`
 
         const { error: uploadError } = await supabase.storage
-         .from('videos')
-         .upload(fileName, video)
+          .from('videos')
+          .upload(fileName, video)
 
         if (uploadError) throw uploadError
 
@@ -38,43 +45,65 @@ try {
         videoUrl = data.publicUrl
       }
 
+      if (image) {
+        const fileExt = image.name.split('.').pop()
+
+        const fileName =
+          `${userId}-${Date.now()}-image.${fileExt}`
+
+        const { error } = await supabase.storage
+          .from('images')
+          .upload(fileName, image)
+
+        if (error) throw error
+
+        const { data } = supabase
+          .storage
+          .from('images')
+          .getPublicUrl(fileName)
+
+        imageUrl = data.publicUrl
+      }
+
       // Get username from auth metadata or email
-const { data: profile, error: profileError } = await supabase
-  .from('profiles')
-  .select('username, avatar_url')
-  .eq('id', userId)
-  .maybeSingle()
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', userId)
+        .maybeSingle()
 
-console.log('PROFILE:', profile)
-console.log('PROFILE ERROR:', profileError)
+      console.log('PROFILE:', profile)
+      console.log('PROFILE ERROR:', profileError)
 
-const avatar_url =
-  profile?.avatar_url || null
+      const avatar_url =
+        profile?.avatar_url || null
 
 
-const username = profile?.username
+      const username = profile?.username
 
       // Insert post with username
-const { data: insertedPost, error: insertError } = await supabase
-  .from('posts')
-  .insert({
-    content: content,
-    user_id: userId,
-    avatar_url: avatar_url,
-    video_url: videoUrl
-  })
-  .select()
+      const { data: insertedPost, error: insertError } = await supabase
+        .from('posts')
+        .insert({
+          content: content,
+          user_id: userId,
+          avatar_url: avatar_url,
+          video_url: videoUrl,
+          image_url: imageUrl
+        })
+        .select()
 
-console.log('INSERTED POST:', insertedPost)
-console.log('INSERT ERROR:', insertError)
+      console.log('INSERTED POST:', insertedPost)
+      console.log('INSERT ERROR:', insertError)
       if (insertError) {
-  console.log(insertError)
-  throw insertError
-}
+        console.log(insertError)
+        throw insertError
+      }
 
       // Reset form
-      setContent('')
-      setVideo(null)
+setContent('')
+setVideo(null)
+setImage(null)
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -83,150 +112,227 @@ console.log('INSERT ERROR:', insertError)
       onPosted()
 
     } catch (error: any) {
-  console.error('Error posting:', error)
-  alert(error.message)
-}
-    
-    
+      console.error('Error posting:', error)
+      alert(error.message)
+    }
+
+
     finally {
       setUploading(false)
     }
   }
   return (
-  <div className="group relative overflow-hidden rounded-xl border border-zinc-900 bg-[#05070b]/60 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-cyan-500/30">
+    <div className="group relative overflow-hidden rounded-xl border border-zinc-900 bg-[#05070b]/60 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:border-cyan-500/30">
 
-    {/* Neon Ambient Glow (Teal + Blue + Orange) */}
-    <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
-    <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-[100px]" />
-    <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-orange-500/10 blur-[120px]" />
+      {/* Neon Ambient Glow (Teal + Blue + Orange) */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
+      <div className="absolute -top-24 -left-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-[100px]" />
+      <div className="absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-orange-500/10 blur-[120px]" />
 
-    <div className="relative p-5 z-10">
+      <div className="relative p-5 z-10">
 
-      {/* HEADER */}
-      <div className="mb-5 flex items-center gap-3">
-        
-        <div className="flex h-11 w-11 items-center justify-center rounded-lg 
+        {/* HEADER */}
+        <div className="mb-5 flex items-center gap-3">
+
+          <div className="flex h-11 w-11 items-center justify-center rounded-lg 
           bg-[#0b1220] border border-cyan-500/30 font-mono font-black text-cyan-400
           shadow-[0_0_15px_rgba(34,211,238,0.15)]">
-          C
-        </div>
+            C
+          </div>
 
-        <div>
-          <h3 className="font-bold text-cyan-100 text-sm tracking-wide uppercase">
-            Create Transmission
-          </h3>
-          <p className="text-xs text-blue-400/70 font-mono">
-            Broadcast to neural grid
-          </p>
-        </div>
+          <div>
+            <h3 className="font-bold text-cyan-100 text-sm tracking-wide uppercase">
+              Create Transmission
+            </h3>
+            <p className="text-xs text-blue-400/70 font-mono">
+              Broadcast to neural grid
+            </p>
+          </div>
 
-        <div className="ml-auto flex items-center gap-1.5 
+          <div className="ml-auto flex items-center gap-1.5 
           bg-orange-500/10 border border-orange-500/30 px-2.5 py-1 rounded-full">
-          <span className="text-[10px] font-mono font-bold text-orange-400 tracking-widest">
-            LIVE STREAM
-          </span>
-        </div>
-      </div>
-
-      {/* INPUT */}
-      <div className="rounded-xl border border-cyan-500/20 bg-[#070b14]/60 p-4
-        focus-within:border-orange-400/40 transition-all">
-
-        <textarea
-          rows={4}
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Transmit your signal into the network..."
-          maxLength={500}
-          className="w-full resize-none bg-transparent text-sm text-cyan-100
-            outline-none placeholder:text-blue-500/40"
-        />
-      </div>
-
-      {/* VIDEO */}
-      {video && (
-        <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-500/5 p-4">
-
-          <div className="flex items-center gap-3">
-
-            <Video size={16} className="text-orange-400" />
-
-            <div className="flex-1 overflow-hidden">
-              <p className="truncate text-xs font-mono text-cyan-100">
-                {video.name}
-              </p>
-              <p className="text-[10px] font-mono text-blue-400">
-                {(video.size / 1024 / 1024).toFixed(2)} MB
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                setVideo(null)
-                if (fileInputRef.current) fileInputRef.current.value = ''
-              }}
-              className="text-xs font-mono text-orange-400 hover:text-orange-300"
-            >
-              remove
-            </button>
+            <span className="text-[10px] font-mono font-bold text-orange-400 tracking-widest">
+              LIVE STREAM
+            </span>
           </div>
         </div>
-      )}
 
-      {/* ACTIONS */}
-      <div className="mt-5 flex flex-col sm:flex-row gap-3">
+        {/* INPUT */}
+        <div className="rounded-xl border border-cyan-500/20 bg-[#070b14]/60 p-4
+        focus-within:border-orange-400/40 transition-all">
 
-        {/* FILE */}
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg
+          <textarea
+            rows={4}
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Transmit your signal into the network..."
+            maxLength={500}
+            className="w-full resize-none bg-transparent text-sm text-cyan-100
+            outline-none placeholder:text-blue-500/40"
+          />
+        </div>
+
+        {/* VIDEO */}
+        {video && (
+          <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-500/5 p-4">
+
+            <div className="flex items-center gap-3">
+
+              <Video size={16} className="text-orange-400" />
+
+              <div className="flex-1 overflow-hidden">
+                <p className="truncate text-xs font-mono text-cyan-100">
+                  {video.name}
+                </p>
+                <p className="text-[10px] font-mono text-blue-400">
+                  {(video.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setVideo(null)
+                  if (fileInputRef.current) fileInputRef.current.value = ''
+                }}
+                className="text-xs font-mono text-orange-400 hover:text-orange-300"
+              >
+                remove
+              </button>
+            </div>
+          </div>
+        )}
+
+{image && (
+  <div className="mt-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+
+    <div className="flex items-center gap-3">
+
+      <Image size={16} className="text-cyan-400" />
+
+      <img
+        src={URL.createObjectURL(image)}
+        alt="preview"
+        className="w-16 h-16 rounded-lg object-cover"
+      />
+
+      <div className="flex-1">
+        <p className="truncate text-xs font-mono text-cyan-100">
+          {image.name}
+        </p>
+
+        <p className="text-[10px] font-mono text-blue-400">
+          {(image.size / 1024 / 1024).toFixed(2)} MB
+        </p>
+      </div>
+
+      <button
+        onClick={() => setImage(null)}
+        className="text-xs font-mono text-red-400"
+      >
+        remove
+      </button>
+
+    </div>
+
+  </div>
+)}
+
+
+
+
+
+        {/* ACTIONS */}
+        <div className="mt-5 flex flex-col sm:flex-row gap-3">
+
+
+
+<label
+  className="
+    flex
+    cursor-pointer
+    items-center
+    justify-center
+    gap-2
+    rounded-lg
+    border
+    border-cyan-500/20
+    bg-[#0b1220]
+    px-5
+    py-2.5
+    text-xs
+    font-bold
+    uppercase
+    text-cyan-300
+  "
+>
+  <Image size={14} />
+
+  Image
+
+  <input
+    type="file"
+    accept="image/*"
+    hidden
+    onChange={(e) =>
+      setImage(e.target.files?.[0] || null)
+    }
+  />
+</label>
+
+
+          {/* FILE */}
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg
           border border-cyan-500/20 bg-[#0b1220] px-5 py-2.5 text-xs font-bold uppercase
           text-cyan-300 hover:text-orange-300 hover:border-orange-400/40 transition">
 
-          <ImagePlus size={14} />
-          Attach Signal
+<Video size={14} />
+Video
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="video/*"
-            hidden
-            onChange={(e) => setVideo(e.target.files?.[0] || null)}
-          />
-        </label>
 
-        {/* SEND */}
-        <button
-          onClick={handlePost}
-          disabled={uploading}
-          className="flex-1 flex items-center justify-center gap-2 rounded-lg
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="video/*"
+              hidden
+              onChange={(e) => setVideo(e.target.files?.[0] || null)}
+            />
+          </label>
+
+          {/* SEND */}
+          <button
+            onClick={handlePost}
+            disabled={uploading}
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg
             bg-gradient-to-r from-cyan-500 via-blue-500 to-orange-500
             text-white py-2.5 text-xs font-black uppercase
             shadow-[0_0_25px_rgba(34,211,238,0.15)]
             hover:shadow-[0_0_40px_rgba(249,115,22,0.25)]
             transition-all active:scale-95 disabled:opacity-40"
-        >
-          {uploading ? (
-            <>
-              <Loader2 size={14} className="animate-spin" />
-              Broadcasting...
-            </>
-          ) : (
-            <>
-              <Send size={14} />
-              Transmit
-            </>
-          )}
-        </button>
+          >
+            {uploading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                Broadcasting...
+              </>
+            ) : (
+              <>
+                <Send size={14} />
+                Transmit
+              </>
+            )}
+          </button>
+
+        </div>
+
+        {/* COUNTER */}
+        <div className="mt-3 text-right">
+          <span className="text-[10px] font-mono text-blue-400/60">
+            {content.length} / 500
+          </span>
+        </div>
 
       </div>
-
-      {/* COUNTER */}
-      <div className="mt-3 text-right">
-        <span className="text-[10px] font-mono text-blue-400/60">
-          {content.length} / 500
-        </span>
-      </div>
-
     </div>
-  </div>
-)
+  )
 }
