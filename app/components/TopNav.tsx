@@ -168,9 +168,46 @@ export default function TopNav({
         C
       </span>
 
-      <span className="mx-1 text-cyan-400 drop-shadow-[0_0_25px_rgba(34,211,238,0.8)]">
-        W
-      </span>
+<span className="group relative mx-2 inline-block font-black select-none transition-all duration-700 hover:scale-110">
+  {/* Layer 1: Hyper-Space Reality Tear (Deep Neon Silhouette Aura) */}
+  <span className="absolute inset-0 translate-x-[2px] translate-y-[2px] select-none text-red-500/40 blur-[4px] filter transition-transform duration-500 group-hover:translate-x-[4px] group-hover:translate-y-[4px]">
+    W
+  </span>
+
+  {/* Layer 2: Quantum Distortion Glow (Deep Blue Volumetric Under-glow) */}
+  <span className="absolute inset-0 select-none text-blue-600 blur-xl filter opacity-90 mix-blend-screen drop-shadow-[0_0_35px_rgba(37,99,235,1)] animate-pulse">
+    W
+  </span>
+
+  {/* Layer 3: Plasma Shield (Sharp Cyan Neon Core Silhouette) */}
+  <span className="absolute inset-0 select-none text-cyan-400 blur-[2px] filter opacity-80 mix-blend-color-dodge group-hover:animate-ping">
+    W
+  </span>
+
+  {/* Layer 4: The Physical Hologram (Your Original Gradient, Perfected) */}
+  <span className="
+    relative
+    block
+    bg-gradient-to-b
+    from-white
+    via-cyan-200
+    to-blue-600
+    bg-clip-text
+    text-transparent
+    font-black
+    tracking-tighter
+    drop-shadow-[0_0_15px_rgba(56,189,248,0.6)]
+    [text-shadow:0_0_50px_rgba(37,99,235,0.5)]
+  ">
+    W
+  </span>
+
+  {/* Layer 5: Chrome Light Flare Reflection (Simulated Liquid Metal Specular Highlight) */}
+  <span className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/80 to-transparent bg-clip-text text-transparent opacity-0 mix-blend-overlay transition-opacity duration-500 group-hover:opacity-100">
+    W
+  </span>
+</span>
+
 
       <span className="text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.7)]">
         V
