@@ -15,6 +15,10 @@ const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [posts, setPosts] = useState<any[]>([])
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isFollowing, setIsFollowing] = useState(false)
+  const [followersCount, setFollowersCount] = useState(0)
+  const [followers, setFollowers] = useState<any[]>([])
+const [showFollowers, setShowFollowers] = useState(false)
+const [followingCount, setFollowingCount] = useState(0)
   const [loading, setLoading] = useState(true)
 const [editing, setEditing] = useState(false)
 const [newUsername, setNewUsername] = useState('')
@@ -68,6 +72,46 @@ const loadProfile = async () => {
 
   // Set profile data in state
   setProfile(profileData)
+const { count: followers } = await supabase
+  .from('followers')
+  .select('*', { count: 'exact', head: true })
+  .eq('following_id', profileData.id)
+
+const { count: following } = await supabase
+  .from('followers')
+  .select('*', { count: 'exact', head: true })
+  .eq('follower_id', profileData.id)
+
+setFollowersCount(followers || 0)
+
+const { data: followersList } = await supabase
+  .from('followers')
+  .select(`
+    follower_id,
+    profiles!followers_follower_id_fkey (
+      id,
+      username,
+      avatar_url
+    )
+  `)
+  .eq('following_id', profileData.id)
+
+setFollowers(followersList || [])
+
+setFollowingCount(following || 0)
+
+
+if (session?.user) {
+  const { data: followRows } = await supabase
+    .from('followers')
+    .select('id')
+    .eq('follower_id', session.user.id)
+    .eq('following_id', profileData.id)
+
+  setIsFollowing((followRows?.length || 0) > 0)
+}
+
+
   setNewUsername(profileData.username || '')
   setNewBio(profileData.bio || '')
 
@@ -184,25 +228,36 @@ const toggleFollow = async () => {
   if (!currentUser || !profile) return
 
   if (isFollowing) {
-    await supabase
+    const { error } = await supabase
       .from('followers')
       .delete()
       .eq('follower_id', currentUser.id)
       .eq('following_id', profile.id)
 
+    if (error) {
+      alert(error.message)
+      return
+    }
+
     setIsFollowing(false)
+    setFollowersCount((prev) => Math.max(0, prev - 1))
   } else {
-    await supabase
+    const { error } = await supabase
       .from('followers')
       .insert({
         follower_id: currentUser.id,
         following_id: profile.id,
       })
 
+    if (error) {
+      alert(error.message)
+      return
+    }
+
     setIsFollowing(true)
+    setFollowersCount((prev) => prev + 1)
   }
 }
-
 
   return (
     <main className="min-h-screen bg-[#060608] text-white">
@@ -329,30 +384,78 @@ onClick={toggleFollow}
     Save Changes
   </button>
 )}
-                <div className="flex gap-6 mt-6">
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+{[
+  { label: "Posts", value: posts.length },
+  { label: "Followers", value: followersCount, clickable: true },
+  { label: "Following", value: followingCount },
+  { label: "Reputation", value: profile?.reputation || 0 },
+].map((stat, index) => (
+    <div
+       key={index}
+  onClick={() => {
+    if (stat.label === 'Followers') {
+      setShowFollowers(true)
+    }
+  }}
+      className="
+        group
+        relative
+        overflow-hidden
+        rounded-2xl
+        border
+        border-zinc-800
+        bg-zinc-950/60
+        backdrop-blur-xl
+        p-6
+        transition-all
+        duration-300
+        hover:-translate-y-1
+        hover:border-cyan-500/30
+        hover:shadow-[0_0_30px_rgba(34,211,238,0.08)]
+      "
+    >
+      {/* Glow */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] via-transparent to-blue-500/[0.03]" />
+      </div>
 
-                  <div>
-                    <p className="text-2xl font-black">
-                      {posts.length}
-                    </p>
-                    <p className="text-xs uppercase text-zinc-500">
-                      Posts
-                    </p>
-                  </div>
+      {/* Top Accent */}
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
 
-                  <div>
-                    <p className="text-2xl font-black">
-                      {profile.created_at
-                        ? new Date(profile.created_at)
-                            .getFullYear()
-                        : '2026'}
-                    </p>
-                    <p className="text-xs uppercase text-zinc-500">
-                      Member Since
-                    </p>
-                  </div>
+      {/* Label */}
+      <p
+        className="
+          text-[11px]
+          font-semibold
+          tracking-[0.25em]
+          uppercase
+          text-zinc-500
+          transition-colors
+          group-hover:text-cyan-400
+        "
+      >
+        {stat.label}
+      </p>
 
-                </div>
+      {/* Value */}
+      <p
+        className="
+          mt-3
+          text-4xl
+          font-black
+          tracking-tight
+          text-white
+        "
+      >
+        {Number(stat.value || 0).toLocaleString()}
+      </p>
+
+      {/* Bottom Tech Line */}
+      <div className="mt-4 h-[1px] w-full bg-gradient-to-r from-cyan-500/0 via-cyan-500/20 to-cyan-500/0" />
+    </div>
+  ))}
+</div>
 
               </div>
 
@@ -447,6 +550,50 @@ onClick={toggleFollow}
         </div>
 
       </div>
+
+{showFollowers && (
+  <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
+    <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-black text-xl">
+          Followers
+        </h2>
+
+        <button
+          onClick={() => setShowFollowers(false)}
+          className="text-zinc-500 hover:text-white"
+        >
+          ✕
+        </button>
+      </div>
+
+      <div className="space-y-3 max-h-[400px] overflow-y-auto">
+
+        {followers.map((follower: any, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900"
+          >
+            <img
+              src={
+                follower.profiles?.avatar_url ||
+                '/avatar-placeholder.png'
+              }
+              className="w-10 h-10 rounded-xl object-cover"
+            />
+
+            <span className="font-semibold">
+              {follower.profiles?.username}
+            </span>
+          </div>
+        ))}
+
+      </div>
+    </div>
+  </div>
+)}
+
 
     </main>
 
