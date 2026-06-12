@@ -157,12 +157,10 @@ const [menuOpen, setMenuOpen] = useState(false)
       "
     />
 
-<h1 className="text-xl md:text-2xl font-light tracking-[0.25em] text-white uppercase transition-all duration-500">
-  Street
-  <span className="ml-1 font-semibold text-emerald-400 border-b border-emerald-500/40 pb-1">
-    Go
-  </span>
+<h1 className="text-left text-2xl md:text-3xl font-bold tracking-normal text-slate-100 transition-colors duration-300">
+  STREET<span className="font-black text-emerald-400">GO</span>
 </h1>
+
 
 
     {/* System Text */}
