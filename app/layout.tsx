@@ -1,11 +1,21 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Street Market',
-  description: 'Buy & sell in your hood',
+  title: 'StreetGO',
+  description: 'Connect • Share • Grow',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'StreetGO',
+  },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en">
       <body className="bg-black text-white">
