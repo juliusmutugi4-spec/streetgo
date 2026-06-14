@@ -16,15 +16,17 @@ export default function NotificationsPage() {
     } = await supabase.auth.getSession()
 
     if (!session?.user) return
-console.log('SESSION USER:', session?.user?.id)
-const { data, error } = await supabase
-  .from('notifications')
-  .select('*')
-  .eq('user_id', session.user.id)
-  .order('created_at', { ascending: false })
+    
+    console.log('SESSION USER:', session?.user?.id)
+    
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .order('created_at', { ascending: false })
 
-console.log('NOTIFICATIONS ERROR:', error)
-console.log('NOTIFICATIONS DATA:', data)
+    console.log('NOTIFICATIONS ERROR:', error)
+    console.log('NOTIFICATIONS DATA:', data)
 
     setNotifications(data || [])
   }
@@ -38,7 +40,6 @@ console.log('NOTIFICATIONS DATA:', data)
         </h1>
 
         <div className="space-y-4">
-
           {notifications.length === 0 ? (
             <div className="text-zinc-500">
               No notifications yet.
@@ -49,23 +50,36 @@ console.log('NOTIFICATIONS DATA:', data)
                 key={notification.id}
                 className="
                   p-4
-                  rounded-xl
+                  rounded-2xl
                   border
-                  border-zinc-800
-                  bg-zinc-950/60
+                  border-cyan-500/20
+                  bg-zinc-950/80
+                  backdrop-blur-md
+                  hover:border-cyan-400/40
+                  transition
                 "
               >
-                <p>{notification.message}</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-cyan-500/20 flex items-center justify-center text-xl">
+                    {notification.type === 'follow' && '👤'}
+                    {notification.type === 'like' && '❤️'}
+                    {notification.type === 'comment' && '💬'}
+                    {notification.type === 'message' && '📩'}
+                  </div>
 
-                <p className="text-xs text-zinc-500 mt-2">
-                  {new Date(
-                    notification.created_at
-                  ).toLocaleString()}
-                </p>
+                  <div className="flex-1">
+                    <p className="font-semibold">
+                      {notification.message || notification.type}
+                    </p>
+
+                    <p className="text-xs text-zinc-500 mt-1">
+                      {new Date(notification.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
               </div>
             ))
           )}
-
         </div>
 
       </div>

@@ -330,7 +330,9 @@ onClick={toggleFollow}
 
 {currentUser?.id !== profile.id && (
   <button
-    onClick={() => router.push(`/chat/${profile.id}`)}
+    onClick={() =>
+  router.push(`/messages?user=${profile.id}`)
+}
     className="mt-3 px-4 py-2 bg-emerald-500 rounded-lg text-sm font-bold"
   >
     Message

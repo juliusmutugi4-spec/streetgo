@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import TopNav from '../components/TopNav'
@@ -17,6 +18,8 @@ type Conversation = {
 
 export default function MessagesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+const targetUserId = searchParams.get('user')
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
 const [conversations, setConversations] = useState<Conversation[]>([])
@@ -26,7 +29,7 @@ const [messageText, setMessageText] = useState('')
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Conversation | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
-
+const [notificationCount, setNotificationCount] = useState(0)
   // Fetch unread messages
   const fetchUnread = async (userId: string) => {
     const { count } = await supabase
@@ -35,6 +38,20 @@ const [messageText, setMessageText] = useState('')
       .eq('receiver_id', userId)
     setUnreadCount(count || 0)
   }
+
+const fetchNotifications = async (userId: string) => {
+  const { count } = await supabase
+    .from('notifications')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('user_id', userId)
+    .eq('is_read', false)
+
+  setNotificationCount(count || 0)
+}
+
 useEffect(() => {
   if (
     conversations.length > 0 &&
@@ -62,8 +79,34 @@ useEffect(() => {
         setProfile(profileData)
 
         await fetchUnread(session.user.id)
+
+        await fetchNotifications(session.user.id)
         console.log('LOGGED IN USER:', session.user.id)
         await fetchConversations(session.user.id)
+
+        if (targetUserId) {
+  const { data: targetProfile } = await supabase
+    .from('profiles')
+    .select('username, avatar_url')
+    .eq('id', targetUserId)
+    .single()
+
+  if (targetProfile) {
+    const chat = {
+      userId: targetUserId,
+      username: targetProfile.username,
+      avatar_url: targetProfile.avatar_url,
+      lastMessage: '',
+      created_at: new Date().toISOString(),
+    }
+
+    setSelectedChat(chat)
+    fetchMessages(
+  targetUserId,
+  session.user.id
+)
+  }
+}
       }
 
       setLoading(false)
@@ -112,14 +155,19 @@ console.log("UNIQUE USERS:", uniqueUsers.size)
 console.log(Array.from(uniqueUsers.values()))
 
   }
-const fetchMessages = async (otherUserId: string) => {
-  if (!user?.id) return
+const fetchMessages = async (
+  otherUserId: string,
+  currentUserId?: string
+) => {
+  const uid = currentUserId || user?.id
+
+  if (!uid) return
 
   const { data, error } = await supabase
     .from('chat_messages')
     .select('*')
     .or(
-      `and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`
+      `and(sender_id.eq.${uid},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${uid})`
     )
     .order('created_at', { ascending: true })
 
@@ -158,7 +206,15 @@ const sendMessage = async () => {
     return
   }
 
-  setMessages((prev) => [...prev, data])
+  setMessages((prev) => {
+  const exists = prev.some(
+    (m) => m.id === data.id
+  )
+
+  if (exists) return prev
+
+  return [...prev, data]
+})
 }
 
 useEffect(() => {
@@ -298,18 +354,48 @@ return (
               }`}
             >
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
-                {conv.username.charAt(0)}
+               {conv.avatar_url ? (
+  
+  
+  
+  <img
+    src={conv.avatar_url}
+    className="w-12 h-12 rounded-full object-cover"
+  />
+) : (
+  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
+    {conv.username.charAt(0)}
+  </div>
+)}
               </div>
 
-              <div className="flex-1 min-w-0">
-                <h3 className="font-medium truncate">
-                  {conv.username}
-                </h3>
+  <div className="flex-1 min-w-0">
 
-                <p className="text-sm text-zinc-400 truncate">
-                  {conv.lastMessage}
-                </p>
-              </div>
+  <div className="flex items-center justify-between">
+
+    <h3 className="font-semibold truncate">
+      {conv.username}
+    </h3>
+
+    <span className="text-xs text-zinc-500">
+      {new Date(conv.created_at).toLocaleDateString()}
+    </span>
+
+  </div>
+
+  <div className="flex items-center justify-between">
+
+    <p className="text-sm text-zinc-400 truncate">
+      {conv.lastMessage}
+    </p>
+
+    <div className="w-5 h-5 rounded-full bg-emerald-500 text-black text-xs flex items-center justify-center font-bold">
+      1
+    </div>
+
+  </div>
+
+</div>
             </button>
           ))}
         </div>
@@ -329,37 +415,49 @@ return (
         {selectedChat ? (
           <>
             {/* HEADER */}
-            <div className="h-16 shrink-0 bg-[#202c33] border-b border-zinc-800 flex items-center justify-between px-5">
+{/* HEADER */}
+<div className="h-16 bg-[#111b21] border-b border-cyan-500/10 flex items-center justify-between px-4">
+  {/* LEFT */}
+  <div className="flex items-center gap-3">
+    <button
+      onClick={() => setSelectedChat(null)}
+      className="lg:hidden text-zinc-400 hover:text-cyan-400 transition"
+    >
+      ←
+    </button>
 
-            <div className="flex items-center gap-3">
+    <div className="relative cursor-pointer">
+      {selectedChat.avatar_url ? (
+        <img
+          src={selectedChat.avatar_url}
+          className="w-11 h-11 rounded-full object-cover border border-cyan-500/20"
+        />
+      ) : (
+        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center font-bold">
+          {selectedChat.username?.charAt(0) || 'U'}
+        </div>
+      )}
+      <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#111b21]" />
+    </div>
 
-  <button
-    onClick={() => setSelectedChat(null)}
-    className="lg:hidden text-xl"
-  >
-    ←
-  </button>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
-                  {selectedChat.username.charAt(0)}
-                </div>
+    <div>
+      <div className="flex items-center gap-2">
+        <h2 className="font-semibold text-white">
+          {selectedChat.username || 'User'}
+        </h2>
+        <span className="text-cyan-400 text-xs">✓</span>
+      </div>
+      <p className="text-xs text-emerald-400">Online now</p>
+    </div>
+  </div>
 
-                <div>
-                  <h2 className="font-semibold">
-                    {selectedChat.username}
-                  </h2>
-
-                  <p className="text-xs text-emerald-400">
-                    Online
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex gap-4 text-zinc-400">
-                <button>📞</button>
-                <button>📹</button>
-                <button>⋮</button>
-              </div>
-            </div>
+  {/* RIGHT */}
+  <div className="flex items-center gap-2">
+    <button className="w-10 h-10 rounded-xl bg-[#1b2730] hover:bg-cyan-500/10 transition">📞</button>
+    <button className="w-10 h-10 rounded-xl bg-[#1b2730] hover:bg-cyan-500/10 transition">🎥</button>
+    <button className="w-10 h-10 rounded-xl bg-[#1b2730] hover:bg-cyan-500/10 transition">⋮</button>
+  </div>
+</div>
 
             {/* MESSAGES */}
             <div
@@ -381,13 +479,36 @@ return (
                         : 'flex justify-start'
                     }
                   >
-                    <div
-                      className={`max-w-[420px] px-4 py-2 rounded-xl ${
-                        mine
-                          ? 'bg-[#005c4b]'
-                          : 'bg-[#202c33]'
-                      }`}
-                    >
+<div
+  className={`
+
+  max-w-[420px]
+  px-4
+  py-3
+
+  backdrop-blur-md
+
+  ${
+    mine
+      ? `
+      bg-gradient-to-br
+      from-emerald-700
+      to-emerald-900
+      rounded-3xl
+      rounded-br-md
+      shadow-[0_0_20px_rgba(16,185,129,0.25)]
+      `
+      : `
+      bg-[#1b2730]
+      rounded-3xl
+      rounded-bl-md
+      border
+      border-cyan-500/10
+      `
+  }
+
+`}
+>
                       <p>{msg.content}</p>
 
                       <p className="text-[11px] text-zinc-400 mt-1 text-right">
@@ -431,9 +552,21 @@ return (
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            Select a chat
-          </div>
+<div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+
+  <div className="text-6xl mb-4">
+    💬
+  </div>
+
+  <h2 className="text-2xl font-bold">
+    Your Messages
+  </h2>
+
+  <p className="text-zinc-400 mt-2 max-w-sm">
+    Start chatting with people you follow on StreetGO.
+  </p>
+
+</div>
         )}
       </div>
     </div>
