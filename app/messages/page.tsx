@@ -14,6 +14,7 @@ type Conversation = {
   avatar_url: string | null
   lastMessage: string
   created_at: string
+  unreadCount: number
 }
 
 export default function MessagesPage() {
@@ -52,18 +53,7 @@ const fetchNotifications = async (userId: string) => {
   setNotificationCount(count || 0)
 }
 
-useEffect(() => {
-  if (
-    conversations.length > 0 &&
-    user?.id &&
-    !selectedChat
-  ) {
-    const firstChat = conversations[0]
 
-    setSelectedChat(firstChat)
-    fetchMessages(firstChat.userId)
-  }
-}, [conversations, user])
   // Initialize user and conversations
   useEffect(() => {
     const init = async () => {
@@ -91,21 +81,23 @@ useEffect(() => {
     .eq('id', targetUserId)
     .single()
 
-  if (targetProfile) {
-    const chat = {
-      userId: targetUserId,
-      username: targetProfile.username,
-      avatar_url: targetProfile.avatar_url,
-      lastMessage: '',
-      created_at: new Date().toISOString(),
-    }
-
-    setSelectedChat(chat)
-    fetchMessages(
-  targetUserId,
-  session.user.id
-)
+if (targetProfile) {
+  const chat = {
+    userId: targetUserId,
+    username: targetProfile.username,
+    avatar_url: targetProfile.avatar_url,
+    lastMessage: 'Start chatting now',
+    created_at: new Date().toISOString(),
+    unreadCount: 0,
   }
+  setConversations((prev) => {
+    const filtered = prev.filter(
+      (c) => c.userId !== targetUserId
+    )
+
+    return [chat, ...filtered]
+  })
+}
 }
       }
 
@@ -144,7 +136,25 @@ console.log('TOTAL MESSAGES:', data?.length)
           avatar_url: otherProfile?.avatar_url || null,
           lastMessage: msg.content,
           created_at: msg.created_at,
+          
         })
+
+const unreadCount = (data || []).filter(
+  (m) =>
+    m.sender_id === otherUserId &&
+    m.receiver_id === userId
+).length
+
+uniqueUsers.set(otherUserId, {
+  userId: otherUserId,
+  username: otherProfile?.username || 'User',
+  avatar_url: otherProfile?.avatar_url || null,
+  lastMessage: msg.content,
+  created_at: msg.created_at,
+  unreadCount,
+})
+
+
       }
     }
     setConversations(Array.from(uniqueUsers.values()))
@@ -355,27 +365,55 @@ return (
 onClick={() => {
   router.push(`/chat/${conv.userId}`)
 }}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition ${
-                selectedChat?.userId === conv.userId
-                  ? 'bg-[#202c33]'
-                  : 'hover:bg-[#1b2730]'
-              }`}
+className={`
+
+w-full
+flex
+items-center
+gap-3
+px-4
+py-3
+text-left
+transition-all
+duration-300
+
+${
+  targetUserId === conv.userId
+    ? `
+      bg-cyan-500/10
+      border-l-4
+      border-cyan-400
+      shadow-[0_0_20px_rgba(6,182,212,0.15)]
+      `
+    : `
+      hover:bg-[#1b2730]
+      `
+}
+
+`}
             >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
-               {conv.avatar_url ? (
-  
-  
-  
-  <img
-    src={conv.avatar_url}
-    className="w-12 h-12 rounded-full object-cover"
-  />
-) : (
-  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
-    {conv.username.charAt(0)}
+<div className="relative">
+
+  {conv.avatar_url ? (
+    <img
+      src={conv.avatar_url}
+      className="w-12 h-12 rounded-full object-cover"
+    />
+  ) : (
+    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
+      {conv.username.charAt(0)}
+    </div>
+  )}
+
+  <div className="absolute bottom-0 right-0">
+
+    <span className="absolute inline-flex h-3 w-3 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+
+    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border border-[#111b21]"></span>
+
   </div>
-)}
-              </div>
+
+</div>
 
   <div className="flex-1 min-w-0">
 
@@ -385,21 +423,47 @@ onClick={() => {
       {conv.username}
     </h3>
 
-    <span className="text-xs text-zinc-500">
-      {new Date(conv.created_at).toLocaleDateString()}
-    </span>
+<span className="text-xs text-zinc-400">
+  {new Date(conv.created_at).toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+  })}
+</span>
 
   </div>
 
   <div className="flex items-center justify-between">
 
-    <p className="text-sm text-zinc-400 truncate">
-      {conv.lastMessage}
-    </p>
+{conv.lastMessage === 'Start chatting now' ? (
+  <p className="text-sm text-cyan-400 font-medium truncate">
+    ✨ Start chatting now
+  </p>
+) : (
+  <p className="text-sm text-zinc-400 truncate">
+    {conv.lastMessage}
+  </p>
+)}
 
-    <div className="w-5 h-5 rounded-full bg-emerald-500 text-black text-xs flex items-center justify-center font-bold">
-      1
-    </div>
+{conv.unreadCount > 0 && (
+  <div
+    className="
+    min-w-[22px]
+    h-[22px]
+    px-1
+    rounded-full
+    bg-emerald-500
+    text-black
+    text-[11px]
+    flex
+    items-center
+    justify-center
+    font-bold
+    shadow-[0_0_10px_rgba(16,185,129,0.5)]
+  "
+  >
+    {conv.unreadCount}
+  </div>
+)}
 
   </div>
 
@@ -409,174 +473,29 @@ onClick={() => {
         </div>
       </div>
 
-{/* CHAT AREA */}
-<div
-  className={`
-    ${selectedChat ? 'flex' : 'hidden lg:flex'}
-    flex-1
-    flex-col
-    h-full
-    min-h-0
-    overflow-hidden
-  `}
->
-        {selectedChat ? (
-          <>
-            {/* HEADER */}
-{/* HEADER */}
-<div className="h-16 bg-[#111b21] border-b border-cyan-500/10 flex items-center justify-between px-4">
-  {/* LEFT */}
-  <div className="flex items-center gap-3">
-    <button
-      onClick={() => setSelectedChat(null)}
-      className="lg:hidden text-zinc-400 hover:text-cyan-400 transition"
-    >
-      ←
-    </button>
 
-    <div className="relative cursor-pointer">
-      {selectedChat.avatar_url ? (
-        <img
-          src={selectedChat.avatar_url}
-          className="w-11 h-11 rounded-full object-cover border border-cyan-500/20"
-        />
-      ) : (
-        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-cyan-500 to-emerald-500 flex items-center justify-center font-bold">
-          {selectedChat.username?.charAt(0) || 'U'}
-        </div>
-      )}
-      <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-[#111b21]" />
+<div className="hidden lg:flex flex-1 items-center justify-center bg-[#0b141a]">
+
+  <div className="text-center">
+
+    <div className="text-7xl mb-4">
+      💬
     </div>
 
-    <div>
-      <div className="flex items-center gap-2">
-        <h2 className="font-semibold text-white">
-          {selectedChat.username || 'User'}
-        </h2>
-        <span className="text-cyan-400 text-xs">✓</span>
-      </div>
-      <p className="text-xs text-emerald-400">Online now</p>
-    </div>
+    <h2 className="text-2xl font-bold text-white">
+      StreetGO Messages
+    </h2>
+
+    <p className="text-zinc-500 mt-2">
+      Select a conversation to start chatting
+    </p>
+
   </div>
 
-  {/* RIGHT */}
-  <div className="flex items-center gap-2">
-    <button className="w-10 h-10 rounded-xl bg-[#1b2730] hover:bg-cyan-500/10 transition">📞</button>
-    <button className="w-10 h-10 rounded-xl bg-[#1b2730] hover:bg-cyan-500/10 transition">🎥</button>
-    <button className="w-10 h-10 rounded-xl bg-[#1b2730] hover:bg-cyan-500/10 transition">⋮</button>
-  </div>
 </div>
 
-            {/* MESSAGES */}
-            <div
-  className="flex-1 min-h-0 overflow-y-auto p-6 space-y-3"
-              style={{
-                backgroundImage:
-                  "url('https://www.transparenttextures.com/patterns/asfalt-dark.png')",
-              }}
-            >
-              {messages.map((msg) => {
-                const mine = msg.sender_id === user?.id
 
-                return (
-                  <div
-                    key={msg.id}
-                    className={
-                      mine
-                        ? 'flex justify-end'
-                        : 'flex justify-start'
-                    }
-                  >
-<div
-  className={`
 
-  max-w-[420px]
-  px-4
-  py-3
-
-  backdrop-blur-md
-
-  ${
-    mine
-      ? `
-      bg-gradient-to-br
-      from-emerald-700
-      to-emerald-900
-      rounded-3xl
-      rounded-br-md
-      shadow-[0_0_20px_rgba(16,185,129,0.25)]
-      `
-      : `
-      bg-[#1b2730]
-      rounded-3xl
-      rounded-bl-md
-      border
-      border-cyan-500/10
-      `
-  }
-
-`}
->
-                      <p>{msg.content}</p>
-
-                      <p className="text-[11px] text-zinc-400 mt-1 text-right">
-                        {new Date(msg.created_at).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            {/* INPUT */}
-            <div className="shrink-0 bg-[#202c33] border-t border-zinc-800 p-3 flex items-center gap-3">
-
-              <button>😊</button>
-
-              <button>📎</button>
-
-              <input
-                value={messageText}
-                onChange={(e) =>
-                  setMessageText(e.target.value)
-                }
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter')
-                    sendMessage()
-                }}
-                placeholder="Type a message..."
-                className="flex-1 bg-[#2a3942] rounded-lg px-4 py-3 outline-none"
-              />
-
-              <button
-                onClick={sendMessage}
-                className="w-12 h-12 rounded-full bg-emerald-500 text-black font-bold"
-              >
-                ➤
-              </button>
-            </div>
-          </>
-        ) : (
-<div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-
-  <div className="text-6xl mb-4">
-    💬
-  </div>
-
-  <h2 className="text-2xl font-bold">
-    Your Messages
-  </h2>
-
-  <p className="text-zinc-400 mt-2 max-w-sm">
-    Start chatting with people you follow on StreetGO.
-  </p>
-
-</div>
-        )}
-      </div>
     </div>
 
 <div className="lg:hidden">
