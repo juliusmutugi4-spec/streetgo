@@ -326,11 +326,20 @@ return (
   `}
 >
 
-        <div className="px-5 py-4 border-b border-zinc-800">
-          <h2 className="text-xl font-semibold">
-            Chats
-          </h2>
-        </div>
+<div className="px-4 py-4 border-b border-zinc-800 flex items-center gap-3">
+
+  <button
+    onClick={() => router.push('/')}
+    className="lg:hidden text-xl text-cyan-400"
+  >
+    ←
+  </button>
+
+  <h2 className="text-xl font-bold">
+    Messages
+  </h2>
+
+</div>
 
         <div className="p-3 border-b border-zinc-800">
           <input
@@ -343,10 +352,9 @@ return (
           {conversations.map((conv) => (
             <button
               key={conv.userId}
-              onClick={() => {
-                setSelectedChat(conv)
-                fetchMessages(conv.userId)
-              }}
+onClick={() => {
+  router.push(`/chat/${conv.userId}`)
+}}
               className={`w-full flex items-center gap-3 px-4 py-3 text-left transition ${
                 selectedChat?.userId === conv.userId
                   ? 'bg-[#202c33]'
