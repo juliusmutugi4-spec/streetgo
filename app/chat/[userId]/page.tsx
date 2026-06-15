@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { supabase } from '../../lib/supabase'
-
+import { useRouter } from 'next/navigation'
 export default function ChatPage() {
   const params = useParams()
   const otherUserId = String(params.userId)
@@ -14,7 +14,7 @@ const [otherProfile, setOtherProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   const bottomRef = useRef<HTMLDivElement>(null)
-
+const router = useRouter()
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
       behavior: 'smooth',
@@ -109,12 +109,18 @@ if (data) {
 <div className="h-16 border-b border-zinc-800 bg-[#202c33] px-4 flex items-center justify-between">
 
   <div className="flex items-center">
-    <button
-      onClick={() => window.history.back()}
-      className="mr-4 text-zinc-300 hover:text-white transition"
-    >
-      ←
-    </button>
+<button
+  onClick={() => router.push('/messages')}
+  className="
+    mr-4
+    text-xl
+    text-cyan-400
+    hover:text-emerald-400
+    transition
+  "
+>
+  ←
+</button>
 
     <div className="relative">
       {otherProfile?.avatar_url ? (
