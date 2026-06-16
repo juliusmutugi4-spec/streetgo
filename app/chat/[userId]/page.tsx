@@ -55,6 +55,15 @@ setOtherProfile(profileData)
       }
 
       setMessages(data || [])
+await supabase
+  .from('chat_messages')
+  .update({
+    is_read: true,
+  })
+  .eq('sender_id', otherUserId)
+  .eq('receiver_id', user.id)
+  .eq('is_read', false)
+
       setLoading(false)
 
 
@@ -76,11 +85,12 @@ return () => {}
 
 const { data, error } = await supabase
   .from('chat_messages')
-  .insert({
-    sender_id: user.id,
-    receiver_id: otherUserId,
-    content: messageText,
-  })
+.insert({
+  sender_id: user.id,
+  receiver_id: otherUserId,
+  content: messageText,
+  is_read: false,
+})
   .select()
   .single()
 

@@ -2,7 +2,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import TopNav from '../components/TopNav'
@@ -19,8 +18,7 @@ type Conversation = {
 
 export default function MessagesPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-const targetUserId = searchParams.get('user')
+const [targetUserId, setTargetUserId] = useState<string | null>(null)
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
 const [conversations, setConversations] = useState<Conversation[]>([])
@@ -53,58 +51,69 @@ const fetchNotifications = async (userId: string) => {
   setNotificationCount(count || 0)
 }
 
+// Initialize user and conversations
+useEffect(() => {
+  const init = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-  // Initialize user and conversations
-  useEffect(() => {
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      setUser(session?.user ?? null)
+    setUser(session?.user ?? null)
 
-      if (session?.user) {
-        const { data: profileData } = await supabase
+    if (session?.user) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username, avatar_url')
+        .eq('id', session.user.id)
+        .single()
+
+      setProfile(profileData)
+
+      await fetchUnread(session.user.id)
+      await fetchNotifications(session.user.id)
+      await fetchConversations(session.user.id)
+
+      const params = new URLSearchParams(
+        window.location.search
+      )
+
+      const target = params.get('user')
+
+      if (target) {
+        setTargetUserId(target)
+
+        const { data: targetProfile } = await supabase
           .from('profiles')
           .select('username, avatar_url')
-          .eq('id', session.user.id)
+          .eq('id', target)
           .single()
-        setProfile(profileData)
 
-        await fetchUnread(session.user.id)
+        if (targetProfile) {
+          const chat = {
+            userId: target,
+            username: targetProfile.username,
+            avatar_url: targetProfile.avatar_url,
+            lastMessage: 'Start chatting now',
+            created_at: new Date().toISOString(),
+            unreadCount: 0,
+          }
 
-        await fetchNotifications(session.user.id)
-        console.log('LOGGED IN USER:', session.user.id)
-        await fetchConversations(session.user.id)
+          setConversations((prev) => {
+            const filtered = prev.filter(
+              (c) => c.userId !== target
+            )
 
-        if (targetUserId) {
-  const { data: targetProfile } = await supabase
-    .from('profiles')
-    .select('username, avatar_url')
-    .eq('id', targetUserId)
-    .single()
-
-if (targetProfile) {
-  const chat = {
-    userId: targetUserId,
-    username: targetProfile.username,
-    avatar_url: targetProfile.avatar_url,
-    lastMessage: 'Start chatting now',
-    created_at: new Date().toISOString(),
-    unreadCount: 0,
-  }
-  setConversations((prev) => {
-    const filtered = prev.filter(
-      (c) => c.userId !== targetUserId
-    )
-
-    return [chat, ...filtered]
-  })
-}
-}
+            return [chat, ...filtered]
+          })
+        }
       }
-
-      setLoading(false)
     }
-    init()
-  }, [])
+
+    setLoading(false)
+  }
+
+  init()
+}, [])
 
   const fetchConversations = async (userId: string) => {
 const { data, error } = await supabase
