@@ -708,15 +708,7 @@ mobileChatOpen
     </div>
 
     <div>
-<button
-onClick={()=>{
-setMobileChatOpen(false)
-setSelectedChat(null)
-}}
-className="lg:hidden mr-4 text-cyan-400 text-xl"
->
-←
-</button>
+
 
       <h1 className="font-bold text-lg text-white">
 
@@ -752,9 +744,7 @@ animate-pulse
 Active now
 
 </p>
-      <p className="text-xs text-emerald-400">
-        Active now
-      </p>
+
     </div>
   </div>
 
