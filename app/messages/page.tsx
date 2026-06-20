@@ -1,7 +1,7 @@
 // File: app/messages/page.tsx
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import TopNav from '../components/TopNav'
@@ -24,7 +24,7 @@ const [targetUserId, setTargetUserId] = useState<string | null>(null)
 const [conversations, setConversations] = useState<Conversation[]>([])
 const [messages, setMessages] = useState<any[]>([])
 const [messageText, setMessageText] = useState('')
-
+const messagesEndRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Conversation | null>(null)
   const [mobileChatOpen, setMobileChatOpen] =useState(false)
@@ -78,7 +78,11 @@ console.log('MESSAGES READ EVENT FIRED')
   }
 }, [user?.id])
 
-
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({
+    behavior: 'smooth'
+  })
+}, [messages])
 // Initialize user and conversations
 useEffect(() => {
   const init = async () => {
@@ -402,14 +406,20 @@ return (
   </div>
 
       {/* CHAT LIST */}
-      <div
-  className={`
-    ${selectedChat ? 'hidden lg:flex' : 'flex'}
-    w-full lg:w-[380px]
-    border-r border-zinc-800
-    bg-[#08131d]
-    flex-col
-  `}
+<div
+className={`
+${
+mobileChatOpen
+? 'hidden lg:flex'
+: 'flex'
+}
+w-full
+lg:w-[380px]
+border-r
+border-zinc-800
+bg-[#08131d]
+flex-col
+`}
 >
 
 <div className="px-4 py-4 border-b border-zinc-800 flex items-center gap-3">
@@ -631,7 +641,19 @@ shadow-[0_0_20px_rgba(0,229,255,.5)]
 
 
 
-<div className="hidden lg:flex flex-1 flex-col bg-[#0b141a]">
+<div
+className={`
+flex-1
+flex-col
+bg-[#0b141a]
+
+${
+mobileChatOpen
+  ? 'flex'
+  : 'hidden lg:flex'
+}
+`}
+>
   {selectedChat ? (
     <>
 <div
@@ -684,10 +706,50 @@ shadow-[0_0_20px_rgba(0,229,255,.5)]
     </div>
 
     <div>
+<button
+onClick={()=>{
+setMobileChatOpen(false)
+setSelectedChat(null)
+}}
+className="lg:hidden mr-4 text-cyan-400 text-xl"
+>
+←
+</button>
+
       <h1 className="font-bold text-lg text-white">
+
+
+        <button
+  onClick={() => {
+    setMobileChatOpen(false)
+    setSelectedChat(null)
+  }}
+  className="
+  lg:hidden
+  mr-4
+  text-cyan-400
+  text-2xl
+  "
+>
+  ←
+</button>
+
         {selectedChat.username}
       </h1>
+<p className="text-xs text-emerald-400 flex items-center gap-2">
 
+<span className="
+w-2
+h-2
+rounded-full
+bg-emerald-400
+animate-pulse
+">
+</span>
+
+Active now
+
+</p>
       <p className="text-xs text-emerald-400">
         Active now
       </p>
@@ -777,14 +839,18 @@ transparent 30%),
   const mine = m.sender_id === user?.id
 
   return (
-    <div
-      key={m.id}
-      className={`
-      flex
-      mb-2
-      ${mine ? 'justify-end' : 'justify-start'}
-      `}
-    >
+<div
+key={m.id}
+className={`
+flex
+mb-3
+animate-[fadeIn_.25s_ease]
+
+${mine
+  ? 'justify-end'
+  : 'justify-start'}
+`}
+>
               <div
                 className={
 mine
@@ -800,6 +866,9 @@ rounded-3xl
 rounded-br-md
 max-w-[500px]
 backdrop-blur-xl
+hover:scale-[1.02]
+transition-all
+duration-300
 shadow-[0_0_20px_rgba(0,229,255,0.08)]
 `
 : `
@@ -835,7 +904,7 @@ max-w-[500px]
       hour: '2-digit',
       minute: '2-digit',
     })}
-
+<div ref={messagesEndRef}></div>
     {mine && (
       <span className="text-cyan-400">
         ✓✓
@@ -850,7 +919,15 @@ max-w-[500px]
       </div>
 
 {/* Input */}
-<div className="border-t border-zinc-800 p-4 bg-[#202c33]">
+<div
+className="
+border-t
+border-cyan-500/10
+p-4
+bg-[#08131d]
+backdrop-blur-xl
+"
+>
   <div
 className="
 flex
