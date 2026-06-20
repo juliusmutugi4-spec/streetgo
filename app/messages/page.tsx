@@ -455,7 +455,13 @@ focus:border-cyan-400"
           />
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div
+className="
+flex-1
+overflow-y-auto
+pb-28
+"
+>
           {conversations.map((conv) => (
             <button
               key={conv.userId}
@@ -710,68 +716,40 @@ mobileChatOpen
     <div>
 
 
- <div className="relative overflow-hidden bg-slate-950/60 p-4 border border-cyan-500/10 backdrop-blur-3xl shadow-[inset_0_1px_2px_rgba(34,211,238,0.05),0_10px_30px_rgba(0,0,0,0.5)]">
-  {/* Cyber Grid Sub-Layer */}
-  <div className="absolute inset-0 bg-[linear-gradient(rgba(6,182,212,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(6,182,212,0.02)_1px,transparent_1px)] bg-[size:16px_16px] pointer-events-none" />
+      <h1 className="font-bold text-lg text-white">
 
-  <div className="flex items-center gap-1.5">
-    <button
-      onClick={() => {
-        setMobileChatOpen(false)
-        setSelectedChat(null)
-      }}
-      className="
-        lg:hidden
-        relative
-        flex
-        items-center
-        justify-center
-        w-9
-        h-9
-        mr-2
-        bg-slate-900/50
-        border
-        border-cyan-400/40
-        text-cyan-400
-        rounded-lg
-        transition-all
-        duration-200
-        before:absolute
-        before:inset-0
-        before:bg-cyan-400/5
-        before:opacity-0
-        hover:before:opacity-100
-        hover:border-cyan-300
-        hover:shadow-[0_0_15px_rgba(34,211,238,0.25)]
-        active:scale-95
-      "
-    >
-      <span className="font-mono text-xl tracking-tighter select-none -mt-0.5">⟵</span>
-    </button>
 
-    <div className="flex flex-col gap-0.5">
-      <h1 className="font-mono text-sm font-semibold tracking-[0.2em] text-cyan-50
-                     bg-gradient-to-r from-cyan-100 via-slate-100 to-slate-400 bg-clip-text text-transparent 
-                     flex items-center gap-2 uppercase">
-        <span className="text-cyan-500/50 text-[10px] select-none">[USR //]</span>
+        <button
+  onClick={() => {
+    setMobileChatOpen(false)
+    setSelectedChat(null)
+  }}
+  className="
+  lg:hidden
+  mr-4
+  text-cyan-400
+  text-2xl
+  "
+>
+  ←
+</button>
+
         {selectedChat.username}
       </h1>
+<p className="text-xs text-emerald-400 flex items-center gap-2">
 
-      <div className="flex items-center gap-2">
-        <span className="relative flex h-1.5 w-1.5">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400/60 opacity-100 duration-1000"></span>
-          <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]"></span>
-        </span>
-        
-        <p className="font-mono text-[9px] font-bold tracking-[0.25em] text-emerald-400 uppercase flex items-center gap-1">
-          <span>NET_NODE_ONLINE</span>
-          <span className="text-emerald-500/40 animate-pulse text-[8px] font-normal">[SECURE_LINK_2080]</span>
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
+<span className="
+w-2
+h-2
+rounded-full
+bg-emerald-400
+animate-pulse
+">
+</span>
 
+Active now
+
+</p>
 
     </div>
   </div>
