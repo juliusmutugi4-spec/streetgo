@@ -263,7 +263,7 @@ const [menuOpen, setMenuOpen] = useState(false)
       
     </span>
     
-    STREAM
+    1
     
     {/* Micro Photon Indicator */}
   <span className="
