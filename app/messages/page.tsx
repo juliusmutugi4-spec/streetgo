@@ -14,6 +14,7 @@ type Conversation = {
   lastMessage: string
   created_at: string
   unreadCount: number
+  isOnline: boolean
 }
 
 export default function MessagesPage() {
@@ -89,13 +90,31 @@ useEffect(() => {
     const {
       data: { session },
     } = await supabase.auth.getSession()
-
+console.log("SESSION:", session)
     setUser(session?.user ?? null)
 
     if (session?.user) {
+console.log("SETTING ONLINE", session.user.id)
+const { data, error } = await supabase
+  .from('profiles')
+  .update({
+    is_online: true
+  })
+  .eq('id', session.user.id)
+  .select()
+alert("ONLINE UPDATE DONE")
+console.log("UPDATED PROFILE:", data)
+console.log("ONLINE UPDATE ERROR:", error)
+const { data: me } = await supabase
+  .from('profiles')
+  .select('username, is_online')
+  .eq('id', session.user.id)
+  .single()
+
+console.log("ME AFTER UPDATE:", me)
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('username, avatar_url')
+        .select('username, avatar_url, is_online')
         .eq('id', session.user.id)
         .single()
 
@@ -116,20 +135,20 @@ useEffect(() => {
 
         const { data: targetProfile } = await supabase
           .from('profiles')
-          .select('username, avatar_url')
+          .select('username, avatar_url, is_online')
           .eq('id', target)
           .single()
 
         if (targetProfile) {
-          const chat = {
-            userId: target,
-            username: targetProfile.username,
-            avatar_url: targetProfile.avatar_url,
-            lastMessage: 'Start chatting now',
-            created_at: new Date().toISOString(),
-            unreadCount: 0,
-          }
-
+   const chat = {
+  userId: target,
+  username: targetProfile.username,
+  avatar_url: targetProfile.avatar_url,
+  lastMessage: 'Start chatting now',
+  created_at: new Date().toISOString(),
+  unreadCount: 0,
+  isOnline: false,
+}
           setConversations((prev) => {
             const filtered = prev.filter(
               (c) => c.userId !== target
@@ -166,19 +185,18 @@ console.log('TOTAL MESSAGES:', data?.length)
     for (const msg of data || []) {
       const otherUserId = msg.sender_id === userId ? msg.receiver_id : msg.sender_id
       if (!uniqueUsers.has(otherUserId)) {
-        const { data: otherProfile } = await supabase
-          .from('profiles')
-          .select('username, avatar_url')
-          .eq('id', otherUserId)
-          .single()
-        uniqueUsers.set(otherUserId, {
-          userId: otherUserId,
-          username: otherProfile?.username || 'User',
-          avatar_url: otherProfile?.avatar_url || null,
-          lastMessage: msg.content,
-          created_at: msg.created_at,
-          
-        })
+const { data: otherProfile } = await supabase
+  .from('profiles')
+  .select(`
+    username,
+    avatar_url,
+    is_online
+  `)
+  .eq('id', otherUserId)
+  .single()
+console.log('PROFILE:', otherProfile)
+console.log('OTHER USER ID:', otherUserId)
+
 
 const unreadCount = (data || []).filter(
   (m) =>
@@ -194,7 +212,13 @@ uniqueUsers.set(otherUserId, {
   lastMessage: msg.content,
   created_at: msg.created_at,
   unreadCount,
+  
+  isOnline: otherProfile?.is_online ?? false,
 })
+
+
+
+console.log("PROFILE FOUND:", otherProfile)
 
       }
     }
@@ -557,13 +581,37 @@ shadow-[0_0_20px_rgba(0,229,255,.2)]
     </div>
   )}
 
+{conv.isOnline && (
   <div className="absolute bottom-0 right-0">
 
-    <span className="absolute inline-flex h-3 w-3 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+    <span
+      className="
+      absolute
+      inline-flex
+      h-3
+      w-3
+      rounded-full
+      bg-emerald-400
+      opacity-75
+      animate-ping
+      "
+    ></span>
 
-    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border border-[#111b21]"></span>
+    <span
+      className="
+      relative
+      inline-flex
+      rounded-full
+      h-3
+      w-3
+      bg-emerald-500
+      border
+      border-[#111b21]
+      "
+    ></span>
 
   </div>
+)}
 
 </div>
 
@@ -698,19 +746,21 @@ mobileChatOpen
         {selectedChat.username.charAt(0).toUpperCase()}
       </div>
 
-      <span
-        className="
-        absolute
-        bottom-0
-        right-0
-        w-3
-        h-3
-        rounded-full
-        bg-emerald-400
-        border-2
-        border-[#08131d]
-      "
-      />
+{selectedChat.isOnline && (
+  <span
+    className="
+    absolute
+    bottom-0
+    right-0
+    w-3
+    h-3
+    rounded-full
+    bg-emerald-400
+    border-2
+    border-[#08131d]
+    "
+  />
+)}
     </div>
 
     <div>
@@ -736,20 +786,24 @@ mobileChatOpen
 
         {selectedChat.username}
       </h1>
-<p className="text-xs text-emerald-400 flex items-center gap-2">
-
-<span className="
-w-2
-h-2
-rounded-full
-bg-emerald-400
-animate-pulse
-">
-</span>
-
-Active now
-
+{selectedChat.isOnline ? (
+  <p className="text-xs text-emerald-400 flex items-center gap-2">
+    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+    Active now
+  </p>
+) : (
+<p
+  className={`text-sm ${
+    selectedChat?.isOnline
+      ? 'text-emerald-400'
+      : 'text-zinc-500'
+  }`}
+>
+  {selectedChat?.isOnline
+    ? '● Active now'
+    : 'Offline'}
 </p>
+)}
 
     </div>
   </div>
@@ -903,11 +957,15 @@ max-w-[500px]
       minute: '2-digit',
     })}
 <div ref={messagesEndRef}></div>
-    {mine && (
-      <span className="text-cyan-400">
-        ✓✓
-      </span>
-    )}
+{mine && (
+  m.is_read ? (
+    <span className="text-sky-400">✓✓</span>
+  ) : selectedChat?.isOnline ? (
+    <span className="text-cyan-400">✓✓</span>
+  ) : (
+    <span className="text-zinc-500">✓</span>
+  )
+)}
   </div>
 </div>
               </div>
