@@ -27,12 +27,11 @@ const [conversations, setConversations] = useState<Conversation[]>([])
 const [messages, setMessages] = useState<any[]>([])
 const [messageText, setMessageText] = useState('')
 const messagesEndRef = useRef<HTMLDivElement>(null)
+const selectedChatRef = useRef<Conversation | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Conversation | null>(null)
   const [mobileChatOpen, setMobileChatOpen] =useState(false)
   const [now, setNow] = useState(Date.now())
-  const selectedChatRef =
-  useRef<Conversation | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
 const [notificationCount, setNotificationCount] = useState(0)
 

@@ -159,7 +159,7 @@ const [menuOpen, setMenuOpen] = useState(false)
 
 <div className="w-full flex justify-start p-0 m-0">
   <h1 className="text-left p-0 m-0 text-2xl md:text-3xl font-bold tracking-tight text-slate-100 transition-colors duration-300">
-    STREET<span className="font-black text-emerald-400">GO</span>
+    street<span className="font-black text-emerald-400">go</span>
   </h1>
 </div>
 
@@ -202,18 +202,84 @@ const [menuOpen, setMenuOpen] = useState(false)
         {/* NAVIGATION */}
         <div className="flex items-center gap-6">
 
-          <button
-            onClick={() => router.push('/videos')}
-            className="
-              text-sm
-              font-semibold
-              text-zinc-300
-              hover:text-white
-              transition
-            "
-          >
-            Videos
-          </button>
+<button
+  onClick={() => router.push('/videos')}
+  className="
+    group
+    relative
+    px-5
+    py-1.5
+    font-mono
+    text-xs
+    font-bold
+    tracking-[0.3em]
+    text-cyan-400/80
+    bg-slate-950/20
+    border-y
+    border-cyan-500/10
+    transition-all
+    duration-500
+    ease-out
+    hover:text-emerald-300
+    hover:tracking-[0.4em]
+    hover:shadow-[0_0_40px_-5px_rgba(52,211,153,0.15)]
+    active:scale-95
+    
+    /* Left Structural Bracket */
+    before:absolute
+    before:top-0
+    before:left-0
+    before:w-1.5
+    before:h-full
+    before:border-y
+    before:border-l
+    before:border-cyan-400/40
+    before:transition-all
+    before:duration-300
+    hover:before:border-emerald-400
+    hover:before:scale-y-110
+    
+    /* Right Structural Bracket */
+    after:absolute
+    after:top-0
+    after:right-0
+    after:w-1.5
+    after:h-full
+    after:border-y
+    after:border-r
+    after:border-cyan-400/40
+    after:transition-all
+    after:duration-300
+    hover:after:border-emerald-400
+    hover:after:scale-y-110
+  "
+>
+  {/* Hyper-Dimensional Plasma Core */}
+  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-r from-cyan-500/10 via-emerald-500/5 to-cyan-500/10 blur-md transition-opacity duration-500 pointer-events-none" />
+
+  <span className="relative z-10 flex items-center gap-2 uppercase">
+    {/* Vector Grid Telemetry Node */}
+    <span className="text-[9px] text-cyan-500/40 group-hover:text-emerald-400/60 transition-colors select-none font-sans">
+      
+    </span>
+    
+    STREAM
+    
+    {/* Micro Photon Indicator */}
+  <span className="
+  w-1 
+  h-1 
+  rounded-full 
+  bg-red-500 
+  group-hover:bg-rose-400 
+  group-hover:animate-ping 
+  shadow-[0_0_10px_rgba(239,68,68,0.8)] 
+  transition-all
+" />
+
+  </span>
+</button>
+
  
 
 {user ? (

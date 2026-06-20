@@ -285,38 +285,7 @@ const { data: updateData, error: updateError } = await supabase
     lg:gap-6
   "
 >
-{/* DESKTOP LEFT SIDEBAR */}
-<div className="hidden lg:block lg:col-span-3">
-  <div className="sticky top-24 space-y-2">
-    <h2 className="font-bold text-lg text-white mb-3">Chats</h2>
 
-    {/* Map over conversations */}
-    {user && posts.length > 0 ? (
-      posts.map((post) => (
-        <button
-          key={post.id}
-          onClick={() => console.log(`Open chat for ${post.username}`)}
-          className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-zinc-800 transition"
-        >
-          <img
-            src={post.avatar_url || '/avatar-placeholder.png'}
-            alt={post.username}
-            className="w-10 h-10 rounded-full object-cover"
-          />
-          <div className="flex-1 text-left min-w-0">
-            <h3 className="text-sm font-semibold text-white truncate">{post.username}</h3>
-            <p className="text-xs text-zinc-400 truncate">{post.content}</p>
-          </div>
-          <span className="text-[10px] text-zinc-500">
-            {new Date(post.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </button>
-      ))
-    ) : (
-      <p className="text-xs text-zinc-500">No conversations</p>
-    )}
-  </div>
-</div>
 
 {/* MAIN FEED */}
 <div className="lg:col-span-6">
@@ -400,14 +369,14 @@ const { data: updateData, error: updateError } = await supabase
     onClick={() => votePrediction(prediction.id, 'agree')}
     className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs"
   >
-    👍 {voteCounts[prediction.id]?.agree || 0}
+    👍agree {voteCounts[prediction.id]?.agree || 0}
   </button>
 
   <button
     onClick={() => votePrediction(prediction.id, 'disagree')}
     className="px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-xs"
   >
-    👎 {voteCounts[prediction.id]?.disagree || 0}
+    👎disagree {voteCounts[prediction.id]?.disagree || 0}
   </button>
 </div>
 
