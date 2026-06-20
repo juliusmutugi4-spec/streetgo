@@ -351,11 +351,13 @@ return (
   <main className="h-screen overflow-hidden flex flex-col bg-[#050b12] text-white">
 
     {/* TOP NAV */}
-    <TopNav
-      user={user}
-      onLogin={() => {}}
-      onLogout={handleLogout}
-    />
+{!mobileChatOpen && (
+  <TopNav
+    user={user}
+    onLogin={() => {}}
+    onLogout={handleLogout}
+  />
+)}
 
 {/* CONTENT */}
 <div className="flex-1 flex overflow-hidden min-h-0">
@@ -1041,13 +1043,15 @@ duration-300
 
     </div>
 
-<div className="lg:hidden">
-  <BottomNav
-    user={user}
-    profile={profile}
-    unreadCount={unreadCount}
-  />
-</div>
+{!mobileChatOpen && (
+  <div className="lg:hidden">
+    <BottomNav
+      user={user}
+      profile={profile}
+      unreadCount={unreadCount}
+    />
+  </div>
+)}
   </main>
 )
 }
