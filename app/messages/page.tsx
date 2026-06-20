@@ -222,7 +222,21 @@ console.log("PROFILE FOUND:", otherProfile)
 
       }
     }
-    setConversations(Array.from(uniqueUsers.values()))
+    const updatedConversations =
+  Array.from(uniqueUsers.values())
+
+setConversations(updatedConversations)
+
+if (selectedChat) {
+  const updatedChat =
+    updatedConversations.find(
+      c => c.userId === selectedChat.userId
+    )
+
+  if (updatedChat) {
+    setSelectedChat(updatedChat)
+  }
+}
 console.log('CONVERSATIONS:')
 console.log(Array.from(uniqueUsers.values()))
 console.log("MESSAGES:", data?.length)
@@ -916,7 +930,9 @@ px-4
 py-3
 rounded-3xl
 rounded-br-md
-max-w-[500px]
+max-w-[80%]
+break-words
+overflow-hidden
 backdrop-blur-xl
 hover:scale-[1.02]
 transition-all
@@ -937,9 +953,9 @@ max-w-[500px]
                 }
               >
                 <div>
-  <p className="leading-relaxed">
-    {m.content}
-  </p>
+<p className="leading-relaxed break-all">
+  {m.content}
+</p>
 
   <div
     className="
