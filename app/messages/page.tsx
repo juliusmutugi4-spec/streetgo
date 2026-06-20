@@ -27,16 +27,22 @@ const [messageText, setMessageText] = useState('')
 
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Conversation | null>(null)
+  const [mobileChatOpen, setMobileChatOpen] =useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
 const [notificationCount, setNotificationCount] = useState(0)
   // Fetch unread messages
-  const fetchUnread = async (userId: string) => {
-    const { count } = await supabase
-      .from('chat_messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('receiver_id', userId)
-    setUnreadCount(count || 0)
-  }
+const fetchUnread = async (userId: string) => {
+  const { count } = await supabase
+    .from('chat_messages')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('receiver_id', userId)
+    .eq('is_read', false)
+
+  setUnreadCount(count || 0)
+}
 
 const fetchNotifications = async (userId: string) => {
   const { count } = await supabase
@@ -50,6 +56,28 @@ const fetchNotifications = async (userId: string) => {
 
   setNotificationCount(count || 0)
 }
+
+useEffect(() => {
+  const refresh = async () => {
+    if (!user?.id) return
+console.log('MESSAGES READ EVENT FIRED')
+    await fetchConversations(user.id)
+    await fetchUnread(user.id)
+  }
+
+  window.addEventListener(
+    'messages-read',
+    refresh
+  )
+
+  return () => {
+    window.removeEventListener(
+      'messages-read',
+      refresh
+    )
+  }
+}, [user?.id])
+
 
 // Initialize user and conversations
 useEffect(() => {
@@ -151,7 +179,8 @@ console.log('TOTAL MESSAGES:', data?.length)
 const unreadCount = (data || []).filter(
   (m) =>
     m.sender_id === otherUserId &&
-    m.receiver_id === userId
+    m.receiver_id === userId &&
+    m.is_read === false
 ).length
 
 uniqueUsers.set(otherUserId, {
@@ -162,7 +191,6 @@ uniqueUsers.set(otherUserId, {
   created_at: msg.created_at,
   unreadCount,
 })
-
 
       }
     }
@@ -237,8 +265,40 @@ const sendMessage = async () => {
 }
 
 useEffect(() => {
+  if (!user?.id) return
+
+  console.log('SUBSCRIBING TO CHAT_MESSAGES')
+
   const channel = supabase
-    .channel('chat-messages')
+    .channel('message-updates')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'chat_messages',
+      },
+      (payload) => {
+        console.log('REALTIME EVENT:', payload)
+console.log('EVENT TYPE:', payload.eventType)
+        fetchConversations(user.id)
+        fetchUnread(user.id)
+      }
+    )
+    .subscribe((status) => {
+      console.log('REALTIME STATUS:', status)
+    })
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [user?.id])
+
+useEffect(() => {
+  if (!selectedChat || !user) return
+
+  const channel = supabase
+    .channel(`chat-${selectedChat.userId}`)
     .on(
       'postgres_changes',
       {
@@ -249,18 +309,26 @@ useEffect(() => {
       (payload) => {
         const msg = payload.new as any
 
-        if (
-          msg.sender_id === selectedChat?.userId ||
-          msg.receiver_id === selectedChat?.userId
-        ) {
-          setMessages((prev) => {
-  const exists = prev.some((m) => m.id === msg.id)
+        const isMyConversation =
+          (msg.sender_id === user.id &&
+            msg.receiver_id === selectedChat.userId) ||
+          (msg.sender_id === selectedChat.userId &&
+            msg.receiver_id === user.id)
 
-  if (exists) return prev
+        if (!isMyConversation) return
 
-  return [...prev, msg]
-})
-        }
+        setMessages((prev) => {
+          const exists = prev.some(
+            (m) => m.id === msg.id
+          )
+
+          if (exists) return prev
+
+          return [...prev, msg]
+        })
+
+        fetchConversations(user.id)
+        fetchUnread(user.id)
       }
     )
     .subscribe()
@@ -268,8 +336,7 @@ useEffect(() => {
   return () => {
     supabase.removeChannel(channel)
   }
-}, [selectedChat])
-
+}, [selectedChat, user])
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
@@ -277,7 +344,7 @@ useEffect(() => {
   }
 
 return (
-  <main className="h-screen overflow-hidden flex flex-col bg-[#060608] text-white">
+  <main className="h-screen overflow-hidden flex flex-col bg-[#050b12] text-white">
 
     {/* TOP NAV */}
     <TopNav
@@ -340,7 +407,7 @@ return (
     ${selectedChat ? 'hidden lg:flex' : 'flex'}
     w-full lg:w-[380px]
     border-r border-zinc-800
-    bg-[#111b21]
+    bg-[#08131d]
     flex-col
   `}
 >
@@ -363,7 +430,16 @@ return (
         <div className="p-3 border-b border-zinc-800">
           <input
             placeholder="Search chats..."
-            className="w-full bg-[#202c33] rounded-lg px-4 py-2 outline-none"
+            className="
+w-full
+bg-[#111c28]
+rounded-2xl
+px-5
+py-3
+outline-none
+border
+border-cyan-500/10
+focus:border-cyan-400"
           />
         </div>
 
@@ -371,45 +447,94 @@ return (
           {conversations.map((conv) => (
             <button
               key={conv.userId}
-onClick={() => {
-  router.push(`/chat/${conv.userId}`)
-}}
-className={`
+onClick={async () => {
+  setSelectedChat(conv)
+  setTargetUserId(conv.userId)
 
+await supabase
+  .from('chat_messages')
+  .update({ is_read: true })
+  .eq('sender_id', conv.userId)
+  .eq('receiver_id', user.id)
+  .eq('is_read', false)
+
+
+  await fetchMessages(conv.userId)
+await fetchConversations(user.id)
+  setMobileChatOpen(true)
+
+
+}}
+
+
+
+
+
+
+
+className={`
+group
 w-full
 flex
 items-center
-gap-3
+gap-4
 px-4
-py-3
+py-4
 text-left
 transition-all
 duration-300
+border-b
+border-white/[0.03]
 
 ${
-  targetUserId === conv.userId
-    ? `
-      bg-cyan-500/10
-      border-l-4
-      border-cyan-400
-      shadow-[0_0_20px_rgba(6,182,212,0.15)]
-      `
-    : `
-      hover:bg-[#1b2730]
-      `
+targetUserId === conv.userId
+? `
+bg-gradient-to-r
+from-cyan-500/10
+to-emerald-500/10
+border-l-4
+border-cyan-400
+shadow-[0_0_30px_rgba(0,229,255,.1)]
+`
+: `
+hover:bg-[#111c28]
+`
 }
-
 `}
             >
 <div className="relative">
 
   {conv.avatar_url ? (
-    <img
-      src={conv.avatar_url}
-      className="w-12 h-12 rounded-full object-cover"
-    />
+<img
+src={conv.avatar_url}
+className="
+w-14
+h-14
+rounded-2xl
+object-cover
+border
+border-cyan-500/20
+shadow-[0_0_20px_rgba(0,229,255,.1)]
+"
+/>
   ) : (
-    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-700 flex items-center justify-center font-bold">
+   <div
+className="
+w-14
+h-14
+rounded-2xl
+bg-gradient-to-br
+from-cyan-400
+to-emerald-500
+flex
+items-center
+justify-center
+font-bold
+text-black
+text-lg
+shadow-[0_0_20px_rgba(0,229,255,.2)]
+"
+>
       {conv.username.charAt(0)}
     </div>
   )}
@@ -428,7 +553,15 @@ ${
 
   <div className="flex items-center justify-between">
 
-    <h3 className="font-semibold truncate">
+    <h3
+className="
+font-bold
+text-white
+truncate
+group-hover:text-cyan-300
+transition
+"
+>
       {conv.username}
     </h3>
 
@@ -448,7 +581,15 @@ ${
     ✨ Start chatting now
   </p>
 ) : (
-  <p className="text-sm text-zinc-400 truncate">
+  <p
+className="
+text-sm
+text-zinc-500
+truncate
+group-hover:text-zinc-300
+transition
+"
+>
     {conv.lastMessage}
   </p>
 )}
@@ -460,12 +601,17 @@ ${
     h-[22px]
     px-1
     rounded-full
-    bg-emerald-500
+    bg-gradient-to-r
+from-cyan-400
+to-emerald-400
     text-black
     text-[11px]
     flex
     items-center
     justify-center
+animate-pulse
+shadow-[0_0_20px_rgba(0,229,255,.5)]
+
     font-bold
     shadow-[0_0_10px_rgba(16,185,129,0.5)]
   "
@@ -483,25 +629,336 @@ ${
       </div>
 
 
-<div className="hidden lg:flex flex-1 items-center justify-center bg-[#0b141a]">
 
-  <div className="text-center">
 
-    <div className="text-7xl mb-4">
-      💬
+<div className="hidden lg:flex flex-1 flex-col bg-[#0b141a]">
+  {selectedChat ? (
+    <>
+<div
+  className="
+  h-20
+  px-6
+  flex
+  items-center
+  justify-between
+  border-b
+  border-cyan-500/10
+  bg-[#08131d]
+  backdrop-blur-xl
+  shadow-[0_0_30px_rgba(0,229,255,0.05)]
+"
+>
+  <div className="flex items-center gap-4">
+
+    <div className="relative">
+      <div
+        className="
+        w-12 h-12
+        rounded-full
+        bg-gradient-to-br
+        from-cyan-400
+        to-emerald-500
+        flex
+        items-center
+        justify-center
+        font-bold
+        text-black
+      "
+      >
+        {selectedChat.username.charAt(0).toUpperCase()}
+      </div>
+
+      <span
+        className="
+        absolute
+        bottom-0
+        right-0
+        w-3
+        h-3
+        rounded-full
+        bg-emerald-400
+        border-2
+        border-[#08131d]
+      "
+      />
     </div>
 
-    <h2 className="text-2xl font-bold text-white">
-      StreetGO Messages
-    </h2>
+    <div>
+      <h1 className="font-bold text-lg text-white">
+        {selectedChat.username}
+      </h1>
 
-    <p className="text-zinc-500 mt-2">
-      Select a conversation to start chatting
-    </p>
-
+      <p className="text-xs text-emerald-400">
+        Active now
+      </p>
+    </div>
   </div>
 
+<div className="flex items-center gap-4">
+
+  <button
+    className="
+    w-10
+    h-10
+    rounded-xl
+    bg-[#101821]
+    border
+    border-cyan-500/10
+    hover:border-cyan-400/40
+    hover:bg-cyan-500/10
+    transition
+    "
+  >
+    📞
+  </button>
+
+  <button
+    className="
+    w-10
+    h-10
+    rounded-xl
+    bg-[#101821]
+    border
+    border-cyan-500/10
+    hover:border-emerald-400/40
+    hover:bg-emerald-500/10
+    transition
+    "
+  >
+    🎥
+  </button>
+
+  <button
+    className="
+    w-10
+    h-10
+    rounded-xl
+    bg-[#101821]
+    border
+    border-cyan-500/10
+    hover:border-cyan-400/40
+    hover:bg-cyan-500/10
+    transition
+    "
+  >
+    ⋮
+  </button>
+
 </div>
+</div>
+
+      {/* Messages */}
+<div
+className="
+flex-1
+overflow-y-auto
+p-8
+space-y-4
+bg-[#050b12]
+"
+
+
+
+style={{
+background: `
+radial-gradient(circle at top left,
+rgba(0,229,255,.05),
+transparent 30%),
+
+radial-gradient(circle at bottom right,
+rgba(16,185,129,.05),
+transparent 30%),
+
+#050b12
+`
+}}
+>
+{messages.map((m) => {
+  const mine = m.sender_id === user?.id
+
+  return (
+    <div
+      key={m.id}
+      className={`
+      flex
+      mb-2
+      ${mine ? 'justify-end' : 'justify-start'}
+      `}
+    >
+              <div
+                className={
+mine
+? `
+bg-gradient-to-br
+from-cyan-500/20
+to-emerald-500/20
+border
+border-cyan-400/20
+px-4
+py-3
+rounded-3xl
+rounded-br-md
+max-w-[500px]
+backdrop-blur-xl
+shadow-[0_0_20px_rgba(0,229,255,0.08)]
+`
+: `
+bg-[#101821]
+border
+border-white/5
+px-4
+py-3
+rounded-3xl
+rounded-bl-md
+max-w-[500px]
+`
+
+                }
+              >
+                <div>
+  <p className="leading-relaxed">
+    {m.content}
+  </p>
+
+  <div
+    className="
+    flex
+    justify-end
+    items-center
+    gap-1
+    mt-2
+    text-[10px]
+    text-zinc-500
+    "
+  >
+    {new Date(m.created_at).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+    })}
+
+    {mine && (
+      <span className="text-cyan-400">
+        ✓✓
+      </span>
+    )}
+  </div>
+</div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+{/* Input */}
+<div className="border-t border-zinc-800 p-4 bg-[#202c33]">
+  <div
+className="
+flex
+gap-3
+items-center
+bg-[#0d1822]
+border
+border-cyan-500/10
+rounded-3xl
+p-2
+shadow-[0_0_30px_rgba(0,229,255,.05)]
+"
+>
+    <input
+      value={messageText}
+      onChange={(e) =>
+        setMessageText(e.target.value)
+      }
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          sendMessage()
+        }
+      }}
+ className="
+flex-1
+bg-[#101821]
+border
+border-cyan-500/10
+rounded-2xl
+px-6
+py-4
+outline-none
+focus:border-cyan-400
+transition
+"
+    />
+
+    <button
+      onClick={sendMessage}
+className="
+w-14
+h-14
+rounded-2xl
+flex
+items-center
+justify-center
+font-bold
+text-black
+bg-gradient-to-r
+from-cyan-400
+to-emerald-400
+shadow-[0_0_25px_rgba(0,229,255,.3)]
+hover:scale-110
+transition-all
+duration-300
+"
+    >
+      ➤
+    </button>
+  </div>
+</div>
+
+
+    </>
+  ) : (
+    <div className="flex flex-1 items-center justify-center">
+      <div className="text-center">
+       <div className="text-center">
+
+  <div
+    className="
+    w-28
+    h-28
+    mx-auto
+    rounded-3xl
+    bg-gradient-to-br
+    from-cyan-500/20
+    to-emerald-500/20
+    border
+    border-cyan-500/20
+    flex
+    items-center
+    justify-center
+    text-5xl
+    mb-6
+    "
+  >
+    💬
+  </div>
+
+  <h1 className="text-4xl font-bold">
+    StreetGO Messages
+  </h1>
+
+  <p className="text-zinc-400 mt-3">
+    Select a conversation to start chatting
+  </p>
+
+</div>
+        <p>Select a conversation to start chatting</p>
+      </div>
+    </div>
+  )}
+</div>
+
+
+
+
 
 
 

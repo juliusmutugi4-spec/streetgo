@@ -23,39 +23,37 @@ const router = useRouter()
 
 useEffect(() => {
   const load = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
 
-      if (!user) return
+    if (!user) return
 
-      setUser(user)
+    setUser(user)
 
-const { data: profileData } = await supabase
-  .from('profiles')
-  .select('username, avatar_url')
-  .eq('id', otherUserId)
-  .single()
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('username, avatar_url')
+      .eq('id', otherUserId)
+      .single()
 
-setOtherProfile(profileData)
+    setOtherProfile(profileData)
 
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .or(
+        `and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`
+      )
+      .order('created_at', {
+        ascending: true,
+      })
 
-      const { data, error } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .or(
-          `and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`
-        )
-        .order('created_at', {
-          ascending: true,
-        })
+    if (error) console.error(error)
 
-      if (error) {
-        console.error(error)
-      }
+    setMessages(data || [])
 
-      setMessages(data || [])
-await supabase
+const { data: readData, error: readError } = await supabase
   .from('chat_messages')
   .update({
     is_read: true,
@@ -63,18 +61,78 @@ await supabase
   .eq('sender_id', otherUserId)
   .eq('receiver_id', user.id)
   .eq('is_read', false)
+  .select()
+console.log('READ DATA:', readData)
+console.log('READ ERROR:', readError)
 
-      setLoading(false)
+
+window.dispatchEvent(
+  new CustomEvent('messages-read')
+)
+router.refresh()
 
 
+    setLoading(false)
+  }
+
+  load()
+}, [otherUserId])
 
 
-    }
+useEffect(() => {
+  if (!user?.id) return
 
-    load()
+  const channel = supabase
+    .channel(`chat-${otherUserId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'chat_messages',
+      },
+      (payload) => {
+        const msg = payload.new as any
 
-return () => {}
-  }, [otherUserId])
+if (
+  msg.sender_id === otherUserId &&
+  msg.receiver_id === user.id
+) {
+  supabase
+    .from('chat_messages')
+    .update({
+      is_read: true,
+    })
+    .eq('id', msg.id)
+}
+
+
+        const isMyChat =
+          (msg.sender_id === user.id &&
+            msg.receiver_id === otherUserId) ||
+          (msg.sender_id === otherUserId &&
+            msg.receiver_id === user.id)
+
+        if (!isMyChat) return
+
+        setMessages((prev) => {
+          const exists = prev.some(
+            (m) => m.id === msg.id
+          )
+
+          if (exists) return prev
+
+          return [...prev, msg]
+        })
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [user?.id, otherUserId])
+
 
   const sendMessage = async () => {
     if (!text.trim() || !user) return
@@ -94,9 +152,6 @@ const { data, error } = await supabase
   .select()
   .single()
 
-if (data) {
-  setMessages((prev) => [...prev, data])
-}
 
     if (error) {
       console.error(error)
@@ -116,7 +171,20 @@ if (data) {
     <div className="h-screen flex flex-col bg-[#0b141a] text-white">
       {/* HEADER */}
       {/* HEADER */}
-<div className="h-16 border-b border-zinc-800 bg-[#202c33] px-4 flex items-center justify-between">
+<div
+  className="
+  h-20
+  px-4
+  flex
+  items-center
+  justify-between
+  border-b
+  border-emerald-500/10
+  bg-black/70
+  backdrop-blur-xl
+  shadow-[0_0_30px_rgba(16,185,129,0.08)]
+  "
+>
 
   <div className="flex items-center">
 <button
@@ -137,7 +205,14 @@ if (data) {
         <img
           src={otherProfile.avatar_url}
           alt=""
-          className="w-10 h-10 rounded-full object-cover"
+          className="
+w-12
+h-12
+rounded-full
+object-cover
+border
+border-emerald-500/30
+"
         />
       ) : (
         <div className="w-10 h-10 rounded-full bg-emerald-500" />
@@ -147,7 +222,7 @@ if (data) {
     </div>
 
     <div className="ml-3">
-      <h1 className="font-semibold text-white">
+      <h1 className="font-bold text-lg text-white">
         {otherProfile?.username || 'User'}
       </h1>
 
@@ -180,11 +255,26 @@ if (data) {
 
       {/* CHAT AREA */}
 <div
-  className="flex-1 overflow-y-auto px-6 py-6 space-y-3"
+  className="
+  flex-1
+  overflow-y-auto
+  px-6
+  py-6
+  space-y-4
+  relative
+  "
   style={{
-    backgroundColor: '#0b141a',
-    backgroundImage:
-      "url('https://www.transparenttextures.com/patterns/asfalt-dark.png')",
+    background: `
+      radial-gradient(circle at top left,
+      rgba(16,185,129,0.08),
+      transparent 35%),
+
+      radial-gradient(circle at bottom right,
+      rgba(6,182,212,0.08),
+      transparent 35%),
+
+      #05070a
+    `
   }}
 >
         {messages.map((m) => {
@@ -223,11 +313,11 @@ if (data) {
                   `
                 }
               >
-                <p className="break-words">
+               <p className="break-words text-[15px] leading-relaxed">
                   {m.content}
                 </p>
 
-                <p className="text-[10px] text-zinc-400 mt-1 text-right">
+                <p className="text-[11px] text-zinc-500 mt-2 text-right">
                   {new Date(
                     m.created_at
                   ).toLocaleTimeString([], {
