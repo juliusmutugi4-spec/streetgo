@@ -15,6 +15,7 @@ type Conversation = {
   created_at: string
   unreadCount: number
   isOnline: boolean
+  lastSeen: string | null
 }
 
 export default function MessagesPage() {
@@ -29,8 +30,12 @@ const messagesEndRef = useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(true)
   const [selectedChat, setSelectedChat] = useState<Conversation | null>(null)
   const [mobileChatOpen, setMobileChatOpen] =useState(false)
+  const [now, setNow] = useState(Date.now())
+  const selectedChatRef =
+  useRef<Conversation | null>(null)
   const [unreadCount, setUnreadCount] = useState(0)
 const [notificationCount, setNotificationCount] = useState(0)
+
   // Fetch unread messages
 const fetchUnread = async (userId: string) => {
   const { count } = await supabase
@@ -57,6 +62,9 @@ const fetchNotifications = async (userId: string) => {
 
   setNotificationCount(count || 0)
 }
+useEffect(() => {
+  selectedChatRef.current = selectedChat
+}, [selectedChat])
 
 useEffect(() => {
   const refresh = async () => {
@@ -98,7 +106,8 @@ console.log("SETTING ONLINE", session.user.id)
 const { data, error } = await supabase
   .from('profiles')
   .update({
-    is_online: true
+    is_online: true,
+    last_seen: new Date().toISOString()
   })
   .eq('id', session.user.id)
   .select()
@@ -114,7 +123,12 @@ const { data: me } = await supabase
 console.log("ME AFTER UPDATE:", me)
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('username, avatar_url, is_online')
+        .select(`
+  username,
+  avatar_url,
+  is_online,
+  last_seen
+`)
         .eq('id', session.user.id)
         .single()
 
@@ -135,19 +149,25 @@ console.log("ME AFTER UPDATE:", me)
 
         const { data: targetProfile } = await supabase
           .from('profiles')
-          .select('username, avatar_url, is_online')
+          .select(`
+  username,
+  avatar_url,
+  is_online,
+  last_seen
+`)
           .eq('id', target)
           .single()
 
         if (targetProfile) {
-   const chat = {
+const chat: Conversation = {
   userId: target,
   username: targetProfile.username,
   avatar_url: targetProfile.avatar_url,
   lastMessage: 'Start chatting now',
   created_at: new Date().toISOString(),
   unreadCount: 0,
-  isOnline: false,
+  isOnline: targetProfile?.is_online ?? false,
+  lastSeen: targetProfile?.last_seen ?? null,
 }
           setConversations((prev) => {
             const filtered = prev.filter(
@@ -165,6 +185,30 @@ console.log("ME AFTER UPDATE:", me)
 
   init()
 }, [])
+
+useEffect(() => {
+  if (!user?.id) return
+
+  const setOffline = async () => {
+    await supabase
+      .from('profiles')
+      .update({
+        is_online: false,
+        last_seen: new Date().toISOString()
+      })
+      .eq('id', user.id)
+  }
+
+  window.addEventListener('beforeunload', setOffline)
+
+  return () => {
+    setOffline()
+    window.removeEventListener(
+      'beforeunload',
+      setOffline
+    )
+  }
+}, [user?.id])
 
   const fetchConversations = async (userId: string) => {
 const { data, error } = await supabase
@@ -190,7 +234,8 @@ const { data: otherProfile } = await supabase
   .select(`
     username,
     avatar_url,
-    is_online
+    is_online,
+    last_seen
   `)
   .eq('id', otherUserId)
   .single()
@@ -214,6 +259,7 @@ uniqueUsers.set(otherUserId, {
   unreadCount,
   
   isOnline: otherProfile?.is_online ?? false,
+  lastSeen: otherProfile?.last_seen ?? null,
 })
 
 
@@ -227,16 +273,20 @@ console.log("PROFILE FOUND:", otherProfile)
 
 setConversations(updatedConversations)
 
-if (selectedChat) {
+if (selectedChatRef.current) {
   const updatedChat =
     updatedConversations.find(
-      c => c.userId === selectedChat.userId
+      c =>
+        c.userId ===
+        selectedChatRef.current?.userId
     )
 
   if (updatedChat) {
     setSelectedChat(updatedChat)
   }
 }
+
+
 console.log('CONVERSATIONS:')
 console.log(Array.from(uniqueUsers.values()))
 console.log("MESSAGES:", data?.length)
@@ -384,6 +434,14 @@ useEffect(() => {
     setUser(null)
     setUnreadCount(0)
   }
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setNow(Date.now())
+  }, 60000) // every 1 minute
+
+  return () => clearInterval(interval)
+}, [])
 
 return (
   <main className="h-screen overflow-hidden flex flex-col bg-[#050b12] text-white">
@@ -743,22 +801,38 @@ mobileChatOpen
   <div className="flex items-center gap-4">
 
     <div className="relative">
-      <div
-        className="
-        w-12 h-12
-        rounded-full
-        bg-gradient-to-br
-        from-cyan-400
-        to-emerald-500
-        flex
-        items-center
-        justify-center
-        font-bold
-        text-black
-      "
-      >
-        {selectedChat.username.charAt(0).toUpperCase()}
-      </div>
+{selectedChat.avatar_url ? (
+  <img
+    src={selectedChat.avatar_url}
+    alt={selectedChat.username}
+    className="
+    w-12
+    h-12
+    rounded-full
+    object-cover
+    border
+    border-cyan-500/20
+    "
+  />
+) : (
+  <div
+    className="
+    w-12
+    h-12
+    rounded-full
+    bg-gradient-to-br
+    from-cyan-400
+    to-emerald-500
+    flex
+    items-center
+    justify-center
+    font-bold
+    text-black
+    "
+  >
+    {selectedChat.username.charAt(0).toUpperCase()}
+  </div>
+)}
 
 {selectedChat.isOnline && (
   <span
@@ -800,24 +874,45 @@ mobileChatOpen
 
         {selectedChat.username}
       </h1>
-{selectedChat.isOnline ? (
-  <p className="text-xs text-emerald-400 flex items-center gap-2">
-    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-    Active now
+      
+
+{selectedChat?.isOnline ? (
+  <p className="text-emerald-400 text-sm">
+    ● Active now
   </p>
+) : selectedChat?.lastSeen ? (
+  (() => {
+    const diff =
+      Math.floor(
+        (now - new Date(selectedChat.lastSeen).getTime())
+        / 1000
+      )
+
+    if (diff < 60)
+      return (
+        <p className="text-zinc-400 text-sm">
+          Last seen just now
+        </p>
+      )
+
+    
+      
+
+
+    return (
+      <p className="text-zinc-400 text-sm">
+        Last seen {Math.floor(diff / 86400)} day ago
+      </p>
+    )
+  })()
 ) : (
-<p
-  className={`text-sm ${
-    selectedChat?.isOnline
-      ? 'text-emerald-400'
-      : 'text-zinc-500'
-  }`}
->
-  {selectedChat?.isOnline
-    ? '● Active now'
-    : 'Offline'}
-</p>
+  <p className="text-zinc-500 text-sm">
+    Offline
+  </p>
 )}
+
+
+
 
     </div>
   </div>
@@ -909,14 +1004,28 @@ transparent 30%),
 key={m.id}
 className={`
 flex
+items-end
+gap-2
 mb-3
-animate-[fadeIn_.25s_ease]
 
 ${mine
   ? 'justify-end'
   : 'justify-start'}
 `}
 >
+
+{!mine && selectedChat.avatar_url && (
+  <img
+    src={selectedChat.avatar_url}
+    className="
+    w-8
+    h-8
+    rounded-full
+    object-cover
+    "
+  />
+)}
+
               <div
                 className={
 mine
@@ -930,7 +1039,9 @@ px-4
 py-3
 rounded-3xl
 rounded-br-md
-max-w-[80%]
+max-w-[75%]
+whitespace-pre-wrap
+break-words
 break-words
 overflow-hidden
 backdrop-blur-xl
@@ -947,7 +1058,9 @@ px-4
 py-3
 rounded-3xl
 rounded-bl-md
-max-w-[500px]
+max-w-[75%]
+break-words
+overflow-hidden
 `
 
                 }
@@ -1000,11 +1113,11 @@ bg-[#08131d]
 backdrop-blur-xl
 "
 >
-  <div
+<div
 className="
 flex
 gap-3
-items-center
+items-end
 bg-[#0d1822]
 border
 border-cyan-500/10
@@ -1013,29 +1126,40 @@ p-2
 shadow-[0_0_30px_rgba(0,229,255,.05)]
 "
 >
-    <input
-      value={messageText}
-      onChange={(e) =>
-        setMessageText(e.target.value)
-      }
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') {
-          sendMessage()
-        }
-      }}
- className="
+<textarea
+  rows={1}
+  value={messageText}
+  onChange={(e) => {
+    setMessageText(e.target.value)
+
+    e.target.style.height = 'auto'
+    e.target.style.height =
+      e.target.scrollHeight + 'px'
+  }}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      sendMessage()
+    }
+  }}
+  placeholder="Type a message..."
+  className="
 flex-1
 bg-[#101821]
 border
 border-cyan-500/10
-rounded-2xl
-px-6
-py-4
+rounded-3xl
+px-5
+py-3
 outline-none
+resize-none
+overflow-y-auto
+min-h-[55px]
+max-h-[140px]
 focus:border-cyan-400
 transition
 "
-    />
+/>
 
     <button
       onClick={sendMessage}
