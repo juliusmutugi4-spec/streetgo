@@ -5,6 +5,7 @@ import Map, { Marker } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 export default function MapPage() {
+    const [user, setUser] = useState<any>(null)
   const [longitude, setLongitude] = useState(36.817223)
   const [latitude, setLatitude] = useState(-1.286389)
 const [pickup, setPickup] = useState([longitude, latitude])
@@ -42,6 +43,21 @@ async function loadDrivers() {
 
 }
 
+
+useEffect(() => {
+
+  async function loadUser() {
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    setUser(user)
+  }
+
+  loadUser()
+
+}, [])
 
 useEffect(() => {
 
@@ -98,10 +114,7 @@ useEffect(() => {
 
   async function listenForAcceptance() {
 
-    const { data: userData } =
-      await supabase.auth.getUser()
-
-    if (!userData.user) return
+if (!user) return
 
   const channel = supabase
   .channel(`ride-status-${crypto.randomUUID()}`)
@@ -119,7 +132,7 @@ useEffect(() => {
           const ride = payload.new as any
 
 if (
-  ride.passenger_id === userData.user.id &&
+  ride.passenger_id === user.id &&
   ride.status === 'accepted'
 ) {
 
@@ -299,6 +312,10 @@ return (
     zoom: 15
   }}
   mapStyle="mapbox://styles/mapbox/streets-v12"
+  style={{
+    width: '100%',
+    height: '100%'
+  }}
 >
 
 
