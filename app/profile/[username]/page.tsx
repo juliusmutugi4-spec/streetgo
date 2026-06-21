@@ -348,6 +348,12 @@ onClick={toggleFollow}
   {editing ? 'Cancel' : 'Edit Profile'}
 </button>
                   )}
+
+
+
+
+
+
                 </div>
 
 {editing ? (
@@ -400,6 +406,28 @@ onClick={toggleFollow}
     Save Changes
   </button>
 )}
+
+
+{currentUser?.id === profile.id && (
+<button
+  onClick={() => router.push('/driver/register')}
+  className="
+    mt-3
+    px-4
+    py-2
+    rounded-lg
+    bg-orange-500
+    hover:bg-orange-400
+    text-white
+    text-sm
+    font-bold
+    transition
+  "
+>
+  🚗 Become Driver
+</button>
+)}
+
 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
 {[
   { label: "Posts", value: posts.length },
