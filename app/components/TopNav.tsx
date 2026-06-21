@@ -14,6 +14,7 @@ type TopNavProps = {
   user: any
   onLogin: () => void
   onLogout: () => void
+
 }
 
 export default function TopNav({
@@ -42,7 +43,7 @@ const [menuOpen, setMenuOpen] = useState(false)
         {/* LOGO */}
 {/* LOGO */}
 <div
-  onClick={() => router.push('/')}
+  onClick={() => router.push('/map')}
   className="
     group
     relative
@@ -309,7 +310,7 @@ const [menuOpen, setMenuOpen] = useState(false)
       transition
     "
   >
-    Sign In
+    SignIn
   </button>
 )}
 

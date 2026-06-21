@@ -29,6 +29,7 @@ type PredictionType = {
 
 export default function Home() {
   const [unreadCount, setUnreadCount] = useState(0)
+  
   const [posts, setPosts] = useState<PostType[]>([])
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
