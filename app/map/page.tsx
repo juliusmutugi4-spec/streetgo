@@ -1,20 +1,18 @@
 'use client'
 import { supabase } from '../lib/supabase'
 import { useEffect, useState } from 'react'
-import dynamic from 'next/dynamic'
 
-const Map = dynamic(
-  () => import('react-map-gl/mapbox').then(mod => mod.default),
-  { ssr: false }
-)
 
-const Marker = dynamic(
-  () => import('react-map-gl/mapbox').then(mod => mod.Marker),
-  { ssr: false }
-)
+import Map, { Marker } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 export default function MapPage() {
+
+  const [mounted, setMounted] = useState(false)
+
+useEffect(() => {
+  setMounted(true)
+}, [])
     const [user, setUser] = useState<any>(null)
   const [longitude, setLongitude] = useState(36.817223)
   const [latitude, setLatitude] = useState(-1.286389)
@@ -309,7 +307,7 @@ setSearching(false)
 
 }
 
-
+if (!mounted) return null
 
 return (
   <div className="relative w-full h-screen overflow-hidden">
@@ -327,10 +325,10 @@ return (
     zoom: 15
   }}
   mapStyle="mapbox://styles/mapbox/streets-v12"
-style={{
-  width: '100%',
-  height: '100%'
-}}
+  style={{
+    width: '100vw',
+    height: '100vh'
+  }}
 >
 
     
