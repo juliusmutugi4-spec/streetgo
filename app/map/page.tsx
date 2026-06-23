@@ -327,12 +327,13 @@ return (
   </div>
 )}
 <Map
-  mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+  mapboxAccessToken="pk.eyJ1..."
   initialViewState={{
     longitude,
     latitude,
     zoom: 15
   }}
+
   mapStyle="mapbox://styles/mapbox/light-v11"
   onLoad={() => {
     console.log('MAP LOADED')
