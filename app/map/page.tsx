@@ -3,7 +3,15 @@ import { supabase } from '../lib/supabase'
 import { useEffect, useState } from 'react'
 
 
-import Map, { Marker } from 'react-map-gl'
+import dynamic from 'next/dynamic'
+import { Marker } from 'react-map-gl'
+
+const Map = dynamic(
+  () => import('react-map-gl').then(mod => mod.default),
+  {
+    ssr: false
+  }
+)
 
 
 export default function MapPage() {
