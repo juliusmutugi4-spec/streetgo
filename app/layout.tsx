@@ -1,4 +1,5 @@
 import './globals.css'
+import 'mapbox-gl/dist/mapbox-gl.css'
 
 export const viewport = {
   width: 'device-width',

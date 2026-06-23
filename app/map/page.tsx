@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 
 
 import Map, { Marker } from 'react-map-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
+
 
 export default function MapPage() {
 
@@ -325,10 +325,12 @@ return (
     zoom: 15
   }}
   mapStyle="mapbox://styles/mapbox/light-v11"
-  style={{
-    width: '100vw',
-    height: '100vh'
-  }}
+style={{
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%'
+}}
 >
     
       {/* User */}
