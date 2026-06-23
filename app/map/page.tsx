@@ -324,7 +324,8 @@ return (
     latitude,
     zoom: 15
   }}
-  mapStyle="mapbox://styles/mapbox/streets-v12"
+  mapStyle="mapbox://styles/mapbox/light-v11"
+  reuseMaps
   style={{
     width: '100vw',
     height: '100vh',
