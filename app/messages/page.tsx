@@ -219,7 +219,11 @@ const { data, error } = await supabase
 console.log('CHAT DATA:', data)
 console.log('TOTAL MESSAGES:', data?.length)
 
-    if (error) return console.error(error)
+ if (error) {
+  alert(JSON.stringify(error, null, 2))
+  console.error("DELETE ERROR:", error)
+  return
+}
 
 
 
@@ -309,10 +313,11 @@ const fetchMessages = async (
     )
     .order('created_at', { ascending: true })
 
-  if (error) {
-    console.error(error)
-    return
-  }
+if (error) {
+  alert(JSON.stringify(error, null, 2))
+  console.error("DELETE ERROR:", error)
+  return
+}
 
   const uniqueMessages = Array.from(
   new Map(
@@ -338,11 +343,11 @@ const sendMessage = async () => {
     })
     .select()
     .single()
-
-  if (error) {
-    console.error(error)
-    return
-  }
+if (error) {
+  alert(JSON.stringify(error, null, 2))
+  console.error("DELETE ERROR:", error)
+  return
+}
 
   setMessages((prev) => {
   const exists = prev.some(
@@ -390,37 +395,48 @@ useEffect(() => {
 
   const channel = supabase
     .channel(`chat-${selectedChat.userId}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
+.on(
+  'postgres_changes',
+  {
+    event: '*',
         schema: 'public',
         table: 'chat_messages',
       },
-      (payload) => {
-        const msg = payload.new as any
+(payload) => {
 
-        const isMyConversation =
-          (msg.sender_id === user.id &&
-            msg.receiver_id === selectedChat.userId) ||
-          (msg.sender_id === selectedChat.userId &&
-            msg.receiver_id === user.id)
+  // Handle delete
+  if (payload.eventType === 'DELETE') {
+    const deleted = payload.old as any
 
-        if (!isMyConversation) return
+    setMessages(prev =>
+      prev.filter(m => m.id !== deleted.id)
+    )
 
-        setMessages((prev) => {
-          const exists = prev.some(
-            (m) => m.id === msg.id
-          )
+    return
+  }
 
-          if (exists) return prev
+  // Handle new message
+  const msg = payload.new as any
 
-          return [...prev, msg]
-        })
+  const isMyConversation =
+    (msg.sender_id === user.id &&
+      msg.receiver_id === selectedChat.userId) ||
+    (msg.sender_id === selectedChat.userId &&
+      msg.receiver_id === user.id)
 
-        fetchConversations(user.id)
-        fetchUnread(user.id)
-      }
+  if (!isMyConversation) return
+
+  setMessages(prev => {
+    const exists = prev.some(m => m.id === msg.id)
+
+    if (exists) return prev
+
+    return [...prev, msg]
+  })
+
+  fetchConversations(user.id)
+  fetchUnread(user.id)
+}
     )
     .subscribe()
 
@@ -441,6 +457,36 @@ useEffect(() => {
 
   return () => clearInterval(interval)
 }, [])
+
+const deleteMessage = async (messageId: string) => {
+  const confirmed = window.confirm(
+    "Delete this message?"
+  )
+
+  if (!confirmed) return
+
+  const { error } = await supabase
+    .from('chat_messages')
+    .delete()
+    .eq('id', messageId)
+    .eq('sender_id', user.id)
+
+if (error) {
+  alert(JSON.stringify(error, null, 2))
+  console.error("DELETE ERROR:", error)
+  return
+}
+
+  setMessages((prev) =>
+    prev.filter((m) => m.id !== messageId)
+  )
+
+  if (user?.id) {
+    fetchConversations(user.id)
+  }
+}
+
+
 
 return (
   <main className="h-screen overflow-hidden flex flex-col bg-[#050b12] text-white">
@@ -1065,9 +1111,24 @@ overflow-hidden
                 }
               >
                 <div>
-<p className="leading-relaxed break-all">
-  {m.content}
-</p>
+<div className="flex items-start gap-2">
+  <p className="leading-relaxed break-all flex-1">
+    {m.content}
+  </p>
+
+  {mine && (
+    <button
+      onClick={() => deleteMessage(m.id)}
+      className="
+      text-red-400
+      hover:text-red-500
+      text-xs
+      "
+    >
+      🗑
+    </button>
+  )}
+</div>
 
   <div
     className="
