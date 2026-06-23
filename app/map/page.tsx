@@ -9,10 +9,7 @@ import Map, { Marker } from 'react-map-gl'
 export default function MapPage() {
 
   const [mounted, setMounted] = useState(false)
-
-useEffect(() => {
-  setMounted(true)
-}, [])
+const [mapLoaded, setMapLoaded] = useState(false)
     const [user, setUser] = useState<any>(null)
   const [longitude, setLongitude] = useState(36.817223)
   const [latitude, setLatitude] = useState(-1.286389)
@@ -307,7 +304,7 @@ setSearching(false)
 
 }
 
-if (!mounted) return null
+
 
 return (
   <div className="relative w-full h-screen overflow-hidden">
@@ -316,7 +313,11 @@ return (
 <p className="absolute top-0 left-0 z-50 bg-red-500 text-white p-2">
   {process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
 </p>
-
+{!mapLoaded && (
+  <div className="absolute inset-0 bg-red-500 z-40 flex items-center justify-center text-white text-3xl">
+    LOADING MAP...
+  </div>
+)}
 <Map
   mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
   initialViewState={{
@@ -325,12 +326,16 @@ return (
     zoom: 15
   }}
   mapStyle="mapbox://styles/mapbox/light-v11"
-style={{
-  position: 'absolute',
-  inset: 0,
-  width: '100%',
-  height: '100%'
-}}
+  onLoad={() => {
+    console.log('MAP LOADED')
+    setMapLoaded(true)
+  }}
+  style={{
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%'
+  }}
 >
     
       {/* User */}
