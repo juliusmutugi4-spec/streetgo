@@ -305,7 +305,9 @@ return (
   <div className="h-screen relative">
 
 
-
+<p className="absolute top-0 left-0 z-50 bg-red-500 text-white p-2">
+  {process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+</p>
 
 <Map
   mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
