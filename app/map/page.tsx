@@ -304,6 +304,9 @@ setSearching(false)
 return (
   <div className="h-screen relative">
 
+
+
+
 <Map
   mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
   initialViewState={{
