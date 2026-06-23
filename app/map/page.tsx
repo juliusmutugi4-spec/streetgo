@@ -322,18 +322,18 @@ return (
   {process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
 </p>
 {!mapLoaded && (
-  <div className="absolute inset-0 bg-red-500 z-40 flex items-center justify-center text-white text-3xl">
-    LOADING MAP...
+  <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-emerald-500 to-green-700 z-40 flex items-center justify-center text-white text-3xl font-bold tracking-wider">
+    🟢 LOADING MAP...
   </div>
 )}
+
 <Map
-  mapboxAccessToken="pk.eyJ1..."
+  mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
   initialViewState={{
     longitude,
     latitude,
     zoom: 15
   }}
-
   mapStyle="mapbox://styles/mapbox/light-v11"
   onLoad={() => {
     console.log('MAP LOADED')
