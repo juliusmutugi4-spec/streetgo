@@ -327,7 +327,8 @@ return (
   mapStyle="mapbox://styles/mapbox/streets-v12"
   style={{
     width: '100vw',
-    height: '100vh'
+    height: '100vh',
+    backgroundColor: 'red'
   }}
 >
 
