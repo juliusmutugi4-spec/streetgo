@@ -184,25 +184,6 @@ if (error) {
             {username}
           </button>
 
-<div className="flex items-center gap-4 mt-2 font-mono text-[10px] tracking-wider uppercase text-slate-400">
-  {/* Reputation / Power Level */}
-  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-yellow-500/20 bg-yellow-500/5 text-yellow-400 shadow-[0_0_10px_rgba(234,179,8,0.1)]">
-    <span className="animate-pulse text-[8px]">⚡</span>
-    <span>REP // {profile?.reputation || 0}</span>
-  </div>
-
-  {/* Correct Predictions / Accuracy Matrix */}
-  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
-    <span>HIT // {profile?.predictions_correct || 0}</span>
-  </div>
-
-  {/* Wrong Predictions / System Faults */}
-  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded border border-red-500/20 bg-red-500/5 text-red-400 shadow-[0_0_10px_rgba(239,68,68,0.1)]">
-    <span className="text-[8px] font-bold">✕</span>
-    <span>MISS // {profile?.predictions_wrong || 0}</span>
-  </div>
-</div>
 
           
           <p className="text-xs text-zinc-500">
@@ -333,19 +314,14 @@ if (error) {
         border-orange-500/20
       "
     >
-      Video Transmission
+      🎬 Video
     </div>
   </div>
 )}
 
-<div className="mt-4 flex items-center gap-4 text-[11px] font-mono text-zinc-500">
-  <span>
-    ❤️ {likes} REACTIONS
-  </span>
-
-  <span>
-    💬 {comments.length} COMMENTS
-  </span>
+<div className="mt-4 flex items-center gap-4 text-sm text-zinc-500">
+  <span>❤️ {likes} Likes</span>
+  <span>💬 {comments.length} Comments</span>
 </div>
 
 {/* ACTION BAR */}
@@ -497,7 +473,7 @@ if (error) {
       active:scale-95
     "
   >
-    🚀 TRANSMIT
+    📤 Share
   </button>
 
 </div>
@@ -539,7 +515,7 @@ if (error) {
         value={commentText}
         onChange={(e) => setCommentText(e.target.value)}
         maxLength={280}
-        placeholder="Transmit a response..."
+        placeholder="Write a comment..."
         className="
           w-full
           bg-transparent
@@ -596,7 +572,7 @@ if (error) {
           disabled:cursor-not-allowed
         "
       >
-        🚀 TRANSMIT
+        💬 Post
       </button>
 
     </div>
@@ -605,71 +581,55 @@ if (error) {
 
 </div>
 
-    <div className="mt-4 space-y-2">
-   {comments.map((c) => (
-  <div
-    key={c.id}
-    className="group/comment relative flex gap-4 rounded-xl border border-zinc-800/50 bg-gradient-to-b from-zinc-900/60 via-zinc-950/40 to-zinc-950/90 p-4 backdrop-blur-md transition-all duration-300 hover:border-cyan-500/30 hover:bg-zinc-950/80 hover:shadow-[0_0_25px_rgba(6,182,212,0.08),inset_0_1px_1px_rgba(255,255,255,0.03)]"
-  >
-    {/* Micro Corner Tech Bracket - Top Right Accent */}
-    <div className="absolute top-0 right-0 h-1.5 w-1.5 border-t border-r border-zinc-700 transition-colors duration-300 group-hover/comment:border-cyan-400" />
-    
-    {/* Quantized Bio-Link Frame (Avatar Box) */}
-    <div className="relative h-10 w-10 shrink-0">
-      {/* Outer Rotating Energy Ring Simulation */}
-      <div className="absolute -inset-0.5 rounded-xl bg-gradient-to-tr from-cyan-500/0 via-cyan-500/20 to-red-500/0 opacity-60 blur-[1px] transition-all duration-500 group-hover/comment:from-cyan-500/30 group-hover/comment:to-red-500/20 group-hover/comment:scale-105" />
-      
+<div className="mt-4 space-y-3">
+  {comments.map((c) => (
+    <div
+      key={c.id}
+      className="flex gap-3 rounded-2xl bg-zinc-900/60 p-3 hover:bg-zinc-800/60 transition"
+    >
+      {/* Avatar */}
       <img
-        src={c.avatar_url || '/avatar-placeholder.png'}
+        src={c.avatar_url || "/avatar-placeholder.png"}
         alt=""
-        className="relative h-full w-full rounded-lg border border-zinc-800 bg-zinc-900 object-cover p-[2px] transition-all duration-500 group-hover/comment:border-cyan-400/60 group-hover/comment:scale-[0.98]"
+        className="h-12 w-12 rounded-full object-cover"
       />
-      
-      {/* Target Lock Matrix Overlay */}
-      <div className="absolute inset-0 rounded-lg border border-transparent transition-all duration-300 group-hover/comment:border-cyan-400/20 group-hover/comment:bg-cyan-500/5" />
-    </div>
 
-    {/* Central Processing Core (Content Section) */}
-    <div className="flex-1 min-w-0">
-      {/* Header Array */}
-      <div className="flex items-baseline justify-between gap-2">
-        <div className="flex items-center gap-1.5">
-          {/* Identity Matrix String */}
-          <span className="truncate text-xs font-black tracking-wider text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.3)] transition-all duration-300 group-hover/comment:text-white group-hover/comment:drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]">
+      {/* Content */}
+      <div className="flex-1">
+        {/* Header */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-semibold text-white">
             {c.username}
           </span>
-          
-          {/* Node Link Identity Metric */}
-<span className="font-mono text-[9px] font-medium tracking-normal text-zinc-600 transition-colors duration-300 group-hover/comment:text-zinc-500">
-  @{c.username?.replace(/\s+/g, '').toLowerCase()}
-</span>
+
+          <span className="text-xs text-zinc-500">
+            @{c.username?.replace(/\s+/g, "").toLowerCase()}
+          </span>
+
+          <span className="text-xs text-zinc-600">
+            • {new Date(c.created_at).toLocaleString()}
+          </span>
         </div>
 
-        {/* System Node Index String */}
-        <span className="font-mono text-[8px] tracking-widest text-zinc-700 transition-colors duration-300 group-hover/comment:text-cyan-500/40">
-          NODE://{c.id?.toString().slice(0, 4) || 'AUTH'}
-        </span>
-      </div>
+        {/* Comment */}
+        <p className="mt-1 text-sm text-zinc-200 leading-relaxed">
+          {c.content}
+        </p>
 
-      {/* Main Signal Display (Comment Payload) */}
-      <p className="mt-2 text-sm leading-relaxed tracking-wide text-zinc-300 transition-colors duration-300 [text-shadow:0_1px_1px_rgba(0,0,0,0.8)] group-hover/comment:text-zinc-100">
-        {c.content}
-      </p>
+        {/* Actions */}
+        <div className="mt-2 flex gap-5 text-xs">
+          <button className="text-zinc-500 hover:text-pink-400 transition">
+            ❤️ Like
+          </button>
 
-      {/* Embedded Telemetry Metrics Bar */}
-      <div className="mt-3 flex items-center gap-3 font-mono text-[8px] tracking-widest text-zinc-600 transition-colors duration-300 group-hover/comment:text-zinc-500">
-        <span className="flex items-center gap-1">
-          <span className="h-1 w-1 rounded-full bg-emerald-500/60 group-hover/comment:animate-pulse" />
-          SECURE_CONN
-        </span>
-        <span>•</span>
-        <span>BRG_v8.4</span>
+          <button className="text-zinc-500 hover:text-cyan-400 transition">
+            💬 Reply
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-))}
-
-    </div>
+  ))}
+</div>
   </>
 )}
 
