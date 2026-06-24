@@ -23,6 +23,7 @@ const [followingCount, setFollowingCount] = useState(0)
 const [editing, setEditing] = useState(false)
 const [newUsername, setNewUsername] = useState('')
 const [newBio, setNewBio] = useState('')
+const [activeTab, setActiveTab] = useState('posts')
 const router = useRouter()
 
 useEffect(() => {
@@ -279,29 +280,79 @@ if (!error) {
       {/* Background Glow */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-cyan-500/5 blur-[150px] pointer-events-none" />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+<div className="max-w-5xl mx-auto px-4 py-8">
 
-        {/* PROFILE CARD */}
-        <div className="relative overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-950/70 backdrop-blur-xl">
+  {/* COVER */}
+  <div className="relative z-0 h-80 rounded-t-3xl overflow-hidden border border-zinc-800 border-b-0">
+    <img
+      src="/cover.jpg"
+      alt="Cover"
+      className="w-full h-full object-cover"
+    />
+
+    {/* Dark Overlay */}
+    <div className="absolute inset-0 bg-black/40" />
+  </div>
+
+  {/* PROFILE CARD */}
+  <div
+    className="
+      relative
+      overflow-visible
+      border
+      border-zinc-800
+      border-t-0
+      bg-zinc-950/70
+      rounded-b-3xl
+      backdrop-blur-xl
+    "
+  >
 
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] via-transparent to-orange-500/[0.03]" />
 
-          <div className="relative p-8">
+          <div className="relative pt-8 px-8 pb-8">
 
+
+            
+<div className="absolute -top-16 left-8 z-[999]">
+  <img
+    src={profile.avatar_url || '/avatar-placeholder.png'}
+    alt="Profile"
+    className="
+      w-44
+      h-44
+      rounded-full
+      object-cover
+      border-[8px]
+      border-[#09090b]
+      ring-2
+      ring-cyan-500/20
+      shadow-[0_20px_60px_rgba(0,0,0,0.7)]
+    "
+  />
+</div>
             <div className="flex flex-col md:flex-row md:items-center gap-6">
-<img
-  src={profile.avatar_url || '/avatar-placeholder.png'}
-  alt="Profile"
-  className="w-32 h-32 rounded-3xl object-cover border border-cyan-500/20 shadow-2xl"
-/>
 
-              <div className="flex-1">
+
+              <div className="flex-1 mt-20">
 
                 <div className="flex flex-wrap items-center gap-3">
 
-                  <h1 className="text-4xl font-black tracking-tight">
-                    {profile.username}
-                  </h1>
+    <div>
+  <div className="flex items-center gap-2">
+    <h1 className="text-2xl font-black tracking-tight">
+      {profile.username}
+    </h1>
+
+    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-black text-xs font-black">
+      ✓
+    </div>
+  </div>
+
+  <p className="text-zinc-500">
+    @{profile.username}
+  </p>
+</div>
 
 
 {currentUser?.id !== profile.id && (
@@ -389,6 +440,11 @@ onClick={toggleFollow}
     {profile.bio || 'No bio yet'}
   </p>
 )}
+<div className="flex flex-wrap gap-4 mt-4 text-sm text-zinc-500">
+  <span>📍 Nairobi, Kenya</span>
+  <span>📅 Joined 2026</span>
+</div>
+
 {editing && (
   <button
     onClick={saveProfile}
@@ -428,30 +484,37 @@ onClick={toggleFollow}
 </button>
 )}
 
-<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
 {[
-  { label: "Posts", value: posts.length },
-  { label: "Followers", value: followersCount, clickable: true },
-  { label: "Following", value: followingCount },
-  { label: "Reputation", value: profile?.reputation || 0 },
-].map((stat, index) => (
+  { label: "Posts", value: posts.length, key: "posts" },
+  { label: "Followers", value: followersCount, key: "followers" },
+  { label: "Following", value: followingCount, key: "following" },
+  { label: "Reputation", value: profile?.reputation || 0, key: "reputation" },
+]
+
+
+.map((stat, index) => (
     <div
        key={index}
-  onClick={() => {
-    if (stat.label === 'Followers') {
-      setShowFollowers(true)
-    }
-  }}
+onClick={() => {
+if (stat.key) {
+  setActiveTab(stat.key)
+}
+
+if (stat.key === 'followers') {
+  setShowFollowers(true)
+}
+}}
       className="
         group
         relative
         overflow-hidden
-        rounded-2xl
+        rounded-xl
         border
         border-zinc-800
         bg-zinc-950/60
         backdrop-blur-xl
-        p-6
+        p-4
         transition-all
         duration-300
         hover:-translate-y-1
@@ -470,7 +533,7 @@ onClick={toggleFollow}
       {/* Label */}
       <p
         className="
-          text-[11px]
+          text-[10px]
           font-semibold
           tracking-[0.25em]
           uppercase
@@ -483,15 +546,14 @@ onClick={toggleFollow}
       </p>
 
       {/* Value */}
-      <p
-        className="
-          mt-3
-          text-4xl
-          font-black
-          tracking-tight
-          text-white
-        "
-      >
+<p
+  className="
+    mt-1
+    text-2xl
+    font-bold
+    text-white
+  "
+>
         {Number(stat.value || 0).toLocaleString()}
       </p>
 
@@ -508,96 +570,87 @@ onClick={toggleFollow}
           </div>
 
         </div>
+{activeTab === 'posts' && (
+  <>
+    {/* POSTS SECTION */}
+    <div className="mt-8 flex items-center justify-between">
+      <h2 className="font-black tracking-widest text-zinc-400 text-sm">
+        DATAFEED // USER POSTS
+      </h2>
 
-        {/* POSTS SECTION */}
+      <div className="text-xs text-cyan-400 font-mono">
+        {posts.length} TRANSMISSIONS
+      </div>
+    </div>
 
-        <div className="mt-8 flex items-center justify-between">
-
-          <h2 className="font-black tracking-widest text-zinc-400 text-sm">
-            DATAFEED // USER POSTS
-          </h2>
-
-          <div className="text-xs text-cyan-400 font-mono">
-            {posts.length} TRANSMISSIONS
-          </div>
-
+    <div className="mt-4 space-y-4">
+      {posts.length === 0 ? (
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-10 text-center">
+          <p className="text-zinc-500">
+            No transmissions found.
+          </p>
         </div>
+      ) : (
+        posts.map((post) => (
+          <div
+            key={post.id}
+            className="
+              rounded-xl
+              border
+              border-zinc-800
+              bg-zinc-950/60
+              backdrop-blur-xl
+              overflow-hidden
+            "
+          >
+            <div className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <img
+                  src={profile.avatar_url || '/avatar-placeholder.png'}
+                  className="w-10 h-10 rounded-xl object-cover"
+                />
 
-        <div className="mt-4 space-y-4">
-
-          {posts.length === 0 ? (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950/60 p-10 text-center">
-              <p className="text-zinc-500">
-                No transmissions found.
-              </p>
-            </div>
-          ) : (
-            posts.map((post) => (
-              <div
-                key={post.id}
-                className="
-                  rounded-2xl
-                  border
-                  border-zinc-800
-                  bg-zinc-950/60
-                  backdrop-blur-xl
-                  overflow-hidden
-                "
-              >
-                <div className="p-5">
-
-                  <div className="flex items-center gap-3 mb-4">
-<img
-  src={profile.avatar_url || '/avatar-placeholder.png'}
-  className="w-10 h-10 rounded-xl object-cover"
-/>
-
-                    <div>
-                      <p className="font-bold">
-                        {profile.username}
-                      </p>
-
-                      <p className="text-xs text-zinc-500">
-                        {new Date(
-                          post.created_at
-                        ).toLocaleString()}
-                      </p>
-                    </div>
-
-                  </div>
-
-                  <p className="text-zinc-200 whitespace-pre-wrap">
-                    {post.content}
+                <div>
+                  <p className="font-bold">
+                    {profile.username}
                   </p>
 
-                  {post.video_url && (
-                    <video
-                      src={post.video_url}
-                      controls
-                      className="
-                        mt-4
-                        rounded-xl
-                        w-full
-                        border
-                        border-zinc-800
-                      "
-                    />
-                  )}
-
+                  <p className="text-xs text-zinc-500">
+                    {new Date(post.created_at).toLocaleString()}
+                  </p>
                 </div>
               </div>
-            ))
-          )}
 
+              <p className="text-zinc-200 whitespace-pre-wrap">
+                {post.content}
+              </p>
 
-
-        </div>
-
-      </div>
+              {post.video_url && (
+                <video
+                  src={post.video_url}
+                  controls
+                  className="
+                    mt-4
+                    rounded-xl
+                    w-full
+                    border
+                    border-zinc-800
+                  "
+                />
+              )}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+   
+  </>
+)}
+</div>
 
 {showFollowers && (
   <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
-    <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
+    <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-950 p-6">
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-black text-xl">
