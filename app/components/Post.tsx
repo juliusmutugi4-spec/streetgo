@@ -170,31 +170,97 @@ if (error) {
 
   <div className="relative p-5">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
-        <img
-          src={avatarUrl}
-          className="w-10 h-10 rounded-lg object-cover"
-          alt="Profile"
-        />
-        <div>
-          <button
-            onClick={goToProfile}
-            className="font-bold text-sm text-white hover:text-cyan-400"
-          >
-            {username}
-          </button>
+      
 
+        
+{/* PRO HEADER */}
+<div className="mb-5 flex items-center justify-between">
 
-          
-          <p className="text-xs text-zinc-500">
-            {new Date(post.created_at).toLocaleString()}
-          </p>
-        </div>
+  <div className="flex items-center gap-3">
 
+    <div className="relative">
+      <img
+        src={avatarUrl}
+        alt=""
+        className="
+          h-12
+          w-12
+          rounded-2xl
+          object-cover
+          border
+          border-cyan-500/20
+        "
+      />
 
+      <div
+        className="
+          absolute
+          bottom-0
+          right-0
+          h-3
+          w-3
+          rounded-full
+          bg-emerald-400
+          border-2
+          border-black
+        "
+      />
+    </div>
 
+    <div>
 
+      <button
+        onClick={goToProfile}
+        className="
+          flex
+          items-center
+          gap-2
+          font-bold
+          text-white
+          hover:text-cyan-400
+          transition
+        "
+      >
+        {username}
+
+      </button>
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-zinc-500">
+          @{username.toLowerCase()}
+        </span>
+
+        <span className="text-zinc-700">•</span>
+
+        <span className="text-xs text-zinc-600">
+          {new Date(post.created_at).toLocaleDateString()}
+        </span>
       </div>
+
+    </div>
+
+  </div>
+
+  <button
+    className="
+      h-10
+      w-10
+      rounded-xl
+      border
+      border-white/5
+      bg-white/[0.03]
+      text-zinc-400
+      hover:text-white
+      hover:bg-white/[0.06]
+      transition
+    "
+  >
+    ⋯
+  </button>
+
+</div>
+
+
 
       {/* Content */}
       {/* Content */}

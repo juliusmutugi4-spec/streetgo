@@ -336,53 +336,60 @@ const [menuOpen, setMenuOpen] = useState(false)
     {menuOpen ? '✕' : <Menu size={20} />}
   </button>
 
-  {menuOpen && (
-    <div
-      className="
-        absolute
-        top-12
-        right-0
-        w-56
-        rounded-2xl
-        border
-        border-cyan-500/20
-        bg-black/95
-        backdrop-blur-xl
-        overflow-hidden
-        shadow-[0_0_30px_rgba(0,255,255,0.15)]
-      "
-    >
+{menuOpen && (
+  <div
+    className="
+      absolute
+      top-14
+      right-0
+      w-60
+      overflow-hidden
+      rounded-3xl
 
-      <button
-        onClick={() => router.push('/leaderboard')}
-        className="
-          w-full
-          px-4
-          py-3
-          flex
-          items-center
-          gap-3
-          text-left
-          hover:bg-cyan-500/10
-          transition
-        "
-      >
-        <Trophy size={18} />
-        Leaderboard
-      </button>
+      border border-white/10
+
+      bg-gradient-to-br
+      from-slate-950/95
+      via-black/95
+      to-cyan-950/40
+
+      backdrop-blur-2xl
+
+      shadow-[0_20px_60px_rgba(0,0,0,0.6)]
+      before:absolute
+      before:inset-0
+      before:bg-[radial-gradient(circle_at_top_right,rgba(34,211,238,0.15),transparent_40%)]
+
+      after:absolute
+      after:inset-0
+      after:bg-[linear-gradient(to_bottom,rgba(255,255,255,0.03),transparent)]
+
+      animate-in
+      fade-in
+      zoom-in-95
+      duration-200
+    "
+  >
+    {/* Glow line */}
+    <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+
+    <div className="relative z-10">
 
       <button
         onClick={() => router.push('/settings')}
         className="
           w-full
-          px-4
+          px-5
           py-3
           flex
           items-center
           gap-3
           text-left
+          text-slate-200
           hover:bg-cyan-500/10
-          transition
+          hover:text-cyan-300
+          transition-all
+          duration-300
         "
       >
         <Settings size={18} />
@@ -390,45 +397,51 @@ const [menuOpen, setMenuOpen] = useState(false)
       </button>
 
       <button
-        onClick={() => router.push('/predictions')}
+        onClick={() => router.push('/leaderboard')}
         className="
           w-full
-          px-4
+          px-5
           py-3
           flex
           items-center
           gap-3
           text-left
+          text-slate-200
           hover:bg-cyan-500/10
-          transition
+          hover:text-cyan-300
+          transition-all
+          duration-300
         "
       >
-        📊 Predictions
+        <Trophy size={18} />
+        Leaderboard
       </button>
 
-<div className="h-px bg-cyan-500/10 mx-3" />
+      <div className="mx-4 h-px bg-gradient-to-r from-transparent via-cyan-500/20 to-transparent" />
 
-<button
-  onClick={onLogout}
-  className="
-    w-full
-    px-4
-    py-3
-    flex
-    items-center
-    gap-3
-    text-left
-    text-red-400
-    hover:bg-red-500/10
-    transition
-  "
->
-  <LogOut size={18} />
-  Logout
-</button>
+      <button
+        onClick={onLogout}
+        className="
+          w-full
+          px-5
+          py-3
+          flex
+          items-center
+          gap-3
+          text-left
+          text-red-400
+          hover:bg-red-500/10
+          transition-all
+          duration-300
+        "
+      >
+        <LogOut size={18} />
+        Logout
+      </button>
 
     </div>
-  )}
+  </div>
+)}
 
 </div>
 
