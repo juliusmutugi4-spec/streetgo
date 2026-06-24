@@ -23,7 +23,7 @@ const [followingCount, setFollowingCount] = useState(0)
 const [editing, setEditing] = useState(false)
 const [newUsername, setNewUsername] = useState('')
 const [newBio, setNewBio] = useState('')
-const [activeTab, setActiveTab] = useState('posts')
+const [activeTab, setActiveTab] = useState('')
 const router = useRouter()
 
 useEffect(() => {
@@ -151,7 +151,7 @@ if (session?.user) {
           <h1 className="text-3xl font-black mb-3">
             USER NOT FOUND
           </h1>
-          <p className="text-zinc-500">
+          <p className="text-xs text-zinc-500">
             This node does not exist on the network.
           </p>
         </div>
@@ -280,10 +280,10 @@ if (!error) {
       {/* Background Glow */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-cyan-500/5 blur-[150px] pointer-events-none" />
 
-<div className="max-w-5xl mx-auto px-4 py-8">
+<div className="w-full">
 
   {/* COVER */}
-  <div className="relative z-0 h-80 rounded-t-3xl overflow-hidden border border-zinc-800 border-b-0">
+  <div className="relative z-0 h-44 w-full overflow-hidden">
     <img
       src="/cover.jpg"
       alt="Cover"
@@ -299,11 +299,9 @@ if (!error) {
     className="
       relative
       overflow-visible
-      border
-      border-zinc-800
-      border-t-0
+
       bg-zinc-950/70
-      rounded-b-3xl
+      
       backdrop-blur-xl
     "
   >
@@ -314,42 +312,39 @@ if (!error) {
 
 
             
-<div className="absolute -top-16 left-8 z-[999]">
+<div className="absolute -top-6 left-4 z-[999]">
   <img
     src={profile.avatar_url || '/avatar-placeholder.png'}
     alt="Profile"
     className="
-      w-44
-      h-44
+      w-14
+      h-14
       rounded-full
       object-cover
-      border-[8px]
+      border-2
       border-[#09090b]
-      ring-2
-      ring-cyan-500/20
-      shadow-[0_20px_60px_rgba(0,0,0,0.7)]
     "
   />
 </div>
             <div className="flex flex-col md:flex-row md:items-center gap-6">
 
 
-              <div className="flex-1 mt-20">
+              <div className="flex-1 mt-4">
 
                 <div className="flex flex-wrap items-center gap-3">
 
     <div>
   <div className="flex items-center gap-2">
-    <h1 className="text-2xl font-black tracking-tight">
+    <h1 className="text-lg font-bold">
       {profile.username}
     </h1>
 
-    <div className="w-6 h-6 rounded-full bg-cyan-500 flex items-center justify-center text-black text-xs font-black">
+    <div className="w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center text-[8px] font-bold">
       ✓
     </div>
   </div>
 
-  <p className="text-zinc-500">
+  <p className="text-xs text-zinc-500">
     @{profile.username}
   </p>
 </div>
@@ -384,7 +379,7 @@ onClick={toggleFollow}
     onClick={() =>
   router.push(`/messages?user=${profile.id}`)
 }
-    className="mt-3 px-4 py-2 bg-emerald-500 rounded-lg text-sm font-bold"
+    className="mt-3 px-3 py-1 text-xs bg-emerald-500 rounded-lg text-sm font-bold"
   >
     Message
   </button>
@@ -394,7 +389,7 @@ onClick={toggleFollow}
                   {currentUser?.id === profile.id && (
 <button
   onClick={() => setEditing(!editing)}
-  className="mt-3 px-4 py-2 bg-cyan-500 rounded-lg text-sm font-bold"
+  className="mt-3 px-3 py-1 text-xs bg-cyan-500 rounded-lg text-sm font-bold"
 >
   {editing ? 'Cancel' : 'Edit Profile'}
 </button>
@@ -436,7 +431,7 @@ onClick={toggleFollow}
 
   </div>
 ) : (
-  <p className="text-zinc-400 mt-2">
+  <p className="text-sm text-zinc-400 mt-1">
     {profile.bio || 'No bio yet'}
   </p>
 )}
@@ -484,83 +479,55 @@ onClick={toggleFollow}
 </button>
 )}
 
-<div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-{[
-  { label: "Posts", value: posts.length, key: "posts" },
-  { label: "Followers", value: followersCount, key: "followers" },
-  { label: "Following", value: followingCount, key: "following" },
-  { label: "Reputation", value: profile?.reputation || 0, key: "reputation" },
-]
+<div className="flex items-center gap-5 mt-4 text-sm overflow-x-auto">
 
-
-.map((stat, index) => (
-    <div
-       key={index}
-onClick={() => {
-if (stat.key) {
-  setActiveTab(stat.key)
-}
-
-if (stat.key === 'followers') {
-  setShowFollowers(true)
-}
-}}
-      className="
-        group
-        relative
-        overflow-hidden
-        rounded-xl
-        border
-        border-zinc-800
-        bg-zinc-950/60
-        backdrop-blur-xl
-        p-4
-        transition-all
-        duration-300
-        hover:-translate-y-1
-        hover:border-cyan-500/30
-        hover:shadow-[0_0_30px_rgba(34,211,238,0.08)]
-      "
-    >
-      {/* Glow */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-        <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/[0.03] via-transparent to-blue-500/[0.03]" />
-      </div>
-
-      {/* Top Accent */}
-      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-
-      {/* Label */}
-      <p
-        className="
-          text-[10px]
-          font-semibold
-          tracking-[0.25em]
-          uppercase
-          text-zinc-500
-          transition-colors
-          group-hover:text-cyan-400
-        "
-      >
-        {stat.label}
-      </p>
-
-      {/* Value */}
-<p
-  className="
-    mt-1
-    text-2xl
-    font-bold
-    text-white
-  "
+ <button
+  onClick={() =>
+    setActiveTab(
+      activeTab === 'posts'
+        ? ''
+        : 'posts'
+    )
+  }
+  className="whitespace-nowrap"
 >
-        {Number(stat.value || 0).toLocaleString()}
-      </p>
+  <span className="font-bold text-white">
+    {posts.length}
+  </span>
+  <span className="text-zinc-500 ml-1">
+    Posts
+  </span>
+</button>
+  <button
+    onClick={() => setShowFollowers(true)}
+    className="whitespace-nowrap"
+  >
+    <span className="font-bold text-white">
+      {followersCount}
+    </span>
+    <span className="text-zinc-500 ml-1">
+      Followers
+    </span>
+  </button>
 
-      {/* Bottom Tech Line */}
-      <div className="mt-4 h-[1px] w-full bg-gradient-to-r from-cyan-500/0 via-cyan-500/20 to-cyan-500/0" />
-    </div>
-  ))}
+  <button className="whitespace-nowrap">
+    <span className="font-bold text-white">
+      {followingCount}
+    </span>
+    <span className="text-zinc-500 ml-1">
+      Following
+    </span>
+  </button>
+
+  <button className="whitespace-nowrap">
+    <span className="font-bold text-white">
+      {profile?.reputation || 0}
+    </span>
+    <span className="text-zinc-500 ml-1">
+      Rep
+    </span>
+  </button>
+
 </div>
 
               </div>
@@ -586,7 +553,7 @@ if (stat.key === 'followers') {
     <div className="mt-4 space-y-4">
       {posts.length === 0 ? (
         <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-10 text-center">
-          <p className="text-zinc-500">
+          <p className="text-xs text-zinc-500">
             No transmissions found.
           </p>
         </div>
