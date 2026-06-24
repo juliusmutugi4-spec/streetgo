@@ -24,6 +24,7 @@ const [editing, setEditing] = useState(false)
 const [newUsername, setNewUsername] = useState('')
 const [newBio, setNewBio] = useState('')
 const [activeTab, setActiveTab] = useState('')
+const [showMenu, setShowMenu] = useState(false)
 const router = useRouter()
 
 useEffect(() => {
@@ -283,16 +284,112 @@ if (!error) {
 <div className="w-full">
 
   {/* COVER */}
-  <div className="relative z-0 h-44 w-full overflow-hidden">
-    <img
-      src="/cover.jpg"
-      alt="Cover"
-      className="w-full h-full object-cover"
-    />
+<div className="relative z-0 h-44 w-full overflow-hidden">
 
-    {/* Dark Overlay */}
-    <div className="absolute inset-0 bg-black/40" />
-  </div>
+  <img
+    src="/cover.jpg"
+    alt="Cover"
+    className="w-full h-full object-cover"
+  />
+
+  <div className="absolute inset-0 bg-black/40" />
+
+  <button
+    onClick={() => router.back()}
+className="
+  absolute
+  top-3
+  left-3
+  z-50
+  flex
+  items-center
+  justify-center
+  text-white
+  text-xl
+"
+  >
+    ←
+  </button>
+<button
+  onClick={() => setShowMenu(!showMenu)}
+  className="
+    absolute
+    top-3
+    right-3
+    z-50
+    text-white
+    text-2xl
+  "
+>
+  ⋮
+</button>
+{currentUser?.id === profile.id && (
+  <>
+    <button
+      onClick={() => setShowMenu(!showMenu)}
+      className="
+        absolute
+        top-3
+        right-3
+        z-50
+        text-white
+        text-2xl
+      "
+    >
+      ⋮
+    </button>
+
+    {showMenu && (
+      <div
+        className="
+          absolute
+          top-12
+          right-3
+          z-50
+          w-48
+          rounded-xl
+          bg-zinc-900
+          border
+          border-zinc-800
+          overflow-hidden
+        "
+      >
+        <button
+          onClick={() => {
+            setEditing(true)
+            setShowMenu(false)
+          }}
+          className="w-full px-4 py-3 text-left hover:bg-zinc-800"
+        >
+          ✏️ Edit Profile
+        </button>
+
+        <button
+          onClick={() => {
+            router.push('/wallet')
+            setShowMenu(false)
+          }}
+          className="w-full px-4 py-3 text-left hover:bg-zinc-800"
+        >
+          💰 Wallet
+        </button>
+
+        <button
+          onClick={() => {
+            router.push('/driver/register')
+            setShowMenu(false)
+          }}
+          className="w-full px-4 py-3 text-left hover:bg-zinc-800"
+        >
+          🚗 Become Driver
+        </button>
+      </div>
+    )}
+  </>
+)}
+
+
+</div>
 
   {/* PROFILE CARD */}
   <div
