@@ -153,7 +153,7 @@ if (error) {
     group
     relative
     overflow-hidden
-    rounded-3xl
+    rounded-xl
     border
     border-cyan-500/10
     bg-[#05070b]/80
@@ -168,7 +168,7 @@ if (error) {
   <div className="absolute -top-20 -left-20 w-48 h-48 bg-cyan-500/10 blur-[80px]" />
   <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-orange-500/10 blur-[80px]" />
 
-  <div className="relative p-5">
+  <div className="relative p-4">
       {/* Header */}
       
 
@@ -185,7 +185,7 @@ if (error) {
         className="
           h-12
           w-12
-          rounded-2xl
+          rounded-xl
           object-cover
           border
           border-cyan-500/20
@@ -215,8 +215,7 @@ if (error) {
           flex
           items-center
           gap-2
-          font-bold
-          text-white
+text-[15px] font-semibold text-white
           hover:text-cyan-400
           transition
         "
@@ -226,13 +225,13 @@ if (error) {
       </button>
 
       <div className="flex items-center gap-2">
-        <span className="text-xs text-zinc-500">
+        <span className="text-[11px] text-zinc-500">
           @{username.toLowerCase()}
         </span>
 
         <span className="text-zinc-700">•</span>
 
-        <span className="text-xs text-zinc-600">
+        <span className="text-[11px] text-zinc-600">
           {new Date(post.created_at).toLocaleDateString()}
         </span>
       </div>
@@ -243,9 +242,9 @@ if (error) {
 
   <button
     className="
-      h-10
-      w-10
-      rounded-xl
+h-8
+w-8
+rounded-lg
       border
       border-white/5
       bg-white/[0.03]
@@ -268,9 +267,9 @@ if (error) {
   <p
     className="
       text-zinc-200
-      leading-relaxed
-      text-sm
-      mb-4
+text-[14px]
+leading-6
+mb-3
     "
   >
     {post.content}
@@ -279,7 +278,7 @@ if (error) {
 
 {/* Image */}
 {post.image_url && (
-  <div className="relative mt-3 overflow-hidden rounded-2xl group">
+  <div className="relative mt-3 overflow-hidden rounded-xl group">
 
     {/* Glow */}
     <div
@@ -300,7 +299,7 @@ if (error) {
       className="
         relative
         w-full
-        rounded-2xl
+        rounded-xl
         max-h-[600px]
         object-cover
         border
@@ -352,7 +351,7 @@ if (error) {
     className="
       mt-4
       overflow-hidden
-      rounded-2xl
+      rounded-xl
       border
       border-orange-500/20
       bg-zinc-950
@@ -370,8 +369,8 @@ if (error) {
 
     <div
       className="
-        px-4
-        py-2
+  px-3
+py-1.5
         text-[10px]
         uppercase
         tracking-widest
@@ -390,22 +389,15 @@ if (error) {
   <span>💬 {comments.length} Comments</span>
 </div>
 
-{/* ACTION BAR */}
 <div
   className="
-    mt-5
+    mt-3
     flex
     items-center
-    gap-6
+    justify-between
     border-t
-    border-zinc-800/60
-    bg-gradient-to-r
-    from-zinc-950
-    via-zinc-900/20
-    to-transparent
-    p-3.5
-    backdrop-blur-md
-    rounded-xl
+    border-white/5
+    pt-2
   "
 >
 
@@ -446,7 +438,7 @@ if (error) {
     <span
       className={`
         font-mono
-        text-xs
+        text-[11px]
         tracking-wider
         ${
           liked
@@ -487,7 +479,7 @@ if (error) {
       💬
     </span>
 
-    <span className="relative font-mono text-xs tracking-wider">
+    <span className="relative font-mono text-[11px] tracking-wider">
       {comments.length}
 
       {comments.length > 0 && (
@@ -525,11 +517,11 @@ if (error) {
       border
       border-cyan-500/20
       bg-cyan-500/5
-      px-4
-      py-2
+  px-3
+py-1.5
       text-[11px]
       font-mono
-      tracking-[0.2em]
+      tracking-wide
       text-cyan-400
       transition-all
       duration-300
@@ -586,7 +578,7 @@ if (error) {
           w-full
           bg-transparent
           px-4
-          py-3
+          py-2.5
           text-sm
           text-zinc-200
           outline-none
@@ -627,7 +619,7 @@ if (error) {
           py-2
           text-[11px]
           font-mono
-          tracking-[0.2em]
+          tracking-wide
           text-cyan-400
           transition-all
           duration-300
@@ -651,13 +643,13 @@ if (error) {
   {comments.map((c) => (
     <div
       key={c.id}
-      className="flex gap-3 rounded-2xl bg-zinc-900/60 p-3 hover:bg-zinc-800/60 transition"
+      className="flex gap-2.5 rounded-xl bg-zinc-900/60 p-2.5 hover:bg-zinc-800/60 transition"
     >
       {/* Avatar */}
       <img
         src={c.avatar_url || "/avatar-placeholder.png"}
         alt=""
-        className="h-12 w-12 rounded-full object-cover"
+        className="h-8 w-8 rounded-full object-cover"
       />
 
       {/* Content */}
@@ -668,22 +660,22 @@ if (error) {
             {c.username}
           </span>
 
-          <span className="text-xs text-zinc-500">
+          <span className="text-[11px] text-zinc-500">
             @{c.username?.replace(/\s+/g, "").toLowerCase()}
           </span>
 
-          <span className="text-xs text-zinc-600">
+          <span className="text-[11px] text-zinc-600">
             • {new Date(c.created_at).toLocaleString()}
           </span>
         </div>
 
         {/* Comment */}
-        <p className="mt-1 text-sm text-zinc-200 leading-relaxed">
+        <p className="mt-1 text-[13px] text-zinc-200 leading-relaxed">
           {c.content}
         </p>
 
         {/* Actions */}
-        <div className="mt-2 flex gap-5 text-xs">
+        <div className="mt-2 flex gap-4 text-[11px]">
           <button className="text-zinc-500 hover:text-pink-400 transition">
             ❤️ Like
           </button>

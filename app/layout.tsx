@@ -1,5 +1,6 @@
 import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import Providers from './providers'
 
 export const viewport = {
   width: 'device-width',
@@ -25,9 +26,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className="bg-black text-white">
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className="transition-colors duration-300">
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   )

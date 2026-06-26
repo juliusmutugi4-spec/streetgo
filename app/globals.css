@@ -6,7 +6,41 @@ body {
   overscroll-behavior: none;
 }
 
-/* StreetGO animations */
+/* =======================================================
+   THEME
+======================================================= */
+
+/* LIGHT THEME (Default) */
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+
+  --card: #f8fafc;
+  --border: #e2e8f0;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --primary: #06b6d4;
+}
+
+/* DARK THEME */
+html.dark {
+  --background: #0f172a;
+  --foreground: #f8fafc;
+
+  --card: #111827;
+  --border: #1f2937;
+
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --primary: #06b6d4;
+}
+
+/* =======================================================
+   ANIMATIONS
+======================================================= */
 
 @keyframes fadeIn {
   from {
@@ -64,18 +98,9 @@ body {
   animation-delay: .3s;
 }
 
-:root {
-  --background: #0f172a;
-  --foreground: #f8fafc;
-
-  --card: #111827;
-  --border: #1f2937;
-
-  --success: #22c55e;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --primary: #06b6d4;
-}
+/* =======================================================
+   GLOBAL
+======================================================= */
 
 *,
 *::before,
@@ -85,6 +110,7 @@ body {
 
 html {
   scroll-behavior: smooth;
+  transition: background .3s ease, color .3s ease;
 }
 
 body {
@@ -93,6 +119,10 @@ body {
 
   background: var(--background);
   color: var(--foreground);
+
+  transition:
+    background .3s ease,
+    color .3s ease;
 
   font-family:
     Inter,
@@ -109,7 +139,10 @@ body {
   overscroll-behavior-y: contain;
 }
 
-/* Scrollbar */
+/* =======================================================
+   SCROLLBAR
+======================================================= */
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -119,7 +152,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #64748b;
   border-radius: 9999px;
 }
 
@@ -127,31 +160,33 @@ body {
   background: #475569;
 }
 
-/* Header Glass */
+/* =======================================================
+   COMPONENTS
+======================================================= */
+
 .glass {
-  background: rgba(15, 23, 42, 0.92);
+  background: color-mix(in srgb, var(--background) 90%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* Cards */
 .card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 16px;
 
   transition:
-    transform 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
+    transform .25s ease,
+    border-color .25s ease,
+    box-shadow .25s ease,
+    background .3s ease;
 }
 
 .card:hover {
   transform: translateY(-2px);
-  border-color: #334155;
+  border-color: var(--primary);
 }
 
-/* Smooth animations */
 .smooth {
   transform: translateZ(0);
   will-change: transform;
@@ -159,7 +194,7 @@ body {
 
 .logo-text {
   font-weight: 800;
-  letter-spacing: -0.03em;
+  letter-spacing: -.03em;
 }
 
 .balance {

@@ -1,13 +1,15 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Bell,
   Menu,
   Trophy,
   Settings,
-  LogOut
+  LogOut,
+  Sun,
+  Moon
 } from 'lucide-react'
 
 type TopNavProps = {
@@ -22,20 +24,37 @@ export default function TopNav({
   onLogin,
   onLogout,
 }: TopNavProps) {
-  const router = useRouter()
+const router = useRouter()
+
 const [menuOpen, setMenuOpen] = useState(false)
+
+const [lightMode, setLightMode] = useState(false)
+
+useEffect(() => {
+  document.body.style.backgroundColor = lightMode
+    ? "#f0f2f5"
+    : "#000000"
+
+  document.body.style.color = lightMode
+    ? "#111827"
+    : "#ffffff"
+}, [lightMode])
   return (
-    <header
+<header
+  style={{
+    backgroundColor: "var(--background)",
+    color: "var(--foreground)",
+    borderBottom: "1px solid var(--border)",
+  }}
   className="
     fixed
     top-0
     left-0
     right-0
     z-50
-    bg-black/90
     backdrop-blur-xl
-    border-b
-    border-cyan-500/20
+    transition-all
+    duration-300
   "
 >
       <div className="max-w-5xl mx-auto h-16 px-6 flex items-center justify-between">
@@ -118,7 +137,7 @@ const [menuOpen, setMenuOpen] = useState(false)
       rounded-xl
       border
       border-white/5
-      bg-black/40
+      bg-[var(--card)]
       backdrop-blur-xl
       shadow-[inset_0_0_12px_rgba(34,211,238,0.05)]
       transition-all
@@ -159,7 +178,7 @@ const [menuOpen, setMenuOpen] = useState(false)
     />
 
 <div className="w-full flex justify-start p-0 m-0">
-  <h1 className="text-left p-0 m-0 text-2xl md:text-3xl font-bold tracking-tight text-slate-100 transition-colors duration-300">
+  <h1 className="text-left p-0 m-0 text-2xl md:text-3xl font-bold tracking-tight text-[var(--foreground)] transition-colors duration-300">
     street<span className="font-black text-emerald-400">go</span>
   </h1>
 </div>
@@ -372,6 +391,37 @@ const [menuOpen, setMenuOpen] = useState(false)
   >
     {/* Glow line */}
     <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
+
+
+{/* Theme Toggle */}
+<div className="absolute top-4 right-4 z-20">
+  <button
+onClick={() => setLightMode(!lightMode)}
+    className="
+      h-9
+      w-9
+      rounded-full
+      border
+      border-cyan-500/20
+      bg-white/5
+      flex
+      items-center
+      justify-center
+      text-yellow-400
+      hover:bg-cyan-500/10
+      transition-all
+      duration-300
+      hover:rotate-180
+    "
+  >
+{lightMode ? (
+  <Moon size={18} />
+) : (
+  <Sun size={18} />
+)}
+  </button>
+</div>
+
 
     <div className="relative z-10">
 
