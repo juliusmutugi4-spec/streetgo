@@ -43,9 +43,29 @@ const [drivers, setDrivers] = useState<any[]>([])
 const [driverInfo, setDriverInfo] = useState<any>(null)
 const [driverLat, setDriverLat] = useState(0)
 const [driverLng, setDriverLng] = useState(0)
+const [driverDistance, setDriverDistance] = useState(0)
+const [driverBearing, setDriverBearing] = useState(0)
 const mapRef = useRef<any>(null)
 const [route, setRoute] = useState<any>(null)
+async function loadRoute(
+  startLng: number,
+  startLat: number,
+  endLng: number,
+  endLat: number
+) {
+  const response = await fetch(
+    `https://api.mapbox.com/directions/v5/mapbox/driving/${startLng},${startLat};${endLng},${endLat}?geometries=geojson&access_token=${process.env.NEXT_PUBLIC_MAPBOX_TOKEN}`
+  )
 
+  const data = await response.json()
+
+  if (!data.routes?.length) return
+
+  setRoute({
+    type: 'Feature',
+    geometry: data.routes[0].geometry
+  })
+}
 const [connectionLine, setConnectionLine] = useState<any>({
   type: 'Feature',
   geometry: {
@@ -146,13 +166,36 @@ function calculateFare() {
 
 async function requestRide() {
 
-  if (!user || !selectedDriver) return
+  if (!user) return
+
+// Find the nearest online driver
+let nearestDriver: any = null
+let shortestDistance = Number.MAX_VALUE
+
+drivers
+  .filter(driver => driver.drivers.vehicle_type === rideType)
+  .forEach(driver => {
+    const distance = Math.sqrt(
+      Math.pow(driver.latitude - latitude, 2) +
+      Math.pow(driver.longitude - longitude, 2)
+    )
+
+    if (distance < shortestDistance) {
+      shortestDistance = distance
+      nearestDriver = driver
+    }
+  })
+
+if (!nearestDriver) {
+  alert('No nearby drivers available')
+  return
+}
 
   const { data } = await supabase
     .from('trips')
     .insert({
       passenger_id: user.id,
-      driver_id: selectedDriver.driver_id,
+      driver_id: nearestDriver.driver_id,
       pickup_lat: latitude,
       pickup_lng: longitude,
       destination,
@@ -165,6 +208,7 @@ if (data) {
   setTripId(data.id)
 }
   setSearching(true)
+  setSelectedDriver(nearestDriver)
 }
 
 useEffect(() => {
@@ -245,6 +289,18 @@ async function loadInitialDriverLocation() {
   if (data) {
     setDriverLat(data.latitude)
     setDriverLng(data.longitude)
+if (mapRef.current) {
+  mapRef.current.fitBounds(
+    [
+      [data.longitude, data.latitude],
+      [longitude, latitude]
+    ],
+    {
+      padding: 120,
+      duration: 1500
+    }
+  )
+}
   }
 
 }
@@ -263,16 +319,78 @@ loadInitialDriverLocation()
         table: 'driver_locations'
       },
 
-      (payload) => {
+      async (payload) => {
 
         const location = payload.new as any
 
         if (location.driver_id === driverInfo.id) {
+const bearing =
+  Math.atan2(
+    location.longitude - driverLng,
+    location.latitude - driverLat
+  ) * (180 / Math.PI)
 
-          setDriverLat(location.latitude)
+setDriverBearing(bearing)
+const startLat = driverLat
+const startLng = driverLng
 
-          setDriverLng(location.longitude)
+const endLat = location.latitude
+const endLng = location.longitude
 
+let progress = 0
+
+const animation = setInterval(() => {
+  progress += 0.1
+
+  if (progress >= 1) {
+    clearInterval(animation)
+
+    setDriverLat(endLat)
+    setDriverLng(endLng)
+
+    return
+  }
+
+  setDriverLat(
+    startLat + (endLat - startLat) * progress
+  )
+
+  setDriverLng(
+    startLng + (endLng - startLng) * progress
+  )
+
+}, 50)
+
+          await loadRoute(
+  location.longitude,
+  location.latitude,
+  longitude,
+  latitude
+)
+const distance =
+  Math.sqrt(
+    Math.pow(location.latitude - latitude, 2) +
+    Math.pow(location.longitude - longitude, 2)
+  ) * 111
+
+setDriverDistance(distance)
+
+if (distance < 0.05 && tripStatus !== 'arrived') {
+  await arrivedTrip()
+}
+
+if (mapRef.current) {
+  mapRef.current.fitBounds(
+    [
+      [location.longitude, location.latitude],
+      [longitude, latitude]
+    ],
+    {
+      padding: 120,
+      duration: 1000
+    }
+  )
+}
 setConnectionLine({
   type: 'Feature',
   geometry: {
@@ -577,13 +695,42 @@ onLoad={(e) => {
   <Marker
     longitude={driverLng}
     latitude={driverLat}
+    anchor="center"
   >
 
-    <div className="text-6xl animate-bounce">
+    <div className="relative">
 
-      {driverInfo.vehicle_type === 'boda'
-        ? '🏍️'
-        : '🚗'}
+      {/* Expanding pulse */}
+      <div className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />
+
+      {/* Soft glow */}
+      <div className="absolute inset-0 rounded-full bg-green-400 blur-xl opacity-60" />
+
+      {/* Vehicle */}
+<div
+  style={{
+    transform: `rotate(${driverBearing}deg)`,
+    transition: 'transform 0.3s linear'
+  }}
+  className="
+    relative
+    w-16
+    h-16
+    rounded-full
+    bg-white
+    border-4
+    border-green-500
+    shadow-2xl
+    flex
+    items-center
+    justify-center
+    text-3xl
+  "
+>
+        {driverInfo.vehicle_type === 'boda'
+          ? '🏍️'
+          : '🚗'}
+      </div>
 
     </div>
 
@@ -591,24 +738,27 @@ onLoad={(e) => {
 
 )}
 
-{rideAccepted && (
+{rideAccepted && route && (
   <Source
-    id="connection-line"
+    id="driver-route"
     type="geojson"
-    data={connectionLine}
+    data={route}
   >
     <Layer
-      id="connection-layer"
+      id="driver-route-line"
       type="line"
+      layout={{
+        'line-cap': 'round',
+        'line-join': 'round'
+      }}
       paint={{
         'line-color': '#22c55e',
-        'line-width': 6,
-        'line-opacity': 0.9
+        'line-width': 7,
+        'line-opacity': 0.95
       }}
     />
   </Source>
 )}
-
 <NavigationControl position="top-right" />
 
 <GeolocateControl
@@ -775,64 +925,49 @@ p-4
 
 <div className="mt-5">
 
-  <h2 className="font-bold text-lg mb-3">
-    Nearby Drivers
-  </h2>
+  <div
+    className="
+      bg-gradient-to-br
+      from-[#09111F]
+      to-[#121C2F]
+      border
+      border-cyan-500/20
+      rounded-3xl
+      p-6
+      text-center
+      text-white
+      shadow-2xl
+    "
+  >
 
-  <div className="space-y-3">
+    <div className="text-6xl mb-4 animate-pulse">
+      🚗
+    </div>
 
-{drivers
-  .filter(driver => driver.drivers.vehicle_type === rideType)
-  .map(driver => (
+    <h2 className="text-2xl font-black">
+      StreetGO Auto Match
+    </h2>
 
-<div
-  key={driver.id}
-  onClick={() => setSelectedDriver(driver)}
-className="
-bg-black/70
-backdrop-blur-md
-border border-cyan-500/20
-rounded-3xl
-p-4
-flex
-justify-between
-cursor-pointer
-text-white
-hover:border-cyan-400
-transition
-"
->
+    <p className="text-cyan-400 mt-3">
+      We'll automatically connect you with the nearest available driver.
+    </p>
 
-          <div>
-            <h3 className="font-bold">
-              {driver.drivers.full_name}
-            </h3>
+    <div className="mt-5 flex justify-center gap-3">
 
-            <p className="text-sm bg-cyan-500 text-black">
-              🟢 Online
-            </p>
-          </div>
+      <div className="px-4 py-2 rounded-full bg-green-500/20 text-green-400 text-sm font-bold">
+        🟢 Live Drivers
+      </div>
 
-          <div className="text-right">
-            <p className="font-semibold">
-              {driver.drivers.vehicle_type === 'boda'
- ? '🏍️ Bodaboda'
- : '🚗 Taxi'}
-            </p>
+      <div className="px-4 py-2 rounded-full bg-cyan-500/20 text-cyan-400 text-sm font-bold">
+        ⚡ Fast Match
+      </div>
 
-            <p className="text-sm bg-cyan-500 text-black">
-              away
-            </p>
-          </div>
-
-        </div>
-
-      ))}
+    </div>
 
   </div>
 
 </div>
-{selectedDriver && (
+{true && (
 
 <div className="mt-5 bg-[#09111F] border border-cyan-500/20 text-white rounded-3xl p-5">
 
@@ -844,7 +979,7 @@ transition
 
     <div>
 <h2 className="text-xl font-bold">
-  {selectedDriver.drivers.full_name}
+  {selectedDriver?.drivers?.full_name || 'Nearest Driver'}
 </h2>
 
 <p className="text-cyan-400">
@@ -852,24 +987,46 @@ transition
 </p>
 
 <p className="text-cyan-400">
-  {selectedDriver.drivers.vehicle_type === 'boda'
-    ? '🏍️ Bodaboda'
-    : '🚗 Taxi'}
+{selectedDriver?.drivers?.vehicle_type === 'boda'
+  ? '🏍️ Bodaboda'
+  : '🚗 Taxi'}
 </p>
-<button
-onClick={arrivedTrip}
-  className="w-full mt-4 bg-yellow-500 text-black p-4 rounded-3xl font-bold"
->
-  ARRIVED
-</button>
+{tripStatus !== 'arrived' &&
+ tripStatus !== 'ongoing' &&
+ tripStatus !== 'completed' && (
+  <button
+    onClick={arrivedTrip}
+    className="
+      w-full
+      mt-4
+      bg-yellow-500
+      text-black
+      p-4
+      rounded-3xl
+      font-bold
+    "
+  >
+    📍 ARRIVED
+  </button>
+)}
 
 
-<button
-onClick={startTrip}
-  className="w-full mt-3 bg-green-500 text-black p-4 rounded-3xl font-bold"
->
-  START TRIP
-</button>
+{tripStatus === 'arrived' && (
+  <button
+    onClick={startTrip}
+    className="
+      w-full
+      mt-3
+      bg-green-500
+      text-black
+      p-4
+      rounded-3xl
+      font-bold
+    "
+  >
+    ▶️ START TRIP
+  </button>
+)}
 
 <button
 onClick={endTrip}
@@ -887,14 +1044,14 @@ onClick={endTrip}
     <p>
       Vehicle:
       {' '}
-{selectedDriver.drivers.vehicle_type === 'boda'
- ? '🏍️ Bodaboda'
- : '🚗 Taxi'}
+{selectedDriver?.drivers?.vehicle_type === 'boda'
+  ? '🏍️ Bodaboda'
+  : '🚗 Taxi'}
     </p>
 
     <p>
   Plate:
-{selectedDriver.drivers.plate_number}
+{selectedDriver?.drivers?.plate_number || 'Searching...'}
     </p>
 
   </div>
@@ -910,7 +1067,7 @@ onClick={requestRide}
     font-bold
   "
 >
-  Request Ride
+  Find Nearest Driver
 </button>
 
 </div>
@@ -997,9 +1154,37 @@ onClick={requestRide}
   Plate {driverInfo?.plate_number}
 </p>
 
-<p className="text-green-400 font-bold">
-  🚗 Driver is coming...
-</p>
+<div className="mt-3 space-y-3">
+
+  <p className="text-green-400 font-bold text-lg">
+    🚗 Driver is coming...
+  </p>
+
+  <p className="text-cyan-400 font-semibold">
+    📍 Distance: {driverDistance < 1
+      ? `${Math.round(driverDistance * 1000)} m`
+      : `${driverDistance.toFixed(1)} km`}
+  </p>
+
+  <p className="text-yellow-400 font-semibold">
+    ⏱️ ETA: {Math.max(1, Math.round(driverDistance * 2))} min
+  </p>
+
+  <div className="w-full h-3 bg-zinc-700 rounded-full overflow-hidden">
+
+    <div
+      className="h-full bg-green-500 transition-all duration-500"
+      style={{
+        width: `${Math.max(
+          5,
+          100 - Math.min(driverDistance * 20, 100)
+        )}%`
+      }}
+    />
+
+  </div>
+
+</div>
 
 <p className="text-zinc-400">
   Live tracking enabled

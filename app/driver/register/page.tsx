@@ -54,11 +54,11 @@ const { error } = await supabase
     status: 'pending'
   })
 
-  if (error) {
-    alert(error.message)
-  } else {
-    alert('Application submitted successfully')
-  }
+if (error) {
+  alert(error.message)
+} else {
+  window.location.href = '/driver'
+}
 }
 
 

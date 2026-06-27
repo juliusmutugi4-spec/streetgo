@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
 export default function LoginModal({ onClose, onLogin }: { onClose: () => void, onLogin: () => void }) {
@@ -30,6 +30,14 @@ export default function LoginModal({ onClose, onLogin }: { onClose: () => void, 
     alert('Password reset link sent to your email')
   }
 
+  
+useEffect(() => {
+  document.body.style.overflow = 'hidden'
+
+  return () => {
+    document.body.style.overflow = 'auto'
+  }
+}, [])
 
   const handleAuth = async () => {
     setLoading(true)

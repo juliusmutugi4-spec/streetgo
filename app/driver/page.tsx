@@ -8,6 +8,7 @@ export default function DriverPage() {
   const [online, setOnline] = useState(false)
 
   const [driverId, setDriverId] = useState('')
+const [driverStatus, setDriverStatus] = useState('')
 
   
 const [requests, setRequests] = useState<any[]>([])
@@ -19,8 +20,8 @@ const notificationSound =
   typeof Audio !== 'undefined'
     ? new Audio('/alert.mp3')
     : null
-async function loadRequests() {
 
+async function loadRequests() {
   const { data } = await supabase
     .from('ride_requests')
     .select('*')
@@ -32,7 +33,6 @@ async function loadRequests() {
 }
 
 async function acceptRide(request: any) {
-
   if (!driverId) return
 
   const { error } = await supabase
@@ -44,31 +44,23 @@ async function acceptRide(request: any) {
     .eq('id', request.id)
 
   if (!error) {
+    setCurrentRide(request)
 
- setCurrentRide(request)
+    incomingRide?.sound?.pause()
+    setIncomingRide(null)
 
-incomingRide?.sound?.pause()
-setIncomingRide(null)
-
-setRequests(prev =>
-  prev.filter(r => r.id !== request.id)
-)
-
+    setRequests(prev =>
+      prev.filter(r => r.id !== request.id)
+    )
   }
-
 }
-
-
-useEffect(() => {
-  loadRequests()
-}, [])
 
 useEffect(() => {
   loadDriver()
+  loadRequests()
 }, [])
 
 async function loadDriver() {
-
   const {
     data: { user }
   } = await supabase.auth.getUser()
@@ -77,23 +69,26 @@ async function loadDriver() {
 
   const { data } = await supabase
     .from('drivers')
-    .select('id')
+    .select('id, status')
     .eq('user_id', user.id)
-    .single()
-console.log('USER ID:', user.id)
-console.log('DRIVER DATA:', data)
+    .maybeSingle()
+
+  console.log('USER ID:', user.id)
+  console.log('DRIVER DATA:', data)
+
   if (!data) return
 
   setDriverId(data.id)
+  setDriverStatus(data.status)
 
-  // check location row
+  if (data.status !== 'approved') return
+
   const { data: existing } = await supabase
     .from('driver_locations')
     .select('*')
     .eq('driver_id', data.id)
     .maybeSingle()
 
-  // create if missing
   if (!existing) {
     await supabase
       .from('driver_locations')
@@ -103,19 +98,15 @@ console.log('DRIVER DATA:', data)
         longitude: 0,
         online: false
       })
+
+    setOnline(false)
   } else {
     setOnline(existing.online)
   }
 }
 
 async function toggleOnline() {
-
-  alert('BUTTON CLICKED')
-
-  if (!driverId) {
-    alert('NO DRIVER ID')
-    return
-  }
+  if (!driverId) return
 
   const newStatus = !online
 
@@ -131,20 +122,39 @@ async function toggleOnline() {
   if (error) {
     console.log(error)
     alert(error.message)
-  } else {
-    alert('UPDATED')
   }
-
 }
 
 useEffect(() => {
+  const channel = supabase
+    .channel('driver-status')
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'drivers'
+      },
+      (payload) => {
+        const driver = payload.new as any
 
+        if (driver.id === driverId) {
+          setDriverStatus(driver.status)
+        }
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [driverId])
+
+useEffect(() => {
   if (!online || !driverId) return
 
   const watchId = navigator.geolocation.watchPosition(
-
     async (position) => {
-
       await supabase
         .from('driver_locations')
         .update({
@@ -152,23 +162,17 @@ useEffect(() => {
           longitude: position.coords.longitude
         })
         .eq('driver_id', driverId)
-
     },
-
     (error) => console.log(error),
-
     {
       enableHighAccuracy: true
     }
-
   )
 
   return () => navigator.geolocation.clearWatch(watchId)
-
 }, [online, driverId])
 
 useEffect(() => {
-
   const channel = supabase
     .channel('ride-requests')
     .on(
@@ -178,76 +182,114 @@ useEffect(() => {
         schema: 'public',
         table: 'ride_requests'
       },
-async (payload) => {
-
- if (notificationSound) {
-  notificationSound.loop = true
-  notificationSound.play()
+      async (payload) => {
+        const ride = payload.new as any
+if (ride.driver_id !== driverId) {
+  return
 }
+        // Ignore rides that are not searching
+        if (ride.status !== 'searching') return
 
-  setIncomingRide({
-    ...payload.new,
-    sound: notificationSound
-  })
-const { data } = await supabase
-  .from('profiles')
-  .select('*')
-  .eq('id', payload.new.passenger_id)
-  .single()
+        // Ignore when driver is offline
+        if (!online) return
 
-setPassengerInfo(data)
-  
+        if (notificationSound) {
+          notificationSound.loop = true
+          notificationSound.play()
+        }
 
-  setRequests(prev => [
-    payload.new,
-    ...prev
-  ])
+        setIncomingRide({
+          ...ride,
+          sound: notificationSound
+        })
 
-}
+        const { data } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', ride.passenger_id)
+          .single()
+
+        setPassengerInfo(data)
+
+        setRequests(prev => [
+          ride,
+          ...prev
+        ])
+      }
     )
     .subscribe()
 
   return () => {
     supabase.removeChannel(channel)
   }
-
-}, [])
-
-useEffect(() => {
-  loadRequests()
-}, [])
-
+}, [online])
 
 useEffect(() => {
-
   if (!incomingRide) return
 
   setCountdown(20)
 
   const interval = setInterval(() => {
-
     setCountdown(prev => {
-
       if (prev <= 1) {
-
         incomingRide.sound?.pause()
-
         setIncomingRide(null)
-
         clearInterval(interval)
-
         return 0
       }
 
       return prev - 1
-
     })
-
   }, 1000)
 
   return () => clearInterval(interval)
-
 }, [incomingRide])
+
+if (driverStatus === 'pending') {
+  return (
+    <main className="min-h-screen bg-[#060608] flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-zinc-900 rounded-3xl p-8 text-center">
+
+        <div className="text-6xl mb-5">⏳</div>
+
+        <h1 className="text-3xl font-black text-white">
+          Application Under Review
+        </h1>
+
+        <p className="text-zinc-400 mt-4">
+          Your driver application has been received.
+        </p>
+
+        <p className="text-zinc-400 mt-2">
+          We'll notify you once your documents have been reviewed.
+        </p>
+
+      </div>
+    </main>
+  )
+}
+
+if (driverStatus === 'rejected') {
+  return (
+    <main className="min-h-screen bg-[#060608] flex items-center justify-center p-6">
+      <div className="max-w-md w-full bg-zinc-900 rounded-3xl p-8 text-center">
+
+        <div className="text-6xl mb-5">❌</div>
+
+        <h1 className="text-3xl font-black text-white">
+          Application Rejected
+        </h1>
+
+        <p className="text-zinc-400 mt-4">
+          Please contact support or submit a new application.
+        </p>
+
+      </div>
+    </main>
+  )
+}
+
+
 
 return (
   <main className="min-h-screen bg-[#060608] text-white p-6">

@@ -36,10 +36,14 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [showLogin, setShowLogin] = useState(false)
   const [profile, setProfile] = useState<any>(null)
+  const [isApprovedDriver, setIsApprovedDriver] = useState(false)
+  const [driverOnline, setDriverOnline] = useState(false)
 const [predictions, setPredictions] = useState<PredictionType[]>([])
 const [voteCounts, setVoteCounts] = useState<any>({})
 const [showNav, setShowNav] = useState(true)
 const [lastScrollY, setLastScrollY] = useState(0)
+const [pendingRideCount, setPendingRideCount] = useState(0)
+
   // Fetch unread messages count
   const fetchUnreadMessages = async (userId: string) => {
     const { count } = await supabase
@@ -50,69 +54,154 @@ const [lastScrollY, setLastScrollY] = useState(0)
     setUnreadCount(count || 0)
   }
 
-  useEffect(() => {
-    const checkUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+const checkUser = async () => {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
+  setUser(session?.user ?? null)
+
+  if (session?.user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select(`
+        username,
+        avatar_url,
+        reputation,
+        predictions_correct,
+        predictions_wrong
+      `)
+      .eq('id', session.user.id)
+      .single()
+
+    setProfile(data)
+
+    const { data: driver } = await supabase
+      .from('drivers')
+      .select('id, status')
+      .eq('user_id', session.user.id)
+      .maybeSingle()
+
+    if (driver?.status === 'approved') {
+      const { data: location } = await supabase
+        .from('driver_locations')
+        .select('online')
+        .eq('driver_id', driver.id)
+        .maybeSingle()
+
+      setDriverOnline(location?.online ?? false)
+    }
+
+    setIsApprovedDriver(driver?.status === 'approved')
+
+    await fetchUnreadMessages(session.user.id)
+  }
+
+ fetchPosts()
+fetchPredictions()
+fetchVoteCounts()
+loadPendingRideCount()
+}
+
+async function loadPendingRideCount() {
+  const { count } = await supabase
+    .from('ride_requests')
+    .select('*', {
+      count: 'exact',
+      head: true,
+    })
+    .eq('status', 'searching')
+
+  setPendingRideCount(count || 0)
+}
+
+
+
+useEffect(() => {
+  checkUser()
+
+  const { data: sub } = supabase.auth.onAuthStateChange(
+    async (_event, session) => {
       setUser(session?.user ?? null)
 
       if (session?.user) {
         const { data } = await supabase
-.from('profiles')
-.select(`
-  username,
-  avatar_url,
-  reputation,
-  predictions_correct,
-  predictions_wrong
-`)
+          .from('profiles')
+          .select(`
+            username,
+            avatar_url,
+            reputation,
+            predictions_correct,
+            predictions_wrong
+          `)
           .eq('id', session.user.id)
           .single()
 
         setProfile(data)
 
-        // ✅ fetch unread messages here
         await fetchUnreadMessages(session.user.id)
+
+        // Refresh driver information too
+        checkUser()
+      } else {
+        setProfile(null)
+        setUnreadCount(0)
+        setIsApprovedDriver(false)
+        setDriverOnline(false)
       }
-fetchPosts()
-fetchPredictions()
-fetchVoteCounts()
     }
+  )
 
-    checkUser()
+  return () => sub.subscription.unsubscribe()
+}, [])
 
-    const { data: sub } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setUser(session?.user ?? null)
 
-        if (session?.user) {
-          const { data } = await supabase
-            .from('profiles')
-            .select(`
-  username,
-  avatar_url,
-  reputation,
-  predictions_correct,
-  predictions_wrong
-`)
-            .eq('id', session.user.id)
-            .single()
 
-          setProfile(data)
-console.log('PROFILE DATA:', data)
-          // ✅ update unread messages on login
-          await fetchUnreadMessages(session.user.id)
-        } else {
-          setProfile(null)
-          setUnreadCount(0)
-        }
+useEffect(() => {
+  const channel = supabase
+    .channel('driver-approval')
+
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'drivers'
+      },
+      async () => {
+        await checkUser()
       }
     )
 
-    return () => sub.subscription.unsubscribe()
-  }, [])
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [])
+
+useEffect(() => {
+  const channel = supabase
+    .channel('ride-count')
+
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'ride_requests'
+      },
+      () => {
+        loadPendingRideCount()
+      }
+    )
+
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [])
 
 useEffect(() => {
   const handleScroll = () => {
@@ -502,6 +591,57 @@ const { data: updateData, error: updateError } = await supabase
       </div>
 </div>
       {/* BottomNav fixed */}
+{isApprovedDriver && (
+  <div className="fixed bottom-20 left-4 right-4 z-40">
+    <button
+      onClick={() => {
+        window.location.href = '/driver'
+      }}
+      className="
+        w-full
+        rounded-2xl
+        bg-[#6D1B1B]
+        px-5
+        py-4
+        shadow-2xl
+        border
+        border-[#8B2C2C]
+        flex
+        items-center
+        justify-between
+        text-white
+        transition
+        hover:bg-[#7A2222]
+      "
+    >
+      <div>
+        <h2 className="font-bold text-lg">
+          🚗 Driver Dashboard
+        </h2>
+
+<p className="text-sm text-red-200">
+  {driverOnline
+    ? `${pendingRideCount} ride request${pendingRideCount === 1 ? '' : 's'} waiting`
+    : 'Tap to start driving'}
+</p>
+      </div>
+<div className="flex items-center gap-2">
+  <div
+    className={`w-3 h-3 rounded-full ${
+      driverOnline
+        ? 'bg-green-400'
+        : 'bg-red-500'
+    }`}
+  />
+
+  <span className="text-sm font-semibold">
+    {driverOnline ? 'Online' : 'Offline'}
+  </span>
+</div>
+    </button>
+  </div>
+)}
+
       <BottomNav
         user={user}
         profile={profile}
