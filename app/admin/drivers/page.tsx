@@ -6,23 +6,39 @@ import { supabase } from '../../lib/supabase'
 export default function AdminDriversPage() {
   const [drivers, setDrivers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    loadDrivers()
-  }, [])
-
+const [approvedCount, setApprovedCount] = useState(0)
+const [rejectedCount, setRejectedCount] = useState(0)
+const [pendingCount, setPendingCount] = useState(0)
+const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected'>('pending')
+useEffect(() => {
+  loadDrivers()
+}, [filter])
   async function loadDrivers() {
     setLoading(true)
 
-    const { data, error } = await supabase
-      .from('drivers')
-      .select('*')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-
+const { data, error } = await supabase
+  .from('drivers')
+  .select('*')
+  .eq('status', filter)
+  .order('created_at', { ascending: false })
     if (!error && data) {
       setDrivers(data)
+      setPendingCount(data.length)
     }
+
+const { count: approved } = await supabase
+  .from('drivers')
+  .select('*', { count: 'exact', head: true })
+  .eq('status', 'approved')
+
+setApprovedCount(approved || 0)
+
+const { count: rejected } = await supabase
+  .from('drivers')
+  .select('*', { count: 'exact', head: true })
+  .eq('status', 'rejected')
+
+setRejectedCount(rejected || 0)
 
     setLoading(false)
   }
@@ -50,6 +66,7 @@ async function approveDriver(driver: any) {
     })
 
   loadDrivers()
+
 }
 
 
@@ -59,15 +76,115 @@ async function approveDriver(driver: any) {
 
       <div className="max-w-5xl mx-auto">
 
-        <h1 className="text-4xl font-black mb-8">
-          🚗 Driver Applications
-        </h1>
+<div className="mb-8">
+
+  <h1 className="text-4xl font-black">
+    🚖 Driver Management
+  </h1>
+
+  <p className="text-zinc-400 mt-2">
+    Review, approve and manage driver applications.
+  </p>
+
+</div>
 
         {loading && (
           <div className="text-zinc-400">
             Loading...
           </div>
         )}
+
+<div className="grid grid-cols-3 gap-4 mb-8">
+
+  <div
+  onClick={() => setFilter('pending')}
+  className={`
+    cursor-pointer
+    rounded-3xl
+    p-5
+    text-center
+    border
+    transition-all
+    duration-300
+
+    ${
+      filter === 'pending'
+        ? 'bg-yellow-500/20 border-yellow-500 scale-[1.02]'
+        : 'bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/15'
+    }
+  `}
+>
+    <p className="text-4xl">🟡</p>
+
+    <h2 className="text-3xl font-black mt-2">
+      {pendingCount}
+    </h2>
+
+    <p className="text-zinc-400 text-sm mt-1">
+      Pending
+    </p>
+  </div>
+
+  <div
+  onClick={() => setFilter('approved')}
+  className={`
+    cursor-pointer
+    rounded-3xl
+    p-5
+    text-center
+    border
+    transition-all
+    duration-300
+
+    ${
+      filter === 'approved'
+        ? 'bg-green-500/20 border-green-500 scale-[1.02]'
+        : 'bg-green-500/10 border-green-500/30 hover:bg-green-500/15'
+    }
+  `}
+>
+    <p className="text-4xl">✅</p>
+
+    <h2 className="text-3xl font-black mt-2">
+      {approvedCount}
+    </h2>
+
+    <p className="text-zinc-400 text-sm mt-1">
+      Approved
+    </p>
+  </div>
+
+  <div
+  onClick={() => setFilter('rejected')}
+  className={`
+    cursor-pointer
+    rounded-3xl
+    p-5
+    text-center
+    border
+    transition-all
+    duration-300
+
+    ${
+      filter === 'rejected'
+        ? 'bg-red-500/20 border-red-500 scale-[1.02]'
+        : 'bg-red-500/10 border-red-500/30 hover:bg-red-500/15'
+    }
+  `}
+>
+    <p className="text-4xl">❌</p>
+
+    <h2 className="text-3xl font-black mt-2">
+      {rejectedCount}
+    </h2>
+
+    <p className="text-zinc-400 text-sm mt-1">
+      Rejected
+    </p>
+  </div>
+
+</div>
+
 
         <div className="space-y-5">
 
@@ -83,70 +200,212 @@ async function approveDriver(driver: any) {
               "
             >
 
-              <h2 className="text-2xl font-bold">
-                {driver.full_name}
-              </h2>
-<div className="mt-4 space-y-2 text-zinc-300">
+<div className="flex items-center justify-between">
 
-  <p>
-    📞 {driver.phone}
-  </p>
+  <div className="flex items-center gap-4">
 
-  <p>
-    🪪 ID: {driver.id_number}
-  </p>
-
-  <p>
-    🚘 Plate: {driver.plate_number}
-  </p>
-
-  <p>
-    🏍️ Vehicle Type: {driver.vehicle_type}
-  </p>
-
-  <p>
-    🚘 Model: {driver.vehicle_model}
-  </p>
-
-  <p>
-    🎨 Color: {driver.vehicle_color}
-  </p>
-
-  <div className="pt-4 space-y-2">
-
-    <a
-      href={driver.license_url}
-      target="_blank"
-      className="block text-cyan-400"
+    <div
+      className="
+        w-16
+        h-16
+        rounded-full
+        bg-gradient-to-br
+        from-cyan-500
+        to-blue-600
+        flex
+        items-center
+        justify-center
+        text-3xl
+        shadow-lg
+      "
     >
-      🪪 View Driving License
-    </a>
+      👤
+    </div>
 
-    <a
-      href={driver.id_front_url}
-      target="_blank"
-      className="block text-cyan-400"
-    >
-      🆔 View ID Front
-    </a>
+    <div>
+
+      <h2 className="text-2xl font-black">
+        {driver.full_name}
+      </h2>
+
+      <p className="text-zinc-400">
+        Driver Applicant
+      </p>
+
+    </div>
+
+  </div>
+
+<div
+  className={`
+    px-4
+    py-2
+    rounded-full
+    font-bold
+    text-sm
+    border
+
+    ${
+      driver.status === 'approved'
+        ? 'bg-green-500/20 text-green-400 border-green-500/30'
+        : driver.status === 'rejected'
+        ? 'bg-red-500/20 text-red-400 border-red-500/30'
+        : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+    }
+  `}
+>
+  {driver.status === 'approved'
+    ? '🟢 APPROVED'
+    : driver.status === 'rejected'
+    ? '🔴 REJECTED'
+    : '🟡 PENDING'}
+</div>
+
+</div>
+<div className="mt-6 grid grid-cols-2 gap-4 text-sm">
+
+  <div className="bg-zinc-800 rounded-2xl p-4">
+    <p className="text-zinc-500">📞 Phone</p>
+    <p className="font-bold text-white mt-1">
+      {driver.phone}
+    </p>
+  </div>
+
+  <div className="bg-zinc-800 rounded-2xl p-4">
+    <p className="text-zinc-500">🪪 National ID</p>
+    <p className="font-bold text-white mt-1">
+      {driver.national_id}
+    </p>
+  </div>
+
+  <div className="bg-zinc-800 rounded-2xl p-4">
+    <p className="text-zinc-500">🏍 Vehicle Type</p>
+    <p className="font-bold text-white mt-1">
+      {driver.vehicle_type}
+    </p>
+  </div>
+
+  <div className="bg-zinc-800 rounded-2xl p-4">
+    <p className="text-zinc-500">🚘 Plate Number</p>
+    <p className="font-bold text-white mt-1">
+      {driver.plate_number}
+    </p>
+  </div>
+
+  <div className="bg-zinc-800 rounded-2xl p-4">
+    <p className="text-zinc-500">🚘 Vehicle Model</p>
+    <p className="font-bold text-white mt-1">
+      {driver.vehicle_model}
+    </p>
+  </div>
+
+  <div className="bg-zinc-800 rounded-2xl p-4">
+    <p className="text-zinc-500">🎨 Vehicle Color</p>
+    <p className="font-bold text-white mt-1">
+      {driver.vehicle_color}
+    </p>
+  </div>
+
+<div className="mt-8">
+
+  <h3 className="text-lg font-bold mb-4">
+    📂 Verification Documents
+  </h3>
+
+  <div className="grid grid-cols-2 gap-4">
+
+<a
+  href={driver.license_url}
+  target="_blank"
+  className="
+    block
+    bg-zinc-800
+    border
+    border-zinc-700
+    rounded-2xl
+    overflow-hidden
+    hover:border-cyan-500
+    transition-all
+    duration-300
+    hover:scale-[1.02]
+  "
+>
+
+  <img
+    src={driver.license_url}
+    alt="Driving License"
+    className="
+      w-full
+      h-40
+      object-cover
+    "
+  />
+
+  <div className="p-4">
+
+    <p className="font-bold">
+      🪪 Driving License
+    </p>
+
+    <p className="text-cyan-400 text-sm mt-1">
+      Click to view full image
+    </p>
+
+  </div>
+
+</a>
 
     <a
       href={driver.id_back_url}
       target="_blank"
-      className="block text-cyan-400"
+      className="
+        bg-zinc-800
+        border
+        border-zinc-700
+        rounded-2xl
+        p-4
+        hover:border-cyan-500
+        transition
+      "
     >
-      🆔 View ID Back
+      <p className="text-3xl">🆔</p>
+
+      <p className="font-bold mt-3">
+        ID Back
+      </p>
+
+      <p className="text-cyan-400 text-sm mt-2">
+        View Document →
+      </p>
     </a>
 
     <a
       href={driver.vehicle_photo_url}
       target="_blank"
-      className="block text-cyan-400"
+      className="
+        bg-zinc-800
+        border
+        border-zinc-700
+        rounded-2xl
+        p-4
+        hover:border-cyan-500
+        transition
+      "
     >
-      🏍️ View Vehicle Photo
+      <p className="text-3xl">🏍️</p>
+
+      <p className="font-bold mt-3">
+        Vehicle Photo
+      </p>
+
+      <p className="text-cyan-400 text-sm mt-2">
+        View Document →
+      </p>
     </a>
 
   </div>
+
+</div>
 
   <p>
     Status:
@@ -159,20 +418,27 @@ async function approveDriver(driver: any) {
 
 <div className="mt-6 flex gap-4">
 
-  <button
-    onClick={() => approveDriver(driver)}
-    className="
+<button
+  disabled={driver.status === 'approved'}
+  onClick={() => approveDriver(driver)}
+  className={`
     flex-1
-    px-6
-    py-3
+    py-4
     rounded-2xl
-    bg-green-500
-    text-black
     font-black
-    "
-  >
-    ✅ Approve
-  </button>
+    transition
+
+    ${
+      driver.status === 'approved'
+        ? 'bg-emerald-800 text-green-300 cursor-default'
+        : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-[1.02] text-white'
+    }
+  `}
+>
+  {driver.status === 'approved'
+    ? '✔ Approved'
+    : '✅ Approve'}
+</button>
 
   <button
     onClick={async () => {
@@ -187,15 +453,22 @@ async function approveDriver(driver: any) {
       loadDrivers()
 
     }}
-    className="
-    flex-1
-    px-6
-    py-3
-    rounded-2xl
-    bg-red-500
-    text-white
-    font-black
-    "
+className="
+flex-1
+py-4
+rounded-2xl
+bg-gradient-to-r
+from-red-500
+to-rose-600
+hover:scale-[1.02]
+transition-all
+duration-300
+font-black
+text-lg
+text-white
+shadow-lg
+shadow-red-500/20
+"
   >
     ❌ Reject
   </button>

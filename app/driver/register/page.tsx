@@ -17,7 +17,6 @@ const [idBack, setIdBack] = useState<File | null>(null)
 const [vehiclePhoto, setVehiclePhoto] = useState<File | null>(null)
 const [status, setStatus] = useState('pending')
 
-
 async function submitApplication() {
 
   const {
@@ -29,36 +28,133 @@ async function submitApplication() {
     return
   }
 
-const { data: existingDriver } = await supabase
-  .from('drivers')
-  .select('id,status')
-  .eq('user_id', user.id)
-  .single()
+  const { data: existingDriver } = await supabase
+    .from('drivers')
+    .select('id,status')
+    .eq('user_id', user.id)
+    .maybeSingle()
 
-if (existingDriver) {
-  alert(`Application already exists (${existingDriver.status})`)
-  return
-}
+  if (existingDriver) {
+    alert(`Application already exists (${existingDriver.status})`)
+    return
+  }
 
-const { error } = await supabase
-  .from('drivers')
-  .insert({
-    user_id: user.id,
-    full_name: fullName,
-    phone,
-    national_id: idNumber,
-    vehicle_type: vehicleType,
-    plate_number: plateNumber,
-    vehicle_model: vehicleModel,
-    vehicle_color: vehicleColor,
-    status: 'pending'
-  })
+  let licenseUrl = ''
+  let idFrontUrl = ''
+  let idBackUrl = ''
+  let vehiclePhotoUrl = ''
 
-if (error) {
-  alert(error.message)
-} else {
+  // Upload Driving License
+  if (licensePhoto) {
+
+    const fileName = `${user.id}-${Date.now()}-${licensePhoto.name}`
+
+    const { error } = await supabase.storage
+      .from('driver-license')
+      .upload(fileName, licensePhoto)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    const { data } = supabase.storage
+      .from('driver-license')
+      .getPublicUrl(fileName)
+
+    licenseUrl = data.publicUrl
+  }
+
+  // Upload ID Front
+  if (idFront) {
+
+    const fileName = `${user.id}-front-${Date.now()}-${idFront.name}`
+
+    const { error } = await supabase.storage
+      .from('driver-id')
+      .upload(fileName, idFront)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    const { data } = supabase.storage
+      .from('driver-id')
+      .getPublicUrl(fileName)
+
+    idFrontUrl = data.publicUrl
+  }
+
+  // Upload ID Back
+  if (idBack) {
+
+    const fileName = `${user.id}-back-${Date.now()}-${idBack.name}`
+
+    const { error } = await supabase.storage
+      .from('driver-id')
+      .upload(fileName, idBack)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    const { data } = supabase.storage
+      .from('driver-id')
+      .getPublicUrl(fileName)
+
+    idBackUrl = data.publicUrl
+  }
+
+  // Upload Vehicle Photo
+  if (vehiclePhoto) {
+
+    const fileName = `${user.id}-vehicle-${Date.now()}-${vehiclePhoto.name}`
+
+    const { error } = await supabase.storage
+      .from('driver-vehicle')
+      .upload(fileName, vehiclePhoto)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    const { data } = supabase.storage
+      .from('driver-vehicle')
+      .getPublicUrl(fileName)
+
+    vehiclePhotoUrl = data.publicUrl
+  }
+
+  const { error } = await supabase
+    .from('drivers')
+    .insert({
+      user_id: user.id,
+      full_name: fullName,
+      phone,
+      national_id: idNumber,
+      vehicle_type: vehicleType,
+      plate_number: plateNumber,
+      vehicle_model: vehicleModel,
+      vehicle_color: vehicleColor,
+      status: 'pending',
+
+      license_url: licenseUrl,
+      id_front_url: idFrontUrl,
+      id_back_url: idBackUrl,
+      vehicle_photo_url: vehiclePhotoUrl
+    })
+
+  if (error) {
+    alert(error.message)
+    return
+  }
+
+  alert('Application submitted successfully!')
+
   window.location.href = '/driver'
-}
 }
 
 
