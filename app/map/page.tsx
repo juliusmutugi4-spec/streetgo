@@ -35,6 +35,13 @@ const [drivers, setDrivers] = useState<any[]>([])
 const [driverInfo, setDriverInfo] = useState<any>(null)
 const [driverLat, setDriverLat] = useState(0)
 const [driverLng, setDriverLng] = useState(0)
+
+const [viewState, setViewState] = useState({
+  longitude: 36.817223,
+  latitude: -1.286389,
+  zoom: 15
+})
+
 const [fare, setFare] = useState(0)
 useEffect(() => {
   loadDrivers()
@@ -73,18 +80,36 @@ useEffect(() => {
 }, [])
 
 useEffect(() => {
-
-  navigator.geolocation.getCurrentPosition(
+  const watchId = navigator.geolocation.watchPosition(
     (position) => {
-      setLongitude(position.coords.longitude)
-      setLatitude(position.coords.latitude)
+      const lng = position.coords.longitude
+      const lat = position.coords.latitude
+
+      setLongitude(lng)
+      setLatitude(lat)
+
+      setViewState((prev) => ({
+        ...prev,
+        longitude: lng,
+        latitude: lat
+      }))
     },
-    (error) => console.log(error)
+    (error) => console.log(error),
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 10000
+    }
   )
 
+  return () => {
+    navigator.geolocation.clearWatch(watchId)
+  }
 }, [])
 
-
+useEffect(() => {
+  setPickup([longitude, latitude])
+}, [longitude, latitude])
 function calculateFare() {
 
   let base = rideType === 'boda' ? 100 : 250
@@ -328,6 +353,8 @@ return (
 )}
 
 <Map
+  {...viewState}
+  onMove={(evt) => setViewState(evt.viewState)}
   mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
   initialViewState={{
     longitude,
