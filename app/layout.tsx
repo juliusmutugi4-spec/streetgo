@@ -1,6 +1,3 @@
-import './globals.css'
-import 'mapbox-gl/dist/mapbox-gl.css'
-import Providers from './providers'
 import type { Metadata, Viewport } from 'next'
 
 export const viewport: Viewport = {
@@ -18,9 +15,32 @@ export const metadata: Metadata = {
     template: '%s | StreetGO',
   },
 
-  description: 'Connect • Share • Grow',
+  description:
+    "StreetGO is Kenya's all-in-one social platform for videos, maps, messaging, drivers, communities, and local discovery.",
 
-  manifest: '/manifest.json',
+  keywords: [
+    'StreetGO',
+    'Kenya social network',
+    'Kenya social media',
+    'Kenya videos',
+    'Kenya maps',
+    'drivers',
+    'community',
+    'chat',
+    'leaderboard',
+    'predictions',
+    'local discovery',
+  ],
+
+  authors: [
+    {
+      name: 'StreetGO',
+    },
+  ],
+
+  creator: 'StreetGO',
+
+  publisher: 'StreetGO',
 
   alternates: {
     canonical: '/',
@@ -28,7 +48,8 @@ export const metadata: Metadata = {
 
   openGraph: {
     title: 'StreetGO',
-    description: 'Connect • Share • Grow',
+    description:
+      "StreetGO is Kenya's all-in-one social platform for videos, maps, messaging, drivers, communities, and local discovery.",
     url: 'https://streetgo.app',
     siteName: 'StreetGO',
     locale: 'en_US',
@@ -38,8 +59,11 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'StreetGO',
-    description: 'Connect • Share • Grow',
+    description:
+      "StreetGO is Kenya's all-in-one social platform for videos, maps, messaging, drivers, communities, and local discovery.",
   },
+
+  manifest: '/manifest.json',
 
   appleWebApp: {
     capable: true,
@@ -51,18 +75,4 @@ export const metadata: Metadata = {
     icon: '/favicon.ico',
     apple: '/icon-192.png',
   },
-}
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="transition-colors duration-300">
-        <Providers>{children}</Providers>
-      </body>
-    </html>
-  )
 }
