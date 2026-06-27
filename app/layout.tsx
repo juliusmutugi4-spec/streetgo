@@ -46,22 +46,31 @@ export const metadata: Metadata = {
     canonical: '/',
   },
 
-  openGraph: {
-    title: 'StreetGO',
-    description:
-      "StreetGO is Kenya's all-in-one social platform for videos, maps, messaging, drivers, communities, and local discovery.",
-    url: 'https://streetgo.app',
-    siteName: 'StreetGO',
-    locale: 'en_US',
-    type: 'website',
-  },
+openGraph: {
+  title: 'StreetGO',
+  description:
+    "StreetGO is Kenya's all-in-one social platform for videos, maps, messaging, drivers, communities, and local discovery.",
+  url: 'https://streetgo.app',
+  siteName: 'StreetGO',
+  images: [
+    {
+      url: '/og-image.png',
+      width: 1200,
+      height: 630,
+      alt: 'StreetGO',
+    },
+  ],
+  locale: 'en_US',
+  type: 'website',
+},
 
-  twitter: {
-    card: 'summary_large_image',
-    title: 'StreetGO',
-    description:
-      "StreetGO is Kenya's all-in-one social platform for videos, maps, messaging, drivers, communities, and local discovery.",
-  },
+twitter: {
+  card: 'summary_large_image',
+  title: 'StreetGO',
+  description:
+    "StreetGO is Kenya's all-in-one social platform for videos, maps, messaging, drivers, communities, and local discovery.",
+  images: ['/og-image.png'],
+},
 
   manifest: '/manifest.json',
 
