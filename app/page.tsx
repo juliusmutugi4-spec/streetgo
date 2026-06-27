@@ -38,6 +38,8 @@ export default function Home() {
   const [profile, setProfile] = useState<any>(null)
 const [predictions, setPredictions] = useState<PredictionType[]>([])
 const [voteCounts, setVoteCounts] = useState<any>({})
+const [showNav, setShowNav] = useState(true)
+const [lastScrollY, setLastScrollY] = useState(0)
   // Fetch unread messages count
   const fetchUnreadMessages = async (userId: string) => {
     const { count } = await supabase
@@ -111,6 +113,30 @@ console.log('PROFILE DATA:', data)
 
     return () => sub.subscription.unsubscribe()
   }, [])
+
+useEffect(() => {
+  const handleScroll = () => {
+    const currentScrollY = window.scrollY
+
+    // Hide nav when scrolling down
+    if (currentScrollY > lastScrollY && currentScrollY > 80) {
+      setShowNav(false)
+    }
+
+    // Show nav when scrolling up
+    if (currentScrollY < lastScrollY) {
+      setShowNav(true)
+    }
+
+    setLastScrollY(currentScrollY)
+  }
+
+  window.addEventListener("scroll", handleScroll)
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll)
+  }
+}, [lastScrollY])
 
   const fetchPosts = async () => {
     const { data: postsData, error: postsError } = await supabase
@@ -272,7 +298,28 @@ const { data: updateData, error: updateError } = await supabase
   return (
     <main className="min-h-screen bg-[#060608] text-[#f4f4f5] antialiased selection:bg-emerald-500/30 font-sans tracking-tight relative overflow-x-hidden">
       {/* TopNav fixed */}
-      <TopNav user={user} onLogin={() => setShowLogin(true)} onLogout={handleLogout} />
+    <div
+  className={`
+    fixed
+    top-0
+    left-0
+    right-0
+    z-50
+    transition-transform
+    duration-300
+    ${
+      showNav
+        ? "translate-y-0"
+        : "-translate-y-full"
+    }
+  `}
+>
+  <TopNav
+    user={user}
+    onLogin={() => setShowLogin(true)}
+    onLogout={handleLogout}
+  />
+</div>
 
       {/* Feed scrollable */}
 <div
@@ -280,7 +327,6 @@ const { data: updateData, error: updateError } = await supabase
     max-w-7xl
     mx-auto
     px-4
-    pt-20
     pb-20
     lg:grid
     lg:grid-cols-12

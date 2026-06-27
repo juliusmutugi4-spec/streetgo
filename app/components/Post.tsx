@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 import VideoSchema from './VideoSchema'
 import PostSchema from './PostSchema'
+import LoginModal from './LoginModal'
 interface PostProps {
 post: {
   id: string
@@ -39,7 +40,9 @@ export default function Post({
 const [showComments, setShowComments] = useState(false)
   const username = post.username || 'Anonymous'
   const avatarUrl = post.avatar_url || '/avatar-placeholder.png'
-
+const [showLogin, setShowLogin] = useState(false)
+const [showMenu, setShowMenu] = useState(false)
+const menuRef = useRef<HTMLDivElement>(null)
   // Load likes & comments
   const loadPostData = async () => {
     // Likes count
@@ -95,9 +98,33 @@ const [showComments, setShowComments] = useState(false)
     }
   }, [post.id])
 
+useEffect(() => {
+  function handleClickOutside(event: MouseEvent) {
+    if (
+      menuRef.current &&
+      !menuRef.current.contains(event.target as Node)
+    ) {
+      setShowMenu(false)
+    }
+  }
+
+  document.addEventListener("mousedown", handleClickOutside)
+
+  return () => {
+    document.removeEventListener(
+      "mousedown",
+      handleClickOutside
+    )
+  }
+}, [])
+
+
   // Toggle like
   const toggleLike = async () => {
-    if (!user) return alert('Login first')
+    if (!user) {
+  setShowLogin(true)
+  return
+}
 
     if (liked) {
       await supabase
@@ -118,9 +145,13 @@ const [showComments, setShowComments] = useState(false)
   }
 
   // Add comment
-  const addComment = async () => {
-    if (!commentText.trim()) return
-    if (!user) return alert('Login first')
+const addComment = async () => {
+  if (!user) {
+    setShowLogin(true)
+    return
+  }
+
+  if (!commentText.trim()) return
 
 const { error } = await supabase
   .from('comments')
@@ -183,7 +214,7 @@ if (error) {
 
         
 {/* PRO HEADER */}
-<div className="mb-5 flex items-center justify-between">
+<div className="relative mb-5 flex items-center justify-between">
 
   <div className="flex items-center gap-3">
 
@@ -249,22 +280,86 @@ text-[15px] font-semibold text-white
 
   </div>
 
-  <button
+<button
+  onClick={() => setShowMenu(!showMenu)}
+  className="
+    h-8
+    w-8
+    rounded-lg
+    border
+    border-white/5
+    bg-white/[0.03]
+    text-zinc-400
+    hover:text-white
+    hover:bg-white/[0.06]
+    transition
+  "
+>
+  ⋯
+</button>
+
+{showMenu && (
+  <div
+    ref={menuRef}
     className="
-h-8
-w-8
-rounded-lg
+      absolute
+      right-4
+      top-16
+      z-50
+      w-56
+      overflow-hidden
+      rounded-2xl
       border
-      border-white/5
-      bg-white/[0.03]
-      text-zinc-400
-      hover:text-white
-      hover:bg-white/[0.06]
-      transition
+      border-cyan-500/20
+      bg-[#090b10]/95
+      backdrop-blur-2xl
+      shadow-[0_20px_60px_rgba(0,0,0,0.45)]
     "
   >
-    ⋯
-  </button>
+    <button
+      className="w-full px-5 py-3 text-left text-sm text-white hover:bg-white/5 transition"
+      onClick={async () => {
+        await navigator.clipboard.writeText(
+          `${window.location.origin}/post/${post.id}`
+        )
+        alert("✅ Link copied")
+        setShowMenu(false)
+      }}
+    >
+      📋 Copy Link
+    </button>
+
+    <button
+      className="w-full px-5 py-3 text-left text-sm text-white hover:bg-white/5 transition"
+      onClick={() => {
+        setShowMenu(false)
+      }}
+    >
+      🔖 Save Post
+    </button>
+
+    <button
+      className="w-full px-5 py-3 text-left text-sm text-white hover:bg-white/5 transition"
+      onClick={() => {
+        setShowMenu(false)
+      }}
+    >
+      🚩 Report
+    </button>
+
+    {user?.id === post.user_id && (
+      <button
+        className="w-full px-5 py-3 text-left text-sm text-red-400 hover:bg-red-500/10 transition"
+        onClick={() => {
+          setShowMenu(false)
+        }}
+      >
+        🗑 Delete Post
+      </button>
+    )}
+  </div>
+)}
+
 
 </div>
 
@@ -522,13 +617,20 @@ py-1.5
 
   {/* TRANSMIT */}
   <button
-    onClick={() =>
-      navigator.share?.({
-        title: 'CWV',
-        text: post.content,
-        url: window.location.href,
-      })
-    }
+onClick={async () => {
+  const url = `${window.location.origin}/post/${post.id}`
+
+  if (navigator.share) {
+    await navigator.share({
+      title: "StreetGO",
+      text: post.content,
+      url,
+    })
+  } else {
+    await navigator.clipboard.writeText(url)
+    alert("Post link copied!")
+  }
+}}
     className="
       ml-auto
       flex
@@ -712,7 +814,15 @@ py-1.5
   </>
 )}
 
-
+{showLogin && (
+  <LoginModal
+    onClose={() => setShowLogin(false)}
+    onLogin={() => {
+      setShowLogin(false)
+      loadPostData()
+    }}
+  />
+)}
 
 
       </div>

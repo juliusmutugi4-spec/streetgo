@@ -46,8 +46,8 @@ useEffect(() => {
     color: "var(--foreground)",
     borderBottom: "1px solid var(--border)",
   }}
-  className="
-    fixed
+className="
+    sticky
     top-0
     left-0
     right-0
@@ -55,7 +55,7 @@ useEffect(() => {
     backdrop-blur-xl
     transition-all
     duration-300
-  "
+"
 >
       <div className="max-w-5xl mx-auto h-16 px-6 flex items-center justify-between">
 
