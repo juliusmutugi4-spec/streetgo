@@ -1,11 +1,11 @@
 import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
-
+import BreadcrumbSchema from './breadcrumb-schema'
 import Providers from './providers'
 import Schema from './schema'
 import WebsiteSchema from './website-schema'
 import type { Metadata, Viewport } from 'next'
-
+import KnowledgeGraph from './knowledge-graph'
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -99,14 +99,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="transition-colors duration-300">
-<Schema />
-<WebsiteSchema />
+<body className="transition-colors duration-300">
+  <Schema />
+  <WebsiteSchema />
+  <BreadcrumbSchema />
+  <KnowledgeGraph />
 
-<Providers>
-  {children}
-</Providers>
-      </body>
+  <Providers>
+    {children}
+  </Providers>
+</body>
     </html>
   )
 }

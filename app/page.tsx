@@ -7,6 +7,7 @@ import LoginModal from './components/LoginModal'
 import TopNav from './components/TopNav'
 import BottomNav from './components/BottomNav'
 import CreatePrediction from './components/CreatePrediction'
+import PostSchema from './components/PostSchema'
 type PostType = {
   id: string
   content: string
@@ -432,11 +433,21 @@ const { data: updateData, error: updateError } = await supabase
                 <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/0 to-transparent group-hover:via-emerald-500/20 transition-all duration-500" />
                 <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/0 to-transparent group-hover:via-red-500/10 transition-all duration-500" />
                 <div className="p-0.5 relative z-10">
-                  <Post
+
+<PostSchema
+  id={post.id}
+  author={post.username ?? 'Unknown'}
+  content={post.content}
+  createdAt={post.created_at}
+/>
+
+<Post
   post={post}
   user={user}
   profile={profile}
 />
+
+
                 </div>
               </div>
             ))}

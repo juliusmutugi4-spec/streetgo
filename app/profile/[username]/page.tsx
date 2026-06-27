@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 
 import { supabase } from '../../lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
+import ProfileSchema from '../../components/ProfileSchema'
 export default function ProfilePage() {
   const params = useParams()
   const username =
@@ -276,11 +277,17 @@ if (!error) {
 }
 
   return (
-    <main className="min-h-screen bg-[#060608] text-white">
 
-      {/* Background Glow */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-cyan-500/5 blur-[150px] pointer-events-none" />
+  <main className="min-h-screen bg-[#060608] text-white">
 
+    <ProfileSchema
+      username={profile.username}
+      bio={profile.bio}
+      avatar={profile.avatar_url}
+    />
+
+    {/* Background Glow */}
+    <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-cyan-500/5 blur-[150px] pointer-events-none" />
 <div className="w-full">
 
   {/* COVER */}
