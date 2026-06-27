@@ -1,10 +1,18 @@
 'use client'
 import { supabase } from '../lib/supabase'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 
 
 import dynamic from 'next/dynamic'
-import { Marker } from 'react-map-gl'
+import {
+  Marker,
+  Source,
+  Layer,
+  NavigationControl,
+  GeolocateControl,
+  FullscreenControl,
+  ScaleControl
+} from 'react-map-gl'
 
 const Map = dynamic(
   () => import('react-map-gl').then(mod => mod.default),
@@ -35,11 +43,23 @@ const [drivers, setDrivers] = useState<any[]>([])
 const [driverInfo, setDriverInfo] = useState<any>(null)
 const [driverLat, setDriverLat] = useState(0)
 const [driverLng, setDriverLng] = useState(0)
+const mapRef = useRef<any>(null)
+const [route, setRoute] = useState<any>(null)
 
+const [connectionLine, setConnectionLine] = useState<any>({
+  type: 'Feature',
+  geometry: {
+    type: 'LineString',
+    coordinates: []
+  }
+})
 const [viewState, setViewState] = useState({
+  
   longitude: 36.817223,
   latitude: -1.286389,
-  zoom: 15
+  zoom: 16,
+  pitch: 60,
+  bearing: -20
 })
 
 const [fare, setFare] = useState(0)
@@ -88,11 +108,13 @@ useEffect(() => {
       setLongitude(lng)
       setLatitude(lat)
 
-      setViewState((prev) => ({
-        ...prev,
-        longitude: lng,
-        latitude: lat
-      }))
+setViewState((prev) => ({
+  ...prev,
+  longitude: prev.longitude + (lng - prev.longitude) * 0.12,
+  latitude: prev.latitude + (lat - prev.latitude) * 0.12,
+  zoom: 16,
+  pitch: 60
+}))
     },
     (error) => console.log(error),
     {
@@ -124,15 +146,12 @@ function calculateFare() {
 
 async function requestRide() {
 
-  const { data: userData } =
-    await supabase.auth.getUser()
-
-  if (!userData.user || !selectedDriver) return
+  if (!user || !selectedDriver) return
 
   const { data } = await supabase
     .from('trips')
     .insert({
-      passenger_id: userData.user.id,
+      passenger_id: user.id,
       driver_id: selectedDriver.driver_id,
       pickup_lat: latitude,
       pickup_lng: longitude,
@@ -254,6 +273,17 @@ loadInitialDriverLocation()
 
           setDriverLng(location.longitude)
 
+setConnectionLine({
+  type: 'Feature',
+  geometry: {
+    type: 'LineString',
+    coordinates: [
+      [location.longitude, location.latitude],
+      [longitude, latitude]
+    ]
+  }
+})
+
         }
 
       }
@@ -343,9 +373,7 @@ return (
   <div className="relative w-full h-screen overflow-hidden">
 
 
-<p className="absolute top-0 left-0 z-50 bg-red-500 text-white p-2">
-  {process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
-</p>
+
 {!mapLoaded && (
   <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-emerald-500 to-green-700 z-40 flex items-center justify-center text-white text-3xl font-bold tracking-wider">
     🟢 LOADING MAP...
@@ -353,19 +381,71 @@ return (
 )}
 
 <Map
+
+
+  ref={mapRef}
   {...viewState}
+  
   onMove={(evt) => setViewState(evt.viewState)}
   mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
-  initialViewState={{
-    longitude,
-    latitude,
-    zoom: 15
-  }}
-  mapStyle="mapbox://styles/mapbox/light-v11"
-  onLoad={() => {
-    console.log('MAP LOADED')
-    setMapLoaded(true)
-  }}
+  mapStyle="mapbox://styles/mapbox/navigation-night-v1"
+onLoad={(e) => {
+  setMapLoaded(true)
+
+  const map = e.target
+
+
+
+
+  map.easeTo({
+    pitch: 60,
+    bearing: -20,
+    zoom: 16,
+    duration: 2000
+  })
+
+  const layers = map.getStyle().layers
+
+  const labelLayerId = layers.find(
+    (layer: any) => layer.type === 'symbol'
+  )?.id
+
+  if (!map.getLayer('3d-buildings')) {
+    map.addLayer(
+      {
+        id: '3d-buildings',
+        source: 'composite',
+        'source-layer': 'building',
+        filter: ['==', 'extrude', 'true'],
+        type: 'fill-extrusion',
+        minzoom: 15,
+        paint: {
+          'fill-extrusion-color': '#d1d5db',
+          'fill-extrusion-height': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            15,
+            0,
+            16,
+            ['get', 'height']
+          ],
+          'fill-extrusion-base': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            15,
+            0,
+            16,
+            ['get', 'min_height']
+          ],
+          'fill-extrusion-opacity': 0.65
+        }
+      },
+      labelLayerId
+    )
+  }
+}}
   style={{
     position: 'absolute',
     inset: 0,
@@ -374,31 +454,121 @@ return (
   }}
 >
     
-      {/* User */}
-      <Marker longitude={longitude} latitude={latitude}>
-        <div className="text-4xl">📍</div>
-      </Marker>
+<Marker longitude={longitude} latitude={latitude}>
+  <div className="relative">
+
+    {/* Glow */}
+    <div className="absolute -inset-3 rounded-full bg-[#E11D48]/25 blur-xl" />
+
+    {/* Pulse */}
+    <div className="absolute inset-0 rounded-full bg-[#E11D48]/20 animate-ping" />
+
+    {/* Main marker */}
+    <div
+      className="
+      relative
+      w-14
+      h-14
+      rounded-full
+      bg-white
+      border-[5px]
+      border-[#E11D48]
+      shadow-[0_10px_30px_rgba(225,29,72,.45)]
+      flex
+      items-center
+      justify-center
+      "
+    >
+      <div className="w-4 h-4 rounded-full bg-[#E11D48]" />
+    </div>
+
+  </div>
+</Marker>
 
 
 
 
 {drivers.map(driver => (
 
-  <Marker
-    key={driver.id}
-    longitude={driver.longitude}
-    latitude={driver.latitude}
-  >
+<Marker
+  key={driver.id}
+  longitude={driver.longitude}
+  latitude={driver.latitude}
+>
+  <div className="relative">
 
-    <div className="text-5xl">
+    {/* Online pulse */}
+    <div className="absolute inset-0 rounded-full bg-green-500/30 animate-ping" />
 
-      {driver.drivers.vehicle_type === 'boda'
-        ? '🏍️'
-        : '🚗'}
+    {/* Marker */}
+    <div
+      className="
+      w-14
+      h-14
+      rounded-full
+      bg-white
+      shadow-2xl
+      border-4
+      border-green-500
+      flex
+      items-center
+      justify-center
+      text-2xl
+      "
+    >
+{driver.drivers.vehicle_type === 'boda' ? (
 
+  <div className="relative">
+
+    <div className="absolute inset-0 rounded-full bg-green-400 blur-xl opacity-50" />
+
+    <div className="
+      relative
+      w-10
+      h-10
+      rounded-full
+      bg-white
+      border-2
+      border-green-500
+      shadow-xl
+      flex
+      items-center
+      justify-center
+    ">
+      🏍️
     </div>
 
-  </Marker>
+  </div>
+
+) : (
+
+  <div className="relative">
+
+    <div className="absolute inset-0 rounded-full bg-blue-400 blur-xl opacity-50" />
+
+    <div className="
+      relative
+      w-10
+      h-10
+      rounded-full
+      bg-white
+      border-2
+      border-blue-500
+      shadow-xl
+      flex
+      items-center
+      justify-center
+    ">
+      🚗
+    </div>
+
+  </div>
+
+)}
+    </div>
+
+  </div>
+</Marker>
 
 ))}
 
@@ -421,20 +591,89 @@ return (
 
 )}
 
+{rideAccepted && (
+  <Source
+    id="connection-line"
+    type="geojson"
+    data={connectionLine}
+  >
+    <Layer
+      id="connection-layer"
+      type="line"
+      paint={{
+        'line-color': '#22c55e',
+        'line-width': 6,
+        'line-opacity': 0.9
+      }}
+    />
+  </Source>
+)}
+
+<NavigationControl position="top-right" />
+
+<GeolocateControl
+  position="top-right"
+  trackUserLocation={true}
+  showUserHeading={true}
+/>
+
+<FullscreenControl position="top-right" />
+
+<ScaleControl position="bottom-left" />
+
     </Map>
 
-    {/* Bottom Panel */}
-<div className="
-absolute
-bottom-0
-left-0
-right-0
-bg-transparent
-rounded-t-[40px]
-p-6
-space-y-3
-">
+{/* StreetGO GPS Button */}
+<button
+  onClick={() => {
+    setViewState((prev) => ({
+      ...prev,
+      longitude,
+      latitude,
+      zoom: 16,
+      pitch: 60
+    }))
+  }}
+  className="
+    absolute
+    bottom-80
+    right-5
+    z-40
+    w-14
+    h-14
+    rounded-full
+    bg-white
+    shadow-2xl
+    border
+    border-gray-200
+    flex
+    items-center
+    justify-center
+    hover:scale-110
+    transition
+  "
+>
+  📍
+</button>
 
+
+    {/* Bottom Panel */}
+<div
+  className="
+  absolute
+  bottom-0
+  left-0
+  right-0
+  bg-white
+  rounded-t-[32px]
+  shadow-[0_-10px_40px_rgba(0,0,0,0.18)]
+  border-t
+  border-gray-200
+  p-6
+  space-y-4
+  z-30
+"
+>
 <div className="flex items-center gap-2 mb-5">
   <div className="
   w-10 h-10
