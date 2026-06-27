@@ -2,6 +2,8 @@ import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
 
 import Providers from './providers'
+import Schema from './schema'
+
 import type { Metadata, Viewport } from 'next'
 
 export const viewport: Viewport = {
@@ -43,6 +45,7 @@ export const metadata: Metadata = {
   ],
 
   creator: 'StreetGO',
+
   publisher: 'StreetGO',
 
   alternates: {
@@ -97,6 +100,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="transition-colors duration-300">
+        <Schema />
+
         <Providers>
           {children}
         </Providers>
