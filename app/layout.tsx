@@ -6,6 +6,7 @@ import Schema from './schema'
 import WebsiteSchema from './website-schema'
 import type { Metadata, Viewport } from 'next'
 import KnowledgeGraph from './knowledge-graph'
+import SearchAction from './search-action'
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -104,6 +105,7 @@ export default function RootLayout({
   <WebsiteSchema />
   <BreadcrumbSchema />
   <KnowledgeGraph />
+  <SearchAction />
 
   <Providers>
     {children}
