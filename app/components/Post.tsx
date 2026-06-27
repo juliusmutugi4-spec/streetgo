@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
-
+import VideoSchema from './VideoSchema'
+import PostSchema from './PostSchema'
 interface PostProps {
 post: {
   id: string
@@ -147,7 +148,15 @@ if (error) {
     router.push(`/profile/${username}`)
   }
 
-  return (
+ return (
+  <>
+    <PostSchema
+      id={post.id}
+      author={username}
+      content={post.content}
+      createdAt={post.created_at}
+    />
+
     <div
   className="
     group
@@ -343,6 +352,18 @@ mb-3
     </div>
 
   </div>
+)}
+
+{/* Video SEO */}
+{post.video_url && (
+  <VideoSchema
+    id={post.id}
+    title={post.content || 'StreetGO Video'}
+    description={post.content || 'Watch this video on StreetGO'}
+    thumbnail="https://streetgo.app/og-image.png"
+    videoUrl={post.video_url}
+    uploadDate={post.created_at}
+  />
 )}
 
 {/* Video */}
@@ -695,6 +716,7 @@ py-1.5
 
 
       </div>
-</div>
-  )
+    </div>
+  </>
+)
 }
