@@ -122,7 +122,7 @@ useEffect(() => {
   // Toggle like
   const toggleLike = async () => {
     if (!user) {
-  setShowLogin(true)
+  if (!showLogin) {setShowLogin(true)}
   return
 }
 
@@ -147,7 +147,7 @@ useEffect(() => {
   // Add comment
 const addComment = async () => {
   if (!user) {
-    setShowLogin(true)
+    if (!showLogin) {setShowLogin(true)}
     return
   }
 
@@ -300,7 +300,6 @@ text-[15px] font-semibold text-white
 
 {showMenu && (
   <div
-    ref={menuRef}
     className="
       absolute
       right-4
@@ -814,7 +813,7 @@ py-1.5
   </>
 )}
 
-{showLogin && (
+{showLogin ? (
   <LoginModal
     onClose={() => setShowLogin(false)}
     onLogin={() => {
@@ -822,8 +821,7 @@ py-1.5
       loadPostData()
     }}
   />
-)}
-
+) : null}
 
       </div>
     </div>
