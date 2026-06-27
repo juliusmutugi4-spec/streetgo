@@ -5,31 +5,6 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useParams, useRouter } from 'next/navigation'
 import ProfileSchema from '../../components/ProfileSchema'
-import type { Metadata } from 'next'
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ username: string }>
-}): Promise<Metadata> {
-  const { username } = await params
-
-  return {
-    title: `${username} | StreetGO`,
-    description: `View ${username}'s profile on StreetGO.`,
-    openGraph: {
-      title: `${username} | StreetGO`,
-      description: `View ${username}'s profile on StreetGO.`,
-      images: ['/og-image.png'],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: `${username} | StreetGO`,
-      description: `View ${username}'s profile on StreetGO.`,
-      images: ['/og-image.png'],
-    },
-  }
-}
 
 
 export default function ProfilePage() {
