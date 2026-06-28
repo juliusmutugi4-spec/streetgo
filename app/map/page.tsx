@@ -111,11 +111,12 @@ useEffect(() => {
 
   async function loadUser() {
 
-    const {
-      data: { user }
-    } = await supabase.auth.getUser()
+const { data, error } = await supabase.auth.getSession()
 
-    setUser(user)
+console.log("SESSION:", data)
+console.log("ERROR:", error)
+
+setUser(data.session?.user ?? null)
   }
 
   loadUser()
@@ -223,11 +224,12 @@ if (data) {
 
 useEffect(() => {
 
-  async function listenForAcceptance() {
+  let channel: any
 
+  async function listenForAcceptance() {
 if (!user) return
 
-  const channel = supabase
+  channel = supabase
   .channel(`ride-status-${crypto.randomUUID()}`)
 
       .on(
@@ -241,7 +243,7 @@ if (!user) return
         async (payload) => {
 
           const ride = payload.new as any
-
+console.log("Realtime event:", ride)
 if (
   ride.passenger_id === user.id &&
   ride.status === 'accepted'
@@ -272,13 +274,16 @@ setRideAccepted(true)
 
       .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
 
   }
 
   listenForAcceptance()
+
+return () => {
+  if (channel) {
+    supabase.removeChannel(channel)
+  }
+}
 
 }, [user])
 

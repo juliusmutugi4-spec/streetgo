@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
 export default function DriverPage() {
@@ -16,10 +16,8 @@ const [currentRide, setCurrentRide] = useState<any>(null)
 const [incomingRide, setIncomingRide] = useState<any>(null)
 const [countdown, setCountdown] = useState(20)
 const [passengerInfo, setPassengerInfo] = useState<any>(null)
-const notificationSound =
-  typeof Audio !== 'undefined'
-    ? new Audio('/alert.mp3')
-    : null
+const ringtoneRef = useRef<HTMLAudioElement | null>(null)
+
 
 async function loadRequests() {
   const { data } = await supabase
@@ -52,7 +50,8 @@ if (error) {
   if (!error) {
     setCurrentRide(request)
 
-    incomingRide?.sound?.pause()
+    ringtoneRef.current?.pause()
+ringtoneRef.current!.currentTime = 0
     setIncomingRide(null)
 
     setRequests(prev =>
@@ -60,6 +59,18 @@ if (error) {
     )
   }
 }
+
+useEffect(() => {
+  ringtoneRef.current = new Audio('/sounds/ride-request.mp3')
+  ringtoneRef.current.loop = true
+
+  return () => {
+    ringtoneRef.current?.pause()
+    ringtoneRef.current = null
+  }
+}, [])
+
+
 
 useEffect(() => {
   loadDriver()
@@ -197,15 +208,11 @@ if (ride.driver_id !== driverId) return
         // Ignore when driver is offline
         if (!online) return
 
-        if (notificationSound) {
-          notificationSound.loop = true
-          notificationSound.play()
-        }
+ ringtoneRef.current?.play()
 
-        setIncomingRide({
-          ...ride,
-          sound: notificationSound
-        })
+setIncomingRide({
+  ...ride
+})
 
         const { data } = await supabase
           .from('profiles')
@@ -236,7 +243,8 @@ useEffect(() => {
   const interval = setInterval(() => {
     setCountdown(prev => {
       if (prev <= 1) {
-        incomingRide.sound?.pause()
+        ringtoneRef.current?.pause()
+ringtoneRef.current!.currentTime = 0
         setIncomingRide(null)
         clearInterval(interval)
         return 0
