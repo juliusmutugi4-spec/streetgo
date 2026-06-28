@@ -158,8 +158,12 @@ console.log('Logged in user:', user)
     })
 
 if (error) {
-  console.error(error)
-  alert(JSON.stringify(error, null, 2))
+  alert(
+    `Code: ${error.code}
+Message: ${error.message}
+Details: ${error.details}
+Hint: ${error.hint}`
+  )
   return
 }
 
