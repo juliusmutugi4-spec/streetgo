@@ -52,6 +52,7 @@ if (error) {
 
     ringtoneRef.current?.pause()
 ringtoneRef.current!.currentTime = 0
+navigator.vibrate?.(0)
     setIncomingRide(null)
 
     setRequests(prev =>
@@ -208,7 +209,9 @@ if (ride.driver_id !== driverId) return
         // Ignore when driver is offline
         if (!online) return
 
- ringtoneRef.current?.play()
+ringtoneRef.current?.play()
+
+navigator.vibrate?.([1000, 500, 1000, 500, 1000])
 
 setIncomingRide({
   ...ride
@@ -245,6 +248,7 @@ useEffect(() => {
       if (prev <= 1) {
         ringtoneRef.current?.pause()
 ringtoneRef.current!.currentTime = 0
+navigator.vibrate?.(0)
         setIncomingRide(null)
         clearInterval(interval)
         return 0
@@ -350,6 +354,14 @@ return (
             {online ? 'GO OFFLINE' : 'GO ONLINE'}
           </button>
 
+<button
+  onClick={() => navigator.vibrate?.([1000, 300, 1000])}
+  className="bg-red-500 text-white p-4 rounded-xl"
+>
+  Test Vibration
+</button>
+
+
         </div>
 
       </div>
@@ -430,12 +442,16 @@ return (
     </button>
 
     <button
-      onClick={() => {
+onClick={() => {
 
-        incomingRide.sound?.pause()
-        setIncomingRide(null)
+  ringtoneRef.current?.pause()
+  ringtoneRef.current!.currentTime = 0
+navigator.vibrate?.(0)
+  
 
-      }}
+  setIncomingRide(null)
+
+}}
       className="
       w-full
       mt-3
