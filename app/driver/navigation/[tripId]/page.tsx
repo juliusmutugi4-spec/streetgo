@@ -1,8 +1,26 @@
 'use client'
 
-import { use, useEffect, useState } from 'react'
-import { supabase } from '../../../lib/supabase'
+import { use, useEffect, useState, useRef } from 'react'
 
+import { supabase } from '../../../lib/supabase'
+import dynamic from 'next/dynamic'
+
+const Map = dynamic(
+  () => import('react-map-gl').then(mod => mod.default),
+  { ssr: false }
+)
+
+import {
+  Marker,
+  NavigationControl,
+  GeolocateControl,
+  FullscreenControl,
+  ScaleControl,
+  Source,
+  Layer
+} from 'react-map-gl'
+
+import 'mapbox-gl/dist/mapbox-gl.css'
 type Props = {
   params: Promise<{
     tripId: string
@@ -14,6 +32,18 @@ export default function DriverNavigationPage({ params }: Props) {
 
   const [trip, setTrip] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+const [mapLoaded, setMapLoaded] = useState(false)
+
+const mapRef = useRef<any>(null)
+
+const [viewState, setViewState] = useState({
+  longitude: 36.817223,
+  latitude: -1.286389,
+  zoom: 15,
+  pitch: 60,
+  bearing: 0
+})
+
 
   useEffect(() => {
     async function loadTrip() {
@@ -27,6 +57,14 @@ export default function DriverNavigationPage({ params }: Props) {
         console.error(error)
       } else {
         setTrip(data)
+
+setViewState({
+  longitude: data.pickup_lng,
+  latitude: data.pickup_lat,
+  zoom: 15,
+  pitch: 60,
+  bearing: 0
+})
       }
 
       setLoading(false)
@@ -50,51 +88,51 @@ export default function DriverNavigationPage({ params }: Props) {
       </main>
     )
   }
+return (
+  <div className="relative w-full h-screen overflow-hidden">
 
-  return (
-    <main className="min-h-screen bg-black text-white p-6">
-
-      <h1 className="text-3xl font-bold mb-8">
-        Driver Navigation
-      </h1>
-
-      <div className="rounded-3xl bg-zinc-900 p-6 space-y-4">
-
-        <div>
-          <p className="text-zinc-400 text-sm">Trip ID</p>
-          <p>{trip.id}</p>
-        </div>
-
-        <div>
-          <p className="text-zinc-400 text-sm">Passenger</p>
-          <p>{trip.passenger_id}</p>
-        </div>
-
-        <div>
-          <p className="text-zinc-400 text-sm">Destination</p>
-          <p>{trip.destination}</p>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-
-          <div className="rounded-xl bg-zinc-800 p-4">
-            <p className="text-zinc-400 text-sm">Pickup Latitude</p>
-            <p>{trip.pickup_lat}</p>
-          </div>
-
-          <div className="rounded-xl bg-zinc-800 p-4">
-            <p className="text-zinc-400 text-sm">Pickup Longitude</p>
-            <p>{trip.pickup_lng}</p>
-          </div>
-
-        </div>
-
-        <div className="rounded-xl bg-cyan-600 p-4 font-semibold">
-          Status: {trip.status}
-        </div>
-
+    {!mapLoaded && (
+      <div className="absolute inset-0 bg-green-600 z-50 flex items-center justify-center text-white text-3xl font-bold">
+        LOADING MAP...
       </div>
+    )}
 
-    </main>
-  )
+    <Map
+      ref={mapRef}
+      {...viewState}
+      onMove={(evt) => setViewState(evt.viewState)}
+      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
+      mapStyle="mapbox://styles/mapbox/navigation-night-v1"
+      onLoad={() => setMapLoaded(true)}
+      style={{
+        width: '100%',
+        height: '100%'
+      }}
+    >
+
+      <NavigationControl position="top-right" />
+
+      <GeolocateControl
+        position="top-right"
+        trackUserLocation={true}
+        showUserHeading={true}
+      />
+
+      <FullscreenControl position="top-right" />
+
+      <ScaleControl position="bottom-left" />
+
+      <Marker
+        longitude={trip.pickup_lng}
+        latitude={trip.pickup_lat}
+      >
+        <div className="text-4xl">
+          📍
+        </div>
+      </Marker>
+
+    </Map>
+
+  </div>
+)
 }
