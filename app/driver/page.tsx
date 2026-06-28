@@ -2,9 +2,9 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-
+import { useRouter } from 'next/navigation'
 export default function DriverPage() {
-
+const router = useRouter()
   const [online, setOnline] = useState(false)
 
   const [driverId, setDriverId] = useState('')
@@ -47,18 +47,21 @@ if (error) {
   return
 }
 
-  if (!error) {
-    setCurrentRide(request)
+if (!error) {
+  setCurrentRide(request)
 
-    ringtoneRef.current?.pause()
-ringtoneRef.current!.currentTime = 0
-navigator.vibrate?.(0)
-    setIncomingRide(null)
+  ringtoneRef.current?.pause()
+  ringtoneRef.current!.currentTime = 0
+  navigator.vibrate?.(0)
 
-    setRequests(prev =>
-      prev.filter(r => r.id !== request.id)
-    )
-  }
+  setIncomingRide(null)
+
+  setRequests(prev =>
+    prev.filter(r => r.id !== request.id)
+  )
+
+  router.push(`/driver/navigation/${request.id}`)
+}
 }
 
 useEffect(() => {
@@ -321,54 +324,193 @@ return (
 
     <div className="max-w-xl mx-auto">
 
-      <h1 className="text-4xl font-black">
-        🚗 Driver Dashboard
+<div className="mb-5">
+
+  <p className="text-[11px] tracking-[4px] font-bold text-green-500 uppercase">
+    STREETGO DRIVER
+  </p>
+
+  <div className="mt-1 flex items-center justify-between">
+
+    <div>
+      <h1 className="text-2xl font-extrabold text-white leading-none">
+        Good Afternoon 👋
       </h1>
 
-      {/* STATUS CARD */}
-      <div className="mt-8 bg-zinc-900 rounded-3xl p-6">
+      <p className="text-xs text-zinc-400 mt-1">
+        Ready for new ride requests
+      </p>
+    </div>
 
-        <div className="flex justify-between">
+    <div className="flex items-center gap-2 bg-zinc-900 px-3 py-2 rounded-full border border-zinc-800">
 
-          {/* LEFT SIDE */}
-          <div>
-            <p className="text-zinc-400">
-              Status
-            </p>
+      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
 
-            <h2
-              className={`text-2xl font-bold ${
-                online ? 'text-green-500' : 'text-red-500'
-              }`}
-            >
-              {online ? 'Online' : 'Offline'}
-            </h2>
-          </div>
+      <span className="text-xs font-semibold text-white">
+        ONLINE
+      </span>
 
-          {/* BUTTON */}
-          <button
-            onClick={toggleOnline}
-            className={`
-              px-6
-              py-3
-              rounded-xl
-              font-bold
-              ${
-                online
-                  ? 'bg-red-500 text-white'
-                  : 'bg-green-500 text-black'
-              }
-            `}
-          >
-            {online ? 'GO OFFLINE' : 'GO ONLINE'}
-          </button>
+    </div>
 
+  </div>
 
+</div>
 
+<div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
 
-        </div>
+  <div className="flex items-center justify-between">
+
+    <div>
+
+      <p className="text-[11px] uppercase tracking-widest text-zinc-500">
+        Driver Status
+      </p>
+
+      <div className="flex items-center gap-2 mt-1">
+
+        <div
+          className={`w-2.5 h-2.5 rounded-full ${
+            online
+              ? 'bg-green-500 animate-pulse'
+              : 'bg-red-500'
+          }`}
+        />
+
+        <span
+          className={`text-sm font-bold ${
+            online
+              ? 'text-green-400'
+              : 'text-red-400'
+          }`}
+        >
+          {online ? 'ONLINE' : 'OFFLINE'}
+        </span>
 
       </div>
+
+    </div>
+
+    <button
+      onClick={toggleOnline}
+      className={`
+        px-4
+        py-2
+        rounded-xl
+        text-xs
+        font-bold
+        transition
+        ${
+          online
+            ? 'bg-red-500 hover:bg-red-600 text-white'
+            : 'bg-green-500 hover:bg-green-600 text-black'
+        }
+      `}
+    >
+      {online ? 'GO OFFLINE' : 'GO ONLINE'}
+    </button>
+
+  </div>
+
+</div>
+
+<div className="grid grid-cols-3 gap-3 mt-4">
+
+  {/* Earnings */}
+  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3">
+
+    <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+      Earnings
+    </p>
+
+    <h2 className="mt-2 text-lg font-black text-green-400">
+      KES 0
+    </h2>
+
+    <p className="text-[11px] text-zinc-500 mt-1">
+      Today
+    </p>
+
+  </div>
+
+  {/* Trips */}
+  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3">
+
+    <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+      Trips
+    </p>
+
+    <h2 className="mt-2 text-lg font-black text-white">
+      0
+    </h2>
+
+    <p className="text-[11px] text-zinc-500 mt-1">
+      Today
+    </p>
+
+  </div>
+
+  {/* Rating */}
+  <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-3">
+
+    <p className="text-[10px] uppercase tracking-widest text-zinc-500">
+      Rating
+    </p>
+
+    <h2 className="mt-2 text-lg font-black text-yellow-400">
+      ★ 5.0
+    </h2>
+
+    <p className="text-[11px] text-zinc-500 mt-1">
+      Excellent
+    </p>
+
+  </div>
+
+</div>
+
+
+
+{online && !incomingRide && (
+
+  <div className="mt-5 bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+
+    <div className="flex flex-col items-center">
+
+      {/* Animated Car */}
+      <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center animate-pulse">
+
+        <span className="text-5xl">
+          🚗
+        </span>
+
+      </div>
+
+      <h2 className="mt-5 text-xl font-bold text-white">
+        Waiting for Ride Requests
+      </h2>
+
+      <p className="mt-2 text-sm text-zinc-400 text-center max-w-xs">
+        Stay online. New passenger requests will appear automatically.
+      </p>
+
+      {/* Status */}
+      <div className="mt-6 flex items-center gap-2 bg-green-500/10 border border-green-500/30 rounded-full px-4 py-2">
+
+        <div className="w-2 h-2 rounded-full bg-green-500 animate-ping"></div>
+
+        <span className="text-xs font-semibold text-green-400">
+          LIVE • Listening for nearby rides
+        </span>
+
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+
+
 
       {incomingRide && (
 
@@ -376,9 +518,29 @@ return (
 
   <div className="bg-zinc-900 rounded-3xl p-8 w-[90%] max-w-md">
 
-    <h1 className="text-3xl font-black text-center text-red-500">
-      🚨 NEW RIDE REQUEST
-    </h1>
+<div className="text-center">
+
+  <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-500/15 border border-red-500/30 animate-pulse">
+
+    <span className="text-5xl">
+      🚖
+    </span>
+
+  </div>
+
+  <p className="mt-5 text-[11px] uppercase tracking-[5px] text-red-400 font-bold">
+    STREETGO
+  </p>
+
+  <h1 className="mt-2 text-3xl font-black text-white">
+    New Ride Request
+  </h1>
+
+  <p className="text-sm text-zinc-400 mt-2">
+    A passenger is requesting a ride.
+  </p>
+
+</div>
 
 <div className="mt-6 flex items-center gap-4">
 
@@ -392,9 +554,33 @@ return (
       {passengerInfo?.username || 'Passenger'}
     </h2>
 
-    <p className="text-zinc-400">
-      ⭐ 4.9
-    </p>
+<div className="mt-6 flex items-center">
+
+  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-emerald-700 flex items-center justify-center text-white text-2xl font-black">
+
+    {passengerInfo?.username?.charAt(0)?.toUpperCase() || "P"}
+
+  </div>
+
+  <div className="ml-4">
+
+    <h2 className="text-xl font-bold text-white">
+      {passengerInfo?.username || "Passenger"}
+    </h2>
+
+    <div className="flex items-center gap-2 mt-1">
+
+      ⭐⭐⭐⭐⭐
+
+      <span className="text-xs text-zinc-400">
+        4.9 Rating
+      </span>
+
+    </div>
+
+  </div>
+
+</div>
 
   </div>
 

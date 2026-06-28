@@ -1,7 +1,7 @@
 'use client'
 import { supabase } from '../lib/supabase'
 import { useEffect, useState, useRef } from 'react'
-
+import { Bike, CarFront } from 'lucide-react'
 
 import dynamic from 'next/dynamic'
 import {
@@ -42,7 +42,7 @@ const [selectedDriver, setSelectedDriver] = useState<any>(null)
 const [searching, setSearching] = useState(false)
 const [rideAccepted, setRideAccepted] = useState(false)
 const acceptedSoundRef = useRef<HTMLAudioElement | null>(null)
-
+const [showDriverPhoto, setShowDriverPhoto] = useState(false)
 const [tripStatus, setTripStatus] = useState<
   'accepted' | 'arrived' | 'ongoing' | 'completed' | null
 >(null)
@@ -262,11 +262,16 @@ if (
 ) {
 
   // 1. get driver info
-  const { data } = await supabase
-    .from('drivers')
-    .select('*')
-    .eq('id', ride.driver_id)
-    .single()
+const { data } = await supabase
+  .from('drivers')
+  .select(`
+    *,
+    profiles(*)
+  `)
+  .eq('id', ride.driver_id)
+  .single()
+
+setDriverInfo(data)
 
   setDriverInfo(data)
 acceptedSoundRef.current?.play()
@@ -600,7 +605,8 @@ onLoad={(e) => {
   }}
 >
     
-<Marker longitude={longitude} latitude={latitude}>
+{mapLoaded && (
+  <Marker longitude={longitude} latitude={latitude}>
   <div className="relative">
 
     {/* Glow */}
@@ -630,6 +636,7 @@ onLoad={(e) => {
 
   </div>
 </Marker>
+)}
 
 
 
@@ -659,7 +666,7 @@ onLoad={(e) => {
       flex
       items-center
       justify-center
-      text-2xl
+      text-sm
       "
     >
 {driver.drivers.vehicle_type === 'boda' ? (
@@ -851,7 +858,7 @@ onLoad={(e) => {
   border-t
   border-gray-200
   p-5
-  space-y-4
+  space-y-2
   z-30
 "
 >
@@ -886,7 +893,7 @@ onLoad={(e) => {
       flex
       items-center
       justify-center
-      text-xl
+      text-base
       font-black
       shadow-lg
       "
@@ -896,7 +903,7 @@ onLoad={(e) => {
 
     <div>
 
-      <h1 className="text-2xl font-black text-gray-900">
+      <h1 className="text-sm font-black text-gray-900">
         Street<span className="text-[#E11D48]">GO</span>
       </h1>
 
@@ -926,7 +933,7 @@ onLoad={(e) => {
 
 </div>
 
-<div className="space-y-3">
+<div className="space-y-1">
 
   {/* Pickup */}
 
@@ -941,7 +948,7 @@ onLoad={(e) => {
       flex
       items-center
       justify-center
-      text-xl
+      text-base
       shrink-0
     ">
       📍
@@ -960,7 +967,7 @@ onLoad={(e) => {
           w-full
           bg-transparent
           outline-none
-          text-lg
+          text-sm
           font-semibold
           text-gray-900
         "
@@ -983,7 +990,7 @@ onLoad={(e) => {
       flex
       items-center
       justify-center
-      text-xl
+      text-base
       shrink-0
     ">
       🎯
@@ -1003,7 +1010,7 @@ onLoad={(e) => {
           w-full
           bg-transparent
           outline-none
-          text-lg
+          text-sm
           font-semibold
           text-gray-900
           placeholder:text-gray-400
@@ -1016,15 +1023,20 @@ onLoad={(e) => {
 
 </div>
 
-<div className="grid grid-cols-2 gap-4 mt-4">
+<div className="grid grid-cols-2 gap-4 mt-2">
 
   <button
     onClick={() => setRideType('boda')}
-    className={`
+className={`
+      h-36
       rounded-3xl
-      p-5
       transition-all
+      duration-300
       border-2
+      flex
+      flex-col
+      items-center
+      justify-center
       ${
         rideType === 'boda'
           ? 'bg-cyan-500 border-cyan-500 text-black shadow-xl scale-105'
@@ -1032,11 +1044,31 @@ onLoad={(e) => {
       }
     `}
   >
-    <div className="text-5xl mb-3">
-      🏍️
-    </div>
+<div
+  className="
+    w-16
+    h-16
+    rounded-3xl
+    bg-gradient-to-br
+    from-cyan-500/20
+    to-blue-500/20
+    border
+    border-cyan-400/40
+    shadow-lg
+    flex
+    items-center
+    justify-center
+    mb-4
+  "
+>
+  <Bike
+  size={34}
+  strokeWidth={2.3}
+  className="text-cyan-400"
+/>
+</div>
 
-    <h3 className="font-bold text-lg">
+    <h3 className="font-bold text-sm">
       Bodaboda
     </h3>
 
@@ -1044,7 +1076,7 @@ onLoad={(e) => {
       Fast Ride
     </p>
 
-    <p className="mt-4 text-xl font-black">
+    <p className="mt-2 text-base font-black">
       KES 100
     </p>
 
@@ -1052,11 +1084,16 @@ onLoad={(e) => {
 
   <button
     onClick={() => setRideType('taxi')}
-    className={`
+className={`
+      h-36
       rounded-3xl
-      p-5
       transition-all
+      duration-300
       border-2
+      flex
+      flex-col
+      items-center
+      justify-center
       ${
         rideType === 'taxi'
           ? 'bg-cyan-500 border-cyan-500 text-black shadow-xl scale-105'
@@ -1064,9 +1101,29 @@ onLoad={(e) => {
       }
     `}
   >
-    <div className="text-5xl mb-3">
-      🚗
-    </div>
+<div
+  className="
+    w-16
+    h-16
+    rounded-3xl
+    bg-gradient-to-br
+    from-cyan-500/20
+    to-blue-500/20
+    border
+    border-cyan-400/40
+    shadow-lg
+    flex
+    items-center
+    justify-center
+    mb-4
+  "
+>
+  <CarFront
+  size={34}
+  strokeWidth={2.3}
+  className="text-cyan-400"
+/>
+</div>
 
     <h3 className="font-bold text-lg">
       Taxi
@@ -1076,7 +1133,7 @@ onLoad={(e) => {
       Comfortable
     </p>
 
-    <p className="mt-4 text-xl font-black">
+    <p className="mt-2 text-base font-black">
       KES 250
     </p>
 
@@ -1090,7 +1147,7 @@ onLoad={(e) => {
     onClick={requestRide}
     className="
       w-full
-      mt-4
+      mt-2
       bg-cyan-500
       hover:bg-cyan-400
       text-white
@@ -1104,18 +1161,56 @@ onLoad={(e) => {
     🚗 Find Nearest Driver
   </button>
 )}
-{true && (
+{!rideAccepted && (
 
-<div className="mt-5 bg-[#09111F] border border-cyan-500/20 text-white rounded-3xl p-5">
+<div className="
+  bg-[#09111F]
+  border
+  border-cyan-500/20
+  rounded-3xl
+  w-[340px]
+  p-5
+  shadow-2xl
+">
 
   <div className="flex items-center gap-4">
 
-    <div className="w-16 h-16 rounded-full bg-gray-700 flex items-center justify-center text-3xl">
+<div
+  onClick={() => setShowDriverPhoto(true)}
+  className="
+    w-16
+    h-16
+    rounded-full
+    overflow-hidden
+    border-2
+    border-cyan-500
+    bg-zinc-800
+    cursor-pointer
+    hover:scale-105
+    transition
+  "
+>
+
+  {driverInfo?.profiles?.avatar_url ? (
+
+    <img
+      src={driverInfo.profiles.avatar_url}
+      alt="Driver"
+      className="w-full h-full object-cover"
+    />
+
+  ) : (
+
+    <div className="w-full h-full flex items-center justify-center text-3xl">
       👨🏿
     </div>
 
+  )}
+
+</div>
+
     <div>
-<h2 className="text-xl font-bold">
+<h2 className="text-base font-bold">
   {selectedDriver?.drivers?.full_name || 'Nearest Driver'}
 </h2>
 
@@ -1135,11 +1230,14 @@ onLoad={(e) => {
     onClick={arrivedTrip}
     className="
       w-full
-      mt-4
+      mt-2
       bg-yellow-500
       text-black
       p-4
-      rounded-3xl
+      h-10
+rounded-xl
+text-xs
+font-semibold
       font-bold
     "
   >
@@ -1157,7 +1255,10 @@ onLoad={(e) => {
       bg-green-500
       text-black
       p-4
-      rounded-3xl
+      h-10
+rounded-xl
+text-xs
+font-semibold
       font-bold
     "
   >
@@ -1167,7 +1268,10 @@ onLoad={(e) => {
 
 <button
 onClick={endTrip}
-  className="w-full mt-3 bg-red-500 text-white p-4 rounded-3xl font-bold"
+  className="w-full mt-3 bg-red-500 text-white p-4 h-10
+rounded-xl
+text-xs
+font-semibold font-bold"
 >
   END TRIP
 </button>
@@ -1176,7 +1280,7 @@ onClick={endTrip}
 
   </div>
 
-  <div className="mt-4 space-y-1">
+  <div className="mt-2 space-y-1">
 
     <p>
       Vehicle:
@@ -1209,7 +1313,9 @@ onClick={endTrip}
 
 <div className="fixed inset-0 bg-[#09111F] border border-cyan-500/20/80 z-50 flex items-center justify-center">
 
-  <div className="bg-[#09111F] border border-cyan-500/30 rounded-3xl p-8 text-center w-80">
+  <div className="bg-[#09111F] border border-cyan-500/30
+rounded-3xl
+p-8 text-center w-80">
 
     <div
       className="
@@ -1224,7 +1330,7 @@ onClick={endTrip}
     "
     />
 
-    <h1 className="text-2xl font-bold mt-6 text-white">
+    <h1 className="text-sm font-bold mt-3 text-white">
       Searching...
     </h1>
 
@@ -1240,7 +1346,10 @@ onClick={endTrip}
         text-white
         px-8
         py-3
-        rounded-3xl
+        h-10
+rounded-xl
+text-xs
+font-semibold
       "
     >
       Cancel
@@ -1255,15 +1364,84 @@ onClick={endTrip}
 {rideAccepted && (
 <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
 
-  <div className="bg-[#09111F] border border-cyan-500/30 p-8 rounded-3xl w-80">
+  <div className="
+  bg-[#09111F]
+  border
+  border-cyan-500/20
+rounded-3xl
+  w-[340px]
+  p-4
+  shadow-2xl
+">
 
-    <h1 className="text-2xl font-bold text-white">
+<div className="flex items-center justify-between">
+
+  <div>
+
+    <h1 className="text-base font-black text-white">
       Driver Found
     </h1>
 
-<p className="mt-4 text-gray-500">
-  👨🏿 {driverInfo?.full_name}
-</p>
+    <p className="text-xs text-green-400 mt-1">
+      Your driver is on the way
+    </p>
+
+  </div>
+
+  <div className="bg-green-500/20 text-green-400 text-xs font-bold px-3 py-2 rounded-full">
+
+    LIVE
+
+  </div>
+
+</div>
+
+<div className="flex items-center gap-4 mt-2">
+
+  <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-cyan-500 bg-zinc-800">
+
+    {driverInfo?.profiles?.avatar_url ? (
+
+      <img
+        src={driverInfo.profiles.avatar_url}
+        alt="Driver"
+        className="w-full h-full object-cover"
+      />
+
+    ) : (
+
+      <div className="w-full h-full flex items-center justify-center text-3xl">
+        👨🏿
+      </div>
+
+    )}
+
+  </div>
+
+  <div>
+
+    <h2 className="text-base font-bold text-white">
+      {driverInfo?.full_name}
+    </h2>
+
+    <p className="text-cyan-400">
+      ⭐ {driverInfo?.rating}
+    </p>
+
+  </div>
+
+</div>
+<div className="flex items-center gap-2 mt-1">
+
+  <span className="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded-full">
+    ⭐ {driverInfo?.rating || "5.0"}
+  </span>
+
+  <span className="bg-green-500/20 text-green-400 text-xs px-2 py-1 rounded-full">
+    Verified Driver
+  </span>
+
+</div>
 
 <p className="text-cyan-400">
   🟢 Online
@@ -1275,25 +1453,69 @@ onClick={endTrip}
     : '🚗 Taxi'}
 </p>
 
-<p className="text-cyan-400">
-  Plate {driverInfo?.plate_number}
-</p>
+<div className="mt-2 bg-zinc-800 rounded-2xl p-3">
 
-<div className="mt-3 space-y-3">
+  <div className="flex justify-between">
 
-  <p className="text-green-400 font-bold text-lg">
+    <span className="text-zinc-400 text-sm">
+      Vehicle
+    </span>
+
+    <span className="font-bold text-white">
+      {driverInfo?.vehicle_model}
+    </span>
+
+  </div>
+
+  <div className="flex justify-between mt-2">
+
+    <span className="text-zinc-400 text-sm">
+      Plate
+    </span>
+
+    <span className="font-bold text-cyan-400">
+      {driverInfo?.plate_number}
+    </span>
+
+  </div>
+
+</div>
+
+<div className="mt-3 space-y-1">
+
+  <p className="text-green-400 font-bold text-sm">
     🚗 Driver is coming...
   </p>
 
-  <p className="text-cyan-400 font-semibold">
-    📍 Distance: {driverDistance < 1
-      ? `${Math.round(driverDistance * 1000)} m`
-      : `${driverDistance.toFixed(1)} km`}
-  </p>
+<div className="grid grid-cols-2 gap-2 mt-3">
 
-  <p className="text-yellow-400 font-semibold">
-    ⏱️ ETA: {Math.max(1, Math.round(driverDistance * 2))} min
-  </p>
+  <div className="bg-zinc-800 rounded-xl p-2.5">
+
+    <p className="text-[9px] uppercase tracking-wider text-zinc-500">
+      Distance
+    </p>
+
+    <h2 className="text-sm font-black text-cyan-400 mt-1">
+      {driverDistance < 1
+        ? `${Math.round(driverDistance * 1000)} m`
+        : `${driverDistance.toFixed(1)} km`}
+    </h2>
+
+  </div>
+
+  <div className="bg-zinc-800 rounded-xl p-2.5">
+
+    <p className="text-[9px] uppercase tracking-wider text-zinc-500">
+      ETA
+    </p>
+
+    <h2 className="text-sm font-black text-yellow-400 mt-1">
+      {Math.max(1, Math.round(driverDistance * 2))} min
+    </h2>
+
+  </div>
+
+</div>
 
   <div className="w-full h-3 bg-zinc-700 rounded-full overflow-hidden">
 
@@ -1314,30 +1536,83 @@ onClick={endTrip}
 <p className="text-zinc-400">
   Live tracking enabled
 </p>
-<button className="w-full mt-6 p-4 rounded-3xl bg-cyan-500 text-gray-500 font-bold shadow-lg shadow-cyan-500/40 text-white">
-  Track Driver
-</button>
+<div className="grid grid-cols-2 gap-2 mt-3">
 
-<button className="w-full mt-3 p-4 rounded-3xl bg-[#09111F] border border-cyan-500/20 text-white">
-  Call Driver
-</button>
+  <button className="h-10 rounded-xl bg-cyan-500 text-white text-xs font-semibold">
+    📍 Track
+  </button>
 
-<button
-  onClick={() => {
-  setRideAccepted(false)
-  setSelectedDriver(null)
-  setSearching(false)
-}}
-  className="w-full mt-3 p-4 rounded-3xl bg-red-500 text-white"
->
-  Cancel Ride
-</button>
+  <button className="h-10 rounded-xl bg-green-500 text-white text-xs font-semibold">
+    📞 Call
+  </button>
+
+  <button className="h-10 rounded-xl bg-zinc-800 border border-zinc-700 text-white text-xs font-semibold">
+    💬 Chat
+  </button>
+
+  <button
+    onClick={() => {
+      setRideAccepted(false)
+      setSelectedDriver(null)
+      setSearching(false)
+    }}
+    className="h-10 rounded-xl bg-red-500 text-white text-xs font-semibold"
+  >
+    ✕ Cancel
+  </button>
+
+</div>
 
   </div>
 
 </div>
 )}
+{showDriverPhoto && (
+  <div
+    onClick={() => setShowDriverPhoto(false)}
+    className="
+      fixed
+      inset-0
+      z-[100]
+      bg-black/90
+      flex
+      items-center
+      justify-center
+      p-6
+    "
+  >
 
+    <button
+      onClick={() => setShowDriverPhoto(false)}
+      className="
+        absolute
+        top-6
+        right-6
+        w-12
+        h-12
+        rounded-full
+        bg-white/10
+        text-white
+        text-3xl
+      "
+    >
+      ×
+    </button>
+
+    <img
+      src={driverInfo?.profiles?.avatar_url}
+      alt="Driver"
+      className="
+        max-w-[95vw]
+        max-h-[85vh]
+        rounded-3xl
+        object-contain
+        shadow-2xl
+      "
+    />
+
+  </div>
+)}
   
     </div>
 
