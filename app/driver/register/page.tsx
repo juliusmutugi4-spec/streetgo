@@ -22,8 +22,9 @@ async function submitApplication() {
 const {
   data: { user }
 } = await supabase.auth.getUser()
-
 console.log("AUTH USER:", user)
+console.log("AUTH UID:", user?.id)
+
 
 if (!user) {
   alert("Not logged in")
@@ -156,10 +157,11 @@ console.log('Logged in user:', user)
       vehicle_photo_url: vehiclePhotoUrl
     })
 
-  if (error) {
-    alert(error.message)
-    return
-  }
+if (error) {
+  console.error(error)
+  alert(JSON.stringify(error, null, 2))
+  return
+}
 
   alert('Application submitted successfully!')
 
