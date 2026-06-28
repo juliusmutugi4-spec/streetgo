@@ -19,10 +19,17 @@ const [status, setStatus] = useState('pending')
 
 async function submitApplication() {
 
-  const {
-    data: { user }
-  } = await supabase.auth.getUser()
+const {
+  data: { user }
+} = await supabase.auth.getUser()
 
+console.log("AUTH USER:", user)
+
+if (!user) {
+  alert("Not logged in")
+  return
+}
+console.log('Logged in user:', user)
   if (!user) {
     alert('Please login first')
     return
@@ -131,6 +138,8 @@ async function submitApplication() {
   const { error } = await supabase
     .from('drivers')
     .insert({
+
+      
       user_id: user.id,
       full_name: fullName,
       phone,

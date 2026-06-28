@@ -808,165 +808,274 @@ onLoad={(e) => {
 
 
     {/* Bottom Panel */}
+
 <div
   className="
   absolute
   bottom-0
   left-0
   right-0
+  h-[260px]
+  overflow-y-auto
   bg-white
   rounded-t-[32px]
   shadow-[0_-10px_40px_rgba(0,0,0,0.18)]
   border-t
   border-gray-200
-  p-6
+  p-5
   space-y-4
   z-30
 "
 >
-<div className="flex items-center gap-2 mb-5">
+{/* Drag Handle */}
+
+<div className="flex justify-center mb-4">
+
   <div className="
-  w-10 h-10
-  rounded-3xl
-  bg-[#E11D48]
-  text-white
-  flex items-center
-  justify-center
-  font-bold
-  ">
-    SG
+    w-14
+    h-1.5
+    rounded-full
+    bg-gray-300
+  " />
+
+</div>
+
+{/* Header */}
+
+<div className="flex items-center justify-between mb-6">
+
+  <div className="flex items-center gap-4">
+
+    <div
+      className="
+      w-14
+      h-14
+      rounded-2xl
+      bg-gradient-to-br
+      from-[#E11D48]
+      to-red-700
+      text-white
+      flex
+      items-center
+      justify-center
+      text-xl
+      font-black
+      shadow-lg
+      "
+    >
+      SG
+    </div>
+
+    <div>
+
+      <h1 className="text-2xl font-black text-gray-900">
+        Street<span className="text-[#E11D48]">GO</span>
+      </h1>
+
+      <p className="text-sm text-gray-500">
+        Request a ride in seconds
+      </p>
+
+    </div>
+
   </div>
 
-  <h1 className="text-3xl font-black text-white">
-    Street<span className="text-[#E11D48]">GO</span>
-  </h1>
+  <div
+    className="
+      px-4
+      py-2
+      rounded-full
+      bg-green-100
+      border
+      border-green-300
+      text-green-700
+      text-sm
+      font-bold
+    "
+  >
+    ● Online
+  </div>
+
 </div>
 
 <div className="space-y-3">
 
   {/* Pickup */}
-  <div className="bg-black/70
-backdrop-blur-md
-border border-cyan-500/20 rounded-3xl p-4">
-    <p className="text-xs text-cyan-400">
-      PICKUP
-    </p>
 
-<input
-className="
-w-full
-bg-transparent
-outline-none
-text-white
-"
-      value="Current location"
-      readOnly
-    />
+  <div className="flex items-center gap-4 bg-gray-100 rounded-2xl p-4 border border-gray-200">
+
+    <div className="
+      w-12
+      h-12
+      rounded-full
+      bg-green-500
+      text-white
+      flex
+      items-center
+      justify-center
+      text-xl
+      shrink-0
+    ">
+      📍
+    </div>
+
+    <div className="flex-1">
+
+      <p className="text-xs text-gray-500 uppercase tracking-wider">
+        Pickup
+      </p>
+
+      <input
+        value="Current Location"
+        readOnly
+        className="
+          w-full
+          bg-transparent
+          outline-none
+          text-lg
+          font-semibold
+          text-gray-900
+        "
+      />
+
+    </div>
+
   </div>
 
   {/* Destination */}
-<div className="
-bg-black/70
-backdrop-blur-md
-border border-cyan-500/20
-rounded-3xl
-p-4
-">
 
-<p className="text-xs text-cyan-400">
-  DESTINATION
-</p>
+  <div className="flex items-center gap-4 bg-gray-100 rounded-2xl p-4 border border-gray-200">
 
-<input
-  value={destination}
-  onChange={(e) => setDestination(e.target.value)}
-  placeholder="Where are you going?"
-  className="
-  w-full
-  bg-transparent
-  outline-none
-  text-white
-  placeholder-gray-500
-  "
-/>
+    <div className="
+      w-12
+      h-12
+      rounded-full
+      bg-red-500
+      text-white
+      flex
+      items-center
+      justify-center
+      text-xl
+      shrink-0
+    ">
+      🎯
+    </div>
+
+    <div className="flex-1">
+
+      <p className="text-xs text-gray-500 uppercase tracking-wider">
+        Destination
+      </p>
+
+      <input
+        value={destination}
+        onChange={(e) => setDestination(e.target.value)}
+        placeholder="Where are you going?"
+        className="
+          w-full
+          bg-transparent
+          outline-none
+          text-lg
+          font-semibold
+          text-gray-900
+          placeholder:text-gray-400
+        "
+      />
+
+    </div>
+
+  </div>
 
 </div>
 
-</div>
-
-<div className="space-y-3">
+<div className="grid grid-cols-2 gap-4 mt-4">
 
   <button
     onClick={() => setRideType('boda')}
-    className={`w-full p-4 rounded-3xl flex justify-between transition ${
-      rideType === 'boda'
-        ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/40'
-        : 'bg-black/70 border border-cyan-500/20 text-white'
-    }`}
+    className={`
+      rounded-3xl
+      p-5
+      transition-all
+      border-2
+      ${
+        rideType === 'boda'
+          ? 'bg-cyan-500 border-cyan-500 text-black shadow-xl scale-105'
+          : 'bg-[#09111F] border-gray-700 text-white hover:border-cyan-500'
+      }
+    `}
   >
-    <span>🏍️ Bodaboda</span>
-    <span>KES 100</span>
+    <div className="text-5xl mb-3">
+      🏍️
+    </div>
+
+    <h3 className="font-bold text-lg">
+      Bodaboda
+    </h3>
+
+    <p className="text-sm opacity-80 mt-1">
+      Fast Ride
+    </p>
+
+    <p className="mt-4 text-xl font-black">
+      KES 100
+    </p>
+
   </button>
 
   <button
     onClick={() => setRideType('taxi')}
-    className={`w-full p-4 rounded-3xl flex justify-between transition ${
-      rideType === 'taxi'
-        ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/40'
-        : 'bg-black/70 border border-cyan-500/20 text-white'
-    }`}
+    className={`
+      rounded-3xl
+      p-5
+      transition-all
+      border-2
+      ${
+        rideType === 'taxi'
+          ? 'bg-cyan-500 border-cyan-500 text-black shadow-xl scale-105'
+          : 'bg-[#09111F] border-gray-700 text-white hover:border-cyan-500'
+      }
+    `}
   >
-    <span>🚗 Taxi</span>
-    <span>KES 250</span>
+    <div className="text-5xl mb-3">
+      🚗
+    </div>
+
+    <h3 className="font-bold text-lg">
+      Taxi
+    </h3>
+
+    <p className="text-sm opacity-80 mt-1">
+      Comfortable
+    </p>
+
+    <p className="mt-4 text-xl font-black">
+      KES 250
+    </p>
+
   </button>
 
 </div>
 
 
-<div className="mt-5">
-
-  <div
+{!rideAccepted && !searching && (
+  <button
+    onClick={requestRide}
     className="
-      bg-gradient-to-br
-      from-[#09111F]
-      to-[#121C2F]
-      border
-      border-cyan-500/20
-      rounded-3xl
-      p-6
-      text-center
+      w-full
+      mt-4
+      bg-cyan-500
+      hover:bg-cyan-400
       text-white
-      shadow-2xl
+      font-bold
+      rounded-2xl
+      py-4
+      transition-all
+      shadow-lg
     "
   >
-
-    <div className="text-6xl mb-4 animate-pulse">
-      🚗
-    </div>
-
-    <h2 className="text-2xl font-black">
-      StreetGO Auto Match
-    </h2>
-
-    <p className="text-cyan-400 mt-3">
-      We'll automatically connect you with the nearest available driver.
-    </p>
-
-    <div className="mt-5 flex justify-center gap-3">
-
-      <div className="px-4 py-2 rounded-full bg-green-500/20 text-green-400 text-sm font-bold">
-        🟢 Live Drivers
-      </div>
-
-      <div className="px-4 py-2 rounded-full bg-cyan-500/20 text-cyan-400 text-sm font-bold">
-        ⚡ Fast Match
-      </div>
-
-    </div>
-
-  </div>
-
-</div>
+    🚗 Find Nearest Driver
+  </button>
+)}
 {true && (
 
 <div className="mt-5 bg-[#09111F] border border-cyan-500/20 text-white rounded-3xl p-5">
@@ -1056,19 +1165,7 @@ onClick={endTrip}
 
   </div>
 
-<button
-onClick={requestRide}
-  className="
-    w-full
-    mt-5
-    bg-cyan-500 text-gray-500 font-bold shadow-lg shadow-cyan-500/40
-    rounded-3xl
-    p-4
-    font-bold
-  "
->
-  Find Nearest Driver
-</button>
+
 
 </div>
 
