@@ -209,7 +209,11 @@ const { data, error } = await supabase
   .select()
   .single()
 
-alert(JSON.stringify(error))
+if (error) {
+  alert(error.message)
+  return
+}
+
 if (data) {
   setTripId(data.id)
 }
@@ -257,12 +261,10 @@ if (
   setRideAccepted(true)
 
   // 3. UPDATE DATABASE TRIP STATUS (IMPORTANT)
-  await supabase
-    .from('trips')
-    .update({
-      status: 'accepted'
-    })
-    .eq('id', ride.id)
+console.log('✅ DRIVER ACCEPTED:', ride)
+
+setSearching(false)
+setRideAccepted(true)
 }
 
         }
@@ -278,7 +280,7 @@ if (
 
   listenForAcceptance()
 
-}, [])
+}, [user])
 
 useEffect(() => {
 
