@@ -25,6 +25,11 @@ const Map = dynamic(
 export default function MapPage() {
 
   const [mounted, setMounted] = useState(false)
+
+useEffect(() => {
+  setMounted(true)
+}, [])
+
 const [mapLoaded, setMapLoaded] = useState(false)
     const [user, setUser] = useState<any>(null)
   const [longitude, setLongitude] = useState(36.817223)
@@ -88,7 +93,6 @@ useEffect(() => {
 }, [])
 
 async function loadDrivers() {
-
   const { data } = await supabase
     .from('driver_locations')
     .select(`
@@ -97,11 +101,9 @@ async function loadDrivers() {
     `)
     .eq('online', true)
 
-if (data) {
-  console.log("ONLINE DRIVERS:", data)
-  alert("Drivers loaded: " + data.length)
-  setDrivers(data)
-}
+  if (data) {
+    setDrivers(data)
+  }
 }
 
 
@@ -193,19 +195,21 @@ if (!nearestDriver) {
   return
 }
 
-  const { data } = await supabase
-    .from('ride_requests')
-    .insert({
-      passenger_id: user.id,
-      driver_id: nearestDriver.driver_id,
-      pickup_lat: latitude,
-      pickup_lng: longitude,
-      destination,
-      ride_type: rideType,
-      status: 'searching'
-    })
-    .select()
-    .single()
+const { data, error } = await supabase
+  .from('ride_requests')
+  .insert({
+    passenger_id: user.id,
+    driver_id: nearestDriver.driver_id,
+    pickup_lat: latitude,
+    pickup_lng: longitude,
+    destination,
+    ride_type: rideType,
+    status: 'searching'
+  })
+  .select()
+  .single()
+
+alert(JSON.stringify(error))
 if (data) {
   setTripId(data.id)
 }
@@ -487,7 +491,9 @@ setSearching(false)
 
 }
 
-
+if (!mounted) {
+  return null
+}
 
 return (
   <div className="relative w-full h-screen overflow-hidden">

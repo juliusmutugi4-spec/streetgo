@@ -35,13 +35,19 @@ async function loadRequests() {
 async function acceptRide(request: any) {
   if (!driverId) return
 
-  const { error } = await supabase
-    .from('ride_requests')
-    .update({
-      status: 'accepted',
-      driver_id: driverId
-    })
-    .eq('id', request.id)
+const { error } = await supabase
+  .from('ride_requests')
+  .update({
+    status: 'accepted',
+    driver_id: driverId
+  })
+  .eq('id', request.id)
+
+if (error) {
+  alert(JSON.stringify(error))
+  console.log(error)
+  return
+}
 
   if (!error) {
     setCurrentRide(request)
@@ -184,7 +190,7 @@ useEffect(() => {
       },
       async (payload) => {
         const ride = payload.new as any
-
+if (ride.driver_id !== driverId) return
         // Ignore rides that are not searching
         if (ride.status !== 'searching') return
 
@@ -220,7 +226,7 @@ useEffect(() => {
   return () => {
     supabase.removeChannel(channel)
   }
-}, [online])
+}, [online, driverId])
 
 useEffect(() => {
   if (!incomingRide) return
