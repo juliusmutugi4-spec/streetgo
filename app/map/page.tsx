@@ -97,10 +97,11 @@ async function loadDrivers() {
     `)
     .eq('online', true)
 
-  if (data) {
-    setDrivers(data)
-  }
-
+if (data) {
+  console.log("ONLINE DRIVERS:", data)
+  alert("Drivers loaded: " + data.length)
+  setDrivers(data)
+}
 }
 
 
@@ -169,6 +170,7 @@ async function requestRide() {
   if (!user) return
 
 // Find the nearest online driver
+alert(JSON.stringify(drivers))
 let nearestDriver: any = null
 let shortestDistance = Number.MAX_VALUE
 
