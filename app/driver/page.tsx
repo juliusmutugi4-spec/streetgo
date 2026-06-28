@@ -238,6 +238,10 @@ setIncomingRide({
   }
 }, [online, driverId])
 
+const vibrationInterval = setInterval(() => {
+  navigator.vibrate?.([700, 300])
+}, 1000)
+
 useEffect(() => {
   if (!incomingRide) return
 
@@ -258,7 +262,11 @@ navigator.vibrate?.(0)
     })
   }, 1000)
 
-  return () => clearInterval(interval)
+  return () => {
+  clearInterval(interval)
+  clearInterval(vibrationInterval)
+  navigator.vibrate?.(0)
+}
 }, [incomingRide])
 
 if (driverStatus === 'pending') {
@@ -354,12 +362,7 @@ return (
             {online ? 'GO OFFLINE' : 'GO ONLINE'}
           </button>
 
-<button
-  onClick={() => navigator.vibrate?.([1000, 300, 1000])}
-  className="bg-red-500 text-white p-4 rounded-xl"
->
-  Test Vibration
-</button>
+
 
 
         </div>
