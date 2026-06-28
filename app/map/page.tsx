@@ -41,6 +41,8 @@ const [tripId, setTripId] = useState('')
 const [selectedDriver, setSelectedDriver] = useState<any>(null)
 const [searching, setSearching] = useState(false)
 const [rideAccepted, setRideAccepted] = useState(false)
+const acceptedSoundRef = useRef<HTMLAudioElement | null>(null)
+
 const [tripStatus, setTripStatus] = useState<
   'accepted' | 'arrived' | 'ongoing' | 'completed' | null
 >(null)
@@ -105,6 +107,16 @@ async function loadDrivers() {
     setDrivers(data)
   }
 }
+
+useEffect(() => {
+  acceptedSoundRef.current = new Audio('/sounds/driver-accepted.mp3')
+
+  return () => {
+    acceptedSoundRef.current?.pause()
+    acceptedSoundRef.current = null
+  }
+}, [])
+
 
 
 useEffect(() => {
@@ -257,7 +269,8 @@ if (
     .single()
 
   setDriverInfo(data)
-
+acceptedSoundRef.current?.play()
+navigator.vibrate?.(300)
   // 2. update UI
   setSearching(false)
   setRideAccepted(true)
