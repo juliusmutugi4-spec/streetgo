@@ -11,7 +11,21 @@ const [rejectedCount, setRejectedCount] = useState(0)
 const [pendingCount, setPendingCount] = useState(0)
 const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected'>('pending')
 useEffect(() => {
-  loadDrivers()
+
+  async function init() {
+
+    const {
+      data: { user }
+    } = await supabase.auth.getUser()
+
+    console.log("ADMIN USER:", user)
+
+    loadDrivers()
+
+  }
+
+  init()
+
 }, [filter])
   async function loadDrivers() {
     setLoading(true)
@@ -21,15 +35,57 @@ const { data, error } = await supabase
   .select('*')
   .eq('status', filter)
   .order('created_at', { ascending: false })
-    if (!error && data) {
-      setDrivers(data)
-      setPendingCount(data.length)
-    }
 
-const { count: approved } = await supabase
+console.log("========== DRIVERS ==========")
+console.log("Filter:", filter)
+console.log("Data:", data)
+console.log("Error:", error)
+console.log("=============================")
+
+if (!error && data) {
+
+  const driversWithUrls = await Promise.all(
+
+    data.map(async (driver) => {
+
+      const { data: license } = await supabase.storage
+        .from('driver-license')
+        .createSignedUrl(driver.license_url, 3600)
+const { data: front } = await supabase.storage
+  .from('driver-id')
+  .createSignedUrl(driver.id_front_url, 3600)
+
+  const { data: back } = await supabase.storage
+  .from('driver-id')
+  .createSignedUrl(driver.id_back_url, 3600)
+
+const { data: vehicle } = await supabase.storage
+  .from('driver-vehicle')
+  .createSignedUrl(driver.vehicle_photo_url, 3600)
+
+
+return {
+  ...driver,
+  license_url: license?.signedUrl || '',
+  id_front_url: front?.signedUrl || '',
+  id_back_url: back?.signedUrl || '',
+  vehicle_photo_url: vehicle?.signedUrl || ''
+}
+    })
+
+  )
+
+  setDrivers(driversWithUrls)
+  setPendingCount(driversWithUrls.length)
+
+}
+const { count: approved, error: approvedError } = await supabase
   .from('drivers')
   .select('*', { count: 'exact', head: true })
   .eq('status', 'approved')
+
+console.log("Approved Count:", approved)
+console.log("Approved Error:", approvedError)
 
 setApprovedCount(approved || 0)
 
@@ -38,6 +94,8 @@ const { count: rejected } = await supabase
   .select('*', { count: 'exact', head: true })
   .eq('status', 'rejected')
 
+
+  
 setRejectedCount(rejected || 0)
 
     setLoading(false)

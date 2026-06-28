@@ -192,7 +192,7 @@ if (!nearestDriver) {
 }
 
   const { data } = await supabase
-    .from('trips')
+    .from('ride_requests')
     .insert({
       passenger_id: user.id,
       driver_id: nearestDriver.driver_id,

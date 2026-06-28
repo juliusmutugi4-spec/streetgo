@@ -184,9 +184,7 @@ useEffect(() => {
       },
       async (payload) => {
         const ride = payload.new as any
-if (ride.driver_id !== driverId) {
-  return
-}
+
         // Ignore rides that are not searching
         if (ride.status !== 'searching') return
 

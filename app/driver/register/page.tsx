@@ -76,11 +76,7 @@ if (licensePhoto) {
       return
     }
 
-    const { data } = supabase.storage
-      .from('driver-license')
-      .getPublicUrl(fileName)
-
-    licenseUrl = data.publicUrl
+licenseUrl = fileName
 
     setProgress(25)
   }
@@ -103,11 +99,7 @@ if (idFront) {
       return
     }
 
-    const { data } = supabase.storage
-      .from('driver-id')
-      .getPublicUrl(fileName)
-
-    idFrontUrl = data.publicUrl
+idFrontUrl = fileName
     setProgress(50)
   }
 
@@ -129,11 +121,7 @@ if (idBack) {
       return
     }
 
-    const { data } = supabase.storage
-      .from('driver-id')
-      .getPublicUrl(fileName)
-
-    idBackUrl = data.publicUrl
+idBackUrl = fileName
 
     setProgress(75)
   }
@@ -156,11 +144,7 @@ if (vehiclePhoto) {
       return
     }
 
-    const { data } = supabase.storage
-      .from('driver-vehicle')
-      .getPublicUrl(fileName)
-
-    vehiclePhotoUrl = data.publicUrl
+vehiclePhotoUrl = fileName
 
     setProgress(90)
   }
