@@ -238,15 +238,16 @@ setIncomingRide({
   }
 }, [online, driverId])
 
-const vibrationInterval = setInterval(() => {
-  navigator.vibrate?.([700, 300])
-}, 1000)
+
 
 useEffect(() => {
   if (!incomingRide) return
 
   setCountdown(20)
 
+  const vibrationInterval = setInterval(() => {
+  navigator.vibrate?.([700, 300])
+}, 1000)
   const interval = setInterval(() => {
     setCountdown(prev => {
       if (prev <= 1) {
