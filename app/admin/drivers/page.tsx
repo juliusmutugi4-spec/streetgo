@@ -355,53 +355,104 @@ async function approveDriver(driver: any) {
 
 </a>
 
-    <a
-      href={driver.id_back_url}
-      target="_blank"
-      className="
-        bg-zinc-800
-        border
-        border-zinc-700
-        rounded-2xl
-        p-4
-        hover:border-cyan-500
-        transition
-      "
-    >
-      <p className="text-3xl">🆔</p>
+{/* ID Front */}
 
-      <p className="font-bold mt-3">
-        ID Back
-      </p>
+<a
+  href={driver.id_front_url}
+  target="_blank"
+  className="
+    block
+    bg-zinc-800
+    border
+    border-zinc-700
+    rounded-2xl
+    overflow-hidden
+    hover:border-cyan-500
+    transition-all
+  "
+>
 
-      <p className="text-cyan-400 text-sm mt-2">
-        View Document →
-      </p>
-    </a>
+  <img
+    src={driver.id_front_url}
+    className="w-full h-40 object-cover"
+    alt="ID Front"
+  />
 
-    <a
-      href={driver.vehicle_photo_url}
-      target="_blank"
-      className="
-        bg-zinc-800
-        border
-        border-zinc-700
-        rounded-2xl
-        p-4
-        hover:border-cyan-500
-        transition
-      "
-    >
-      <p className="text-3xl">🏍️</p>
+  <div className="p-4">
 
-      <p className="font-bold mt-3">
-        Vehicle Photo
-      </p>
+    <p className="font-bold">
+      🆔 ID Front
+    </p>
 
-      <p className="text-cyan-400 text-sm mt-2">
-        View Document →
-      </p>
-    </a>
+  </div>
+
+</a>
+
+{/* ID Back */}
+
+<a
+  href={driver.id_back_url}
+  target="_blank"
+  className="
+    block
+    bg-zinc-800
+    border
+    border-zinc-700
+    rounded-2xl
+    overflow-hidden
+    hover:border-cyan-500
+    transition-all
+  "
+>
+
+  <img
+    src={driver.id_back_url}
+    className="w-full h-40 object-cover"
+    alt="ID Back"
+  />
+
+  <div className="p-4">
+
+    <p className="font-bold">
+      🆔 ID Back
+    </p>
+
+  </div>
+
+</a>
+
+{/* Vehicle */}
+
+<a
+  href={driver.vehicle_photo_url}
+  target="_blank"
+  className="
+    block
+    bg-zinc-800
+    border
+    border-zinc-700
+    rounded-2xl
+    overflow-hidden
+    hover:border-cyan-500
+    transition-all
+  "
+>
+
+  <img
+    src={driver.vehicle_photo_url}
+    className="w-full h-40 object-cover"
+    alt="Vehicle"
+  />
+
+  <div className="p-4">
+
+    <p className="font-bold">
+      🏍️ Vehicle Photo
+    </p>
+
+  </div>
+
+</a>
 
   </div>
 

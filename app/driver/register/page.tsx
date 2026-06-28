@@ -1,6 +1,5 @@
 'use client'
-
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 export default function DriverRegisterPage() {
   const [fullName, setFullName] = useState('')
@@ -16,17 +15,25 @@ const [idFront, setIdFront] = useState<File | null>(null)
 const [idBack, setIdBack] = useState<File | null>(null)
 const [vehiclePhoto, setVehiclePhoto] = useState<File | null>(null)
 const [status, setStatus] = useState('pending')
-
+const [uploading, setUploading] = useState(false)
+const [progress, setProgress] = useState(0)
+const [progressText, setProgressText] = useState('')
+const [displayProgress, setDisplayProgress] = useState(0)
 async function submitApplication() {
 
-const {
-  data: { user }
-} = await supabase.auth.getUser()
+  setUploading(true)
+  setProgress(0)
+  setProgressText('Preparing application...')
+
+  const {
+    data: { user }
+  } = await supabase.auth.getUser()
 console.log("AUTH USER:", user)
 console.log("AUTH UID:", user?.id)
 
 
 if (!user) {
+  setUploading(false)
   alert("Not logged in")
   return
 }
@@ -42,25 +49,28 @@ console.log('Logged in user:', user)
     .eq('user_id', user.id)
     .maybeSingle()
 
-  if (existingDriver) {
-    alert(`Application already exists (${existingDriver.status})`)
-    return
-  }
-
+if (existingDriver) {
+  setUploading(false)
+  alert(`Application already exists (${existingDriver.status})`)
+  return
+}
   let licenseUrl = ''
   let idFrontUrl = ''
   let idBackUrl = ''
   let vehiclePhotoUrl = ''
 
   // Upload Driving License
-  if (licensePhoto) {
+// Upload Driving License
+if (licensePhoto) {
 
-    const fileName = `${user.id}-${Date.now()}-${licensePhoto.name}`
+  setProgress(10)
+  setProgressText('Uploading Driving License...')
 
-    const { error } = await supabase.storage
-      .from('driver-license')
-      .upload(fileName, licensePhoto)
+  const fileName = `${user.id}-${Date.now()}-${licensePhoto.name}`
 
+  const { error } = await supabase.storage
+    .from('driver-license')
+    .upload(fileName, licensePhoto)
     if (error) {
       alert(error.message)
       return
@@ -71,16 +81,22 @@ console.log('Logged in user:', user)
       .getPublicUrl(fileName)
 
     licenseUrl = data.publicUrl
+
+    setProgress(25)
   }
 
   // Upload ID Front
-  if (idFront) {
+// Upload ID Front
+if (idFront) {
 
-    const fileName = `${user.id}-front-${Date.now()}-${idFront.name}`
+  setProgress(30)
+  setProgressText('Uploading ID Front...')
 
-    const { error } = await supabase.storage
-      .from('driver-id')
-      .upload(fileName, idFront)
+  const fileName = `${user.id}-front-${Date.now()}-${idFront.name}`
+
+  const { error } = await supabase.storage
+    .from('driver-id')
+    .upload(fileName, idFront)
 
     if (error) {
       alert(error.message)
@@ -92,16 +108,21 @@ console.log('Logged in user:', user)
       .getPublicUrl(fileName)
 
     idFrontUrl = data.publicUrl
+    setProgress(50)
   }
 
   // Upload ID Back
-  if (idBack) {
+ // Upload ID Back
+if (idBack) {
 
-    const fileName = `${user.id}-back-${Date.now()}-${idBack.name}`
+  setProgress(55)
+  setProgressText('Uploading ID Back...')
 
-    const { error } = await supabase.storage
-      .from('driver-id')
-      .upload(fileName, idBack)
+  const fileName = `${user.id}-back-${Date.now()}-${idBack.name}`
+
+  const { error } = await supabase.storage
+    .from('driver-id')
+    .upload(fileName, idBack)
 
     if (error) {
       alert(error.message)
@@ -113,16 +134,22 @@ console.log('Logged in user:', user)
       .getPublicUrl(fileName)
 
     idBackUrl = data.publicUrl
+
+    setProgress(75)
   }
 
   // Upload Vehicle Photo
-  if (vehiclePhoto) {
+// Upload Vehicle Photo
+if (vehiclePhoto) {
 
-    const fileName = `${user.id}-vehicle-${Date.now()}-${vehiclePhoto.name}`
+  setProgress(80)
+  setProgressText('Uploading Vehicle Photo...')
 
-    const { error } = await supabase.storage
-      .from('driver-vehicle')
-      .upload(fileName, vehiclePhoto)
+  const fileName = `${user.id}-vehicle-${Date.now()}-${vehiclePhoto.name}`
+
+  const { error } = await supabase.storage
+    .from('driver-vehicle')
+    .upload(fileName, vehiclePhoto)
 
     if (error) {
       alert(error.message)
@@ -134,8 +161,11 @@ console.log('Logged in user:', user)
       .getPublicUrl(fileName)
 
     vehiclePhotoUrl = data.publicUrl
-  }
 
+    setProgress(90)
+  }
+setProgress(95)
+setProgressText('Saving application...')
   const { error } = await supabase
     .from('drivers')
     .insert({
@@ -158,23 +188,143 @@ console.log('Logged in user:', user)
     })
 
 if (error) {
+  setUploading(false)
+  setProgress(0)
+  setProgressText('')
+
   alert(
     `Code: ${error.code}
 Message: ${error.message}
 Details: ${error.details}
 Hint: ${error.hint}`
   )
+
   return
 }
+
+setProgress(100)
+setProgressText('Application submitted successfully! ✅')
+
+setTimeout(() => {
+  setUploading(false)
 
   alert('Application submitted successfully!')
 
   window.location.href = '/driver'
+}, 1200)
 }
 
+useEffect(() => {
+
+  if (displayProgress >= progress) return
+
+  const timer = setInterval(() => {
+
+    setDisplayProgress((value) => {
+
+      if (value >= progress) {
+        clearInterval(timer)
+        return value
+      }
+
+      return value + 1
+
+    })
+
+  }, 15)
+
+  return () => clearInterval(timer)
+
+}, [progress, displayProgress])
 
   return (
     <main className="min-h-screen bg-[#060608] text-white p-6">
+
+{uploading && (
+  <div
+    className="
+      fixed
+      inset-0
+      z-[9999]
+      bg-black/80
+      backdrop-blur-md
+      flex
+      items-center
+      justify-center
+      p-6
+    "
+  >
+    <div
+      className="
+        w-full
+        max-w-md
+        bg-zinc-900
+        rounded-3xl
+        p-8
+        border
+        border-zinc-700
+        shadow-2xl
+      "
+    >
+      <div className="text-center">
+
+<div className="flex justify-center mb-6">
+
+  <div
+    className="
+      w-20
+      h-20
+      rounded-full
+      border-4
+      border-zinc-700
+      border-t-cyan-400
+      animate-spin
+    "
+  />
+
+</div>
+
+        <h2 className="text-2xl font-black mt-5">
+          Uploading Driver Application
+        </h2>
+
+        <p className="text-zinc-400 mt-2">
+          Please don't close this page.
+        </p>
+
+      </div>
+
+      <div className="mt-8">
+
+        <div className="flex justify-between text-sm mb-3">
+
+          <span>{progressText}</span>
+
+          <span>{progress}%</span>
+
+        </div>
+
+        <div className="h-3 rounded-full bg-zinc-800 overflow-hidden">
+
+          <div
+            className="
+              h-full
+              bg-cyan-400
+              transition-all
+              duration-500
+            "
+style={{
+  width: `${displayProgress}%`
+}}
+          />
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+)}
 
       <div className="max-w-xl mx-auto">
 
@@ -235,19 +385,7 @@ Hint: ${error.hint}`
   className="w-full p-4 rounded-xl bg-zinc-900 border border-zinc-800"
 />
 
-<button
-  onClick={submitApplication}
-  className="
-  w-full
-  p-4
-  rounded-xl
-  bg-cyan-500
-  text-black
-  font-black
-  "
->
-  Submit Application
-</button>
+
 
 <h2 className="text-2xl font-bold mt-10 mb-5">
   Upload Documents
@@ -303,6 +441,50 @@ Hint: ${error.hint}`
       }
     />
   </div>
+{uploading && (
+  <div className="mb-4">
+
+    <div className="flex justify-between text-sm text-zinc-400 mb-2">
+      <span>{progressText}</span>
+      <span>{displayProgress}%</span>
+    </div>
+
+    <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+
+      <div
+        className="
+          h-full
+          bg-cyan-400
+          transition-all
+          duration-500
+        "
+style={{
+  width: `${displayProgress}%`
+}}
+      />
+
+    </div>
+
+  </div>
+)}
+<button
+  onClick={submitApplication}
+  disabled={uploading}
+  className="
+    w-full
+    p-4
+    rounded-xl
+    bg-cyan-500
+    text-black
+    font-black
+    transition-all
+    duration-300
+    disabled:opacity-70
+    disabled:cursor-not-allowed
+  "
+>
+  {uploading ? progressText : 'Submit Application'}
+</button>
 
 </div>
 
