@@ -42,19 +42,24 @@ useEffect(() => {
   return (
 <header
   style={{
-    backgroundColor: "var(--background)",
     color: "var(--foreground)",
   }}
   className="
     relative
     sticky
     top-0
-    left-0
-    right-0
     z-50
-    backdrop-blur-xl
+
+    bg-[rgba(10,10,10,0.75)]
+    backdrop-blur-2xl
+
+    border-b
+    border-white/5
+
+    shadow-[0_10px_40px_rgba(0,0,0,.35)]
+
     transition-all
-    duration-300
+    duration-500
 "
 >
       <div className="max-w-5xl mx-auto h-16 px-6 flex items-center justify-between">
@@ -70,8 +75,8 @@ useEffect(() => {
     select-none
     transition-all
     duration-500
-    hover:scale-105
-    active:scale-95
+    hover:scale-[1.02]
+    active:scale-[0.98]
   "
 >
   {/* Ambient Glow */}
@@ -178,7 +183,7 @@ useEffect(() => {
     />
 
 <div className="w-full flex justify-start p-0 m-0">
-  <h1 className="text-left p-0 m-0 text-2xl md:text-3xl font-bold tracking-tight text-[var(--foreground)] transition-colors duration-300">
+  <h1 className="text-left p-0 m-0 text-[30px] md:text-[36px] font-bold tracking-[-0.04em] text-[var(--foreground)] transition-colors duration-300">
     street<span className="font-black text-emerald-400">go</span>
   </h1>
 </div>
