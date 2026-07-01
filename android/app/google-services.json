@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "342611852132",
+    "project_id": "tundastreet-301",
+    "storage_bucket": "tundastreet-301.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:342611852132:android:06a39018497eb789871871",
+        "android_client_info": {
+          "package_name": "com.streetgo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADW55p_d7pWJ5pvyn95KzwWT3w-YUmMg4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

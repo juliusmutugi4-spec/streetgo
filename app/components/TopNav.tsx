@@ -44,9 +44,9 @@ useEffect(() => {
   style={{
     backgroundColor: "var(--background)",
     color: "var(--foreground)",
-    borderBottom: "1px solid var(--border)",
   }}
-className="
+  className="
+    relative
     sticky
     top-0
     left-0
@@ -499,6 +499,12 @@ onClick={() => setLightMode(!lightMode)}
 
         </div>
       </div>
+            
+
+      {/* Bottom Red Accent */}
+   <div className="absolute left-0 right-0 top-full pointer-events-none z-[60]">
+  <div className="h-[2px] w-full bg-red-500" />
+</div>
     </header>
   )
 }

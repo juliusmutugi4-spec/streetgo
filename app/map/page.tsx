@@ -2,7 +2,7 @@
 import { supabase } from '../lib/supabase'
 import { useEffect, useState, useRef } from 'react'
 import { Bike, CarFront } from 'lucide-react'
-
+import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import {
   Marker,
@@ -39,6 +39,8 @@ const [destination, setDestination] = useState('')
 const [rideType, setRideType] = useState<'boda' | 'taxi'>('boda')
 const [tripId, setTripId] = useState('')
 const [selectedDriver, setSelectedDriver] = useState<any>(null)
+const [nearbyDrivers, setNearbyDrivers] = useState<any[]>([])
+const [currentDriverIndex, setCurrentDriverIndex] = useState(0)
 const [searching, setSearching] = useState(false)
 const [rideAccepted, setRideAccepted] = useState(false)
 const acceptedSoundRef = useRef<HTMLAudioElement | null>(null)
@@ -52,7 +54,9 @@ const [driverLat, setDriverLat] = useState(0)
 const [driverLng, setDriverLng] = useState(0)
 const [driverDistance, setDriverDistance] = useState(0)
 const [driverBearing, setDriverBearing] = useState(0)
+const [showTrackingCard, setShowTrackingCard] = useState(true)
 const mapRef = useRef<any>(null)
+const router = useRouter()
 const [route, setRoute] = useState<any>(null)
 async function loadRoute(
   startLng: number,
@@ -166,8 +170,10 @@ setViewState((prev) => ({
 }, [])
 
 useEffect(() => {
-  setPickup([longitude, latitude])
-}, [longitude, latitude])
+  if (!searching && !rideAccepted) {
+    setPickup([longitude, latitude])
+  }
+}, [longitude, latitude, searching, rideAccepted])
 function calculateFare() {
 
   let base = rideType === 'boda' ? 100 : 250
@@ -180,34 +186,70 @@ function calculateFare() {
 
 }
 
+function getDistanceKm(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+) {
+  const R = 6371
+
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2)
+
+  const c = 2 * Math.atan2(
+    Math.sqrt(a),
+    Math.sqrt(1 - a)
+  )
+
+  return R * c
+}
+
 async function requestRide() {
 
   if (!user) return
 
 // Find the nearest online driver
-alert(JSON.stringify(drivers))
-let nearestDriver: any = null
-let shortestDistance = Number.MAX_VALUE
 
-drivers
+const nearby = drivers
   .filter(driver => driver.drivers.vehicle_type === rideType)
-  .forEach(driver => {
-    const distance = Math.sqrt(
-      Math.pow(driver.latitude - latitude, 2) +
-      Math.pow(driver.longitude - longitude, 2)
+  .map(driver => ({
+    ...driver,
+    distance: getDistanceKm(
+      latitude,
+      longitude,
+      driver.latitude,
+      driver.longitude
     )
+  }))
+  .sort((a, b) => a.distance - b.distance)
 
-    if (distance < shortestDistance) {
-      shortestDistance = distance
-      nearestDriver = driver
-    }
-  })
+  const nearestDrivers = nearby.slice(0, 5)
+
+setNearbyDrivers(nearestDrivers)
+const nearestDriver = nearestDrivers[0]
 
 if (!nearestDriver) {
-  alert('No nearby drivers available')
+  console.warn("No nearby drivers available")
   return
 }
 
+const maxDistance =
+  rideType === 'boda'
+    ? 3
+    : 8
+
+if (nearestDriver.distance > maxDistance) {
+  console.warn("No nearby drivers available")
+  return
+}
 const { data, error } = await supabase
   .from('ride_requests')
   .insert({
@@ -223,7 +265,7 @@ const { data, error } = await supabase
   .single()
 
 if (error) {
-  alert(error.message)
+  console.error(error.message)
   return
 }
 
@@ -342,6 +384,8 @@ loadInitialDriverLocation()
 
     .channel('driver-tracking')
 
+
+    
     .on(
       'postgres_changes',
       {
@@ -398,18 +442,22 @@ const animation = setInterval(() => {
   longitude,
   latitude
 )
-const distance =
-  Math.sqrt(
-    Math.pow(location.latitude - latitude, 2) +
-    Math.pow(location.longitude - longitude, 2)
-  ) * 111
+const distance = getDistanceKm(
+  latitude,
+  longitude,
+  location.latitude,
+  location.longitude
+)
 
 setDriverDistance(distance)
+const ARRIVAL_DISTANCE_KM = 0.05
 
-if (distance < 0.05 && tripStatus !== 'arrived') {
+if (
+  distance <= ARRIVAL_DISTANCE_KM &&
+  tripStatus !== 'arrived'
+) {
   await arrivedTrip()
 }
-
 if (mapRef.current) {
   mapRef.current.fitBounds(
     [
@@ -448,6 +496,25 @@ setConnectionLine({
   }
 
 }, [driverInfo])
+
+
+useEffect(() => {
+  if (!rideAccepted) return
+
+  if (driverLat === 0 || driverLng === 0) return
+
+loadRoute(
+  driverLng,
+  driverLat,
+  pickup[0],
+  pickup[1]
+)
+}, [
+  driverLat,
+  driverLng,
+  pickup,
+  rideAccepted
+])
 
 async function arrivedTrip() {
 
@@ -530,6 +597,25 @@ return (
     🟢 LOADING MAP...
   </div>
 )}
+
+<button 
+  onClick={() => router.back()} 
+  className="absolute top-4 left-4 z-50 flex items-center justify-center p-3 rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+  aria-label="Back"
+>
+  <svg 
+    xmlns="http://w3.org" 
+    fill="none" 
+    viewBox="0 0 24 24" 
+    strokeWidth={2.5} 
+    stroke="currentColor" 
+    className="w-7 h-7 text-gray-800"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+  </svg>
+</button>
+
+
 
 <Map
 
@@ -773,7 +859,7 @@ onLoad={(e) => {
 
 )}
 
-{rideAccepted && route && (
+{route && (
   <Source
     id="driver-route"
     type="geojson"
@@ -804,7 +890,8 @@ onLoad={(e) => {
 
 <FullscreenControl position="top-right" />
 
-<ScaleControl position="bottom-left" />
+
+
 
     </Map>
 
@@ -1361,7 +1448,7 @@ font-semibold
 
 )}
 
-{rideAccepted && (
+{rideAccepted && showTrackingCard && (
 <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50">
 
   <div className="
