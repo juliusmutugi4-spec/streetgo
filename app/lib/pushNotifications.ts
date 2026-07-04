@@ -32,33 +32,35 @@ await PushNotifications.register()
 alert('PushNotifications.register() finished')
 
 PushNotifications.addListener('registration', async (token) => {
-  alert('FCM TOKEN:\n\n' + token.value)
+  alert('FCM TOKEN RECEIVED')
 
-  console.log('✅ FCM TOKEN:', token.value)
+  const result = await supabase.auth.getUser()
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+  alert('getUser() finished')
 
-    if (!user) {
-      console.log('No logged in user')
-      return
-    }
+  const user = result.data.user
 
-    const { error } = await supabase
-      .from('device_tokens')
-      .upsert({
-        user_id: user.id,
-        token: token.value,
-        platform: 'android',
-      })
+  if (!user) {
+    alert('NO USER LOGGED IN')
+    return
+  }
 
-    if (error) {
-      console.error(error)
-    } else {
-      console.log('✅ Device token saved successfully')
-    }
-  })
+  alert('USER ID:\n' + user.id)
+
+  const { error } = await supabase
+    .from('device_tokens')
+    .upsert({
+      user_id: user.id,
+      token: token.value,
+      platform: 'android',
+    })
+
+  if (error) {
+    alert('SUPABASE ERROR:\n' + JSON.stringify(error))
+  } else {
+    alert('TOKEN SAVED!')
+  }
+})
 
 PushNotifications.addListener('registrationError', (err) => {
   alert('REGISTRATION ERROR:\n\n' + JSON.stringify(err))
