@@ -1,7 +1,12 @@
 import { PushNotifications } from '@capacitor/push-notifications'
 import { supabase } from './supabase'
-
+import { Capacitor } from '@capacitor/core'
 export async function registerPushNotifications() {
+  if (!Capacitor.isNativePlatform()) {
+    console.log('Not running on Android/iOS')
+    return
+  }
+
   alert('registerPushNotifications started')
 
   console.log('🚀 registerPushNotifications started')
@@ -34,11 +39,14 @@ alert('PushNotifications.register() finished')
 PushNotifications.addListener('registration', async (token) => {
   alert('FCM TOKEN RECEIVED')
 
-  const result = await supabase.auth.getUser()
+const result = await supabase.auth.getUser()
 
-  alert('getUser() finished')
+alert(
+  'Current user:\n' +
+  JSON.stringify(result.data.user, null, 2)
+)
 
-  const user = result.data.user
+const user = result.data.user
 
   if (!user) {
     alert('NO USER LOGGED IN')
@@ -46,14 +54,18 @@ PushNotifications.addListener('registration', async (token) => {
   }
 
   alert('USER ID:\n' + user.id)
-
-  const { error } = await supabase
-    .from('device_tokens')
-    .upsert({
+const { error } = await supabase
+  .from('device_tokens')
+  .upsert(
+    {
       user_id: user.id,
       token: token.value,
       platform: 'android',
-    })
+    },
+    {
+      onConflict: 'token',
+    }
+  )
 
   if (error) {
     alert('SUPABASE ERROR:\n' + JSON.stringify(error))

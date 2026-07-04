@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-
+import { registerPushNotifications } from '../lib/pushNotifications'
 export default function LoginModal({ onClose, onLogin }: { onClose: () => void, onLogin: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -125,11 +125,21 @@ username: cleanUsername,
   }
 }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) {
-        setLoading(false)
-        return alert(error.message)
-      }
+const { error } = await supabase.auth.signInWithPassword({
+  email,
+  password
+})
+
+if (error) {
+  setLoading(false)
+  return alert(error.message)
+}
+
+// Give Supabase a moment to finish creating the session
+await new Promise(resolve => setTimeout(resolve, 500))
+
+// Register this device for the logged-in user
+await registerPushNotifications()
     }
     
     setLoading(false)
