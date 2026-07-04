@@ -40,7 +40,7 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { user_id, title, body } = await req.json();
+    const { user_id, title, body, ride_id } = await req.json();
 
 const { data, error } = await supabase
   .from("device_tokens")
@@ -61,14 +61,22 @@ if (error || !data) {
   );
 }
 
+console.log('Sending notification...')
+
+
+
 const messageId = await getMessaging().send({
   token: data[0].token,
   notification: {
     title,
     body,
   },
-});
-
+  data: {
+    type: 'ride_request',
+    ride_id: ride_id || '',
+  },
+})
+console.log('MESSAGE ID:', messageId)
     return NextResponse.json({
       success: true,
       messageId,

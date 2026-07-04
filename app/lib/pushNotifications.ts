@@ -83,7 +83,20 @@ PushNotifications.addListener('registrationError', (err) => {
     console.log('📩 Notification received:', notification)
   })
 
-  PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+PushNotifications.addListener(
+  'pushNotificationActionPerformed',
+  (notification) => {
     console.log('👆 Notification tapped:', notification)
-  })
+
+    const rideId =
+      notification.notification.data?.ride_id
+
+    if (rideId) {
+      window.location.href =
+        `/driver?ride=${rideId}`
+    } else {
+      window.location.href = '/driver'
+    }
+  }
+)
 }

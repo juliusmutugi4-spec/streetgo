@@ -272,6 +272,19 @@ if (error) {
 if (data) {
   setTripId(data.id)
 }
+
+await fetch('/api/send-push', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    user_id: nearestDriver.drivers.user_id,
+    title: '🚕 New Ride Request',
+    body: `${rideType.toUpperCase()} • ${destination}`,
+    ride_id: data.id,
+  }),
+})
   setSearching(true)
   setSelectedDriver(nearestDriver)
 }

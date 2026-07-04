@@ -477,17 +477,32 @@ backdrop-blur-xl
       💬 Chat
     </button>
 
-    <button
-      className="
-        h-12
-        rounded-xl
-        bg-black
-        text-white
-        font-semibold
-      "
-    >
-      ✅ Arrived
-    </button>
+<button
+  onClick={async () => {
+    const { error } = await supabase
+      .from('ride_requests')
+      .update({
+        status: 'arrived'
+      })
+      .eq('id', trip.id)
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    alert('Passenger has been notified that you arrived.')
+  }}
+  className="
+    h-12
+    rounded-xl
+    bg-black
+    text-white
+    font-semibold
+  "
+>
+  ✅ Arrived
+</button>
 
   </div>
 
