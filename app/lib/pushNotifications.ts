@@ -2,10 +2,17 @@ import { PushNotifications } from '@capacitor/push-notifications'
 import { supabase } from './supabase'
 
 export async function registerPushNotifications() {
+  alert('registerPushNotifications started')
+
   console.log('🚀 registerPushNotifications started')
 
-  console.log('Checking permissions...')
+  alert('Checking permissions...')
+
   let permStatus = await PushNotifications.checkPermissions()
+
+  alert(JSON.stringify(permStatus))
+
+  console.log('Permission status:', permStatus)
   console.log('Permission status:', permStatus)
 
   if (permStatus.receive === 'prompt') {
