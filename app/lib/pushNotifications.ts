@@ -32,7 +32,9 @@ await PushNotifications.register()
 alert('PushNotifications.register() finished')
 
 PushNotifications.addListener('registration', async (token) => {
-    console.log('✅ FCM TOKEN:', token.value)
+  alert('FCM TOKEN:\n\n' + token.value)
+
+  console.log('✅ FCM TOKEN:', token.value)
 
     const {
       data: { user },
@@ -58,10 +60,11 @@ PushNotifications.addListener('registration', async (token) => {
     }
   })
 
-  PushNotifications.addListener('registrationError', (err) => {
-    console.error('❌ Registration error:', err)
-  })
+PushNotifications.addListener('registrationError', (err) => {
+  alert('REGISTRATION ERROR:\n\n' + JSON.stringify(err))
 
+  console.error('❌ Registration error:', err)
+})
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('📩 Notification received:', notification)
   })
