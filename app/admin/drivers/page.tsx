@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 export default function AdminDriversPage() {
   const [drivers, setDrivers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [processingId, setProcessingId] = useState<string | null>(null)
 const [approvedCount, setApprovedCount] = useState(0)
 const [rejectedCount, setRejectedCount] = useState(0)
 const [pendingCount, setPendingCount] = useState(0)
@@ -102,7 +103,7 @@ setRejectedCount(rejected || 0)
   }
 
 async function approveDriver(driver: any) {
-
+setProcessingId(driver.id)
   // Remove card immediately
   setDrivers(prev => prev.filter(d => d.id !== driver.id))
 
@@ -118,10 +119,11 @@ async function approveDriver(driver: any) {
     })
     .eq('id', driver.id)
 
-  if (error) {
-    loadDrivers()
-    return
-  }
+if (error) {
+  setProcessingId(null)
+  loadDrivers()
+  return
+}
 
   // Create driver location
   await supabase
@@ -132,7 +134,7 @@ async function approveDriver(driver: any) {
       longitude: 0,
       online: false
     })
-
+setProcessingId(null)
 }
 
 
@@ -536,7 +538,10 @@ async function approveDriver(driver: any) {
 <div className="mt-6 flex gap-4">
 
 <button
-  disabled={driver.status === 'approved'}
+  disabled={
+    driver.status === 'approved' ||
+    processingId === driver.id
+  }
   onClick={() => approveDriver(driver)}
   className={`
     flex-1
@@ -552,9 +557,11 @@ async function approveDriver(driver: any) {
     }
   `}
 >
-  {driver.status === 'approved'
-    ? '✔ Approved'
-    : '✅ Approve'}
+{processingId === driver.id
+  ? '⏳ Approving...'
+  : driver.status === 'approved'
+  ? '✔ Approved'
+  : '✅ Approve'}
 </button>
 
 <button
