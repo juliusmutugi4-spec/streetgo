@@ -14,7 +14,7 @@ const [driverStatus, setDriverStatus] = useState('')
 const [requests, setRequests] = useState<any[]>([])
 const [currentRide, setCurrentRide] = useState<any>(null)
 const [incomingRide, setIncomingRide] = useState<any>(null)
-const [countdown, setCountdown] = useState(20)
+const [countdown, setCountdown] = useState(40)
 const [passengerInfo, setPassengerInfo] = useState<any>(null)
 const ringtoneRef = useRef<HTMLAudioElement | null>(null)
 
@@ -55,7 +55,9 @@ if (!error) {
   navigator.vibrate?.(0)
 
   setIncomingRide(null)
-
+setRequests(prev =>
+  prev.filter(r => r.id !== incomingRide.id)
+)
   setRequests(prev =>
     prev.filter(r => r.id !== request.id)
   )
@@ -247,21 +249,28 @@ setIncomingRide({
 useEffect(() => {
   if (!incomingRide) return
 
-  setCountdown(20)
+  setCountdown(40)
 
   const vibrationInterval = setInterval(() => {
   navigator.vibrate?.([700, 300])
 }, 1000)
   const interval = setInterval(() => {
     setCountdown(prev => {
-      if (prev <= 1) {
-        ringtoneRef.current?.pause()
-ringtoneRef.current!.currentTime = 0
-navigator.vibrate?.(0)
-        setIncomingRide(null)
-        clearInterval(interval)
-        return 0
-      }
+if (prev <= 1) {
+  ringtoneRef.current?.pause()
+  ringtoneRef.current!.currentTime = 0
+  navigator.vibrate?.(0)
+
+  setRequests(prevRequests =>
+    prevRequests.filter(r => r.id !== incomingRide.id)
+  )
+
+  setIncomingRide(null)
+
+  clearInterval(interval)
+
+  return 0
+}
 
       return prev - 1
     })
