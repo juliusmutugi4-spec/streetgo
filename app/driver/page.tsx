@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 export default function DriverPage() {
 const router = useRouter()
   const [online, setOnline] = useState(false)
@@ -335,7 +336,27 @@ return (
     <div className="max-w-xl mx-auto">
 
 <div className="mb-5">
+<div className="mb-5 flex items-center">
 
+  <button
+    onClick={() => router.back()}
+    className="
+      w-12
+      h-12
+      flex
+      items-center
+      justify-center
+      rounded-full
+      hover:bg-zinc-800
+      transition-all
+      duration-200
+      active:scale-95
+    "
+  >
+    <ArrowLeft size={34} className="text-white" />
+  </button>
+
+</div>
   <p className="text-[11px] tracking-[4px] font-bold text-green-500 uppercase">
     STREETGO DRIVER
   </p>
