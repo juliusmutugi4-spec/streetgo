@@ -26,10 +26,12 @@ export async function registerPushNotifications() {
     return
   }
 
-  console.log('Registering with Firebase...')
-  await PushNotifications.register()
+console.log('Registering with Firebase...')
+await PushNotifications.register()
 
-  PushNotifications.addListener('registration', async (token) => {
+alert('PushNotifications.register() finished')
+
+PushNotifications.addListener('registration', async (token) => {
     console.log('✅ FCM TOKEN:', token.value)
 
     const {
