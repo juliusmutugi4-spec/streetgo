@@ -610,9 +610,16 @@ const { data: updateData, error: updateError } = await supabase
     to-green-400
   "
 /> 
-<button
+<div
+  role="button"
+  tabIndex={0}
   onClick={() => {
     window.location.href = '/driver'
+  }}
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      window.location.href = '/driver'
+    }
   }}
   className="
     relative
@@ -690,7 +697,7 @@ const { data: updateData, error: updateError } = await supabase
 >
   {driverOnline ? '🟢 ONLINE' : '🔴 OFFLINE'}
 </button>
-    </button>
+   </div>
   </div>
 )}
 
