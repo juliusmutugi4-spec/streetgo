@@ -13,8 +13,8 @@
   "backgroundColor": "#000000",
   "enableNotifications": true,
   "startUrl": "/",
-  "iconUrl": "https://streetgo.app/icons/icon-512.webp",
-  "maskableIconUrl": "https://streetgo.app/icons/icon-512.webp",
+  "iconUrl": "https://streetgo.app/icon-512.png",
+  "maskableIconUrl": "https://streetgo.app/icon-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
     "path": "C:\\Users\\hp\\tunda-street\\android.keystore",

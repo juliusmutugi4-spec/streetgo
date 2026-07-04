@@ -8,6 +8,7 @@ import TopNav from './components/TopNav'
 import BottomNav from './components/BottomNav'
 import CreatePrediction from './components/CreatePrediction'
 import PostSchema from './components/PostSchema'
+import { registerPushNotifications } from './lib/pushNotifications'
 type PostType = {
   id: string
   content: string
@@ -119,6 +120,8 @@ async function loadPendingRideCount() {
 
 useEffect(() => {
   checkUser()
+
+  registerPushNotifications()
 
   const { data: sub } = supabase.auth.onAuthStateChange(
     async (_event, session) => {

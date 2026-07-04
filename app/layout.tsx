@@ -7,7 +7,7 @@ import WebsiteSchema from './website-schema'
 import type { Metadata, Viewport } from 'next'
 import KnowledgeGraph from './knowledge-graph'
 import SearchAction from './search-action'
-import PushNotificationSetup from './PushNotifications'
+
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
@@ -109,7 +109,6 @@ export default function RootLayout({
   <SearchAction />
 
 <Providers>
-  <PushNotificationSetup />
   {children}
 </Providers>
 </body>
