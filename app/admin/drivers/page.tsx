@@ -77,7 +77,12 @@ return {
   )
 
   setDrivers(driversWithUrls)
-  setPendingCount(driversWithUrls.length)
+  const { count: pending } = await supabase
+  .from('drivers')
+  .select('*', { count: 'exact', head: true })
+  .eq('status', 'pending')
+
+setPendingCount(pending || 0)
 
 }
 const { count: approved, error: approvedError } = await supabase
@@ -112,19 +117,23 @@ setProcessingId(driver.id)
   setApprovedCount(prev => prev + 1)
 
   // Update database
-  const { error } = await supabase
-    .from('drivers')
-    .update({
-      status: 'approved'
-    })
-    .eq('id', driver.id)
+ const { error } = await supabase
+  .from('drivers')
+  .update({
+    status: 'approved'
+  })
+  .eq('id', driver.id)
+
+console.log("APPROVE ERROR:", error)
 
 if (error) {
+  console.error(error)
+  alert(error.message)
+
   setProcessingId(null)
   loadDrivers()
   return
 }
-
   // Create driver location
   await supabase
     .from('driver_locations')
