@@ -103,7 +103,14 @@ setRejectedCount(rejected || 0)
 
 async function approveDriver(driver: any) {
 
-  // Approve driver
+  // Remove card immediately
+  setDrivers(prev => prev.filter(d => d.id !== driver.id))
+
+  // Update counters immediately
+  setPendingCount(prev => Math.max(prev - 1, 0))
+  setApprovedCount(prev => prev + 1)
+
+  // Update database
   const { error } = await supabase
     .from('drivers')
     .update({
@@ -111,9 +118,12 @@ async function approveDriver(driver: any) {
     })
     .eq('id', driver.id)
 
-  if (error) return
+  if (error) {
+    loadDrivers()
+    return
+  }
 
-  // Create location row
+  // Create driver location
   await supabase
     .from('driver_locations')
     .insert({
@@ -122,8 +132,6 @@ async function approveDriver(driver: any) {
       longitude: 0,
       online: false
     })
-
-  loadDrivers()
 
 }
 
@@ -549,20 +557,30 @@ async function approveDriver(driver: any) {
     : '✅ Approve'}
 </button>
 
-  <button
-    onClick={async () => {
+<button
+  onClick={async () => {
 
-      await supabase
-        .from('drivers')
-        .update({
-          status: 'rejected'
-        })
-        .eq('id', driver.id)
+    // Remove immediately
+    setDrivers(prev => prev.filter(d => d.id !== driver.id))
 
+    // Update counters immediately
+    setPendingCount(prev => Math.max(prev - 1, 0))
+    setRejectedCount(prev => prev + 1)
+
+    // Update database
+    const { error } = await supabase
+      .from('drivers')
+      .update({
+        status: 'rejected'
+      })
+      .eq('id', driver.id)
+
+    if (error) {
       loadDrivers()
+    }
 
-    }}
-className="
+  }}
+  className="
 flex-1
 py-4
 rounded-2xl
@@ -578,9 +596,9 @@ text-white
 shadow-lg
 shadow-red-500/20
 "
-  >
-    ❌ Reject
-  </button>
+>
+  ❌ Reject
+</button>
 
 </div>
 
