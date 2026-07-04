@@ -49,21 +49,23 @@ if (error) {
 }
 
 if (!error) {
-  setCurrentRide(request)
+setCurrentRide(request)
 
-  ringtoneRef.current?.pause()
-  ringtoneRef.current!.currentTime = 0
-  navigator.vibrate?.(0)
+ringtoneRef.current?.pause()
 
-  setIncomingRide(null)
+if (ringtoneRef.current) {
+  ringtoneRef.current.currentTime = 0
+}
+
+navigator.vibrate?.(0)
+
 setRequests(prev =>
-  prev.filter(r => r.id !== incomingRide.id)
+  prev.filter(r => r.id !== request.id)
 )
-  setRequests(prev =>
-    prev.filter(r => r.id !== request.id)
-  )
 
-  router.push(`/driver/navigation/${request.id}`)
+setIncomingRide(null)
+
+router.push(`/driver/navigation/${request.id}`)
 }
 
 }
@@ -677,30 +679,39 @@ return (
       ACCEPT
     </button>
 
-    <button
-onClick={() => {
+  <button
+  onClick={() => {
 
-  ringtoneRef.current?.pause()
-  ringtoneRef.current!.currentTime = 0
-navigator.vibrate?.(0)
-  
+    ringtoneRef.current?.pause()
 
-  setIncomingRide(null)
+    if (ringtoneRef.current) {
+      ringtoneRef.current.currentTime = 0
+    }
 
-}}
-      className="
-      w-full
-      mt-3
-      bg-red-500
-      text-white
-      p-5
-      rounded-3xl
-      font-black
-      text-2xl
-      "
-    >
-      REJECT
-    </button>
+    navigator.vibrate?.(0)
+
+    if (incomingRide) {
+      setRequests(prev =>
+        prev.filter(r => r.id !== incomingRide.id)
+      )
+    }
+
+    setIncomingRide(null)
+
+  }}
+  className="
+    w-full
+    mt-3
+    bg-red-500
+    text-white
+    p-5
+    rounded-3xl
+    font-black
+    text-2xl
+  "
+>
+  REJECT
+</button>
 
   </div>
 
@@ -747,20 +758,26 @@ navigator.vibrate?.(0)
             </button>
 
             {/* REJECT */}
-            <button
-              className="
-                mt-3
-                w-full
-                bg-red-500
-                text-white
-                px-5
-                py-3
-                rounded-xl
-                font-bold
-              "
-            >
-              Reject
-            </button>
+   {/* REJECT */}
+<button
+  onClick={() => {
+    setRequests(prev =>
+      prev.filter(r => r.id !== req.id)
+    )
+  }}
+  className="
+    mt-3
+    w-full
+    bg-red-500
+    text-white
+    px-5
+    py-3
+    rounded-xl
+    font-bold
+  "
+>
+  Reject
+</button>
 
           </div>
 
