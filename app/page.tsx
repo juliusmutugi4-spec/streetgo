@@ -596,27 +596,43 @@ const { data: updateData, error: updateError } = await supabase
       {/* BottomNav fixed */}
 {isApprovedDriver && (
   <div className="fixed bottom-20 left-4 right-4 z-40">
-    <button
-      onClick={() => {
-        window.location.href = '/driver'
-      }}
-      className="
-        w-full
-        rounded-2xl
-        bg-[#6D1B1B]
-        px-5
-        py-4
-        shadow-2xl
-        border
-        border-[#8B2C2C]
-        flex
-        items-center
-        justify-between
-        text-white
-        transition
-        hover:bg-[#7A2222]
-      "
-    >
+   <div
+  className="
+    absolute
+    top-0
+    left-0
+    right-0
+    h-1
+    rounded-t-2xl
+    bg-gradient-to-r
+    from-green-400
+    via-emerald-500
+    to-green-400
+  "
+/> 
+<button
+  onClick={() => {
+    window.location.href = '/driver'
+  }}
+  className="
+    relative
+    w-full
+    rounded-2xl
+    bg-[#111315]
+    px-4
+    py-3
+    shadow-xl
+    border
+    border-zinc-800
+    flex
+    items-center
+    justify-between
+    text-white
+    transition-all
+    duration-300
+    hover:border-green-500/40
+  "
+>
       <div>
         <h2 className="font-bold text-lg">
           🚗 Driver Dashboard
@@ -628,19 +644,52 @@ const { data: updateData, error: updateError } = await supabase
     : 'Tap to start driving'}
 </p>
       </div>
-<div className="flex items-center gap-2">
-  <div
-    className={`w-3 h-3 rounded-full ${
-      driverOnline
-        ? 'bg-green-400'
-        : 'bg-red-500'
-    }`}
-  />
+<button
+  onClick={async (e) => {
+    e.stopPropagation()
 
-  <span className="text-sm font-semibold">
-    {driverOnline ? 'Online' : 'Offline'}
-  </span>
-</div>
+    const newStatus = !driverOnline
+
+    setDriverOnline(newStatus)
+
+    const {
+      data: { session }
+    } = await supabase.auth.getSession()
+
+    if (!session?.user) return
+
+    const { data: driver } = await supabase
+      .from('drivers')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .single()
+
+    if (!driver) return
+
+    await supabase
+      .from('driver_locations')
+      .update({
+        online: newStatus
+      })
+      .eq('driver_id', driver.id)
+  }}
+  className={`
+    px-3
+    py-2
+    rounded-full
+    text-xs
+    font-bold
+    transition-all
+    duration-300
+    ${
+      driverOnline
+        ? 'bg-green-500 text-white'
+        : 'bg-red-500 text-white'
+    }
+  `}
+>
+  {driverOnline ? '🟢 ONLINE' : '🔴 OFFLINE'}
+</button>
     </button>
   </div>
 )}

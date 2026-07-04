@@ -357,32 +357,45 @@ return (
 
 </div>
 
-<div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+<div className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
 
-  <div className="flex items-center justify-between">
+  {/* Green top line */}
+  <div className="h-1 bg-gradient-to-r from-green-400 via-emerald-500 to-green-400" />
 
+  <div className="flex items-center justify-between px-4 py-3">
+
+    {/* Left */}
     <div>
 
-      <p className="text-[11px] uppercase tracking-widest text-zinc-500">
-        Driver Status
+      <p className="text-[10px] uppercase tracking-[3px] text-zinc-500 font-semibold">
+        DRIVER STATUS
       </p>
 
       <div className="flex items-center gap-2 mt-1">
 
         <div
-          className={`w-2.5 h-2.5 rounded-full ${
-            online
-              ? 'bg-green-500 animate-pulse'
-              : 'bg-red-500'
-          }`}
+          className={`
+            w-2.5
+            h-2.5
+            rounded-full
+            ${
+              online
+                ? 'bg-green-500 animate-pulse'
+                : 'bg-red-500'
+            }
+          `}
         />
 
         <span
-          className={`text-sm font-bold ${
-            online
-              ? 'text-green-400'
-              : 'text-red-400'
-          }`}
+          className={`
+            text-sm
+            font-black
+            ${
+              online
+                ? 'text-green-400'
+                : 'text-red-400'
+            }
+          `}
         >
           {online ? 'ONLINE' : 'OFFLINE'}
         </span>
@@ -391,15 +404,17 @@ return (
 
     </div>
 
+    {/* Right Button */}
     <button
       onClick={toggleOnline}
       className={`
-        px-4
+        px-3
         py-2
-        rounded-xl
-        text-xs
+        rounded-full
+        text-[11px]
         font-bold
-        transition
+        transition-all
+        duration-300
         ${
           online
             ? 'bg-red-500 hover:bg-red-600 text-white'
