@@ -716,12 +716,26 @@ const { data: updateData, error: updateError } = await supabase
 
     <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-[#060608] border-t border-cyan-500/20 p-4 max-h-[90vh] overflow-y-auto">
 
-      <button
-        onClick={() => setCreateMode('none')}
-        className="absolute right-4 top-4 text-red-400 font-bold"
-      >
-        ✕
-      </button>
+<button
+  onClick={() => setCreateMode('none')}
+  className="
+    absolute
+    top-4
+    right-4
+    z-[999]
+    h-10
+    w-10
+    rounded-full
+    bg-red-500
+    text-white
+    flex
+    items-center
+    justify-center
+    shadow-lg
+  "
+>
+  ✕
+</button>
 
       <CreatePost
         userId={user.id}
@@ -737,7 +751,7 @@ const { data: updateData, error: updateError } = await supabase
 )}
 
 {createMode === 'prediction' && (
-  <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm">
+  <div className="fixed inset-0 z-[10000] bg-black/60 backdrop-blur-sm">
 
     <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-[#060608] border-t border-orange-500/20 p-4 max-h-[90vh] overflow-y-auto">
 
