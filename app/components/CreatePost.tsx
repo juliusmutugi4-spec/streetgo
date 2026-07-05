@@ -42,39 +42,53 @@ console.log("STEP 1")
 
       // Upload video if exists
 if (video) {
+  console.log("Starting video upload")
+
   const fileExt = video.name.split('.').pop()
   const fileName = `${userId}-${Date.now()}.${fileExt}`
 
-  const { error: uploadError } = await supabase.storage
+  const result = await supabase.storage
     .from('videos')
     .upload(fileName, video)
 
-  if (uploadError) throw uploadError
+  console.log("VIDEO RESULT:", result)
+
+  if (result.error) {
+    throw result.error
+  }
 
   const { data } = supabase.storage
     .from('videos')
     .getPublicUrl(fileName)
 
   videoUrl = data.publicUrl
+
+  console.log("Video upload finished")
 }
 
 if (image) {
+  console.log("Starting image upload")
+
   const fileExt = image.name.split('.').pop()
+  const fileName = `${userId}-${Date.now()}-image.${fileExt}`
 
-  const fileName =
-    `${userId}-${Date.now()}-image.${fileExt}`
-
-  const { error } = await supabase.storage
+  const result = await supabase.storage
     .from('images')
     .upload(fileName, image)
 
-  if (error) throw error
+  console.log("IMAGE RESULT:", result)
+
+  if (result.error) {
+    throw result.error
+  }
 
   const { data } = supabase.storage
     .from('images')
     .getPublicUrl(fileName)
 
   imageUrl = data.publicUrl
+
+  console.log("Image upload finished")
 }
 
       // Get username from auth metadata or emai
