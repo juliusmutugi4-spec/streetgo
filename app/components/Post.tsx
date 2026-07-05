@@ -209,13 +209,13 @@ if (error) {
   <div className="absolute -top-20 -left-20 w-48 h-48 bg-cyan-500/10 blur-[80px]" />
   <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-orange-500/10 blur-[80px]" />
 
-  <div className="relative p-4">
+  <div className="relative px-0 pb-4 pt-4">
       {/* Header */}
       
 
         
 {/* PRO HEADER */}
-<div className="relative mb-5 flex items-center justify-between">
+<div className="relative mb-5 flex items-center justify-between px-4">
 
   <div className="flex items-center gap-3">
 
@@ -367,19 +367,18 @@ text-[15px] font-semibold text-white
 
       {/* Content */}
       {/* Content */}
-{post.content && (
+<div className="px-4">
   <p
     className="
       text-zinc-200
-text-[14px]
-leading-6
-mb-3
+      text-[14px]
+      leading-6
+      mb-3
     "
   >
     {post.content}
   </p>
-)}
-
+</div>
 {post.image_urls && post.image_urls.length > 0 && (
   <div className="-mx-4 mt-4 relative">
 
