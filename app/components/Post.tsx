@@ -499,31 +499,42 @@ py-1.5
     mt-3
     flex
     items-center
-    justify-between
+    gap-2
+    overflow-x-auto
+    scrollbar-hide
+    whitespace-nowrap
     border-t
     border-white/5
     pt-2
+    px-2
+    scroll-smooth
   "
 >
 
   {/* LIKE ENGINE */}
   <button
     onClick={toggleLike}
-    className="
-      group/like
-      flex
-      items-center
-      gap-2.5
-      rounded-lg
-      px-3
-      py-1.5
-      text-zinc-400
-      transition-all
-      duration-300
-      hover:text-pink-400
-      hover:bg-pink-500/5
-      active:scale-95
-    "
+  className="
+  group/like
+  shrink-0
+  w-20
+  h-16
+  flex
+  flex-col
+  items-center
+  justify-center
+  rounded-2xl
+  border
+  border-white/10
+  bg-white/[0.03]
+  backdrop-blur-xl
+  transition-all
+  duration-300
+  hover:border-pink-400/50
+  hover:bg-pink-500/10
+  hover:-translate-y-1
+  active:scale-95
+"
   >
     <span
       className={`
@@ -559,30 +570,35 @@ py-1.5
   {/* COMMENTS */}
 <button
   onClick={() => setShowComments(!showComments)}
-  className="
-    group/comment
-    flex
-    items-center
-    gap-2.5
-    rounded-lg
-    px-3
-    py-1.5
-    text-zinc-400
-    hover:text-cyan-400
-    hover:bg-cyan-500/5
-    transition-all
-    duration-300
-  "
+className="
+  group/comment
+  shrink-0
+  w-20
+  h-16
+  flex
+  flex-col
+  items-center
+  justify-center
+  rounded-2xl
+  border
+  border-white/10
+  bg-white/[0.03]
+  backdrop-blur-xl
+  transition-all
+  duration-300
+  hover:border-cyan-400/50
+  hover:bg-cyan-500/10
+  hover:-translate-y-1
+  active:scale-95
+"
 >
-    <span
-      className="
-        group-hover/comment:scale-110
-        transition-all
-        duration-300
-      "
-    >
-      💬
-    </span>
+<>
+  <span className="text-xl">💬</span>
+
+  <span className="text-[10px] font-bold uppercase tracking-widest">
+    Comment
+  </span>
+</>
 
     <span className="relative font-mono text-[11px] tracking-wider">
       {comments.length}
@@ -620,31 +636,136 @@ onClick={async () => {
     alert("Post link copied!")
   }
 }}
-    className="
-      ml-auto
-      flex
-      items-center
-      gap-2
-      rounded-lg
-      border
-      border-cyan-500/20
-      bg-cyan-500/5
-  px-3
-py-1.5
-      text-[11px]
-      font-mono
-      tracking-wide
-      text-cyan-400
-      transition-all
-      duration-300
-      hover:border-cyan-400/50
-      hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]
-      hover:bg-cyan-500/10
-      active:scale-95
-    "
+className="
+  shrink-0
+  w-20
+  h-16
+  flex
+  flex-col
+  items-center
+  justify-center
+  rounded-2xl
+  border
+  border-white/10
+  bg-white/[0.03]
+  backdrop-blur-xl
+  transition-all
+  duration-300
+  hover:border-cyan-400/50
+  hover:bg-cyan-500/10
+  hover:-translate-y-1
+  active:scale-95
+"
   >
-    📤 Share
+    <>
+  <span className="text-xl">📤</span>
+
+  <span className="text-[10px] font-bold uppercase tracking-widest">
+    Share
+  </span>
+</>
   </button>
+
+{/* TIP */}
+<button
+  className="
+    ml-2
+    flex
+    items-center
+    gap-2
+    rounded-lg
+    border
+    border-emerald-500/20
+    bg-emerald-500/5
+    px-3
+    py-1.5
+    text-[11px]
+    font-mono
+    tracking-wide
+    text-emerald-400
+    transition-all
+    hover:border-emerald-400/50
+    hover:bg-emerald-500/10
+  "
+>
+  💰 Tip
+</button>
+
+{/* VOICE */}
+<button
+  className="
+    ml-2
+    flex
+    items-center
+    gap-2
+    rounded-lg
+    border
+    border-purple-500/20
+    bg-purple-500/5
+    px-3
+    py-1.5
+    text-[11px]
+    font-mono
+    tracking-wide
+    text-purple-400
+    transition-all
+    hover:border-purple-400/50
+    hover:bg-purple-500/10
+  "
+>
+  🎤 Voice
+</button>
+
+{/* HERE */}
+<button
+  className="
+    ml-2
+    flex
+    items-center
+    gap-2
+    rounded-lg
+    border
+    border-orange-500/20
+    bg-orange-500/5
+    px-3
+    py-1.5
+    text-[11px]
+    font-mono
+    tracking-wide
+    text-orange-400
+    transition-all
+    hover:border-orange-400/50
+    hover:bg-orange-500/10
+  "
+>
+  👥 Here
+</button>
+
+{/* PLACE */}
+<button
+  className="
+    ml-2
+    flex
+    items-center
+    gap-2
+    rounded-lg
+    border
+    border-blue-500/20
+    bg-blue-500/5
+    px-3
+    py-1.5
+    text-[11px]
+    font-mono
+    tracking-wide
+    text-blue-400
+    transition-all
+    hover:border-blue-400/50
+    hover:bg-blue-500/10
+  "
+>
+  📍 Place
+</button>
+
 
 </div>
 
