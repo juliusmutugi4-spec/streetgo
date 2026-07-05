@@ -192,10 +192,15 @@ setUploadedBytes(0)
 setTotalBytes(0)
 
 
-    } catch (error: any) {
-      console.error('Error posting:', error)
-      alert(error.message)
-    }
+    } 
+    
+catch (error: any) {
+  console.error('FULL ERROR:', error)
+
+  alert(
+    JSON.stringify(error, null, 2)
+  )
+}
 
 
     finally {
