@@ -420,8 +420,9 @@ const { data: updateData, error: updateError } = await supabase
   className="
     max-w-7xl
     mx-auto
-    px-4
+    px-0
     pb-20
+    lg:px-4
     lg:grid
     lg:grid-cols-12
     lg:gap-6
