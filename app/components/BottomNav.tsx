@@ -11,12 +11,17 @@ type BottomNavProps = {
     avatar_url?: string | null
   } | null
   unreadCount: number
+
+  onCreateSelect: (
+    mode: 'post' | 'prediction'
+  ) => void
 }
 
 export default function BottomNav({
   user,
   profile,
   unreadCount,
+  onCreateSelect,
 }: BottomNavProps) {
   const router = useRouter()
 const [showCreateMenu, setShowCreateMenu] = useState(false)
@@ -31,10 +36,10 @@ const [showCreateMenu, setShowCreateMenu] = useState(false)
 
     {/* Transmit */}
     <button
-      onClick={() => {
-        setShowCreateMenu(false)
-        navigate('/create')
-      }}
+onClick={() => {
+  setShowCreateMenu(false)
+  onCreateSelect('post')
+}}
       className="w-full flex items-center gap-3 px-4 py-3 text-cyan-300 hover:bg-cyan-500/10 transition"
     >
       <Radio size={18} />
@@ -47,10 +52,10 @@ const [showCreateMenu, setShowCreateMenu] = useState(false)
 
     {/* Predict */}
     <button
-      onClick={() => {
-        setShowCreateMenu(false)
-        navigate('/prediction/create')
-      }}
+onClick={() => {
+  setShowCreateMenu(false)
+  onCreateSelect('prediction')
+}}
       className="w-full flex items-center gap-3 px-4 py-3 text-orange-300 hover:bg-orange-500/10 transition"
     >
       <Sparkles size={18} />

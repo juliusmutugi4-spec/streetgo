@@ -44,7 +44,9 @@ const [voteCounts, setVoteCounts] = useState<any>({})
 const [showNav, setShowNav] = useState(true)
 const [lastScrollY, setLastScrollY] = useState(0)
 const [pendingRideCount, setPendingRideCount] = useState(0)
-
+const [createMode, setCreateMode] = useState<
+  'none' | 'post' | 'prediction'
+>('none')
   // Fetch unread messages count
   const fetchUnreadMessages = async (userId: string) => {
     const { count } = await supabase
@@ -433,15 +435,56 @@ const { data: updateData, error: updateError } = await supabase
           <div className="group relative rounded-xl bg-zinc-900/20 border border-zinc-900 overflow-hidden shadow-2xl backdrop-blur-md transition-all duration-500 hover:border-zinc-800/80">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
             <div className="p-4">
-              <CreatePost userId={user.id} onPosted={fetchPosts} />
+{createMode === 'post' && (
+  <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm">
 
-<CreatePrediction
-  userId={user.id}
-  username={profile?.username}
-  avatarUrl={profile?.avatar_url}
-  onCreated={fetchPredictions}
-/>
+    <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-[#060608] border-t border-cyan-500/20 p-4 max-h-[90vh] overflow-y-auto">
 
+      <button
+        onClick={() => setCreateMode('none')}
+        className="absolute right-4 top-4 text-red-400 font-bold"
+      >
+        ✕
+      </button>
+
+      <CreatePost
+        userId={user.id}
+        onPosted={() => {
+          fetchPosts()
+          setCreateMode('none')
+        }}
+      />
+
+    </div>
+
+  </div>
+)}
+{createMode === 'prediction' && (
+  <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm">
+
+    <div className="absolute bottom-0 left-0 right-0 rounded-t-3xl bg-[#060608] border-t border-orange-500/20 p-4 max-h-[90vh] overflow-y-auto">
+
+      <button
+        onClick={() => setCreateMode('none')}
+        className="absolute right-4 top-4 text-red-400 font-bold"
+      >
+        ✕
+      </button>
+
+      <CreatePrediction
+        userId={user.id}
+        username={profile?.username}
+        avatarUrl={profile?.avatar_url}
+        onCreated={() => {
+          fetchPredictions()
+          setCreateMode('none')
+        }}
+      />
+
+    </div>
+
+  </div>
+)}
 
             </div>
           </div>
@@ -701,11 +744,12 @@ const { data: updateData, error: updateError } = await supabase
   </div>
 )}
 
-      <BottomNav
-        user={user}
-        profile={profile}
-        unreadCount={unreadCount} // ✅ pass unread count to show badge
-      />
+<BottomNav
+  user={user}
+  profile={profile}
+  unreadCount={unreadCount}
+  onCreateSelect={setCreateMode}
+/>
 
       {/* Login Modal */}
       {showLogin && (
