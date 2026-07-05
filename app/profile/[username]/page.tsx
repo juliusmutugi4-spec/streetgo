@@ -293,7 +293,7 @@ if (!error) {
 <div className="w-full">
 
   {/* COVER */}
-<div className="relative z-0 h-44 w-full overflow-hidden">
+<div className="relative z-0 h-32 md:h-40 w-full overflow-hidden">
 
   <img
     src="/cover.jpg"
@@ -418,17 +418,18 @@ className="
 
 
             
-<div className="absolute -top-6 left-4 z-[999]">
+<div className="absolute -top-8 left-5 z-[999]">
   <img
     src={profile.avatar_url || '/avatar-placeholder.png'}
     alt="Profile"
     className="
-      w-14
-      h-14
+      w-20
+      h-20
       rounded-full
       object-cover
-      border-2
+      border-4
       border-[#09090b]
+      shadow-xl
     "
   />
 </div>
