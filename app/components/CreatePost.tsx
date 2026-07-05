@@ -13,7 +13,73 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
   const [video, setVideo] = useState<File | null>(null)
   const [image, setImage] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+ const [uploadProgress, setUploadProgress] = useState(0)
+const [uploadedBytes, setUploadedBytes] = useState(0)
+const [totalBytes, setTotalBytes] = useState(0)
+const [uploadSpeed, setUploadSpeed] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
+const [timeRemaining, setTimeRemaining] = useState(0)
+const [uploadComplete, setUploadComplete] = useState(false)
+
+const uploadWithProgress = (
+  bucket: string,
+  file: File,
+  fileName: string
+): Promise<string> => {
+  return new Promise((resolve, reject) => {
+
+    const xhr = new XMLHttpRequest()
+
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('bucket', bucket)
+    formData.append('fileName', fileName)
+
+const startTime = Date.now()
+
+xhr.upload.onprogress = (event) => {
+  if (!event.lengthComputable) return
+
+  const percent = Math.round(
+    (event.loaded / event.total) * 100
+  )
+
+  const elapsed = (Date.now() - startTime) / 1000
+
+  const speed = elapsed > 0
+    ? event.loaded / elapsed
+    : 0
+
+  const remaining =
+    speed > 0
+      ? (event.total - event.loaded) / speed
+      : 0
+
+  setUploadProgress(percent)
+  setUploadedBytes(event.loaded)
+  setTotalBytes(event.total)
+  setUploadSpeed(speed)
+  setTimeRemaining(Math.ceil(remaining))
+}
+
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        resolve(xhr.responseText)
+      } else {
+        reject(xhr.responseText)
+      }
+    }
+
+    xhr.onerror = () => reject('Upload failed')
+
+    xhr.open('POST', '/api/upload')
+
+    xhr.send(formData)
+
+  })
+}
+
+
 
   const handlePost = async () => {
     if (
@@ -31,39 +97,45 @@ export default function CreatePost({ userId, onPosted }: CreatePostProps) {
       let imageUrl = null
 
       // Upload video if exists
-      if (video) {
-        const fileExt = video.name.split('.').pop()
-        const fileName = `${userId}-${Date.now()}.${fileExt}`
+if (video) {
+  const fileExt = video.name.split('.').pop()
+  const fileName = `${userId}-${Date.now()}.${fileExt}`
 
-        const { error: uploadError } = await supabase.storage
-          .from('videos')
-          .upload(fileName, video)
+  const response = await uploadWithProgress(
+    'videos',
+    video,
+    fileName
+  )
 
-        if (uploadError) throw uploadError
+  const result = JSON.parse(response)
 
-        const { data } = supabase.storage.from('videos').getPublicUrl(fileName)
-        videoUrl = data.publicUrl
-      }
+  if (!result.success) {
+    throw new Error(result.error)
+  }
 
-      if (image) {
-        const fileExt = image.name.split('.').pop()
+  videoUrl = result.url
+}
 
-        const fileName =
-          `${userId}-${Date.now()}-image.${fileExt}`
+if (image) {
+  const fileExt = image.name.split('.').pop()
 
-        const { error } = await supabase.storage
-          .from('images')
-          .upload(fileName, image)
+  const fileName =
+    `${userId}-${Date.now()}-image.${fileExt}`
 
-        if (error) throw error
+  const response = await uploadWithProgress(
+    'images',
+    image,
+    fileName
+  )
 
-        const { data } = supabase
-          .storage
-          .from('images')
-          .getPublicUrl(fileName)
+  const result = JSON.parse(response)
 
-        imageUrl = data.publicUrl
-      }
+  if (!result.success) {
+    throw new Error(result.error)
+  }
+
+  imageUrl = result.url
+}
 
       // Get username from auth metadata or email
       const { data: profile, error: profileError } = await supabase
@@ -109,7 +181,16 @@ setImage(null)
       }
 
       // Refresh feed
-      onPosted()
+      setUploadComplete(true)
+
+setTimeout(() => {
+  onPosted()
+}, 1000)
+
+setUploadProgress(0)
+setUploadedBytes(0)
+setTotalBytes(0)
+
 
     } catch (error: any) {
       console.error('Error posting:', error)
@@ -172,64 +253,51 @@ setImage(null)
           />
         </div>
 
-        {/* VIDEO */}
-        {video && (
-          <div className="mt-4 rounded-xl border border-orange-500/30 bg-orange-500/5 p-4">
-
-            <div className="flex items-center gap-3">
-
-              <Video size={16} className="text-orange-400" />
-
-              <div className="flex-1 overflow-hidden">
-                <p className="truncate text-xs font-mono text-cyan-100">
-                  {video.name}
-                </p>
-                <p className="text-[10px] font-mono text-blue-400">
-                  {(video.size / 1024 / 1024).toFixed(2)} MB
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setVideo(null)
-                  if (fileInputRef.current) fileInputRef.current.value = ''
-                }}
-                className="text-xs font-mono text-orange-400 hover:text-orange-300"
-              >
-                remove
-              </button>
-            </div>
-          </div>
-        )}
-
-{image && (
-  <div className="mt-4 rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+{(image || video) && (
+  <div className="mt-4 rounded-xl border border-cyan-500/20 bg-[#0b1220]/60 p-4">
 
     <div className="flex items-center gap-3">
 
-      <Image size={16} className="text-cyan-400" />
+      {image ? (
+        <img
+          src={URL.createObjectURL(image)}
+          alt="preview"
+          className="w-16 h-16 rounded-lg object-cover border border-cyan-500/20"
+        />
+      ) : (
+        <video
+          src={URL.createObjectURL(video!)}
+          className="w-16 h-16 rounded-lg object-cover border border-orange-500/20"
+          muted
+        />
+      )}
 
-      <img
-        src={URL.createObjectURL(image)}
-        alt="preview"
-        className="w-16 h-16 rounded-lg object-cover"
-      />
+      <div className="flex-1 overflow-hidden">
 
-      <div className="flex-1">
         <p className="truncate text-xs font-mono text-cyan-100">
-          {image.name}
+          {image?.name || video?.name}
         </p>
 
         <p className="text-[10px] font-mono text-blue-400">
-          {(image.size / 1024 / 1024).toFixed(2)} MB
+          {(
+            ((image?.size || video?.size || 0) / 1024 / 1024)
+          ).toFixed(2)} MB
         </p>
+
       </div>
 
       <button
-        onClick={() => setImage(null)}
-        className="text-xs font-mono text-red-400"
+        onClick={() => {
+          setImage(null)
+          setVideo(null)
+
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ''
+          }
+        }}
+        className="text-xs font-bold text-red-400 hover:text-red-300"
       >
-        remove
+        Remove
       </button>
 
     </div>
@@ -243,8 +311,83 @@ setImage(null)
 
         {/* ACTIONS */}
         <div className="mt-5 flex flex-col sm:flex-row gap-3">
+{(uploading || uploadComplete) && (
+  <div className="mt-5 mb-4 rounded-xl border border-cyan-500/20 bg-[#0b1220]/70 p-4">
+
+    <div className="flex justify-between items-center mb-2">
+
+      <span className="text-xs font-bold text-cyan-300">
+        {uploadComplete
+  ? 'Upload Complete'
+  : 'Uploading Media...'}
+      </span>
+
+      <span className="text-xs font-mono text-cyan-300">
+        {uploadComplete ? '✔' : `${uploadProgress}%`}
+      </span>
+
+    </div>
+
+<div className="relative mt-1 h-3 overflow-hidden rounded-full bg-zinc-800 border border-cyan-500/20">
+
+  {/* Animated background */}
+  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 via-blue-500/10 to-cyan-500/10 animate-pulse" />
+
+  {/* Progress */}
+  <div
+    className="
+      relative
+      h-full
+      rounded-full
+      bg-gradient-to-r
+      from-cyan-400
+      via-blue-500
+      to-cyan-300
+      transition-all
+      duration-300
+      shadow-[0_0_18px_rgba(34,211,238,.7)]
+    "
+    style={{
+      width: `${uploadProgress}%`
+    }}
+  />
+
+  {/* Moving glow */}
+  <div
+    className="absolute top-0 h-full w-8 bg-white/30 blur-sm"
+    style={{
+      left: `calc(${uploadProgress}% - 16px)`
+    }}
+  />
+
+</div>
+
+    <div className="mt-2 flex justify-between text-[10px] text-zinc-400">
+
+      <span>
+        {(uploadedBytes / 1024 / 1024).toFixed(2)} MB
+      </span>
+
+      <span>
+        {(totalBytes / 1024 / 1024).toFixed(2)} MB
+      </span>
+
+    </div>
+<div className="mt-1 flex justify-between text-[10px] text-cyan-400">
+
+  <span>
+    {(uploadSpeed / 1024 / 1024).toFixed(2)} MB/s
+  </span>
+
+  <span>
+    {timeRemaining}s left
+  </span>
+
+</div>
 
 
+  </div>
+)}
 
 <label
   className="
@@ -263,41 +406,35 @@ setImage(null)
     font-bold
     uppercase
     text-cyan-300
+    hover:text-orange-300
+    hover:border-orange-400/40
+    transition
   "
 >
-  <Image size={14} />
+  <ImagePlus size={15} />
 
-  Image
+  Media
 
   <input
+    ref={fileInputRef}
     type="file"
-    accept="image/*"
+    accept="image/*,video/*"
     hidden
-    onChange={(e) =>
-      setImage(e.target.files?.[0] || null)
-    }
+    onChange={(e) => {
+      const file = e.target.files?.[0]
+
+      if (!file) return
+
+      if (file.type.startsWith('image/')) {
+        setImage(file)
+        setVideo(null)
+      } else if (file.type.startsWith('video/')) {
+        setVideo(file)
+        setImage(null)
+      }
+    }}
   />
 </label>
-
-
-          {/* FILE */}
-          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg
-          border border-cyan-500/20 bg-[#0b1220] px-5 py-2.5 text-xs font-bold uppercase
-          text-cyan-300 hover:text-orange-300 hover:border-orange-400/40 transition">
-
-<Video size={14} />
-Video
-
-
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="video/*"
-              hidden
-              onChange={(e) => setVideo(e.target.files?.[0] || null)}
-            />
-          </label>
 
           {/* SEND */}
           <button
@@ -310,17 +447,23 @@ Video
             hover:shadow-[0_0_40px_rgba(249,115,22,0.25)]
             transition-all active:scale-95 disabled:opacity-40"
           >
-            {uploading ? (
-              <>
-                <Loader2 size={14} className="animate-spin" />
-                Broadcasting...
-              </>
-            ) : (
-              <>
-                <Send size={14} />
-                Transmit
-              </>
-            )}
+{uploading ? (
+  uploadProgress < 100 ? (
+    <>
+      <Loader2 size={14} className="animate-spin" />
+      Uploading... {uploadProgress}%
+    </>
+  ) : (
+    <>
+      ✅ Finalizing...
+    </>
+  )
+) : (
+  <>
+    <Send size={14} />
+    Transmit
+  </>
+)}
           </button>
 
         </div>

@@ -31,13 +31,29 @@ const [showCreateMenu, setShowCreateMenu] = useState(false)
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#060608]/95 backdrop-blur-xl border-t border-zinc-800 shadow-md">
       <div className="max-w-xl mx-auto h-16 flex items-center justify-around">
 
-{showCreateMenu && (
-  <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-50 animate-in fade-in zoom-in-95 duration-200">
 
-    <div
-      className="
-        relative
-        w-44
+
+
+        {/* Feed */}
+        <button
+          onClick={() => navigate('/')}
+          className="flex flex-col items-center text-zinc-400 hover:text-white transition"
+        >
+          <Home size={24} />
+          <span className="text-[10px] mt-1">Feed</span>
+        </button>
+
+{/* Create */}
+<div className="relative flex flex-col items-center">
+
+{showCreateMenu && (
+  <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in zoom-in-95 duration-200">
+
+<div
+  className="
+    relative
+    w-44
+    mb-3
         overflow-hidden
         rounded-2xl
         border
@@ -182,46 +198,51 @@ const [showCreateMenu, setShowCreateMenu] = useState(false)
     </div>
 
     {/* POINTER */}
-    <div className="flex justify-center -mt-[1px]">
-      <div className="h-3 w-3 rotate-45 border-r border-b border-emerald-500/20 bg-[#090d12]" />
-    </div>
+{/* BOTTOM NOTCH */}
+<div className="absolute -bottom-[10px] left-1/2 -translate-x-1/2">
+  <div
+    className="
+      w-5
+      h-5
+      rotate-45
+      bg-[#090d12]
+      border-r
+      border-b
+      border-emerald-500/20
+      shadow-[0_0_18px_rgba(34,197,94,.18)]
+    "
+  />
+</div>
 
   </div>
 )}
 
 
 
-        {/* Feed */}
-        <button
-          onClick={() => navigate('/')}
-          className="flex flex-col items-center text-zinc-400 hover:text-white transition"
-        >
-          <Home size={24} />
-          <span className="text-[10px] mt-1">Feed</span>
-        </button>
 
-        {/* Create */}
-   <button
-  onClick={() => setShowCreateMenu(!showCreateMenu)}
-  className="flex flex-col items-center text-emerald-400 hover:text-emerald-300 transition"
->
-  <div
-    className={`
-      flex
-      items-center
-      justify-center
-      transition-all
-      duration-300
-      ${showCreateMenu ? "rotate-45 scale-110" : ""}
-    `}
+  <button
+    onClick={() => setShowCreateMenu(!showCreateMenu)}
+    className="flex flex-col items-center text-emerald-400 hover:text-emerald-300 transition"
   >
-    <PlusSquare size={26} />
-  </div>
+    <div
+      className={`
+        flex
+        items-center
+        justify-center
+        transition-all
+        duration-300
+        ${showCreateMenu ? "rotate-45 scale-110" : ""}
+      `}
+    >
+      <PlusSquare size={26} />
+    </div>
 
-  <span className="text-[10px] mt-1">
-    {showCreateMenu ? "Close" : "Create"}
-  </span>
-</button>
+    <span className="text-[10px] mt-1">
+      {showCreateMenu ? "Close" : "Create"}
+    </span>
+  </button>
+
+</div>
 
         {/* Messages */}
         <button
