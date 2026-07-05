@@ -44,28 +44,36 @@ console.log("STEP 1")
 if (video) {
   console.log("Starting video upload")
 
+  console.log(video.name)
+  console.log(video.type)
+  console.log(video.size)
+
   const fileExt = video.name.split('.').pop()
-  const fileName = `${userId}-${Date.now()}.${fileExt}`
+  const fileName = `${Date.now()}.${fileExt}`
 
-  const result = await supabase.storage
-    .from('videos')
-    .upload(fileName, video)
+console.time("VIDEO UPLOAD")
 
-  console.log("VIDEO RESULT:", result)
+const { data, error } = await supabase.storage
+  .from('videos')
+  .upload(fileName, video, {
+    cacheControl: '3600',
+    upsert: false,
+    contentType: video.type,
+  })
 
-  if (result.error) {
-    throw result.error
-  }
+console.timeEnd("VIDEO UPLOAD")
 
-  const { data } = supabase.storage
-    .from('videos')
-    .getPublicUrl(fileName)
+console.log("VIDEO DATA:", data)
+console.log("VIDEO ERROR:", error)
 
-  videoUrl = data.publicUrl
+if (error) throw error
 
-  console.log("Video upload finished")
+videoUrl = supabase.storage
+  .from('videos')
+  .getPublicUrl(fileName).data.publicUrl
+
+console.log("Video upload finished")
 }
-
 if (image) {
   console.log("Starting image upload")
 
