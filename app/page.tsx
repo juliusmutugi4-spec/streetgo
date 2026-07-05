@@ -737,13 +737,14 @@ const { data: updateData, error: updateError } = await supabase
   ✕
 </button>
 
-      <CreatePost
-        userId={user.id}
-        onPosted={() => {
-          fetchPosts()
-          setCreateMode('none')
-        }}
-      />
+<CreatePost
+  userId={user.id}
+  profile={profile}
+  onPosted={() => {
+    fetchPosts()
+    setCreateMode('none')
+  }}
+/>
 
     </div>
 

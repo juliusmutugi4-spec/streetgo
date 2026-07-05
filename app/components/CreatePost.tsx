@@ -5,10 +5,17 @@ import { ImagePlus, Video, Send, Loader2, Image, Sparkles } from 'lucide-react'
 
 interface CreatePostProps {
   userId: string
+  profile: {
+    username?: string
+    avatar_url?: string | null
+  } | null
   onPosted: () => void
 }
-
-export default function CreatePost({ userId, onPosted }: CreatePostProps) {
+export default function CreatePost({
+  userId,
+  profile,
+  onPosted,
+}: CreatePostProps) {
   const [content, setContent] = useState('')
   const [video, setVideo] = useState<File | null>(null)
   const [image, setImage] = useState<File | null>(null)
@@ -26,7 +33,7 @@ const fileInputRef = useRef<HTMLInputElement>(null)
 )
   return
     setUploading(true)
-
+console.log("STEP 1")
     try {
       if (!userId) throw new Error('Not logged in')
 
@@ -70,24 +77,12 @@ if (image) {
   imageUrl = data.publicUrl
 }
 
-      // Get username from auth metadata or email
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('username, avatar_url')
-        .eq('id', userId)
-        .maybeSingle()
-
-      console.log('PROFILE:', profile)
-      console.log('PROFILE ERROR:', profileError)
-
-      const avatar_url =
-        profile?.avatar_url || null
-
-
-      const username = profile?.username
-
+      // Get username from auth metadata or emai
+const avatar_url = profile?.avatar_url ?? null
       // Insert post with username
-      const { data: insertedPost, error: insertError } = await supabase
+      const { data: insertedPost, error: insertError } = await
+       supabase
+       
         .from('posts')
         .insert({
           content: content,
@@ -114,7 +109,11 @@ setImage(null)
       }
 
       // Refresh feed
-onPosted()
+console.log("BEFORE onPosted")
+
+await Promise.resolve(onPosted())
+
+console.log("AFTER onPosted")
 
 
     } 
