@@ -116,18 +116,28 @@ async function loadDriver() {
     .eq('driver_id', data.id)
     .maybeSingle()
 
-  if (!existing) {
-    await supabase
-      .from('driver_locations')
-      .insert({
-        driver_id: data.id,
-        latitude: 0,
-        longitude: 0,
-        online: false
-      })
 
-    setOnline(false)
-  } else {
+if (!existing) {
+
+  console.log("Creating driver_locations row...")
+
+  const { error: insertError } = await supabase
+    .from('driver_locations')
+    .insert({
+      driver_id: data.id,
+      latitude: 0,
+      longitude: 0,
+      online: false
+    })
+
+  console.log("INSERT ERROR:", insertError)
+
+  setOnline(false)
+}
+
+
+
+  else {
     setOnline(existing.online)
   }
 }
