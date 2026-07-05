@@ -1,7 +1,8 @@
 'use client'
 
-import { Home, PlusSquare, MessageCircle, User } from 'lucide-react'
+import { Home, PlusSquare, MessageCircle, User, Radio, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 type BottomNavProps = {
   user: any
@@ -18,12 +19,50 @@ export default function BottomNav({
   unreadCount,
 }: BottomNavProps) {
   const router = useRouter()
-
+const [showCreateMenu, setShowCreateMenu] = useState(false)
   const navigate = (path: string) => router.push(path)
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#060608]/95 backdrop-blur-xl border-t border-zinc-800 shadow-md">
       <div className="max-w-xl mx-auto h-16 flex items-center justify-around">
+
+{showCreateMenu && (
+  <div className="absolute bottom-20 left-1/2 -translate-x-1/2 w-52 rounded-2xl border border-cyan-500/30 bg-[#05070b]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+
+    {/* Transmit */}
+    <button
+      onClick={() => {
+        setShowCreateMenu(false)
+        navigate('/create')
+      }}
+      className="w-full flex items-center gap-3 px-4 py-3 text-cyan-300 hover:bg-cyan-500/10 transition"
+    >
+      <Radio size={18} />
+      <span className="font-semibold">
+        📡 Transmit
+      </span>
+    </button>
+
+    <div className="border-t border-zinc-800" />
+
+    {/* Predict */}
+    <button
+      onClick={() => {
+        setShowCreateMenu(false)
+        navigate('/prediction/create')
+      }}
+      className="w-full flex items-center gap-3 px-4 py-3 text-orange-300 hover:bg-orange-500/10 transition"
+    >
+      <Sparkles size={18} />
+      <span className="font-semibold">
+        🔮 Predict
+      </span>
+    </button>
+
+  </div>
+)}
+
+
 
         {/* Feed */}
         <button
@@ -36,7 +75,7 @@ export default function BottomNav({
 
         {/* Create */}
         <button
-          onClick={() => navigate('/create')}
+          onClick={() =>  setShowCreateMenu(!showCreateMenu)}
           className="flex flex-col items-center text-emerald-400 hover:text-emerald-300 transition"
         >
           <PlusSquare size={26} />
