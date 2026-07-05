@@ -146,6 +146,14 @@ async function toggleOnline() {
     })
     .eq('driver_id', driverId)
 
+await supabase
+  .from('drivers')
+  .update({
+    available: newStatus
+  })
+  .eq('id', driverId)
+
+
   if (error) {
     console.log(error)
     alert(error.message)
@@ -182,13 +190,14 @@ useEffect(() => {
 
   const watchId = navigator.geolocation.watchPosition(
     async (position) => {
-      await supabase
-        .from('driver_locations')
-        .update({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        })
-        .eq('driver_id', driverId)
+await supabase
+  .from('driver_locations')
+  .update({
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude,
+    online: true
+  })
+  .eq('driver_id', driverId)
     },
     (error) => console.log(error),
     {

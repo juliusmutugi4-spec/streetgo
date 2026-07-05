@@ -103,9 +103,11 @@ async function loadDrivers() {
     .from('driver_locations')
     .select(`
       *,
-      drivers(*)
+      drivers!inner(*)
     `)
     .eq('online', true)
+    .eq('drivers.status', 'approved')
+    .eq('drivers.available', true)
 
   if (data) {
     setDrivers(data)
@@ -703,9 +705,13 @@ onLoad={(e) => {
     height: '100%'
   }}
 >
-    
+    console.log("mapLoaded:", mapLoaded)
+console.log("longitude:", longitude)
+console.log("latitude:", latitude)
 {mapLoaded && (
   <Marker longitude={longitude} latitude={latitude}>
+
+    
   <div className="relative">
 
     {/* Glow */}
