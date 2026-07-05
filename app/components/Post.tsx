@@ -10,7 +10,7 @@ interface PostProps {
 post: {
   id: string
   content: string
-  image_url?: string | null
+  image_urls?: string[] | null
   video_url?: string | null
     user_id: string
     created_at: string
@@ -43,6 +43,7 @@ const [showComments, setShowComments] = useState(false)
 const [showLogin, setShowLogin] = useState(false)
 const [showMenu, setShowMenu] = useState(false)
 const menuRef = useRef<HTMLDivElement>(null)
+const [currentImage, setCurrentImage] = useState(0)
   // Load likes & comments
   const loadPostData = async () => {
     // Likes count
@@ -379,71 +380,61 @@ mb-3
   </p>
 )}
 
-{/* Image */}
-{post.image_url && (
-  <div className="relative mt-3 overflow-hidden rounded-xl group">
+{post.image_urls && post.image_urls.length > 0 && (
+  <div className="-mx-4 mt-4 relative">
 
-    {/* Glow */}
-    <div
-      className="
-        absolute
-        inset-0
-        bg-gradient-to-r
-        from-cyan-500/20
-        via-blue-500/10
-        to-orange-500/20
-        blur-2xl
-      "
-    />
-
-    <img
-      src={post.image_url}
-      alt="Post"
-      className="
-        relative
-        w-full
-        rounded-xl
-        max-h-[600px]
-        object-cover
-        border
-        border-cyan-500/20
-        transition-all
-        duration-500
-        group-hover:scale-[1.02]
-      "
-    />
-
-    <div
-      className="
-        absolute
-        inset-0
-        bg-gradient-to-t
-        from-black/50
-        via-transparent
-        to-transparent
-      "
-    />
-
-    <div
-      className="
-        absolute
-        top-3
-        right-3
-        px-3
-        py-1
-        rounded-full
-        bg-cyan-500/20
-        backdrop-blur-xl
-        border
-        border-cyan-500/30
-        text-cyan-300
-        text-[10px]
-        font-bold
-        uppercase
-      "
-    >
-      Visual Signal
+<div
+  id={`gallery-${post.id}`}
+  className="
+    relative
+    flex
+    overflow-x-auto
+    snap-x
+    snap-mandatory
+    scrollbar-hide
+    scroll-smooth
+  "
+  onScroll={(e) => {
+    const width = e.currentTarget.clientWidth
+    const index = Math.round(e.currentTarget.scrollLeft / width)
+    setCurrentImage(index)
+  }}
+>
+      {post.image_urls.map((url, index) => (
+        <img
+          key={index}
+          src={url}
+          alt=""
+className="
+  w-full
+  min-w-full
+  h-[65vh]
+  shrink-0
+  snap-center
+  object-cover
+"
+        />
+      ))}
     </div>
+
+
+
+
+<div
+  className="
+    pointer-events-none
+    absolute
+    bottom-0
+    left-0
+    right-0
+    h-32
+    bg-gradient-to-t
+    from-black/80
+    via-black/20
+    to-transparent
+  "
+/>
+
 
   </div>
 )}

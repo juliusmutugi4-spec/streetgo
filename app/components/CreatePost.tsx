@@ -2,7 +2,7 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { ImagePlus, Video, Send, Loader2, Image, Sparkles } from 'lucide-react'
-
+import imageCompression from 'browser-image-compression'
 interface CreatePostProps {
   userId: string
   profile: {
@@ -18,18 +18,18 @@ export default function CreatePost({
 }: CreatePostProps) {
   const [content, setContent] = useState('')
   const [video, setVideo] = useState<File | null>(null)
-  const [image, setImage] = useState<File | null>(null)
+  const [images, setImages] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
-
+const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([])
 const fileInputRef = useRef<HTMLInputElement>(null)
 
 
 
   const handlePost = async () => {
-    if (
+if (
   !content.trim() &&
   !video &&
-  !image
+  images.length === 0
 )
   return
     setUploading(true)
@@ -38,7 +38,7 @@ console.log("STEP 1")
       if (!userId) throw new Error('Not logged in')
 
       let videoUrl = null
-      let imageUrl = null
+      let imageUrls: string[] = []
 
       // Upload video if exists
 if (video) {
@@ -74,58 +74,34 @@ videoUrl = supabase.storage
 
 console.log("Video upload finished")
 }
-if (image) {
-  console.log("Starting image upload")
 
-  const fileExt = image.name.split('.').pop()
-  const fileName = `${userId}-${Date.now()}-image.${fileExt}`
-
-  const result = await supabase.storage
-    .from('images')
-    .upload(fileName, image)
-
-  console.log("IMAGE RESULT:", result)
-
-  if (result.error) {
-    throw result.error
-  }
-
-  const { data } = supabase.storage
-    .from('images')
-    .getPublicUrl(fileName)
-
-  imageUrl = data.publicUrl
-
-  console.log("Image upload finished")
-}
-
+imageUrls = uploadedImageUrls
       // Get username from auth metadata or emai
 const avatar_url = profile?.avatar_url ?? null
-      // Insert post with username
-      const { data: insertedPost, error: insertError } = await
-       supabase
-       
-        .from('posts')
-        .insert({
-          content: content,
-          user_id: userId,
-          avatar_url: avatar_url,
-          video_url: videoUrl,
-          image_url: imageUrl
-        })
-        .select()
 
-      console.log('INSERTED POST:', insertedPost)
-      console.log('INSERT ERROR:', insertError)
-      if (insertError) {
-        console.log(insertError)
-        throw insertError
-      }
+const { data: insertedPost, error: insertError } = await supabase
+  .from('posts')
+  .insert({
+    content: content,
+    user_id: userId,
+    avatar_url,
+    video_url: videoUrl,
+    image_urls: imageUrls
+  })
+  .select()
+
+console.log("INSERTED POST:", insertedPost)
+console.log("INSERT ERROR:", insertError)
+
+if (insertError) {
+  throw insertError
+}
+
 
       // Reset form
 setContent('')
 setVideo(null)
-setImage(null)
+setImages([])
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -204,42 +180,53 @@ catch (error: any) {
           />
         </div>
 
-{(image || video) && (
+{(images.length > 0 || video) && (
   <div className="mt-4 rounded-xl border border-cyan-500/20 bg-[#0b1220]/60 p-4">
 
     <div className="flex items-center gap-3">
-
-      {image ? (
-        <img
-          src={URL.createObjectURL(image)}
-          alt="preview"
-          className="w-16 h-16 rounded-lg object-cover border border-cyan-500/20"
-        />
-      ) : (
-        <video
-          src={URL.createObjectURL(video!)}
-          className="w-16 h-16 rounded-lg object-cover border border-orange-500/20"
-          muted
-        />
-      )}
+{images.length > 0 ? (
+  <div className="flex overflow-x-auto snap-x snap-mandatory scroll-smooth">
+    {images.map((img, index) => (
+      <img
+        key={index}
+        src={URL.createObjectURL(img)}
+        alt=""
+        className="w-32 h-32 rounded-xl object-cover shrink-0 border border-cyan-500/20"
+      />
+    ))}
+  </div>
+) : video ? (
+  <video
+    src={URL.createObjectURL(video)}
+    className="w-32 h-32 rounded-xl object-cover border border-orange-500/20"
+    muted
+  />
+) : null}
 
       <div className="flex-1 overflow-hidden">
 
         <p className="truncate text-xs font-mono text-cyan-100">
-          {image?.name || video?.name}
+          {images.length > 0
+  ? `${images.length} Photos Selected`
+  : video?.name}
         </p>
 
-        <p className="text-[10px] font-mono text-blue-400">
-          {(
-            ((image?.size || video?.size || 0) / 1024 / 1024)
-          ).toFixed(2)} MB
-        </p>
+ <p className="text-[10px] font-mono text-blue-400">
+  {(
+    (images.reduce((t, f) => t + f.size, 0) ||
+      video?.size ||
+      0) /
+    1024 /
+    1024
+  ).toFixed(2)}{" "}
+  MB
+</p>
 
       </div>
 
       <button
         onClick={() => {
-          setImage(null)
+          setImages([])
           setVideo(null)
 
           if (fileInputRef.current) {
@@ -312,23 +299,57 @@ catch (error: any) {
 
   Media
 
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept="image/*,video/*"
+<input
+  ref={fileInputRef}
+  type="file"
+  accept="image/*,video/*"
+  multiple
     hidden
-    onChange={(e) => {
+    onChange={async (e) => {
       const file = e.target.files?.[0]
 
       if (!file) return
 
-      if (file.type.startsWith('image/')) {
-        setImage(file)
-        setVideo(null)
-      } else if (file.type.startsWith('video/')) {
-        setVideo(file)
-        setImage(null)
-      }
+if (file.type.startsWith('image/')) {
+  const files = Array.from(e.target.files || [])
+    .filter(file => file.type.startsWith('image/'))
+    .slice(0, 10)
+
+  setImages(files)
+  setVideo(null)
+
+  // Background upload starts immediately
+  const urls = await Promise.all(
+    files.map(async (img) => {
+      const compressedImage = await imageCompression(img, {
+        maxSizeMB: 0.4,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      })
+
+      const fileExt = img.name.split('.').pop()
+
+      const fileName =
+        `${userId}-${Date.now()}-${crypto.randomUUID()}.${fileExt}`
+
+      const { error } = await supabase.storage
+        .from('images')
+        .upload(fileName, compressedImage)
+
+      if (error) throw error
+
+      return supabase.storage
+        .from('images')
+        .getPublicUrl(fileName).data.publicUrl
+    })
+  )
+
+  setUploadedImageUrls(urls)
+}
+else if (file.type.startsWith('video/')) {
+  setVideo(file)
+  setImages([])
+}
     }}
   />
 </label>
