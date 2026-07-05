@@ -201,13 +201,27 @@ const [showCreateMenu, setShowCreateMenu] = useState(false)
         </button>
 
         {/* Create */}
-        <button
-          onClick={() =>  setShowCreateMenu(!showCreateMenu)}
-          className="flex flex-col items-center text-emerald-400 hover:text-emerald-300 transition"
-        >
-          <PlusSquare size={26} />
-          <span className="text-[10px] mt-1">Create</span>
-        </button>
+   <button
+  onClick={() => setShowCreateMenu(!showCreateMenu)}
+  className="flex flex-col items-center text-emerald-400 hover:text-emerald-300 transition"
+>
+  <div
+    className={`
+      flex
+      items-center
+      justify-center
+      transition-all
+      duration-300
+      ${showCreateMenu ? "rotate-45 scale-110" : ""}
+    `}
+  >
+    <PlusSquare size={26} />
+  </div>
+
+  <span className="text-[10px] mt-1">
+    {showCreateMenu ? "Close" : "Create"}
+  </span>
+</button>
 
         {/* Messages */}
         <button
