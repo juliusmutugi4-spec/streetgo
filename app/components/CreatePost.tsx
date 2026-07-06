@@ -50,9 +50,79 @@ console.log("STEP 1")
       let videoUrl = null
       let imageUrls: string[] = []
 
+const files = images
+
+
+setTotalFiles(files.length)
+
+
+console.log("START IMAGE UPLOAD")
+const urls: string[] = []
+
+setTotalFiles(files.length)
+
+for (let index = 0; index < files.length; index++) {
+  const img = files[index]
+
+  setCurrentFile(index + 1)
+  setCurrentUpload(`🖼 Uploading photo ${index + 1} of ${files.length}`)
+
+  const compressedImage = await imageCompression(img, {
+    maxSizeMB: 0.4,
+    maxWidthOrHeight: 1920,
+    useWebWorker: true,
+  })
+
+  const fileExt = img.name.split('.').pop()
+
+  const fileName =
+    `${userId}-${Date.now()}-${crypto.randomUUID()}.${fileExt}`
+
+const { data, error } = await supabase.storage
+  .from("images")
+  .upload(fileName, compressedImage)
+
+console.log("UPLOAD DATA:", data)
+console.log("UPLOAD ERROR:", error)
+
+if (error) throw error
+
+  const url = supabase.storage
+    .from("images")
+    .getPublicUrl(fileName).data.publicUrl
+
+  urls.push(url)
+console.log("URL ADDED:", url)
+console.log("URLS ARRAY:", urls)
+  const completed = index + 1
+
+  setUploadProgress(
+    Math.round((completed / files.length) * 100)
+  )
+
+  const remaining = files.length - completed
+
+  setSecondsLeft(Math.max(0, remaining * 2))
+
+  setCurrentUpload(
+    `✅ Uploaded ${completed} of ${files.length} photos`
+  )
+}
+imageUrls = urls
+
+console.log("IMAGE UPLOAD FINISHED", imageUrls)
+      
+
+
       // Upload video if exists
 if (video) {
+  
   setCurrentUpload("🎥 Uploading video...")
+
+setCurrentFile(1)
+setTotalFiles(1)
+setUploadProgress(5)
+
   console.log("Starting video upload")
 
   console.log(video.name)
@@ -63,7 +133,7 @@ if (video) {
   const fileName = `${Date.now()}.${fileExt}`
 
 console.time("VIDEO UPLOAD")
-
+setUploadProgress(20)
 const { data, error } = await supabase.storage
   .from('videos')
   .upload(fileName, video, {
@@ -76,9 +146,10 @@ console.timeEnd("VIDEO UPLOAD")
 
 console.log("VIDEO DATA:", data)
 console.log("VIDEO ERROR:", error)
-
+setUploadProgress(80)
 if (error) throw error
-
+setUploadProgress(100)
+setCurrentUpload("✅ Video uploaded")
 videoUrl = supabase.storage
   .from('videos')
   .getPublicUrl(fileName).data.publicUrl
@@ -87,12 +158,15 @@ console.log("Video upload finished")
 }
 setCurrentUpload("☁ Finalizing transmission...")
 setUploadProgress(100)
-imageUrls = uploadedImageUrls
+
       // Get username from auth metadata or emai
 const avatar_url = profile?.avatar_url ?? null
-
+console.log("INSERTING POST")
+console.log("INSERT IMAGE URLS:", imageUrls)
 const { data: insertedPost, error: insertError } = await supabase
   .from('posts')
+
+  
   .insert({
     content: content,
     user_id: userId,
@@ -122,6 +196,14 @@ setImages([])
 console.log("BEFORE onPosted")
 setCurrentUpload("✅ Transmission complete")
 await Promise.resolve(onPosted())
+await new Promise(resolve => setTimeout(resolve, 1500))
+
+setUploadProgress(0)
+setCurrentFile(0)
+setTotalFiles(0)
+setSecondsLeft(null)
+setCurrentUpload("")
+
 
 console.log("AFTER onPosted")
 
@@ -390,56 +472,9 @@ if (file.type.startsWith('image/')) {
   setVideo(null)
 
   // Background upload starts immediately
-setTotalFiles(files.length)
 
-const urls = await Promise.all(
-  files.map(async (img, index) => {
 
-    setCurrentFile(index + 1)
 
-    setCurrentUpload(`Uploading photo ${index + 1} of ${files.length}`)
-
-    setUploadProgress(
-      Math.round(((index + 1) / files.length) * 100)
-    )
-      const compressedImage = await imageCompression(img, {
-        maxSizeMB: 0.4,
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-      })
-
-      const fileExt = img.name.split('.').pop()
-
-      const fileName =
-        `${userId}-${Date.now()}-${crypto.randomUUID()}.${fileExt}`
-
-      const { error } = await supabase.storage
-        .from('images')
-        .upload(fileName, compressedImage)
-
-      if (error) throw error
-
-const url = supabase.storage
-  .from("images")
-  .getPublicUrl(fileName).data.publicUrl
-
-const completed = index + 1
-
-setUploadProgress(
-  Math.round((completed / files.length) * 100)
-)
-const remaining = files.length - completed
-
-setSecondsLeft(Math.max(1, remaining * 2))
-setCurrentUpload(
-  `Uploaded ${completed} of ${files.length} photos`
-)
-
-return url
-    })
-  )
-
-  setUploadedImageUrls(urls)
 }
 else if (file.type.startsWith('video/')) {
   setVideo(file)

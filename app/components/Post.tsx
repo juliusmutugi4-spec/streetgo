@@ -379,11 +379,20 @@ text-[15px] font-semibold text-white
     {post.content}
   </p>
 </div>
+
+
+
 {post.image_urls && post.image_urls.length > 0 && (
   <div className="-mx-4 mt-4 relative">
 
 <div
   id={`gallery-${post.id}`}
+ref={(el) => {
+  if (el) {
+    el.style.scrollSnapType = "x mandatory"
+  }
+}}
+
   className="
     relative
     flex
@@ -406,7 +415,8 @@ text-[15px] font-semibold text-white
           alt=""
 className="
   w-full
-  min-w-full
+  flex-none
+w-full
   h-[65vh]
   shrink-0
   snap-center
