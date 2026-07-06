@@ -20,6 +20,11 @@ export default function CreatePost({
   const [video, setVideo] = useState<File | null>(null)
   const [images, setImages] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+const [currentUpload, setCurrentUpload] = useState("")
+const [currentFile, setCurrentFile] = useState(0)
+const [totalFiles, setTotalFiles] = useState(0)
+const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
 const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([])
 const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -33,6 +38,11 @@ if (
 )
   return
     setUploading(true)
+setUploadProgress(0)
+setCurrentFile(0)
+setTotalFiles(0)
+setCurrentUpload("📡 Preparing transmission...")
+
 console.log("STEP 1")
     try {
       if (!userId) throw new Error('Not logged in')
@@ -42,6 +52,7 @@ console.log("STEP 1")
 
       // Upload video if exists
 if (video) {
+  setCurrentUpload("🎥 Uploading video...")
   console.log("Starting video upload")
 
   console.log(video.name)
@@ -74,7 +85,8 @@ videoUrl = supabase.storage
 
 console.log("Video upload finished")
 }
-
+setCurrentUpload("☁ Finalizing transmission...")
+setUploadProgress(100)
 imageUrls = uploadedImageUrls
       // Get username from auth metadata or emai
 const avatar_url = profile?.avatar_url ?? null
@@ -108,7 +120,7 @@ setImages([])
 
       // Refresh feed
 console.log("BEFORE onPosted")
-
+setCurrentUpload("✅ Transmission complete")
 await Promise.resolve(onPosted())
 
 console.log("AFTER onPosted")
@@ -247,24 +259,83 @@ catch (error: any) {
 
 
 {uploading && (
-  <div className="mb-4 rounded-xl border border-cyan-500/20 bg-[#0b1220]/70 p-4">
+  <div className="mb-4 rounded-2xl border border-cyan-500/20 bg-[#0b1220]/80 p-4">
 
-    <div className="flex items-center gap-3">
-
-      <Loader2
-        size={18}
-        className="animate-spin text-cyan-400"
-      />
+    <div className="flex items-center justify-between">
 
       <div>
         <p className="text-sm font-bold text-cyan-300">
-          Uploading...
+          {currentUpload || "Uploading..."}
         </p>
 
         <p className="text-xs text-zinc-400">
-          Please don't close the app.
+          {currentFile} / {totalFiles} files
         </p>
+<div className="mt-2 flex items-center justify-between">
+
+  <p className="text-[11px] font-mono text-emerald-400 animate-pulse">
+    ⚡ Please keep StreetGO open
+  </p>
+
+  {secondsLeft !== null && (
+    <p className="text-[11px] font-mono text-cyan-400">
+      ⏱ {secondsLeft}s left
+    </p>
+  )}
+
+</div>
       </div>
+
+<div
+  className="
+    h-14
+    w-14
+    rounded-full
+    border-2
+    border-cyan-400/30
+    bg-cyan-500/10
+    flex
+    items-center
+    justify-center
+    shadow-[0_0_20px_rgba(34,211,238,0.15)]
+  "
+>
+  <span className="text-sm font-black text-cyan-300">
+    {uploadProgress}%
+  </span>
+</div>
+
+    </div>
+
+    {/* Progress Bar */}
+    <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-800">
+
+<div
+  className="
+    relative
+    h-full
+    overflow-hidden
+    rounded-full
+    bg-gradient-to-r
+    from-cyan-500
+    via-blue-500
+    to-emerald-400
+    transition-all
+    duration-500
+  "
+        style={{
+          width: `${uploadProgress}%`,
+        }}
+     >
+  <div
+    className="
+      absolute
+      inset-0
+      animate-pulse
+      bg-white/20
+    "
+  />
+</div>
 
     </div>
 
@@ -319,8 +390,18 @@ if (file.type.startsWith('image/')) {
   setVideo(null)
 
   // Background upload starts immediately
-  const urls = await Promise.all(
-    files.map(async (img) => {
+setTotalFiles(files.length)
+
+const urls = await Promise.all(
+  files.map(async (img, index) => {
+
+    setCurrentFile(index + 1)
+
+    setCurrentUpload(`Uploading photo ${index + 1} of ${files.length}`)
+
+    setUploadProgress(
+      Math.round(((index + 1) / files.length) * 100)
+    )
       const compressedImage = await imageCompression(img, {
         maxSizeMB: 0.4,
         maxWidthOrHeight: 1920,
@@ -338,9 +419,23 @@ if (file.type.startsWith('image/')) {
 
       if (error) throw error
 
-      return supabase.storage
-        .from('images')
-        .getPublicUrl(fileName).data.publicUrl
+const url = supabase.storage
+  .from("images")
+  .getPublicUrl(fileName).data.publicUrl
+
+const completed = index + 1
+
+setUploadProgress(
+  Math.round((completed / files.length) * 100)
+)
+const remaining = files.length - completed
+
+setSecondsLeft(Math.max(1, remaining * 2))
+setCurrentUpload(
+  `Uploaded ${completed} of ${files.length} photos`
+)
+
+return url
     })
   )
 
