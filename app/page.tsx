@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from './lib/supabase'
 import Post from './components/Post'
 import CreatePost from './components/CreatePost'
@@ -9,6 +9,8 @@ import BottomNav from './components/BottomNav'
 import CreatePrediction from './components/CreatePrediction'
 import PostSchema from './components/PostSchema'
 import { registerPushNotifications } from './lib/pushNotifications'
+
+
 type PostType = {
   id: string
   content: string
@@ -28,7 +30,7 @@ type PredictionType = {
   created_at: string
 }
 
-
+let lastFeedFetch = 0
 export default function Home() {
   const [unreadCount, setUnreadCount] = useState(0)
   
@@ -39,10 +41,12 @@ export default function Home() {
   const [profile, setProfile] = useState<any>(null)
   const [isApprovedDriver, setIsApprovedDriver] = useState(false)
   const [driverOnline, setDriverOnline] = useState(false)
-const [predictions, setPredictions] = useState<PredictionType[]>([])
-const [voteCounts, setVoteCounts] = useState<any>({})
+const [predictions, setPredictions] =
+  useState<PredictionType[]>([])
+const [voteCounts, setVoteCounts] =
+  useState<any>({})
 const [showNav, setShowNav] = useState(true)
-const [lastScrollY, setLastScrollY] = useState(0)
+const lastScrollY = useRef(0)
 const [pendingRideCount, setPendingRideCount] = useState(0)
 const [createMode, setCreateMode] = useState<
   'none' | 'post' | 'prediction'
@@ -100,10 +104,21 @@ const checkUser = async () => {
     await fetchUnreadMessages(session.user.id)
   }
 
- fetchPosts()
-fetchPredictions()
-fetchVoteCounts()
-loadPendingRideCount()
+const now = Date.now()
+
+if (now - lastFeedFetch > 30000) {
+  await Promise.all([
+    fetchPosts(),
+    fetchPredictions(),
+    fetchVoteCounts(),
+    loadPendingRideCount(),
+  ])
+
+  lastFeedFetch = now
+} else {
+  setLoading(false)
+  await loadPendingRideCount()
+}
 }
 
 async function loadPendingRideCount() {
@@ -147,7 +162,7 @@ useEffect(() => {
         await fetchUnreadMessages(session.user.id)
 
         // Refresh driver information too
-        checkUser()
+        
       } else {
         setProfile(null)
         setUnreadCount(0)
@@ -213,16 +228,19 @@ useEffect(() => {
     const currentScrollY = window.scrollY
 
     // Hide nav when scrolling down
-    if (currentScrollY > lastScrollY && currentScrollY > 80) {
+    if (
+  currentScrollY > lastScrollY.current &&
+  currentScrollY > 80
+) {
       setShowNav(false)
     }
 
     // Show nav when scrolling up
-    if (currentScrollY < lastScrollY) {
+    if (currentScrollY < lastScrollY.current) {
       setShowNav(true)
     }
 
-    setLastScrollY(currentScrollY)
+    lastScrollY.current = currentScrollY
   }
 
   window.addEventListener("scroll", handleScroll)
@@ -230,15 +248,20 @@ useEffect(() => {
   return () => {
     window.removeEventListener("scroll", handleScroll)
   }
-}, [lastScrollY])
+}, [])
 
   const fetchPosts = async () => {
-    const { data: postsData, error: postsError } = await supabase
-      .from('posts')
-      .select('*')
-      .order('created_at', { ascending: false })
- console.log('POSTS DATA:', postsData)
-  console.log('POSTS ERROR:', postsError)
+
+if (posts.length === 0) {
+  setLoading(true)
+}
+
+const { data: postsData, error: postsError } = await supabase
+  .from('posts')
+  .select('*')
+  
+  .order('created_at', { ascending: false })
+
     if (postsError) {
       console.error('Supabase fetchPosts error:', postsError)
       return
@@ -252,30 +275,42 @@ useEffect(() => {
       .select('id, username, avatar_url')
       .in('id', userIds)
 
-    const postsWithProfiles = postsData?.map((p: any) => {
-      const profile = profiles?.find((u: any) => u.id === p.user_id)
-      return { ...p, username: profile?.username, avatar_url: profile?.avatar_url }
-    }) ?? []
+const profileMap = new Map(
+  (profiles || []).map((p: any) => [p.id, p])
+)
 
-    setPosts(postsWithProfiles)
+const postsWithProfiles =
+  postsData?.map((post: any) => {
+    const profile = profileMap.get(post.user_id)
+
+    return {
+      ...post,
+      username: profile?.username,
+      avatar_url: profile?.avatar_url,
+    }
+  }) ?? []
+
+  
+setPosts(postsWithProfiles)
     setLoading(false)
   }
+
+
+
 const fetchPredictions = async () => {
-  alert('FETCH PREDICTIONS START')
 
   const { data, error } = await supabase
     .from('predictions')
     .select('*')
 
   if (error) {
-    alert('ERROR: ' + error.message)
-    console.error(error)
+    console.log("Prediction Error:", JSON.stringify(error, null, 2))
+    console.log(error)
     return
   }
 
-  alert('FOUND: ' + data.length + ' predictions')
-
-  setPredictions(data || [])
+ 
+setPredictions(data || [])
 }
 const votePrediction = async (
   predictionId: string,
@@ -325,7 +360,8 @@ const fetchVoteCounts = async () => {
     counts[vote.prediction_id][vote.vote]++
   })
 
-  setVoteCounts(counts)
+ 
+setVoteCounts(counts)
 }
 
   const handleLogout = async () => {
@@ -359,7 +395,7 @@ const { data: profileData, error: profileError } = await supabase
   if (!profileData) return
 
   if (status === 'correct') {
-    alert('ENTERED CORRECT BLOCK')
+  
     await supabase
       .from('profiles')
       .update({
@@ -442,7 +478,7 @@ const { data: updateData, error: updateError } = await supabase
           </div>
         )}
 
-        {loading ? (
+        {loading && posts.length === 0 ? (
           <div className="rounded-xl bg-zinc-900/10 border border-zinc-900/60 p-12 text-center backdrop-blur-md relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/[0.01] to-transparent animate-pulse" />
             <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-[0_0_10px_rgba(16,185,129,0.2)]" />
@@ -456,9 +492,7 @@ const { data: updateData, error: updateError } = await supabase
           <div className="space-y-4">
 
 
-<div className="bg-red-500 text-white p-3 rounded">
-  Predictions Loaded: {predictions.length}
-</div>
+
 
 
 
@@ -567,12 +601,7 @@ const { data: updateData, error: updateError } = await supabase
                 <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/0 to-transparent group-hover:via-red-500/10 transition-all duration-500" />
                 <div className="p-0.5 relative z-10">
 
-<PostSchema
-  id={post.id}
-  author={post.username ?? 'Unknown'}
-  content={post.content}
-  createdAt={post.created_at}
-/>
+
 
 <Post
   post={post}
@@ -706,7 +735,7 @@ const { data: updateData, error: updateError } = await supabase
     profile={profile}
     unreadCount={unreadCount}
     onCreateSelect={(mode) => {
-      console.log("Selected:", mode)
+      
       setCreateMode(mode)
     }}
   />
@@ -741,8 +770,18 @@ const { data: updateData, error: updateError } = await supabase
 <CreatePost
   userId={user.id}
   profile={profile}
-  onPosted={() => {
-    fetchPosts()
+  onPosted={(newPost) => {
+    if (newPost) {
+      setPosts((prev) => [
+        {
+          ...newPost,
+          username: profile?.username,
+          avatar_url: profile?.avatar_url,
+        },
+        ...prev,
+      ])
+    }
+
     setCreateMode('none')
   }}
 />

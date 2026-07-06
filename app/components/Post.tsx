@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 import VideoSchema from './VideoSchema'
@@ -27,7 +27,7 @@ profile?: {
 } | null
 }
 
-export default function Post({
+function Post({
   post,
   user,
   profile,
@@ -414,9 +414,8 @@ ref={(el) => {
           src={url}
           alt=""
 className="
-  w-full
   flex-none
-w-full
+  w-full
   h-[65vh]
   shrink-0
   snap-center
@@ -949,3 +948,5 @@ className="
   </>
 )
 }
+
+export default memo(Post)

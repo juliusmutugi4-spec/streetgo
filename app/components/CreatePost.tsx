@@ -9,7 +9,7 @@ interface CreatePostProps {
     username?: string
     avatar_url?: string | null
   } | null
-  onPosted: () => void
+  onPosted: (post: any) => void
 }
 export default function CreatePost({
   userId,
@@ -195,7 +195,9 @@ setImages([])
       // Refresh feed
 console.log("BEFORE onPosted")
 setCurrentUpload("✅ Transmission complete")
-await Promise.resolve(onPosted())
+await Promise.resolve(
+  onPosted(insertedPost?.[0])
+)
 await new Promise(resolve => setTimeout(resolve, 1500))
 
 setUploadProgress(0)
