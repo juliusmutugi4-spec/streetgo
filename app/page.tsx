@@ -9,8 +9,10 @@ import BottomNav from './components/BottomNav'
 import CreatePrediction from './components/CreatePrediction'
 import PostSchema from './components/PostSchema'
 import { registerPushNotifications } from './lib/pushNotifications'
-
-
+import { useFeed } from './hooks/useFeed'
+import { usePredictions } from "./hooks/usePredictions"
+import { useAuth } from "./hooks/useAuth"
+import { useDriver } from "./hooks/useDriver"
 type PostType = {
   id: string
   content: string
@@ -30,36 +32,67 @@ type PredictionType = {
   created_at: string
 }
 
-let lastFeedFetch = 0
+
 export default function Home() {
-  const [unreadCount, setUnreadCount] = useState(0)
+
   
-  const [posts, setPosts] = useState<PostType[]>([])
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const {
+  posts,
+  setPosts,
+  loading,
+  fetchPosts,
+} = useFeed()
+const {
+  user,
+  setUser,
+
+  profile,
+  setProfile,
+
+  unreadCount,
+  setUnreadCount,
+} = useAuth()
   const [showLogin, setShowLogin] = useState(false)
-  const [profile, setProfile] = useState<any>(null)
-  const [isApprovedDriver, setIsApprovedDriver] = useState(false)
-  const [driverOnline, setDriverOnline] = useState(false)
-const [predictions, setPredictions] =
-  useState<PredictionType[]>([])
-const [voteCounts, setVoteCounts] =
-  useState<any>({})
+  
+const {
+  isApprovedDriver,
+  setIsApprovedDriver,
+
+  driverOnline,
+  setDriverOnline,
+
+  pendingRideCount,
+  setPendingRideCount,
+
+  loadPendingRideCount,
+  loadDriver,
+  toggleDriverOnline,
+} = useDriver(user)
+
+const {
+  predictions,
+  setPredictions,
+  voteCounts,
+  setVoteCounts,
+  fetchPredictions,
+  fetchVoteCounts,
+  votePrediction,
+} = usePredictions(user)
 const [showNav, setShowNav] = useState(true)
 const lastScrollY = useRef(0)
-const [pendingRideCount, setPendingRideCount] = useState(0)
+
 const [createMode, setCreateMode] = useState<
   'none' | 'post' | 'prediction'
 >('none')
   // Fetch unread messages count
-  const fetchUnreadMessages = async (userId: string) => {
-    const { count } = await supabase
-      .from('chat_messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('receiver_id', userId)
+const fetchUnreadMessages = async (userId: string) => {
+  const { count } = await supabase
+    .from('chat_messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('receiver_id', userId)
 
-    setUnreadCount(count || 0)
-  }
+  setUnreadCount(count || 0)
+}
 
 const checkUser = async () => {
   const {
@@ -83,145 +116,38 @@ const checkUser = async () => {
 
     setProfile(data)
 
-    const { data: driver } = await supabase
-      .from('drivers')
-      .select('id, status')
-      .eq('user_id', session.user.id)
-      .maybeSingle()
-
-    if (driver?.status === 'approved') {
-      const { data: location } = await supabase
-        .from('driver_locations')
-        .select('online')
-        .eq('driver_id', driver.id)
-        .maybeSingle()
-
-      setDriverOnline(location?.online ?? false)
-    }
-
-    setIsApprovedDriver(driver?.status === 'approved')
 
     await fetchUnreadMessages(session.user.id)
   }
 
-const now = Date.now()
 
-if (now - lastFeedFetch > 30000) {
-  await Promise.all([
-    fetchPosts(),
-    fetchPredictions(),
-    fetchVoteCounts(),
-    loadPendingRideCount(),
-  ])
-
-  lastFeedFetch = now
-} else {
-  setLoading(false)
-  await loadPendingRideCount()
-}
 }
 
-async function loadPendingRideCount() {
-  const { count } = await supabase
-    .from('ride_requests')
-    .select('*', {
-      count: 'exact',
-      head: true,
-    })
-    .eq('status', 'searching')
 
-  setPendingRideCount(count || 0)
-}
 
 
 
 useEffect(() => {
-  checkUser()
+  const initialize = async () => {
+    await Promise.all([
+      loadDriver(),
+      fetchPosts(),
+      fetchPredictions(),
+      fetchVoteCounts(),
+      loadPendingRideCount(),
+    ])
 
-  registerPushNotifications()
-
-  const { data: sub } = supabase.auth.onAuthStateChange(
-    async (_event, session) => {
-      setUser(session?.user ?? null)
-
-      if (session?.user) {
-        const { data } = await supabase
-          .from('profiles')
-          .select(`
-            username,
-            avatar_url,
-            reputation,
-            predictions_correct,
-            predictions_wrong
-          `)
-          .eq('id', session.user.id)
-          .single()
-
-        setProfile(data)
-
-        await fetchUnreadMessages(session.user.id)
-
-        // Refresh driver information too
-        
-      } else {
-        setProfile(null)
-        setUnreadCount(0)
-        setIsApprovedDriver(false)
-        setDriverOnline(false)
-      }
-    }
-  )
-
-  return () => sub.subscription.unsubscribe()
-}, [])
-
-
-
-useEffect(() => {
-  const channel = supabase
-    .channel('driver-approval')
-
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'drivers'
-      },
-      async () => {
-        await checkUser()
-      }
-    )
-
-    .subscribe()
-
-  return () => {
-    supabase.removeChannel(channel)
+    registerPushNotifications()
   }
+
+  initialize()
 }, [])
 
-useEffect(() => {
-  const channel = supabase
-    .channel('ride-count')
 
-    .on(
-      'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'ride_requests'
-      },
-      () => {
-        loadPendingRideCount()
-      }
-    )
 
-    .subscribe()
 
-  return () => {
-    supabase.removeChannel(channel)
-  }
-}, [])
+
+
 
 useEffect(() => {
   const handleScroll = () => {
@@ -250,119 +176,10 @@ useEffect(() => {
   }
 }, [])
 
-  const fetchPosts = async () => {
-
-if (posts.length === 0) {
-  setLoading(true)
-}
-
-const { data: postsData, error: postsError } = await supabase
-  .from('posts')
-  .select('*')
-  
-  .order('created_at', { ascending: false })
-
-    if (postsError) {
-      console.error('Supabase fetchPosts error:', postsError)
-      return
-    }
 
 
 
-    const userIds = postsData?.map((p: any) => p.user_id) ?? []
-    const { data: profiles } = await supabase
-      .from('profiles')
-      .select('id, username, avatar_url')
-      .in('id', userIds)
 
-const profileMap = new Map(
-  (profiles || []).map((p: any) => [p.id, p])
-)
-
-const postsWithProfiles =
-  postsData?.map((post: any) => {
-    const profile = profileMap.get(post.user_id)
-
-    return {
-      ...post,
-      username: profile?.username,
-      avatar_url: profile?.avatar_url,
-    }
-  }) ?? []
-
-  
-setPosts(postsWithProfiles)
-    setLoading(false)
-  }
-
-
-
-const fetchPredictions = async () => {
-
-  const { data, error } = await supabase
-    .from('predictions')
-    .select('*')
-
-  if (error) {
-    console.log("Prediction Error:", JSON.stringify(error, null, 2))
-    console.log(error)
-    return
-  }
-
- 
-setPredictions(data || [])
-}
-const votePrediction = async (
-  predictionId: string,
-  vote: 'agree' | 'disagree'
-) => {
-  if (!user) {
-    alert('Login first')
-    return
-  }
-
-  const { error } = await supabase
-    .from('prediction_votes')
-.upsert(
-  {
-    prediction_id: predictionId,
-    user_id: user.id,
-    vote,
-  },
-  {
-    onConflict: 'prediction_id,user_id',
-  }
-)
-
-  if (error) {
-    alert(error.message)
-    return
-  }
-
-  await fetchVoteCounts()
-}
-const fetchVoteCounts = async () => {
-  const { data } = await supabase
-    .from('prediction_votes')
-
-    .select('*')
-
-  const counts: any = {}
-
-  data?.forEach((vote) => {
-    if (!counts[vote.prediction_id]) {
-      counts[vote.prediction_id] = {
-        agree: 0,
-        disagree: 0,
-      }
-    }
-
-    counts[vote.prediction_id][vote.vote]++
-  })
-
- 
-setVoteCounts(counts)
-}
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -676,33 +493,9 @@ const { data: updateData, error: updateError } = await supabase
 </p>
       </div>
 <button
-  onClick={async (e) => {
+  onClick={(e) => {
     e.stopPropagation()
-
-    const newStatus = !driverOnline
-
-    setDriverOnline(newStatus)
-
-    const {
-      data: { session }
-    } = await supabase.auth.getSession()
-
-    if (!session?.user) return
-
-    const { data: driver } = await supabase
-      .from('drivers')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .single()
-
-    if (!driver) return
-
-    await supabase
-      .from('driver_locations')
-      .update({
-        online: newStatus
-      })
-      .eq('driver_id', driver.id)
+    toggleDriverOnline()
   }}
   className={`
     px-3

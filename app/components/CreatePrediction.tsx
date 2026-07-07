@@ -11,28 +11,58 @@ export default function CreatePrediction({
 }: any) {
   const [title, setTitle] = useState('')
   const [date, setDate] = useState('')
+
 const createPrediction = async () => {
-  if (!title.trim()) return
+  try {
+    console.log("Button clicked")
 
-  const { error } = await supabase
-    .from('predictions')
-    .insert({
-      title,
-      target_date: date || null,
-      user_id: userId,
-      username,
-      avatar_url: avatarUrl,
-    })
+    if (!title.trim()) {
+      alert("Enter a title")
+      return
+    }
 
-  if (error) {
-    alert(error.message)
-    return
+    console.log("About to call Supabase")
+
+console.log("User ID:", userId)
+console.log("Username:", username)
+console.log("Avatar:", avatarUrl)
+
+const sessionResult = await supabase.auth.getSession()
+
+console.log("Session Result:", sessionResult)
+
+    const result = await supabase
+      .from("predictions")
+      .insert({
+
+
+        
+        title,
+        target_date: date || null,
+        user_id: userId,
+        username,
+        avatar_url: avatarUrl,
+      })
+      .select()
+
+    console.log("Supabase result:", result)
+
+    if (result.error) {
+      alert(result.error.message)
+      return
+    }
+
+    alert("Prediction created!")
+
+    setTitle("")
+    setDate("")
+
+    onCreated()
+
+  } catch (err) {
+    console.error("Caught error:", err)
+    alert("An unexpected error occurred. Check the console.")
   }
-
-  setTitle('')
-  setDate('')
-
-  onCreated()
 }
   return (
     <div className="rounded-2xl border border-cyan-500/20 bg-[#05070b] p-4">
