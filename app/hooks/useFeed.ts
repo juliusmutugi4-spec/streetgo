@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { supabase } from "../lib/supabase"
 
 export type PostType = {
@@ -11,51 +11,66 @@ export type PostType = {
   avatar_url?: string | null
 }
 
-export function useFeed() {
-  const [posts, setPosts] = useState<PostType[]>([])
-  const [loading, setLoading] = useState(true)
+async function fetchPostsFromSupabase(): Promise<PostType[]> {
+  const { data: postsData, error: postsError } = await supabase
+    .from("posts")
+    .select("*")
+    .order("created_at", { ascending: false })
 
-  const fetchPosts = async () => {
-    if (posts.length === 0) {
-      setLoading(true)
-    }
+  if (postsError) {
+    throw postsError
+  }
 
-    const { data: postsData, error: postsError } = await supabase
-      .from("posts")
-      .select("*")
-      .order("created_at", { ascending: false })
+  const userIds = postsData?.map((p: any) => p.user_id) ?? []
 
- if (postsError) {
-  console.log("Posts Error:", JSON.stringify(postsError, null, 2))
-  console.log(postsError)
-  return
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("id, username, avatar_url")
+    .in("id", userIds)
+
+  const profileMap = new Map(
+    (profiles || []).map((p: any) => [p.id, p])
+  )
+
+  return (
+    postsData?.map((post: any) => ({
+      ...post,
+      username: profileMap.get(post.user_id)?.username,
+      avatar_url: profileMap.get(post.user_id)?.avatar_url,
+    })) ?? []
+  )
 }
-    const userIds = postsData?.map((p: any) => p.user_id) ?? []
 
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, username, avatar_url")
-      .in("id", userIds)
+export function useFeed() {
+  const queryClient = useQueryClient()
 
-    const profileMap = new Map(
-      (profiles || []).map((p: any) => [p.id, p])
+  const {
+    data: posts = [],
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["feed"],
+    queryFn: fetchPostsFromSupabase,
+  })
+
+  const setPosts = (
+    updater:
+      | PostType[]
+      | ((previous: PostType[]) => PostType[])
+  ) => {
+    queryClient.setQueryData<PostType[]>(
+      ["feed"],
+      (old = []) =>
+        typeof updater === "function"
+          ? updater(old)
+          : updater
     )
-
-    const postsWithProfiles =
-      postsData?.map((post: any) => ({
-        ...post,
-        username: profileMap.get(post.user_id)?.username,
-        avatar_url: profileMap.get(post.user_id)?.avatar_url,
-      })) ?? []
-
-    setPosts(postsWithProfiles)
-    setLoading(false)
   }
 
   return {
     posts,
     setPosts,
-    loading,
-    fetchPosts,
+    loading: isLoading,
+    fetchPosts: refetch,
   }
 }

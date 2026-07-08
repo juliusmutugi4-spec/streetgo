@@ -3,17 +3,21 @@
 import { useEffect, useState } from 'react'
 
 import { supabase } from '../../lib/supabase'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import ProfileSchema from '../../components/ProfileSchema'
-
+import { getCachedProfile, setCachedProfile } from '../../lib/profileCache'
 
 export default function ProfilePage() {
   const params = useParams()
+  const router = useRouter()
+ 
+
   const username =
-  decodeURIComponent(params.username as string)
-    .trim()
-    .toLowerCase()
-const [avatarFile, setAvatarFile] = useState<File | null>(null)
+    decodeURIComponent(params.username as string)
+      .trim()
+      .toLowerCase()
+
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [profile, setProfile] = useState<any>(null)
   const [posts, setPosts] = useState<any[]>([])
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -28,7 +32,7 @@ const [newUsername, setNewUsername] = useState('')
 const [newBio, setNewBio] = useState('')
 const [activeTab, setActiveTab] = useState('')
 const [showMenu, setShowMenu] = useState(false)
-const router = useRouter()
+const searchParams = useSearchParams()
 
 useEffect(() => {
   let mounted = true
@@ -46,7 +50,18 @@ useEffect(() => {
   }
 }, [username])
 const loadProfile = async () => {
-  setLoading(true)
+  const cached = getCachedProfile(username)
+
+  if (cached) {
+    setProfile((prev: any) => ({
+      ...prev,
+      ...cached,
+    }))
+
+    setLoading(false)
+  } else {
+    setLoading(true)
+  }
 
   // Get current session
   const {
@@ -76,34 +91,52 @@ const loadProfile = async () => {
   }
 
   // Set profile data in state
-  setProfile(profileData)
-const { count: followers } = await supabase
-  .from('followers')
-  .select('*', { count: 'exact', head: true })
-  .eq('following_id', profileData.id)
+setProfile(profileData)
 
-const { count: following } = await supabase
-  .from('followers')
-  .select('*', { count: 'exact', head: true })
-  .eq('follower_id', profileData.id)
+setCachedProfile(profileData.username.toLowerCase(), {
+  username: profileData.username,
+  avatar_url: profileData.avatar_url,
+  reputation: profileData.reputation,
+  predictions_correct: profileData.predictions_correct,
+  predictions_wrong: profileData.predictions_wrong,
+})
 
-setFollowersCount(followers || 0)
+setLoading(false)
 
-const { data: followersList } = await supabase
-  .from('followers')
-  .select(`
-    follower_id,
-    profiles!followers_follower_id_fkey (
-      id,
-      username,
-      avatar_url
-    )
-  `)
-  .eq('following_id', profileData.id)
 
-setFollowers(followersList || [])
+const [
+  followersResult,
+  followingResult,
+  followersListResult,
+] = await Promise.all([
+  supabase
+    .from('followers')
+    .select('*', { count: 'exact', head: true })
+    .eq('following_id', profileData.id),
 
-setFollowingCount(following || 0)
+  supabase
+    .from('followers')
+    .select('*', { count: 'exact', head: true })
+    .eq('follower_id', profileData.id),
+
+  supabase
+    .from('followers')
+    .select(`
+      follower_id,
+      profiles!followers_follower_id_fkey (
+        id,
+        username,
+        avatar_url
+      )
+    `)
+    .eq('following_id', profileData.id),
+
+
+])
+
+setFollowersCount(followersResult.count || 0)
+setFollowingCount(followingResult.count || 0)
+setFollowers(followersListResult.data || [])
 
 
 if (session?.user) {
@@ -116,21 +149,11 @@ if (session?.user) {
   setIsFollowing((followRows?.length || 0) > 0)
 }
 
-
-  setNewUsername(profileData.username || '')
-  setNewBio(profileData.bio || '')
-
-  // Load posts for this user
-  const { data: userPosts } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('user_id', profileData.id)
-    .order('created_at', { ascending: false })
-
-  setPosts(userPosts || [])
-  setLoading(false)
+setNewUsername(profileData.username || '')
+setNewBio(profileData.bio || '')
+  
 }
-  if (loading) {
+  if (loading && !profile) {
 
 
 
@@ -228,6 +251,21 @@ const saveProfile = async () => {
 
   router.replace(`/profile/${username}`)
 }
+
+
+const loadPosts = async () => {
+  if (!profile) return
+
+  const { data } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('user_id', profile.id)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  setPosts(data || [])
+}
+
 
 const toggleFollow = async () => {
   if (!currentUser || !profile) return
@@ -589,13 +627,18 @@ onClick={toggleFollow}
 <div className="flex items-center gap-5 mt-4 text-sm overflow-x-auto">
 
  <button
-  onClick={() =>
-    setActiveTab(
-      activeTab === 'posts'
-        ? ''
-        : 'posts'
-    )
+onClick={async () => {
+  if (activeTab === 'posts') {
+    setActiveTab('')
+    return
   }
+
+  setActiveTab('posts')
+
+  if (posts.length === 0) {
+    await loadPosts()
+  }
+}}
   className="whitespace-nowrap"
 >
   <span className="font-bold text-white">

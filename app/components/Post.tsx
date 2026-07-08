@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import VideoSchema from './VideoSchema'
 import PostSchema from './PostSchema'
 import LoginModal from './LoginModal'
+import { setCachedProfile } from "../lib/profileCache"
 interface PostProps {
 post: {
   id: string
@@ -75,6 +76,15 @@ const [currentImage, setCurrentImage] = useState(0)
   useEffect(() => {
     loadPostData()
   }, [post.id, user])
+
+useEffect(() => {
+  if (!post.username) return
+
+  setCachedProfile(post.username.toLowerCase(), {
+    username: post.username,
+    avatar_url: post.avatar_url || null,
+  })
+}, [post.username, post.avatar_url])
 
   // Live comments subscription
   useEffect(() => {
@@ -175,11 +185,17 @@ if (error) {
   }
 
   // Go to user profile
-  const goToProfile = () => {
-    if (!username) return
-    router.push(`/profile/${username}`)
-  }
+const goToProfile = () => {
+  if (!username) return
 
+  setCachedProfile(username.toLowerCase(), {
+    username,
+    avatar_url: avatarUrl,
+  })
+
+  router.prefetch(`/profile/${username}`)
+  router.push(`/profile/${username}`)
+}
  return (
   <>
     <PostSchema
@@ -250,21 +266,23 @@ if (error) {
 
     <div>
 
-      <button
-        onClick={goToProfile}
-        className="
-          flex
-          items-center
-          gap-2
-text-[15px] font-semibold text-white
-          hover:text-cyan-400
-          transition
-        "
-      >
-        {username}
-
-      </button>
-
+<button
+  onMouseEnter={() => router.prefetch(`/profile/${username}`)}
+  onTouchStart={() => router.prefetch(`/profile/${username}`)}
+  onClick={goToProfile}
+  className="
+    flex
+    items-center
+    gap-2
+    text-[15px]
+    font-semibold
+    text-white
+    hover:text-cyan-400
+    transition
+  "
+>
+  {username}
+</button>
       <div className="flex items-center gap-2">
         <span className="text-[11px] text-zinc-500">
           @{username.toLowerCase()}

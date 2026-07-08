@@ -44,13 +44,10 @@ export default function Home() {
 } = useFeed()
 const {
   user,
-  setUser,
-
   profile,
-  setProfile,
-
   unreadCount,
-  setUnreadCount,
+  checkUser,
+  handleLogout,
 } = useAuth()
   const [showLogin, setShowLogin] = useState(false)
   
@@ -85,43 +82,9 @@ const [createMode, setCreateMode] = useState<
   'none' | 'post' | 'prediction'
 >('none')
   // Fetch unread messages count
-const fetchUnreadMessages = async (userId: string) => {
-  const { count } = await supabase
-    .from('chat_messages')
-    .select('*', { count: 'exact', head: true })
-    .eq('receiver_id', userId)
-
-  setUnreadCount(count || 0)
-}
-
-const checkUser = async () => {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  setUser(session?.user ?? null)
-
-  if (session?.user) {
-    const { data } = await supabase
-      .from('profiles')
-      .select(`
-        username,
-        avatar_url,
-        reputation,
-        predictions_correct,
-        predictions_wrong
-      `)
-      .eq('id', session.user.id)
-      .single()
-
-    setProfile(data)
 
 
-    await fetchUnreadMessages(session.user.id)
-  }
 
-
-}
 
 
 
@@ -131,7 +94,6 @@ useEffect(() => {
   const initialize = async () => {
     await Promise.all([
       loadDriver(),
-      fetchPosts(),
       fetchPredictions(),
       fetchVoteCounts(),
       loadPendingRideCount(),
@@ -141,7 +103,7 @@ useEffect(() => {
   }
 
   initialize()
-}, [])
+}, [user])
 
 
 
@@ -181,11 +143,7 @@ useEffect(() => {
 
 
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    setUnreadCount(0)
-  }
+
 
 const resolvePrediction = async (
   predictionId: string,

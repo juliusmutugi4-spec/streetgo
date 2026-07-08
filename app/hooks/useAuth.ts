@@ -92,15 +92,12 @@ useEffect(() => {
 
 
 
-  return {
-    user,
-    profile,
-    unreadCount,
-    setUser,
-    setProfile,
-    setUnreadCount,
-    checkUser,
-    fetchUnreadMessages,
-    handleLogout,
-  }
+ return {
+  user,
+  profile,
+  unreadCount,
+
+  checkUser,
+  handleLogout,
+}
 }
