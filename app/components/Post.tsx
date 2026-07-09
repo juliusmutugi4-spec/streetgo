@@ -40,6 +40,13 @@ function Post({
   const [commentText, setCommentText] = useState('')
 const [showComments, setShowComments] = useState(false)
   const username = post.username || 'Anonymous'
+console.log(
+  "POST",
+  post.id,
+  "USERNAME:",
+  post.username
+)
+
   const avatarUrl = post.avatar_url || '/avatar-placeholder.png'
 const [showLogin, setShowLogin] = useState(false)
 const [showMenu, setShowMenu] = useState(false)
@@ -73,9 +80,11 @@ const [currentImage, setCurrentImage] = useState(0)
     setComments(commentsData || [])
   }
 
-  useEffect(() => {
+useEffect(() => {
+  if (showComments) {
     loadPostData()
-  }, [post.id, user])
+  }
+}, [showComments, post.id, user])
 
 useEffect(() => {
   if (!post.username) return
@@ -236,9 +245,11 @@ const goToProfile = () => {
   <div className="flex items-center gap-3">
 
     <div className="relative">
-      <img
-        src={avatarUrl}
-        alt=""
+<img
+  src={avatarUrl}
+  alt=""
+  loading="lazy"
+  decoding="async"
         className="
           h-12
           w-12
@@ -427,10 +438,12 @@ ref={(el) => {
   }}
 >
       {post.image_urls.map((url, index) => (
-        <img
-          key={index}
-          src={url}
-          alt=""
+<img
+  key={index}
+  src={url}
+  alt=""
+  loading="lazy"
+  decoding="async"
 className="
   flex-none
   w-full
@@ -489,15 +502,17 @@ className="
       bg-zinc-950
     "
   >
-    <video
-      src={post.video_url}
-      controls
-      className="
-        w-full
-        max-h-[600px]
-        object-cover
-      "
-    />
+<video
+  src={post.video_url}
+  controls
+  preload="metadata"
+  playsInline
+  className="
+    w-full
+    max-h-[600px]
+    object-cover
+  "
+/>
 
     <div
       className="
@@ -906,8 +921,10 @@ className="
       className="flex gap-2.5 rounded-xl bg-zinc-900/60 p-2.5 hover:bg-zinc-800/60 transition"
     >
       {/* Avatar */}
-      <img
-        src={c.avatar_url || "/avatar-placeholder.png"}
+<img
+  src={c.avatar_url || "/avatar-placeholder.png"}
+  loading="lazy"
+  decoding="async"
         alt=""
         className="h-8 w-8 rounded-full object-cover"
       />

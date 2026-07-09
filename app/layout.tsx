@@ -4,6 +4,8 @@ import BreadcrumbSchema from './breadcrumb-schema'
 import Providers from './providers'
 import Schema from './schema'
 import WebsiteSchema from './website-schema'
+import OrganizationSchema from "./organization-schema"
+import WebApplicationSchema from "./webapplication-schema"
 import type { Metadata, Viewport } from 'next'
 import KnowledgeGraph from './knowledge-graph'
 import SearchAction from './search-action'
@@ -105,6 +107,8 @@ export default function RootLayout({
   <Schema />
   <WebsiteSchema />
   <BreadcrumbSchema />
+  <OrganizationSchema />
+  <WebApplicationSchema />
   <KnowledgeGraph />
   <SearchAction />
 

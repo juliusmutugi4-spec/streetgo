@@ -161,6 +161,7 @@ setUploadProgress(100)
 
       // Get username from auth metadata or emai
 const avatar_url = profile?.avatar_url ?? null
+
 console.log("INSERTING POST")
 console.log("INSERT IMAGE URLS:", imageUrls)
 const { data: insertedPost, error: insertError } = await supabase

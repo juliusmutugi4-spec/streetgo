@@ -121,7 +121,12 @@ username: cleanUsername,
     created_at: new Date().toISOString()
   })
   if (profileError) {
-    console.log('PROFILE INSERT ERROR:', profileError)
+    if (profileError) {
+  console.log("PROFILE INSERT ERROR:", profileError)
+  alert(
+    JSON.stringify(profileError, null, 2)
+  )
+}
   }
 }
     } else {
