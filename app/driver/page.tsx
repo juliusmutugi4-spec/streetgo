@@ -18,7 +18,7 @@ const [incomingRide, setIncomingRide] = useState<any>(null)
 const [countdown, setCountdown] = useState(40)
 const [passengerInfo, setPassengerInfo] = useState<any>(null)
 const ringtoneRef = useRef<HTMLAudioElement | null>(null)
-
+const [vehicleType, setVehicleType] = useState("")
 
 async function loadRequests() {
   const { data } = await supabase
@@ -115,7 +115,7 @@ async function loadDriver() {
 
   const { data } = await supabase
     .from('drivers')
-    .select('id, status')
+    .select('id, status, vehicle_type')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -126,7 +126,7 @@ async function loadDriver() {
 
   setDriverId(data.id)
   setDriverStatus(data.status)
-
+setVehicleType(data.vehicle_type)
   if (data.status !== 'approved') return
 
   const { data: existing } = await supabase
@@ -286,7 +286,13 @@ useEffect(() => {
       },
       async (payload) => {
         const ride = payload.new as any
-if (ride.driver_id !== driverId) return
+
+if (ride.status !== "searching") return
+
+if (!online) return
+
+
+
         // Ignore rides that are not searching
         if (ride.status !== 'searching') return
 
