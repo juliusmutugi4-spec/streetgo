@@ -27,6 +27,18 @@
             android:grantUriPermissions="true">
             <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
         </provider>
+<service
+    android:name=".StreetGoMessagingService"
+    android:exported="false">
+    <intent-filter>
+        <action android:name="com.google.firebase.MESSAGING_EVENT" />
+    </intent-filter>
+</service>
+
+<receiver
+    android:name=".RideActionReceiver"
+    android:exported="false" />
+
     </application>
 
     <!-- Permissions -->

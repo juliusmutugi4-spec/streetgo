@@ -67,14 +67,13 @@ console.log('Sending notification...')
 
 const messageId = await getMessaging().send({
   token: data[0].token,
-  notification: {
-    title,
-    body,
-  },
-  data: {
-    type: 'ride_request',
-    ride_id: ride_id || '',
-  },
+
+data: {
+  title,
+  body,
+  type: "ride_request",
+  ride_id: ride_id || "",
+},
 })
 console.log('MESSAGE ID:', messageId)
     return NextResponse.json({
