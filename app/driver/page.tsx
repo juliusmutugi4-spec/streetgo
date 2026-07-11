@@ -21,14 +21,31 @@ const ringtoneRef = useRef<HTMLAudioElement | null>(null)
 const [vehicleType, setVehicleType] = useState("")
 
 async function loadRequests() {
-  const { data } = await supabase
-    .from('ride_requests')
-    .select('*')
-    .eq('status', 'searching')
 
-  if (data) {
-    setRequests(data)
+  const { data } = await supabase
+    .from("ride_requests")
+    .select("*")
+    .eq("status", "searching")
+
+  if (!data || !driverId) return
+
+  const visible = []
+
+  for (const ride of data) {
+
+    const { data: rejected } = await supabase
+      .from("ride_rejections")
+      .select("id")
+      .eq("ride_id", ride.id)
+      .eq("driver_id", driverId)
+      .maybeSingle()
+
+    if (!rejected) {
+      visible.push(ride)
+    }
   }
+
+  setRequests(visible)
 }
 
 async function acceptRide(request: any) {
@@ -109,8 +126,14 @@ useEffect(() => {
 
 useEffect(() => {
   loadDriver()
-  loadRequests()
 }, [])
+
+useEffect(() => {
+  if (!driverId) return
+
+  loadRequests()
+}, [driverId])
+
 
 async function loadDriver() {
   const {
