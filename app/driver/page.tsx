@@ -55,7 +55,13 @@ if (!data || data.length === 0) {
 
   navigator.vibrate?.(0)
 
-  setIncomingRide(null)
+
+
+setIncomingRide(null)
+
+setRequests(prev =>
+  prev.filter(r => r.id !== incomingRide.id)
+)
 
   return
 }
@@ -288,7 +294,7 @@ useEffect(() => {
         const ride = payload.new as any
 
 if (ride.status !== "searching") return
-
+if (ride.ride_type !== vehicleType) return
 if (!online) return
 
 
@@ -300,7 +306,18 @@ if (!online) return
         if (!online) return
 
 ringtoneRef.current?.play()
+const { data: rejected } = await supabase
+  .from("ride_rejections")
+  .select("id")
+  .eq("ride_id", ride.id)
+  .eq("driver_id", driverId)
+  .maybeSingle()
 
+if (rejected) return
+
+ringtoneRef.current?.play()
+
+navigator.vibrate?.([1000, 500, 1000, 500, 1000])
 navigator.vibrate?.([1000, 500, 1000, 500, 1000])
 
 setIncomingRide({
@@ -761,25 +778,32 @@ return (
     </button>
 
   <button
-  onClick={() => {
+onClick={async () => {
 
-    ringtoneRef.current?.pause()
+  if (!incomingRide) return
 
-    if (ringtoneRef.current) {
-      ringtoneRef.current.currentTime = 0
-    }
+  await supabase
+    .from("ride_rejections")
+    .insert({
+      ride_id: incomingRide.id,
+      driver_id: driverId,
+    })
 
-    navigator.vibrate?.(0)
+  ringtoneRef.current?.pause()
 
-    if (incomingRide) {
-      setRequests(prev =>
-        prev.filter(r => r.id !== incomingRide.id)
-      )
-    }
+  if (ringtoneRef.current) {
+    ringtoneRef.current.currentTime = 0
+  }
 
-    setIncomingRide(null)
+  navigator.vibrate?.(0)
 
-  }}
+  setRequests(prev =>
+    prev.filter(r => r.id !== incomingRide.id)
+  )
+
+  setIncomingRide(null)
+
+}}
   className="
     w-full
     mt-3
@@ -841,11 +865,20 @@ return (
             {/* REJECT */}
    {/* REJECT */}
 <button
-  onClick={() => {
-    setRequests(prev =>
-      prev.filter(r => r.id !== req.id)
-    )
-  }}
+onClick={async () => {
+
+  await supabase
+    .from("ride_rejections")
+    .insert({
+      ride_id: req.id,
+      driver_id: driverId,
+    })
+
+  setRequests(prev =>
+    prev.filter(r => r.id !== req.id)
+  )
+
+}}
   className="
     mt-3
     w-full
