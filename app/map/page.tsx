@@ -41,6 +41,10 @@ const [tripId, setTripId] = useState('')
 const [selectedDriver, setSelectedDriver] = useState<any>(null)
 const [nearbyDrivers, setNearbyDrivers] = useState<any[]>([])
 const [currentDriverIndex, setCurrentDriverIndex] = useState(0)
+const [nearbyDriverCount, setNearbyDriverCount] = useState(0)
+const [nearestEta, setNearestEta] = useState<number | null>(null)
+
+
 const [searching, setSearching] = useState(false)
 const [rideAccepted, setRideAccepted] = useState(false)
 const acceptedSoundRef = useRef<HTMLAudioElement | null>(null)
@@ -57,6 +61,10 @@ const [driverBearing, setDriverBearing] = useState(0)
 const [showTrackingCard, setShowTrackingCard] = useState(true)
 const mapRef = useRef<any>(null)
 const router = useRouter()
+async function refreshNearbyDrivers() {
+  await loadDrivers()
+}
+
 const [route, setRoute] = useState<any>(null)
 async function loadRoute(
   startLng: number,
@@ -96,10 +104,23 @@ const [viewState, setViewState] = useState({
 const [fare, setFare] = useState(0)
 useEffect(() => {
   loadDrivers()
-}, [])
+}, [latitude, longitude])
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    loadDrivers()
+  }, 3000)
+
+  return () => clearInterval(interval)
+}, [latitude, longitude])
+
 
 async function loadDrivers() {
+
+  
   const { data } = await supabase
+
+  
     .from('driver_locations')
     .select(`
       *,
@@ -108,10 +129,35 @@ async function loadDrivers() {
     .eq('online', true)
     .eq('drivers.status', 'approved')
     .eq('drivers.available', true)
+console.log("Driver locations:", data)
+if (data) {
+  const nearby = data
+    .map((driver: any) => ({
+      ...driver,
+      distance: getDistanceKm(
+        latitude,
+        longitude,
+        driver.latitude,
+        driver.longitude
+      )
+    }))
+    .filter(driver => driver.distance <= 5)
+    .sort((a, b) => a.distance - b.distance)
+console.log("Nearby drivers:", nearby)
+console.log("Count:", nearby.length)
 
-  if (data) {
-    setDrivers(data)
+
+
+  setDrivers(nearby)
+
+  setNearbyDriverCount(nearby.length)
+
+  if (nearby.length > 0) {
+    setNearestEta(Math.max(1, Math.round(nearby[0].distance * 2)))
+  } else {
+    setNearestEta(null)
   }
+}
 }
 
 useEffect(() => {
@@ -256,7 +302,7 @@ const { data, error } = await supabase
   .from('ride_requests')
   .insert({
     passenger_id: user.id,
-    driver_id: nearestDriver.driver_id,
+    driver_id: null,
     pickup_lat: latitude,
     pickup_lng: longitude,
     destination,
@@ -275,18 +321,26 @@ if (data) {
   setTripId(data.id)
 }
 
-await fetch('/api/send-push', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    user_id: nearestDriver.drivers.user_id,
-    title: '🚕 New Ride Request',
-    body: `${rideType.toUpperCase()} • ${destination}`,
-    ride_id: data.id,
-  }),
-})
+await Promise.all(
+
+  nearestDrivers.map(driver =>
+
+    fetch('/api/send-push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: driver.drivers.user_id,
+        title: '🚕 New Ride Request',
+        body: `${rideType.toUpperCase()} • ${destination}`,
+        ride_id: data.id,
+      }),
+    })
+
+  )
+
+)
   setSearching(true)
   setSelectedDriver(nearestDriver)
 }
@@ -598,6 +652,31 @@ setSearching(false)
 
 }
 
+useEffect(() => {
+  const channel = supabase
+    .channel("nearby-drivers")
+
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "driver_locations",
+      },
+      () => {
+        refreshNearbyDrivers()
+      }
+    )
+
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [latitude, longitude])
+
+
+
 if (!mounted) {
   return null
 }
@@ -630,7 +709,33 @@ return (
   </svg>
 </button>
 
+<div className="absolute top-4 left-1/2 -translate-x-1/2 z-50">
+  <div className="bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl px-5 py-3 border border-green-200 min-w-[220px]">
 
+    {nearbyDriverCount > 0 ? (
+      <>
+        <h2 className="text-sm font-bold text-green-700 text-center">
+          🟢 {nearbyDriverCount} Driver{nearbyDriverCount > 1 ? "s" : ""} Nearby
+        </h2>
+
+        <p className="text-xs text-gray-500 text-center mt-1">
+          Nearest driver • {nearestEta} min away
+        </p>
+      </>
+    ) : (
+      <>
+        <h2 className="text-sm font-bold text-red-600 text-center">
+          🔴 No Drivers Nearby
+        </h2>
+
+        <p className="text-xs text-gray-500 text-center mt-1">
+          Searching nearby...
+        </p>
+      </>
+    )}
+
+  </div>
+</div>
 
 <Map
 

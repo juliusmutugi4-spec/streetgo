@@ -34,13 +34,32 @@ async function loadRequests() {
 async function acceptRide(request: any) {
   if (!driverId) return
 
-const { error } = await supabase
-  .from('ride_requests')
+const { data, error } = await supabase
+  .from("ride_requests")
   .update({
-    status: 'accepted',
-    driver_id: driverId
+    status: "accepted",
+    driver_id: driverId,
   })
-  .eq('id', request.id)
+  .eq("id", request.id)
+  .eq("status", "searching")
+  .select()
+
+if (!data || data.length === 0) {
+  alert("Another driver already accepted this ride.")
+
+  ringtoneRef.current?.pause()
+
+  if (ringtoneRef.current) {
+    ringtoneRef.current.currentTime = 0
+  }
+
+  navigator.vibrate?.(0)
+
+  setIncomingRide(null)
+
+  return
+}
+
 
 if (error) {
   alert(JSON.stringify(error))
@@ -221,7 +240,44 @@ await supabase
 useEffect(() => {
   const channel = supabase
     .channel('ride-requests')
+
+.on(
+  "postgres_changes",
+  {
+    event: "UPDATE",
+    schema: "public",
+    table: "ride_requests",
+  },
+  (payload) => {
+
+    const ride = payload.new as any
+
+    if (!incomingRide) return
+
+    if (ride.id !== incomingRide.id) return
+
+    if (ride.status === "accepted") {
+
+      ringtoneRef.current?.pause()
+
+      if (ringtoneRef.current) {
+        ringtoneRef.current.currentTime = 0
+      }
+
+      navigator.vibrate?.(0)
+
+      setIncomingRide(null)
+
+      setRequests(prev =>
+        prev.filter(r => r.id !== ride.id)
+      )
+    }
+
+  }
+)
+
     .on(
+
       'postgres_changes',
       {
         event: 'INSERT',

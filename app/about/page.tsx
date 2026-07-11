@@ -290,7 +290,7 @@ const schema = {
 
     <div className="flex items-start gap-6">
       <div className="w-16 h-16 rounded-full bg-orange-500 flex items-center justify-center text-3xl">
-        <MessagesSquare className="w-8 h-8 text-white" />💬
+        <MessagesSquare className="w-8 h-8 text-white" />   💬
       </div>
 
       <div>
