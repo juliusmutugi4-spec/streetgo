@@ -59,7 +59,11 @@ public void onMessageReceived(RemoteMessage remoteMessage) {
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setContentTitle(title)
                     .setContentText(body)
-                    .setPriority(NotificationCompat.PRIORITY_HIGH)
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+.setCategory(NotificationCompat.CATEGORY_CALL)
+.setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+.setAutoCancel(false)
+.setOngoing(true)
                     .setAutoCancel(true)
                     .addAction(
                             0,
