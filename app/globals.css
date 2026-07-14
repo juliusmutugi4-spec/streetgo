@@ -207,4 +207,42 @@ body {
 
 .danger {
   color: var(--danger);
+  
 }
+
+/* =======================================================
+   VIDEO PORTAL
+======================================================= */
+
+@keyframes portalUp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 80px) scale(.96);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes portalDown {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 80px) scale(.96);
+  }
+}
+
+.portal-enter {
+  animation: portalUp 0.35s ease forwards;
+}
+
+.portal-exit {
+  animation: portalDown 0.25s ease forwards;
+}
+
