@@ -79,15 +79,12 @@ useEffect(() => {
     fixed
     inset-0
     z-[2147483647]
-    bg-red-500
-    flex
-    items-center
-    justify-center
+    h-screen
+    w-screen
+    bg-black
+    overflow-hidden
   "
 >
-  <h1 className="text-6xl font-black text-white">
-    VIDEO PORTAL
-  </h1>
       {/* CLOSE */}
       <button
         onClick={onClose}
