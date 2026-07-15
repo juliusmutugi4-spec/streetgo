@@ -7,6 +7,7 @@ import VideoSchema from './VideoSchema'
 import PostSchema from './PostSchema'
 import LoginModal from './LoginModal'
 import { setCachedProfile } from "../lib/profileCache"
+import VideoPortal from "./VideoPortal"
 import {
   Heart,
   MessageCircle,
@@ -50,7 +51,8 @@ function Post({
   const [commentText, setCommentText] = useState('')
 const [showComments, setShowComments] = useState(false)
   const username = post.username || 'Anonymous'
-
+const [portalOpening, setPortalOpening] = useState(false)
+const [portalStartTime, setPortalStartTime] = useState(0)
 console.log(
   "POST",
   post.id,
@@ -112,23 +114,38 @@ const loadPortalVideos = async () => {
       id,
       content,
       video_url,
-      username,
       avatar_url,
-      created_at
+      created_at,
+      user_id
     `)
     .not("video_url", "is", null)
-    .neq("id", post.id)
     .order("created_at", { ascending: false })
     .limit(20)
 
   if (error) {
-    console.log(error)
+    console.error(error)
     return
   }
 
+  const validVideos = (data || []).filter(
+    (v: any) =>
+      v.video_url &&
+      v.video_url.trim() !== ""
+  )
+
+  // Make sure the current video is first
+  const currentVideo = {
+    ...post,
+    video_url: post.video_url,
+  }
+
+  const others = validVideos.filter(
+    (v: any) => v.id !== post.id
+  )
+
   setPortalVideos([
-    post,
-    ...(data || []),
+    currentVideo,
+    ...others,
   ])
 }
 
@@ -392,7 +409,9 @@ const signalTheme =
 
 
 
- return (
+
+
+return (
   <>
     <PostSchema
       id={post.id}
@@ -407,14 +426,21 @@ const signalTheme =
     group
     relative
     overflow-hidden
+    transition-all
+    duration-500
+
+    ${
+      portalOpening
+        ? "scale-110 opacity-0 blur-md"
+        : "scale-100 opacity-100"
+    }
+
     rounded-xl
     border
     ${signalTheme.border}
     ${signalTheme.glow}
     bg-[#05070b]/80
     backdrop-blur-xl
-    transition-all
-    duration-500
   `}
 >
   <div
@@ -692,17 +718,35 @@ className="
 {/* Video */}
 {post.video_url && (
   <div
-    className="
+    className={`
       mt-4
       overflow-hidden
       rounded-xl
       border
       border-orange-500/20
       bg-zinc-950
-    "
+      transition-all
+      duration-500
+
+      ${
+        portalOpening
+          ? `
+            fixed
+            inset-0
+            z-[99998]
+            rounded-none
+            border-0
+            m-0
+          `
+          : ""
+      }
+    `}
   >
 <video
   ref={videoRef}
+  style={{
+    transition: "all .45s ease",
+  }}
   onTimeUpdate={(e) => {
   const video = e.currentTarget
 
@@ -1344,6 +1388,7 @@ onClick={() => {
       overflow-hidden
     "
   >
+
     <div className="h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
 
     <div className="px-5 py-4">
@@ -1366,149 +1411,50 @@ onClick={() => {
 
         </div>
 
-<button
-  onClick={async () => {
+        <button
+onClick={async () => {
+  if (videoRef.current) {
+    setPortalStartTime(videoRef.current.currentTime)
+  }
+
+  setPortalOpening(true)
+
   await loadPortalVideos()
-  setPortalMode(true)
+
+  setTimeout(() => {
+    setPortalMode(true)
+    setShowVideoPortal(false)
+    setPortalOpening(false)
+  }, 350)
 }}
-  className="
-    rounded-xl
-    bg-cyan-500
-    px-4
-    py-2
-    text-sm
-    font-bold
-    text-black
-    transition
-    hover:scale-105
-  "
->
-  ENTER
-</button>
+          className="
+            rounded-xl
+            bg-cyan-500
+            px-4
+            py-2
+            text-sm
+            font-bold
+            text-black
+            transition
+            hover:scale-105
+          "
+        >
+          ENTER
+        </button>
 
       </div>
 
     </div>
+
   </div>
 )}
 
 {portalMode && (
-  <div
-    className="
-      fixed
-      inset-0
-      z-[99999]
-      bg-black
-      overflow-y-auto
-    "
-  >
-    {/* CLOSE */}
-    <button
-      onClick={() => setPortalMode(false)}
-      className="
-        fixed
-        top-5
-        right-5
-        z-50
-        h-10
-        w-10
-        rounded-full
-        bg-black/70
-        text-white
-      "
-    >
-      ✕
-    </button>
-
-
-
-<div
-  className="
-    h-screen
-    overflow-y-auto
-    snap-y
-    snap-mandatory
-    scroll-smooth
-  "
->
-  {/* CURRENT VIDEO */}
-
-  <section
-    className="
-      h-screen
-      snap-start
-      relative
-      bg-black
-    "
-  >
-
-    <video
-      src={post.video_url || ""}
-      controls
-      autoPlay
-      playsInline
-      className="
-        w-full
-        h-full
-        object-cover
-      "
-    />
-
-  </section>
-
-{portalVideos.map((video, index) => (
-  <section
-    key={video.id}
-    className="
-      relative
-      h-screen
-      snap-start
-      bg-black
-    "
-  >
-<video
-  ref={(el) => {
-    portalVideoRefs.current[index] = el
-  }}
-  src={video.video_url}
-      autoPlay
-      controls
-      playsInline
-      preload="metadata"
-      className="
-        h-full
-        w-full
-        object-cover
-      "
-    />
-
-    {/* Overlay */}
-    <div
-      className="
-        absolute
-        inset-x-0
-        bottom-0
-        bg-gradient-to-t
-        from-black/90
-        via-black/40
-        to-transparent
-        p-6
-      "
-    >
-      <h2 className="text-xl font-bold text-white">
-        {video.content}
-      </h2>
-
-      <p className="mt-2 text-sm text-zinc-400">
-        @{video.username || "anonymous"}
-      </p>
-    </div>
-  </section>
-))}
-
-</div>
-
-  </div>
+<VideoPortal
+  videos={portalVideos}
+  startTime={portalStartTime}
+  onClose={() => setPortalMode(false)}
+/>
 )}
 
 
