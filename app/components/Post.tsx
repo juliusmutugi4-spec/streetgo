@@ -1369,85 +1369,26 @@ onClick={() => {
 
 
 {showVideoPortal && (
-  <div
-    className="
-      fixed
-      bottom-6
-      left-1/2
-      z-[9999]
-      w-[92%]
-      max-w-md
-      -translate-x-1/2
-      rounded-2xl
-      border
-      border-cyan-500/30
-      bg-[#070b12]/95
-      backdrop-blur-2xl
-      shadow-[0_20px_60px_rgba(0,0,0,0.6)]
-      animate-[portalUp_.35s_ease]
-      overflow-hidden
-    "
-  >
-
-    <div className="h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent" />
-
-    <div className="px-5 py-4">
-
-      <div className="flex items-center justify-between">
-
-        <div>
-
-          <p className="text-[10px] tracking-[0.3em] uppercase text-cyan-400">
-            VIDEO PORTAL
-          </p>
-
-          <h3 className="mt-1 text-lg font-bold text-white">
-            Continue Exploring
-          </h3>
-
-          <p className="mt-1 text-sm text-zinc-400">
-            Similar videos are ready.
-          </p>
-
-        </div>
-
-        <button
-onClick={async () => {
-  if (videoRef.current) {
-    setPortalStartTime(videoRef.current.currentTime)
-  }
-
-  setPortalOpening(true)
-
-  await loadPortalVideos()
-
-  setTimeout(() => {
-    setPortalMode(true)
-    setShowVideoPortal(false)
-    setPortalOpening(false)
-  }, 350)
-}}
-          className="
-            rounded-xl
-            bg-cyan-500
-            px-4
-            py-2
-            text-sm
-            font-bold
-            text-black
-            transition
-            hover:scale-105
-          "
-        >
-          ENTER
-        </button>
-
-      </div>
-
-    </div>
-
+  <div className="absolute top-8 left-1/2 z-50 -translate-x-1/2 pointer-events-auto">
+    <button 
+      onClick={async () => { 
+        if (videoRef.current) { 
+          setPortalStartTime(videoRef.current.currentTime) 
+        } 
+        setPortalOpening(true) 
+        await loadPortalVideos() 
+        setTimeout(() => { 
+          setPortalMode(true) 
+          setShowVideoPortal(false) 
+          setPortalOpening(false) 
+        }, 350) 
+      }} 
+      className="h-3 w-3 rounded-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] transition duration-200 hover:scale-150"
+      aria-label="Enter"
+    />
   </div>
 )}
+
 
 {portalMode && (
 <VideoPortal

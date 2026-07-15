@@ -76,6 +76,7 @@ const {
   votePrediction,
 } = usePredictions(user)
 const [showNav, setShowNav] = useState(true)
+const [videoPortalOpen, setVideoPortalOpen] = useState(false)
 const lastScrollY = useRef(0)
 
 const [createMode, setCreateMode] = useState<
@@ -203,19 +204,21 @@ const { data: updateData, error: updateError } = await supabase
   return (
     <main className="min-h-screen bg-[#060608] text-[#f4f4f5] antialiased selection:bg-emerald-500/30 font-sans tracking-tight relative overflow-x-hidden">
       {/* TopNav fixed */}
-    <div
+<div
   className={`
     fixed
     top-0
     left-0
     right-0
     z-50
-    transition-transform
+    transition-all
     duration-300
     ${
-      showNav
-        ? "translate-y-0"
-        : "-translate-y-full"
+      videoPortalOpen
+        ? "-translate-y-full opacity-0"
+        : showNav
+        ? "translate-y-0 opacity-100"
+        : "-translate-y-full opacity-0"
     }
   `}
 >
@@ -476,7 +479,22 @@ const { data: updateData, error: updateError } = await supabase
   </div>
 )}
 
-<div className="fixed bottom-0 left-0 right-0 z-[9999]">
+<div
+  className={`
+    fixed
+    bottom-0
+    left-0
+    right-0
+    z-[9999]
+    transition-all
+    duration-300
+    ${
+      videoPortalOpen
+        ? "translate-y-full opacity-0 pointer-events-none"
+        : "translate-y-0 opacity-100"
+    }
+  `}
+>
 
 
   

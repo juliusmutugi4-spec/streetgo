@@ -17,54 +17,77 @@ console.log("VideoPortal videos:", videos)
 const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
 
 useEffect(() => {
+  console.log("Refs:", videoRefs.current)
+
   const video = videoRefs.current[0]
 
-  if (!video) return
+  if (!video) {
+    console.log("FIRST VIDEO REF IS NULL")
+    return
+  }
+
+  console.log("FOUND VIDEO:", video)
 
   video.currentTime = startTime
 
-  video.play().catch(() => {})
+  video.play().catch((err) => {
+    console.log("PLAY ERROR:", err)
+  })
 }, [startTime, videos])
 
 
 
 useEffect(() => {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        const video = entry.target as HTMLVideoElement
+  let observer: IntersectionObserver | null = null
 
-        if (entry.isIntersecting) {
-          video.play().catch(() => {})
-        } else {
-          video.pause()
-        }
-      })
-    },
-    {
-      threshold: 0.8,
-    }
-  )
+  const timer = setTimeout(() => {
+    observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target as HTMLVideoElement
 
-  videoRefs.current.forEach((video) => {
-    if (video) {
-      observer.observe(video)
-    }
-  })
+          if (entry.isIntersecting) {
+            video.play().catch(() => {})
+          } else {
+            video.pause()
+          }
+        })
+      },
+      {
+        threshold: 0.8,
+      }
+    )
+
+    videoRefs.current.forEach((video) => {
+      if (video) {
+        observer!.observe(video)
+      }
+    })
+  }, 500)
 
   return () => {
-    observer.disconnect()
+    clearTimeout(timer)
+
+    if (observer) {
+      observer.disconnect()
+    }
   }
 }, [videos])
   return (
-    <div
-      className="
-        fixed
-        inset-0
-        z-[99999]
-        bg-black
-      "
-    >
+<div
+  className="
+    fixed
+    inset-0
+    z-[2147483647]
+    bg-red-500
+    flex
+    items-center
+    justify-center
+  "
+>
+  <h1 className="text-6xl font-black text-white">
+    VIDEO PORTAL
+  </h1>
       {/* CLOSE */}
       <button
         onClick={onClose}
@@ -104,6 +127,11 @@ useEffect(() => {
               relative
             "
           >
+
+<p className="absolute top-5 left-5 z-50 bg-red-600 px-2 py-1 text-white">
+  {video.video_url ? "VIDEO OK" : "NO VIDEO"}
+</p>
+
 {video.video_url && (
 <video
 ref={(el) => {
