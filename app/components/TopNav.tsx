@@ -112,116 +112,15 @@ useEffect(() => {
     "
   />
 
-  {/* Scan Line */}
-  <div
-    className="
-      absolute
-      top-0
-      left-0
-      h-[2px]
-      w-full
-      opacity-0
-      group-hover:opacity-100
-      transition-all
-      duration-500
-      bg-gradient-to-r
-      from-transparent
-      via-cyan-400
-      to-transparent
-    "
-  />
-
-  {/* Main Container */}
-  <div
-    className="
-      relative
-      px-4
-      py-2
-      md:px-6
-      md:py-3
-      rounded-xl
-      border
-      border-white/5
-      bg-[var(--card)]
-      backdrop-blur-xl
-      shadow-[inset_0_0_12px_rgba(34,211,238,0.05)]
-      transition-all
-      duration-500
-      group-hover:border-cyan-500/30
-      group-hover:shadow-[inset_0_0_20px_rgba(34,211,238,0.15)]
-    "
-  >
-
-    {/* Top Left Corner */}
-    <div
-      className="
-        absolute
-        top-0
-        left-0
-        h-2
-        w-2
-        border-t-2
-        border-l-2
-        border-cyan-400/40
-        group-hover:border-cyan-400
-      "
-    />
-
-    {/* Bottom Right Corner */}
-    <div
-      className="
-        absolute
-        bottom-0
-        right-0
-        h-2
-        w-2
-        border-b-2
-        border-r-2
-        border-red-500/40
-        group-hover:border-red-500
-      "
-    />
-
-<div className="w-full flex justify-start p-0 m-0">
-  <h1 className="text-left p-0 m-0 text-[30px] md:text-[36px] font-bold tracking-[-0.04em] text-[var(--foreground)] transition-colors duration-300">
-    street<span className="font-black text-emerald-400">go</span>
+<div className="flex justify-start py-2">
+  <h1 className="font-['Nunito',_sans-serif] text-3xl md:text-4xl font-extrabold lowercase tracking-tight text-neutral-900 dark:text-neutral-50">
+    street<span className="font-black text-emerald-500 ml-0.5">go</span>
   </h1>
 </div>
 
 
 
 
-    {/* System Text */}
-    <div
-      className="
-        hidden
-        md:flex
-        mt-1
-        items-center
-        justify-between
-        text-[8px]
-        font-mono
-        tracking-[0.3em]
-        text-cyan-400/40
-        group-hover:text-cyan-400/80
-      "
-    >
-      <span>SYS.OP</span>
-
-      <span
-        className="
-          h-1
-          w-1
-          rounded-full
-          bg-red-500
-          animate-pulse
-        "
-      />
-
-      <span>V.4.02</span>
-    </div>
-
-  </div>
 </div>
 
         {/* NAVIGATION */}

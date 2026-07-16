@@ -14,14 +14,28 @@ export type PostType = {
 async function fetchPostsFromSupabase(): Promise<PostType[]> {
   const { data: postsData, error: postsError } = await supabase
     .from("posts")
-    .select("*")
+    .select(`
+  id,
+  content,
+  video_url,
+  image_urls,
+  user_id,
+  created_at
+`)
     .order("created_at", { ascending: false })
+
 
   if (postsError) {
     throw postsError
   }
 
-  const userIds = postsData?.map((p: any) => p.user_id) ?? []
+ const userIds = [
+  ...new Set(postsData?.map((p) => p.user_id) ?? [])
+]
+
+if (userIds.length === 0) {
+  return []
+}
 
   const { data: profiles } = await supabase
     .from("profiles")
@@ -44,14 +58,22 @@ async function fetchPostsFromSupabase(): Promise<PostType[]> {
 export function useFeed() {
   const queryClient = useQueryClient()
 
-  const {
-    data: posts = [],
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["feed"],
-    queryFn: fetchPostsFromSupabase,
-  })
+const {
+  data: posts = [],
+  isLoading,
+  refetch,
+} = useQuery({
+  queryKey: ["feed"],
+  queryFn: fetchPostsFromSupabase,
+
+  staleTime: 1000 * 60 * 5,
+  gcTime: 1000 * 60 * 30,
+
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+
+  placeholderData: (previousData) => previousData,
+})
 
   const setPosts = (
     updater:

@@ -465,7 +465,7 @@ return (
 
         
 {/* PRO HEADER */}
-<div className="relative mb-5 flex items-center justify-between px-4">
+<div className="relative mb-3 flex items-center justify-between px-3">
 
   <div className="flex items-center gap-3">
 
@@ -476,8 +476,8 @@ return (
   loading="lazy"
   decoding="async"
         className="
-          h-12
-          w-12
+          h-10
+          w-10
           rounded-xl
           object-cover
           border
@@ -510,7 +510,7 @@ return (
     flex
     items-center
     gap-2
-    text-[15px]
+    text-sm font-bold
     font-semibold
     text-white
     hover:text-cyan-400
@@ -538,8 +538,8 @@ return (
 <button
   onClick={() => setShowMenu(!showMenu)}
   className="
-    h-8
-    w-8
+    h-9
+    w-9
     rounded-lg
     border
     border-white/5
@@ -784,199 +784,50 @@ py-1.5
     </div>
   </div>
 )}
+
+
+
+
 {/* SIGNAL PANEL */}
 <div className="mt-6 rounded-2xl border border-zinc-900 bg-zinc-950/50 backdrop-blur-xl overflow-hidden">
 
-  {/* TOP */}
-  <div className="flex items-center justify-between px-5 py-4">
-
-    {/* LIKES */}
-    <button
-      onClick={toggleLike}
-      className="
-        group
-        flex
-        items-center
-        gap-3
-        transition-all
-      "
-    >
-      <div
-        className="
-          flex
-          h-11
-          w-11
-          items-center
-          justify-center
-          rounded-xl
-          border
-          border-amber-500/20
-          bg-amber-500/5
-          transition-all
-          duration-300
-          group-hover:border-amber-400
-          group-hover:bg-amber-500/10
-        "
-      >
-        <Heart
-          size={20}
-          fill={liked ? "currentColor" : "none"}
-          className={liked ? "text-amber-400" : "text-zinc-500"}
-        />
-      </div>
-
-      <div>
-        <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-          Resonance
-        </p>
-
-        <p className="text-xl font-bold text-white">
-          {displayLikes}
-        </p>
-      </div>
-    </button>
-
-    {/* COMMENTS */}
-    <button
-      onClick={() => setShowComments(!showComments)}
-      className="
-        group
-        flex
-        items-center
-        gap-3
-        transition-all
-      "
-    >
-      <div
-        className="
-          flex
-          h-11
-          w-11
-          items-center
-          justify-center
-          rounded-xl
-          border
-          border-cyan-500/20
-          bg-cyan-500/5
-          transition-all
-          duration-300
-          group-hover:border-cyan-400
-          group-hover:bg-cyan-500/10
-        "
-      >
-        <MessageCircle
-          size={20}
-          className="text-cyan-400"
-        />
-      </div>
-
-      <div>
-        <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500">
-          Streams
-        </p>
-
-        <p className="text-xl font-bold text-white">
-          {comments.length}
-        </p>
-      </div>
-    </button>
-
-  </div>
 
   {/* DIVIDER */}
   <div className="h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
+{/* SIGNAL */}
+<div className="px-5 py-4">
 
-  {/* SIGNAL */}
-  <div className="px-5 py-4">
+  <div className="flex flex-wrap items-center gap-2">
 
-    <div className="flex items-center justify-between">
-
-      <div>
-
-        <p className="text-[10px] uppercase tracking-[0.25em] text-zinc-500">
-          Signal Strength
-        </p>
-
-        <p className="mt-1 text-3xl font-black text-emerald-400">
-          {(displayLikes * 0.01).toFixed(2)}%
-        </p>
-
-      </div>
-
-<div
-  className={`
-    rounded-full
-    px-3
-    py-1
-    text-[11px]
-    font-bold
-    border
-    ${
-      displayLikes < 100
-        ? "border-zinc-700 bg-zinc-800 text-zinc-300"
-      : displayLikes < 1000
-        ? "border-cyan-500/30 bg-cyan-500/10 text-cyan-400"
-      : displayLikes < 10000
-        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-      : displayLikes < 100000
-        ? "border-orange-500/30 bg-orange-500/10 text-orange-400"
-      : "border-pink-500/30 bg-pink-500/10 text-pink-400"
-    }
-  `}
->
-  {displayLikes < 100
-    ? "NEW SIGNAL"
-    : displayLikes < 1000
-    ? "ACTIVE"
-    : displayLikes < 10000
-    ? "TRENDING"
-    : displayLikes < 100000
-    ? "VIRAL"
-    : "LEGEND"}
-</div>
-
+    <div className="rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-[11px] font-semibold text-orange-400">
+      🔥 {
+        displayLikes < 100
+          ? "New"
+          : displayLikes < 1000
+          ? "Active"
+          : displayLikes < 10000
+          ? "Trending"
+          : displayLikes < 100000
+          ? "Viral"
+          : "Legend"
+      }
     </div>
 
-    {/* BAR */}
-    <div className="mt-4">
-
-      <div className="h-2 overflow-hidden rounded-full bg-zinc-900">
-
-        <div
-          className="
-            h-full
-            rounded-full
-            bg-gradient-to-r
-            from-emerald-500
-            via-cyan-400
-            to-cyan-300
-            transition-all
-            duration-700
-          "
-          style={{
-            width: `${Math.min(displayLikes * 0.01, 100)}%`,
-          }}
-        />
-
-      </div>
-
+    <div className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-[11px] font-semibold text-cyan-400">
+      ⚡ {(displayLikes * 0.01).toFixed(0)}%
     </div>
 
-    {/* LEVELS */}
-
-    <div className="mt-3 flex justify-between text-[10px] text-zinc-600">
-
-      <span>NEW</span>
-
-      <span>ACTIVE</span>
-
-      <span>TRENDING</span>
-
-      <span>LEGEND</span>
-
-      <span>GLOBAL</span>
-
+    <div className="rounded-full border border-pink-500/20 bg-pink-500/10 px-3 py-1 text-[11px] font-semibold text-pink-400">
+      ❤️ {displayLikes}
     </div>
+
+    <div className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-[11px] font-semibold text-purple-400">
+      💬 {comments.length}
+    </div>
+
+  </div>
+
+
 
   </div>
 
@@ -986,7 +837,7 @@ py-1.5
 
 <div
   className="
-    mt-3
+    mt-2
     flex
     items-center
     gap-2
@@ -1001,35 +852,30 @@ py-1.5
   "
 >
 
-  {/* LIKE ENGINE */}
+{/* LIKE */}
 <button
-onClick={() => {
-  console.log("clicked")
-  toggleLike()
-}}
+  onClick={toggleLike}
   className="
     flex
     items-center
-    gap-2
-    px-4
+    gap-1.5
+    rounded-full
+    px-3
     py-2
-    rounded-xl
     transition-all
+    duration-200
     hover:bg-pink-500/10
+    hover:scale-105
+    active:scale-95
   "
 >
-<Heart
-  size={20}
-  fill={liked ? "currentColor" : "none"}
-  strokeWidth={2}
-  className={liked ? "text-pink-500" : "text-zinc-400"}
-/>
+  <Heart
+    size={18}
+    fill={liked ? "currentColor" : "none"}
+    className={liked ? "text-pink-500" : "text-zinc-400"}
+  />
 
-  <span className="text-zinc-300">
-    Like
-  </span>
-
-  <span className="text-zinc-500">
+  <span className="text-sm font-medium text-zinc-300">
     {likes}
   </span>
 </button>
@@ -1040,24 +886,23 @@ onClick={() => {
   className="
     flex
     items-center
-    gap-2
-    px-4
+    gap-1.5
+    rounded-full
+    px-3
     py-2
-    rounded-xl
     transition-all
+    duration-200
     hover:bg-cyan-500/10
+    hover:scale-105
+    active:scale-95
   "
 >
   <MessageCircle
-  size={18}
-  className="text-cyan-400"
-/>
+    size={18}
+    className="text-cyan-400"
+  />
 
-  <span className="text-zinc-300">
-    Comment
-  </span>
-
-  <span className="text-zinc-500">
+  <span className="text-sm font-medium text-zinc-300">
     {comments.length}
   </span>
 </button>
@@ -1081,127 +926,124 @@ onClick={() => {
   className="
     flex
     items-center
-    gap-2
-    px-4
-    py-2
-    rounded-xl
+    justify-center
+    rounded-full
+    p-2.5
     transition-all
+    duration-200
     hover:bg-orange-500/10
+    hover:scale-105
+    active:scale-95
   "
 >
-<Send
-  size={18}
-  className="text-orange-400"
-/>
-  <span className="text-zinc-300">
-    Share
-  </span>
+  <Send
+    size={18}
+    className="text-orange-400"
+  />
 </button>
 
 {/* TIP */}
 <button
   className="
-    ml-2
     flex
     items-center
-    gap-2
-    rounded-lg
+    gap-1.5
+    rounded-full
     border
     border-emerald-500/20
-    bg-emerald-500/5
+    bg-emerald-500/10
     px-3
     py-1.5
     text-[11px]
-    font-mono
-    tracking-wide
+    font-semibold
     text-emerald-400
     transition-all
-    hover:border-emerald-400/50
-    hover:bg-emerald-500/10
+    duration-200
+    hover:bg-emerald-500/20
+    hover:scale-105
+    active:scale-95
   "
 >
-  <Coins size={16} />
-<span>Tip</span>
+  <Coins size={14} />
+  Tip
 </button>
 
 {/* VOICE */}
 <button
   className="
-    ml-2
     flex
     items-center
-    gap-2
-    rounded-lg
+    gap-1.5
+    rounded-full
     border
     border-purple-500/20
-    bg-purple-500/5
+    bg-purple-500/10
     px-3
     py-1.5
     text-[11px]
-    font-mono
-    tracking-wide
+    font-semibold
     text-purple-400
     transition-all
-    hover:border-purple-400/50
-    hover:bg-purple-500/10
+    duration-200
+    hover:bg-purple-500/20
+    hover:scale-105
+    active:scale-95
   "
 >
-  <Mic size={16} />
-<span>Voice</span>
+  <Mic size={14} />
+  Voice
 </button>
-
 {/* HERE */}
 <button
   className="
-    ml-2
     flex
     items-center
-    gap-2
-    rounded-lg
+    gap-1.5
+    rounded-full
     border
     border-orange-500/20
-    bg-orange-500/5
+    bg-orange-500/10
     px-3
     py-1.5
     text-[11px]
-    font-mono
-    tracking-wide
+    font-semibold
     text-orange-400
     transition-all
-    hover:border-orange-400/50
-    hover:bg-orange-500/10
+    duration-200
+    hover:bg-orange-500/20
+    hover:scale-105
+    active:scale-95
   "
 >
-  <Users size={16} />
-<span>Here</span>
+  <Users size={14} />
+  Here
 </button>
 
 {/* PLACE */}
 <button
   className="
-    ml-2
     flex
     items-center
-    gap-2
-    rounded-lg
+    gap-1.5
+    rounded-full
     border
     border-blue-500/20
-    bg-blue-500/5
+    bg-blue-500/10
     px-3
     py-1.5
     text-[11px]
-    font-mono
-    tracking-wide
+    font-semibold
     text-blue-400
     transition-all
-    hover:border-blue-400/50
-    hover:bg-blue-500/10
+    duration-200
+    hover:bg-blue-500/20
+    hover:scale-105
+    active:scale-95
   "
 >
-  <MapPin size={16} />
-<span>Place</span>
+  <MapPin size={14} />
+  Place
 </button>
-
 
 </div>
 

@@ -77,6 +77,7 @@ const {
 } = usePredictions(user)
 const [showNav, setShowNav] = useState(true)
 const [videoPortalOpen, setVideoPortalOpen] = useState(false)
+const [showLoader, setShowLoader] = useState(false)
 const lastScrollY = useRef(0)
 
 const [createMode, setCreateMode] = useState<
@@ -107,7 +108,19 @@ useEffect(() => {
 }, [user])
 
 
+useEffect(() => {
+  let timer: NodeJS.Timeout
 
+  if (loading) {
+    timer = setTimeout(() => {
+      setShowLoader(true)
+    }, 150) // show loader only if loading lasts >150ms
+  } else {
+    setShowLoader(false)
+  }
+
+  return () => clearTimeout(timer)
+}, [loading])
 
 
 
@@ -256,11 +269,11 @@ const { data: updateData, error: updateError } = await supabase
           </div>
         )}
 
-        {loading && posts.length === 0 ? (
+        {showLoader && posts.length === 0 ? (
           <div className="rounded-xl bg-zinc-900/10 border border-zinc-900/60 p-12 text-center backdrop-blur-md relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/[0.01] to-transparent animate-pulse" />
             <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4 shadow-[0_0_10px_rgba(16,185,129,0.2)]" />
-            <p className="text-xs font-mono font-bold tracking-widest text-zinc-500 uppercase"> Synchronizing network feed... </p>
+            
           </div>
         ) : posts.length === 0 ? (
           <div className="rounded-xl bg-zinc-900/10 border border-zinc-900/60 p-12 text-center backdrop-blur-md">
