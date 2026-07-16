@@ -40,7 +40,14 @@ useEffect(() => {
     : "#ffffff"
 }, [lightMode])
   return (
+
+
+
+
 <header
+
+
+
   style={{
     color: "var(--foreground)",
   }}
@@ -63,6 +70,12 @@ useEffect(() => {
 "
 >
       <div className="max-w-5xl mx-auto h-16 px-6 flex items-center justify-between">
+
+
+{/* Top White Glow Bar */}
+<div className="absolute top-0 left-0 w-full h-[3px] overflow-hidden">
+  <div className="h-full w-full bg-gradient-to-r from-transparent via-white to-transparent shadow-[0_0_12px_rgba(255,255,255,0.9)]" />
+</div>
 
         {/* LOGO */}
 {/* LOGO */}
@@ -112,9 +125,9 @@ useEffect(() => {
     "
   />
 
-<div className="flex justify-start py-2">
-  <h1 className="font-['Nunito',_sans-serif] text-3xl md:text-4xl font-extrabold lowercase tracking-tight text-neutral-900 dark:text-neutral-50">
-    street<span className="font-black text-emerald-500 ml-0.5">go</span>
+<div className="flex items-center py-2">
+  <h1 className="font-['Nunito',_sans-serif] text-3xl md:text-4xl font-extrabold lowercase tracking-tight text-[var(--foreground)]">
+    street<span className="ml-0.5 font-black text-emerald-500">go</span>
   </h1>
 </div>
 
