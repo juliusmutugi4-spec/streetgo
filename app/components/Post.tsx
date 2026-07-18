@@ -12,6 +12,7 @@ import {
   Heart,
   MessageCircle,
   Send,
+  Bookmark,
   Coins,
   Mic,
   Users,
@@ -53,6 +54,16 @@ const [showComments, setShowComments] = useState(false)
   const username = post.username || 'Anonymous'
 const [portalOpening, setPortalOpening] = useState(false)
 const [portalStartTime, setPortalStartTime] = useState(0)
+const [imageLikes, setImageLikes] = useState<number[]>([])
+const [showImageComments, setShowImageComments] = useState(false)
+const [imageComments, setImageComments] = useState<any[]>([])
+const [imageCommentText, setImageCommentText] = useState("")
+const imageUrls = post.image_urls ?? []
+useEffect(() => {
+  setImageLikes(
+    imageUrls.map(() => 0)
+  )
+}, [post.id])
 console.log(
   "POST",
   post.id,
@@ -65,6 +76,7 @@ const [showLogin, setShowLogin] = useState(false)
 const [showMenu, setShowMenu] = useState(false)
 const menuRef = useRef<HTMLDivElement>(null)
 const [currentImage, setCurrentImage] = useState(0)
+const [showImageViewer, setShowImageViewer] = useState(false)
 const videoRef = useRef<HTMLVideoElement>(null)
 const portalVideoRefs = useRef<(HTMLVideoElement | null)[]>([])
 const postRef = useRef<HTMLDivElement>(null)
@@ -95,6 +107,32 @@ const [portalVideos, setPortalVideos] = useState<any[]>([])
       setLiked(!!data)
     }
 
+
+
+    
+const loadImageComments = async () => {
+  const { data, error } = await supabase
+    .from("image_comments")
+    .select("*")
+    .eq("post_id", post.id)
+    .eq("image_index", currentImage)
+    .order("created_at", {
+      ascending: false,
+    })
+
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  setImageComments(data || [])
+}
+
+useEffect(() => {
+  if (!showImageComments) return
+
+  loadImageComments()
+}, [showImageComments, currentImage])
 
 
     // Load comments
@@ -636,49 +674,185 @@ return (
 
 
 
-{post.image_urls && post.image_urls.length > 0 && (
+{imageUrls.length > 0 && (
   <div className="-mx-4 mt-4 relative">
 
 <div
-  id={`gallery-${post.id}`}
-ref={(el) => {
-  if (el) {
-    el.style.scrollSnapType = "x mandatory"
-  }
-}}
+className={`
+  overflow-hidden
+  rounded-xl
+  bg-black
 
-  className="
-    relative
-    flex
-    overflow-x-auto
-    snap-x
-    snap-mandatory
-    scrollbar-hide
-    scroll-smooth
-  "
-  onScroll={(e) => {
-    const width = e.currentTarget.clientWidth
-    const index = Math.round(e.currentTarget.scrollLeft / width)
-    setCurrentImage(index)
-  }}
+  ${
+    imageUrls.length === 2
+      ? "grid grid-cols-2 gap-[3px]"
+      : ""
+  }
+`}
 >
-      {post.image_urls.map((url, index) => (
+
+
+{imageUrls.length === 3 && (
+  <div className="grid grid-cols-2 gap-[3px] h-[500px]">
 <img
+  src={imageUrls[0]}
+  alt=""
+  onClick={() => {
+  setCurrentImage(0)
+  setShowImageViewer(true)
+}}
+  className="
+    w-full
+    h-full
+    object-cover
+    cursor-pointer
+    hover:brightness-90
+    transition
+  "
+/>
+
+    <div className="grid grid-rows-2 gap-[3px]">
+<img
+  src={imageUrls[1]}
+  alt=""
+  onClick={() => {
+  setCurrentImage(1)
+  setShowImageViewer(true)
+}}
+  className="
+    w-full
+    h-full
+    object-cover
+    cursor-pointer
+    hover:brightness-90
+    transition
+  "
+/>
+
+<img
+  src={imageUrls[2]}
+  alt=""
+  onClick={() => {
+  setCurrentImage(2)
+  setShowImageViewer(true)
+}}
+  className="
+    w-full
+    h-full
+    object-cover
+    cursor-pointer
+    hover:brightness-90
+    transition
+  "
+/>
+    </div>
+  </div>
+)}
+
+{imageUrls.length === 4 && (
+  <div className="grid grid-cols-2 gap-[3px] h-[500px]">
+    {imageUrls.map((url, index) => (
+<img
+  key={index}
+  src={url}
+  onClick={() => {
+    setCurrentImage(index)
+    setShowImageViewer(true)
+  }}
+  className="
+    w-full
+    h-full
+    object-cover
+    cursor-pointer
+    hover:brightness-90
+    transition
+  "
+/>
+    ))}
+  </div>
+)}
+
+
+
+{imageUrls.length > 4 && (
+  <div className="grid grid-cols-2 gap-[3px] h-[500px]">
+    {imageUrls.slice(0, 4).map((url, index) => (
+      <div key={index} className="relative">
+<img
+  key={index}
+  src={url}
+  alt=""
+  onClick={() => {
+    setCurrentImage(index)
+    setShowImageViewer(true)
+  }}
+          className="w-full h-full object-cover"
+        />
+
+        {index === 3 && (
+          <div
+            className="
+              absolute
+              inset-0
+            bg-[#0b6b4b]
+              flex
+              items-center
+              justify-center
+              text-white
+              text-3xl
+              font-bold
+            "
+          >
+            +{imageUrls.length - 4}
+          </div>
+        )}
+      </div>
+    ))}
+  </div>
+)}
+
+
+
+{imageUrls.length <= 2 &&
+ imageUrls.map((url, index) => (
+ <img
   key={index}
   src={url}
   alt=""
   loading="lazy"
   decoding="async"
-className="
-  flex-none
-  w-full
-  h-[65vh]
-  shrink-0
-  snap-center
-  object-cover
-"
-        />
-      ))}
+  onClick={() => {
+    setCurrentImage(index)
+    setShowImageViewer(true)
+  }}
+    className={`
+      w-full
+      cursor-pointer
+      transition-all
+      duration-300
+      hover:brightness-95
+
+      ${
+        imageUrls.length === 1
+          ? `
+            max-h-[700px]
+            object-contain
+            rounded-xl
+            bg-black
+          `
+          : imageUrls.length === 2
+          ? `
+            h-[420px]
+            object-cover
+          `
+          : `
+            h-64
+            object-cover
+          `
+      }
+    `}
+  />
+))}
     </div>
 
 
@@ -780,7 +954,7 @@ py-1.5
         border-orange-500/20
       "
     >
-      🎬 Video
+      
     </div>
   </div>
 )}
@@ -1240,6 +1414,348 @@ py-1.5
 />
 )}
 
+
+
+{showImageViewer && (
+<div
+  onClick={() => {
+  setShowImageComments(false)
+  setShowImageViewer(false)
+}}
+  className="
+    fixed
+    inset-0
+    z-[99999]
+    bg-black/95
+    flex
+    items-center
+    justify-center
+  "
+>
+<div
+  className="
+    absolute
+    top-0
+    left-0
+    right-0
+    z-20
+    flex
+    items-center
+    justify-between
+    px-6
+    py-4
+    bg-gradient-to-b
+    from-black/80
+    to-transparent
+  "
+>
+  <button
+onClick={(e) => {
+  e.stopPropagation()
+
+  setShowImageComments(false)
+  setShowImageViewer(false)
+}}
+    className="
+      text-white
+      text-3xl
+      hover:text-red-400
+      transition
+    "
+  >
+    ✕
+  </button>
+
+ <div className="flex items-center gap-3">
+
+  <img
+    src={avatarUrl}
+    alt=""
+    className="
+      h-10
+      w-10
+      rounded-full
+      object-cover
+      border
+      border-white/20
+    "
+  />
+
+  <div>
+    <div className="font-semibold text-white">
+      {username}
+    </div>
+
+    <div className="text-xs text-zinc-400">
+      Image {currentImage + 1} of {imageUrls.length}
+    </div>
+  </div>
+
+</div>
+
+  <button
+    className="
+      text-white
+      text-2xl
+      hover:text-cyan-400
+    "
+  >
+    ⋯
+  </button>
+</div>
+
+<button
+  onClick={(e) => {
+    e.stopPropagation()
+    setCurrentImage(
+      (currentImage - 1 + imageUrls.length) % imageUrls.length
+    )
+  }}
+  className="
+    absolute
+    left-6
+    text-white
+    text-5xl
+    px-4
+    py-2
+    hover:bg-white/10
+    rounded-full
+    transition
+  "
+>
+  ‹
+</button>
+
+
+<img
+  src={imageUrls[currentImage]}
+  alt=""
+  onClick={(e) => e.stopPropagation()}
+className="
+  max-w-[95vw]
+  max-h-[75vh]
+  object-contain
+  select-none
+"
+/>
+<button
+  onClick={(e) => {
+    e.stopPropagation()
+    setCurrentImage(
+      (currentImage + 1) % imageUrls.length
+    )
+  }}
+  className="
+    absolute
+    right-6
+    text-white
+    text-5xl
+    px-4
+    py-2
+    hover:bg-white/10
+    rounded-full
+    transition
+  "
+>
+  ›
+</button>
+{imageUrls.length > 1 && (
+<div
+  className="
+    absolute
+    bottom-0
+    left-0
+    right-0
+    z-20
+    flex
+    items-center
+    justify-center
+    gap-8
+    px-6
+    py-4
+    bg-gradient-to-t
+    from-black/90
+    to-transparent
+  "
+>
+<button
+  onClick={() => {
+    setImageLikes((prev) => {
+      const updated = [...prev]
+      updated[currentImage] = (updated[currentImage] || 0) + 1
+      return updated
+    })
+  }}
+  className="
+    flex
+    items-center
+    gap-2
+    text-zinc-300
+    hover:text-pink-500
+    transition
+  "
+>
+  <Heart size={22} />
+
+  <span>
+    {imageLikes[currentImage] || 0}
+  </span>
+</button>
+
+<button
+  onClick={() => setShowImageComments(true)}
+  className="
+    flex
+    items-center
+    gap-2
+    text-zinc-300
+    hover:text-cyan-400
+    transition
+  "
+>
+  <MessageCircle size={22} />
+
+  <span>Comment</span>
+</button>
+
+<button
+  className="
+    flex
+    items-center
+    gap-2
+    text-zinc-300
+    hover:text-emerald-400
+    transition
+  "
+>
+  <Bookmark size={22} />
+  <span>Save</span>
+</button>
+
+  <button
+    className="
+      flex
+      items-center
+      gap-2
+      text-white
+      hover:text-emerald-400
+      transition
+    "
+  >
+    🔖 <span>Save</span>
+  </button>
+</div>
+)}
+{showImageComments && (
+  <div
+    onClick={(e) => e.stopPropagation()}
+    className="
+      absolute
+      bottom-0
+      left-0
+      right-0
+      h-[55vh]
+      rounded-t-3xl
+      bg-zinc-950
+      border-t
+      border-zinc-700
+      z-30
+      flex
+      flex-col
+    "
+  >
+    <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+
+      <h2 className="text-white font-semibold">
+        Comments
+      </h2>
+
+      <button
+        onClick={() => setShowImageComments(false)}
+        className="text-zinc-400 text-2xl hover:text-white"
+      >
+        ✕
+      </button>
+
+    </div>
+
+<div className="flex-1 overflow-y-auto p-4 space-y-4">
+
+  {imageComments.length === 0 && (
+    <div className="text-center text-zinc-500 py-8">
+      No comments yet.
+    </div>
+  )}
+
+  {imageComments.map((comment) => (
+    <div
+      key={comment.id}
+      className="
+        flex
+        gap-3
+        rounded-xl
+        bg-zinc-900/70
+        p-3
+      "
+    >
+      <img
+        src={comment.avatar_url || "/avatar-placeholder.png"}
+        alt=""
+        className="
+          h-10
+          w-10
+          rounded-full
+          object-cover
+        "
+      />
+
+      <div className="flex-1">
+
+        <div className="flex items-center gap-2">
+
+          <span className="font-semibold text-white">
+            {comment.username}
+          </span>
+
+          <span className="text-xs text-zinc-500">
+            {new Date(comment.created_at).toLocaleDateString()}
+          </span>
+
+        </div>
+
+        <p className="mt-1 text-sm text-zinc-300">
+          {comment.content}
+        </p>
+
+      </div>
+    </div>
+  ))}
+
+</div>
+
+    <div className="border-t border-zinc-800 p-4">
+      <input
+        placeholder="Write a comment..."
+        className="
+          w-full
+          rounded-xl
+          bg-zinc-900
+          px-4
+          py-3
+          text-white
+          outline-none
+        "
+      />
+    </div>
+  </div>
+)}
+
+  </div>
+
+
+
+
+)}
 
 
 {showLogin ? (
