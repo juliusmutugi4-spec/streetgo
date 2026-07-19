@@ -39,7 +39,7 @@ function Card({
         relative
         overflow-hidden
 
-        rounded-3xl
+        rounded-2xl
 
         border
         border-white/10
@@ -47,12 +47,12 @@ function Card({
         bg-white/[0.03]
         backdrop-blur-xl
 
-        p-6
+        p-4
 
         transition-all
         duration-300
 
-        hover:scale-[1.03]
+        hover:scale-[1.02]
         hover:border-cyan-500/40
       "
     >
@@ -72,11 +72,10 @@ function Card({
 
         <div
           className="
-            mb-5
-            w-14
-            h-14
-
-            rounded-2xl
+mb-3
+w-10
+h-10
+rounded-xl
 
             bg-zinc-900
 
@@ -88,14 +87,14 @@ function Card({
           {icon}
         </div>
 
-        <p className="text-zinc-400 text-sm">
+        <p className="text-zinc-400 text-xs">
           {title}
         </p>
 
         <h2
           className="
             mt-2
-            text-3xl
+            text-2xl
             font-black
           "
         >
@@ -117,14 +116,14 @@ export default function ProfileStats({
   onPostsClick,
 }: Props) {
   return (
-    <div className="px-8 mt-10">
+    <div className="px-8 mt-5">
 
       <div
         className="
           grid
-          grid-cols-2
-          lg:grid-cols-4
-          gap-5
+grid-cols-2
+lg:grid-cols-4
+gap-3
         "
       >
 
@@ -135,8 +134,8 @@ export default function ProfileStats({
           icon={
             <Trophy
               className="
-                w-7
-                h-7
+                w-5
+                h-5
                 text-cyan-400
               "
             />
@@ -151,8 +150,8 @@ export default function ProfileStats({
           icon={
             <Users
               className="
-                w-7
-                h-7
+                w-5
+                h-5
                 text-blue-400
               "
             />
@@ -166,8 +165,8 @@ export default function ProfileStats({
           icon={
             <UserPlus
               className="
-                w-7
-                h-7
+                w-5
+                h-5
                 text-violet-400
               "
             />
@@ -182,8 +181,8 @@ export default function ProfileStats({
           icon={
    <FileText
   className="
-    w-7
-    h-7
+    w-3
+    h- 3
     text-orange-400
   "
 />
