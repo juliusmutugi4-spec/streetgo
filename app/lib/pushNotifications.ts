@@ -1,23 +1,17 @@
 import { PushNotifications } from '@capacitor/push-notifications'
-import { supabase } from './supabase'
 import { Capacitor } from '@capacitor/core'
+import { supabase } from './supabase'
+
 export async function registerPushNotifications() {
   if (!Capacitor.isNativePlatform()) {
     console.log('Not running on Android/iOS')
     return
   }
 
-  alert('registerPushNotifications started')
-
   console.log('🚀 registerPushNotifications started')
-
-  alert('Checking permissions...')
 
   let permStatus = await PushNotifications.checkPermissions()
 
-  alert(JSON.stringify(permStatus))
-
-  console.log('Permission status:', permStatus)
   console.log('Permission status:', permStatus)
 
   if (permStatus.receive === 'prompt') {
@@ -31,72 +25,64 @@ export async function registerPushNotifications() {
     return
   }
 
-console.log('Registering with Firebase...')
-await PushNotifications.register()
+  console.log('Registering with Firebase...')
+  await PushNotifications.register()
 
-alert('PushNotifications.register() finished')
+  console.log('PushNotifications.register() finished')
 
-PushNotifications.addListener('registration', async (token) => {
-  alert('FCM TOKEN RECEIVED')
+  PushNotifications.addListener('registration', async (token) => {
+    console.log('✅ FCM Token:', token.value)
 
-const result = await supabase.auth.getUser()
+    const result = await supabase.auth.getUser()
+    const user = result.data.user
 
-alert(
-  'Current user:\n' +
-  JSON.stringify(result.data.user, null, 2)
-)
-
-const user = result.data.user
-
-  if (!user) {
-    alert('NO USER LOGGED IN')
-    return
-  }
-
-  alert('USER ID:\n' + user.id)
-const { error } = await supabase
-  .from('device_tokens')
-  .upsert(
-    {
-      user_id: user.id,
-      token: token.value,
-      platform: 'android',
-    },
-    {
-      onConflict: 'token',
+    if (!user) {
+      console.log('❌ No user logged in')
+      return
     }
-  )
 
-  if (error) {
-    alert('SUPABASE ERROR:\n' + JSON.stringify(error))
-  } else {
-    alert('TOKEN SAVED!')
-  }
-})
+    console.log('User ID:', user.id)
 
-PushNotifications.addListener('registrationError', (err) => {
-  alert('REGISTRATION ERROR:\n\n' + JSON.stringify(err))
+    const { error } = await supabase
+      .from('device_tokens')
+      .upsert(
+        {
+          user_id: user.id,
+          token: token.value,
+          platform: 'android',
+        },
+        {
+          onConflict: 'token',
+        }
+      )
 
-  console.error('❌ Registration error:', err)
-})
+    if (error) {
+      console.error('❌ Supabase error:', error)
+    } else {
+      console.log('✅ Token saved successfully')
+    }
+  })
+
+  PushNotifications.addListener('registrationError', (err) => {
+    console.error('❌ Registration error:', err)
+  })
+
   PushNotifications.addListener('pushNotificationReceived', (notification) => {
     console.log('📩 Notification received:', notification)
   })
 
-PushNotifications.addListener(
-  'pushNotificationActionPerformed',
-  (notification) => {
-    console.log('👆 Notification tapped:', notification)
+  PushNotifications.addListener(
+    'pushNotificationActionPerformed',
+    (notification) => {
+      console.log('👆 Notification tapped:', notification)
 
-    const rideId =
-      notification.notification.data?.ride_id
+      const rideId = notification.notification.data?.ride_id
 
-    if (rideId) {
-      window.location.href =
-        `/driver?ride=${rideId}`
-    } else {
-      window.location.href = '/driver'
+      if (rideId) {
+        window.location.href = `/driver?ride=${rideId}`
+      } else {
+        window.location.href = '/driver'
+      }
     }
-  }
-)
+  )
 }

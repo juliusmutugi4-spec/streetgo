@@ -11,11 +11,10 @@ export default function Providers({
   children: React.ReactNode
 }) {
   useEffect(() => {
-    alert('1. Providers started')
-
+  
     registerPushNotifications()
 
-    alert('2. registerPushNotifications() called')
+   
   }, [])
 
 const [queryClient] = useState(
