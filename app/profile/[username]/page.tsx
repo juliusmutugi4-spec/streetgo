@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import ProfileSchema from '../../components/ProfileSchema'
+import ProfileHero from './ProfileHero'
 import { getCachedProfile, setCachedProfile } from '../../lib/profileCache'
 
 export default function ProfilePage() {
@@ -325,7 +326,56 @@ if (!error) {
       bio={profile.bio}
       avatar={profile.avatar_url}
     />
+<ProfileHero
+  profile={profile}
+  postsCount={posts.length}
+  followersCount={followersCount}
+  followingCount={followingCount}
 
+  currentUser={currentUser}
+
+  editing={editing}
+  setEditing={setEditing}
+
+  newUsername={newUsername}
+  setNewUsername={setNewUsername}
+
+  newBio={newBio}
+  setNewBio={setNewBio}
+
+  avatarFile={avatarFile}
+  setAvatarFile={setAvatarFile}
+
+  saveProfile={saveProfile}
+
+  isFollowing={isFollowing}
+  onFollow={toggleFollow}
+
+  onMessage={() =>
+    router.push(`/messages?user=${profile.id}`)
+  }
+
+  onBecomeDriver={() =>
+    router.push('/driver/register')
+  }
+
+  reputation={profile.reputation ?? 0}
+
+  onPostsClick={async () => {
+    if (activeTab === 'posts') {
+      setActiveTab('')
+      return
+    }
+
+    setActiveTab('posts')
+
+    if (posts.length === 0) {
+      await loadPosts()
+    }
+  }}
+
+  onFollowersClick={() => setShowFollowers(true)}
+/>
     {/* Background Glow */}
     <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-cyan-500/5 blur-[150px] pointer-events-none" />
 <div className="w-full">
@@ -455,235 +505,7 @@ className="
           <div className="relative pt-8 px-8 pb-8">
 
 
-            
-<div className="absolute -top-8 left-5 z-[999]">
-  <img
-    src={profile.avatar_url || '/avatar-placeholder.png'}
-    alt="Profile"
-    className="
-      w-20
-      h-20
-      rounded-full
-      object-cover
-      border-4
-      border-[#09090b]
-      shadow-xl
-    "
-  />
-</div>
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-
-
-              <div className="flex-1 mt-4">
-
-                <div className="flex flex-wrap items-center gap-3">
-
-    <div>
-  <div className="flex items-center gap-2">
-    <h1 className="text-lg font-bold">
-      {profile.username}
-    </h1>
-
-    <div className="w-4 h-4 rounded-full bg-cyan-500 flex items-center justify-center text-[8px] font-bold">
-      ✓
-    </div>
-  </div>
-
-  <p className="text-xs text-zinc-500">
-    @{profile.username}
-  </p>
-</div>
-
-
-{currentUser?.id !== profile.id && (
-  <button
-onClick={toggleFollow}
-    className="
-      mt-3
-      px-4
-      py-2
-      rounded-lg
-      border
-      border-cyan-500/20
-      bg-cyan-500/5
-      text-cyan-400
-      text-sm
-      font-semibold
-      hover:bg-cyan-500/10
-      transition
-    "
-  >
-    {isFollowing ? 'Following' : 'Follow'}
-  </button>
-)}
-
-
-
-{currentUser?.id !== profile.id && (
-  <button
-    onClick={() =>
-  router.push(`/messages?user=${profile.id}`)
-}
-    className="mt-3 px-3 py-1 text-xs bg-emerald-500 rounded-lg text-sm font-bold"
-  >
-    Message
-  </button>
-)}
-
-
-                  {currentUser?.id === profile.id && (
-<button
-  onClick={() => setEditing(!editing)}
-  className="mt-3 px-3 py-1 text-xs bg-cyan-500 rounded-lg text-sm font-bold"
->
-  {editing ? 'Cancel' : 'Edit Profile'}
-</button>
-                  )}
-
-
-
-
-
-
-                </div>
-
-{editing ? (
-  <div className="mt-4 space-y-3">
-
-    <input
-      value={newUsername}
-      onChange={(e) => setNewUsername(e.target.value)}
-      placeholder="Username"
-      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3"
-    />
-
-    <textarea
-      value={newBio}
-      onChange={(e) => setNewBio(e.target.value)}
-      placeholder="Bio"
-      rows={4}
-      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3"
-    />
-
-    <input
-      type="file"
-      accept="image/*"
-      onChange={(e) =>
-        setAvatarFile(e.target.files?.[0] || null)
-      }
-      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg p-3"
-    />
-
-  </div>
-) : (
-  <p className="text-sm text-zinc-400 mt-1">
-    {profile.bio || 'No bio yet'}
-  </p>
-)}
-<div className="flex flex-wrap gap-4 mt-4 text-sm text-zinc-500">
-  <span>📍 Nairobi, Kenya</span>
-  <span>📅 Joined 2026</span>
-</div>
-
-{editing && (
-  <button
-    onClick={saveProfile}
-    className="
-      mt-4
-      bg-emerald-500
-      hover:bg-emerald-400
-      px-4
-      py-2
-      rounded-lg
-      font-bold
-      transition
-    "
-  >
-    Save Changes
-  </button>
-)}
-
-
-{currentUser?.id === profile.id && (
-<button
-  onClick={() => router.push('/driver/register')}
-  className="
-    mt-3
-    px-4
-    py-2
-    rounded-lg
-    bg-orange-500
-    hover:bg-orange-400
-    text-white
-    text-sm
-    font-bold
-    transition
-  "
->
-  🚗 Become Driver
-</button>
-)}
-
-<div className="flex items-center gap-5 mt-4 text-sm overflow-x-auto">
-
- <button
-onClick={async () => {
-  if (activeTab === 'posts') {
-    setActiveTab('')
-    return
-  }
-
-  setActiveTab('posts')
-
-  if (posts.length === 0) {
-    await loadPosts()
-  }
-}}
-  className="whitespace-nowrap"
->
-  <span className="font-bold text-white">
-    {posts.length}
-  </span>
-  <span className="text-zinc-500 ml-1">
-    Posts
-  </span>
-</button>
-  <button
-    onClick={() => setShowFollowers(true)}
-    className="whitespace-nowrap"
-  >
-    <span className="font-bold text-white">
-      {followersCount}
-    </span>
-    <span className="text-zinc-500 ml-1">
-      Followers
-    </span>
-  </button>
-
-  <button className="whitespace-nowrap">
-    <span className="font-bold text-white">
-      {followingCount}
-    </span>
-    <span className="text-zinc-500 ml-1">
-      Following
-    </span>
-  </button>
-
-  <button className="whitespace-nowrap">
-    <span className="font-bold text-white">
-      {profile?.reputation || 0}
-    </span>
-    <span className="text-zinc-500 ml-1">
-      Rep
-    </span>
-  </button>
-
-</div>
-
-              </div>
-
-            </div>
-
+  <div className="py-6" />
           </div>
 
         </div>

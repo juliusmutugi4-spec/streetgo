@@ -58,6 +58,12 @@ const [imageLikes, setImageLikes] = useState<number[]>([])
 const [showImageComments, setShowImageComments] = useState(false)
 const [imageComments, setImageComments] = useState<any[]>([])
 const [imageCommentText, setImageCommentText] = useState("")
+const [imageCommentCounts, setImageCommentCounts] = useState<number[]>([])
+const [imageLiked, setImageLiked] = useState<boolean[]>([])
+useEffect(() => {
+  setImageLikes(imageUrls.map(() => 0))
+  setImageLiked(imageUrls.map(() => false))
+}, [post.id])
 const imageUrls = post.image_urls ?? []
 useEffect(() => {
   setImageLikes(
@@ -84,13 +90,89 @@ const [showVideoPortal, setShowVideoPortal] = useState(false)
 const [portalMode, setPortalMode] = useState(false)
 const [portalVideos, setPortalVideos] = useState<any[]>([])
   // Load likes & comments
+
+const toggleImageLike = async () => {
+  if (!user) {
+    setShowLogin(true)
+    return
+  }
+
+
+  
+
+  const liked = imageLiked[currentImage]
+console.log("LIKED:", liked)
+  if (liked) {
+    const { error } = await supabase
+      .from("image_likes")
+      .delete()
+      .eq("post_id", post.id)
+      .eq("image_index", currentImage)
+      .eq("user_id", user.id)
+console.log("ABOUT TO INSERT")
+console.log("INSERT ERROR:", error)
+
+if (error) {
+  alert(error.message)
+  return
+}
+
+console.log("IMAGE LIKE SAVED")
+
+    setImageLiked((prev) => {
+      const copy = [...prev]
+      copy[currentImage] = false
+      return copy
+    })
+
+    setImageLikes((prev) => {
+      const copy = [...prev]
+      copy[currentImage] = Math.max(0, copy[currentImage] - 1)
+      return copy
+    })
+
+    return
+  }
+
+console.log("ABOUT TO INSERT")
+
+const { data, error } = await supabase
+  .from("image_likes")
+  .insert({
+    post_id: post.id,
+    image_index: currentImage,
+    user_id: user.id,
+  })
+  .select()
+
+console.log("INSERT DATA:", data)
+console.log("INSERT ERROR:", error)
+
+if (error) {
+  alert(error.message)
+  return
+}
+
+console.log("IMAGE LIKE SAVED")
+
+  setImageLiked((prev) => {
+    const copy = [...prev]
+    copy[currentImage] = true
+    return copy
+  })
+
+  setImageLikes((prev) => {
+    const copy = [...prev]
+    copy[currentImage]++
+    return copy
+  })
+}
+
+
+
+
   const loadPostData = async () => {
-
-
-
-
-    
-    // Likes count
+  // Likes count
     const { count } = await supabase
       .from('likes')
       .select('*', { count: 'exact', head: true })
@@ -106,10 +188,55 @@ const [portalVideos, setPortalVideos] = useState<any[]>([])
         .maybeSingle()
       setLiked(!!data)
     }
+  // Load comments
+    const { data: commentsData } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('post_id', post.id)
+      .order('created_at', { ascending: false })
+    setComments(commentsData || [])
+  }
 
+const addImageComment = async () => {
+  if (!user) {
+    setShowLogin(true)
+    return
+  }
 
+  if (!imageCommentText.trim()) return
 
-    
+  const { error } = await supabase
+    .from("image_comments")
+    .insert({
+      post_id: post.id,
+      image_index: currentImage,
+      user_id: user.id,
+      content: imageCommentText,
+      username: profile?.username || "Anonymous",
+      avatar_url: profile?.avatar_url || null,
+    })
+
+  console.log("IMAGE COMMENT DATA:", {
+  post_id: post.id,
+  image_index: currentImage,
+  user_id: user.id,
+  content: imageCommentText,
+  username: profile?.username,
+  avatar_url: profile?.avatar_url,
+})
+
+console.log("IMAGE COMMENT ERROR:", error)
+
+  if (error) {
+    alert(error.message)
+    return
+  }
+
+setImageCommentText("")
+await loadImageComments()
+await loadImageCommentCounts()
+}
+
 const loadImageComments = async () => {
   const { data, error } = await supabase
     .from("image_comments")
@@ -121,7 +248,8 @@ const loadImageComments = async () => {
     })
 
   if (error) {
-    console.error(error)
+    console.log("IMAGE COMMENTS ERROR:", JSON.stringify(error, null, 2))
+console.log(error)
     return
   }
 
@@ -135,14 +263,66 @@ useEffect(() => {
 }, [showImageComments, currentImage])
 
 
-    // Load comments
-    const { data: commentsData } = await supabase
-      .from('comments')
-      .select('*')
-      .eq('post_id', post.id)
-      .order('created_at', { ascending: false })
-    setComments(commentsData || [])
+
+const loadImageCommentCounts = async () => {
+  const counts = await Promise.all(
+    imageUrls.map(async (_, index) => {
+      const { count } = await supabase
+        .from("image_comments")
+        .select("*", {
+          count: "exact",
+          head: true,
+        })
+        .eq("post_id", post.id)
+        .eq("image_index", index)
+
+      return count || 0
+    })
+  )
+
+  setImageCommentCounts(counts)
+}
+
+
+const loadImageLikes = async () => {
+  const likes: number[] = []
+  const liked: boolean[] = []
+
+  for (let index = 0; index < imageUrls.length; index++) {
+    // Count likes
+    const { count } = await supabase
+      .from("image_likes")
+      .select("*", {
+        count: "exact",
+        head: true,
+      })
+      .eq("post_id", post.id)
+      .eq("image_index", index)
+
+    likes.push(count || 0)
+
+    // Has current user liked?
+    if (user) {
+      const { data } = await supabase
+        .from("image_likes")
+        .select("id")
+        .eq("post_id", post.id)
+        .eq("image_index", index)
+        .eq("user_id", user.id)
+        .maybeSingle()
+
+      liked.push(!!data)
+    } else {
+      liked.push(false)
+    }
   }
+
+  setImageLikes(likes)
+  setImageLiked(liked)
+}
+
+
+
 
 
 const loadPortalVideos = async () => {
@@ -191,6 +371,15 @@ const loadPortalVideos = async () => {
 useEffect(() => {
   loadPostData()
 }, [post.id, user?.id])
+
+useEffect(() => {
+  loadImageCommentCounts()
+}, [post.id])
+
+useEffect(() => {
+  loadImageLikes()
+}, [post.id, user?.id])
+
 
 useEffect(() => {
   if (!post.username) return
@@ -1254,23 +1443,20 @@ py-1.5
         backdrop-blur-xl
       "
     >
-      <input
-        value={commentText}
-        onChange={(e) => setCommentText(e.target.value)}
-        maxLength={280}
-        placeholder="Write a comment..."
-        className="
-          w-full
-          bg-transparent
-          px-4
-          py-2.5
-          text-sm
-          text-zinc-200
-          outline-none
-          placeholder:text-zinc-500
-        "
-      />
-
+<input
+  value={commentText}
+  onChange={(e) => setCommentText(e.target.value)}
+  placeholder="Write a comment..."
+  className="
+    w-full
+    rounded-xl
+    bg-zinc-900
+    px-4
+    py-3
+    text-white
+    outline-none
+  "
+/>
       <div
         className="
           absolute
@@ -1480,16 +1666,17 @@ onClick={(e) => {
       border-white/20
     "
   />
+<div>
+  <div className="font-semibold text-white">
+    {username}
+  </div>
 
-  <div>
-    <div className="font-semibold text-white">
-      {username}
-    </div>
-
+  {imageUrls.length > 1 && (
     <div className="text-xs text-zinc-400">
       Image {currentImage + 1} of {imageUrls.length}
     </div>
-  </div>
+  )}
+</div>
 
 </div>
 
@@ -1503,12 +1690,14 @@ onClick={(e) => {
     ⋯
   </button>
 </div>
-
+{imageUrls.length > 1 && (
 <button
   onClick={(e) => {
     e.stopPropagation()
+
     setCurrentImage(
-      (currentImage - 1 + imageUrls.length) % imageUrls.length
+      (currentImage - 1 + imageUrls.length) %
+      imageUrls.length
     )
   }}
   className="
@@ -1526,7 +1715,7 @@ onClick={(e) => {
   ‹
 </button>
 
-
+)}
 <img
   src={imageUrls[currentImage]}
   alt=""
@@ -1538,6 +1727,8 @@ className="
   select-none
 "
 />
+
+{imageUrls.length > 1 && (
 <button
   onClick={(e) => {
     e.stopPropagation()
@@ -1559,6 +1750,8 @@ className="
 >
   ›
 </button>
+)}
+
 {imageUrls.length > 1 && (
 <div
   className="
@@ -1579,13 +1772,11 @@ className="
   "
 >
 <button
-  onClick={() => {
-    setImageLikes((prev) => {
-      const updated = [...prev]
-      updated[currentImage] = (updated[currentImage] || 0) + 1
-      return updated
-    })
-  }}
+onClick={(e) => {
+  e.stopPropagation()
+  console.log("HEART CLICKED")
+  toggleImageLike()
+}}
   className="
     flex
     items-center
@@ -1603,7 +1794,10 @@ className="
 </button>
 
 <button
-  onClick={() => setShowImageComments(true)}
+  onClick={(e) => {
+    e.stopPropagation()
+    setShowImageComments(true)
+  }}
   className="
     flex
     items-center
@@ -1615,7 +1809,9 @@ className="
 >
   <MessageCircle size={22} />
 
-  <span>Comment</span>
+<span>
+  {imageCommentCounts[currentImage] || 0}
+</span>
 </button>
 
 <button
@@ -1632,18 +1828,7 @@ className="
   <span>Save</span>
 </button>
 
-  <button
-    className="
-      flex
-      items-center
-      gap-2
-      text-white
-      hover:text-emerald-400
-      transition
-    "
-  >
-    🔖 <span>Save</span>
-  </button>
+
 </div>
 )}
 {showImageComments && (
@@ -1733,20 +1918,39 @@ className="
 
 </div>
 
-    <div className="border-t border-zinc-800 p-4">
-      <input
-        placeholder="Write a comment..."
-        className="
-          w-full
-          rounded-xl
-          bg-zinc-900
-          px-4
-          py-3
-          text-white
-          outline-none
-        "
-      />
-    </div>
+  <div className="border-t border-zinc-800 p-4 flex gap-3">
+  <input
+    value={imageCommentText}
+    onChange={(e) => setImageCommentText(e.target.value)}
+    placeholder="Write a comment..."
+    className="
+      flex-1
+      rounded-xl
+      bg-zinc-900
+      px-4
+      py-3
+      text-white
+      outline-none
+    "
+  />
+
+<button
+  onClick={addImageComment}
+  disabled={!imageCommentText.trim()}
+  className="
+    px-5
+    rounded-xl
+    bg-cyan-500
+    text-white
+    font-semibold
+    disabled:opacity-50
+  "
+>
+  Post
+</button>
+</div>
+
+    
   </div>
 )}
 
