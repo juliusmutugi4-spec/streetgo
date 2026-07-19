@@ -88,6 +88,9 @@ export default function ProfileHero({
         shadow-2xl
       "
     >
+
+
+        
       <ProfileCover
         coverUrl={profile.cover_url}
       />
