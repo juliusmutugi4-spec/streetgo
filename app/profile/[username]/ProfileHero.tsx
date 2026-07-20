@@ -140,7 +140,7 @@ avatarFile,
           </div>
 
           {/* Action and Structural Meta-Information Sidebar Panel */}
-          <div className="lg:col-span-3 flex flex-col gap-4 lg:pt-14 self-start w-full mt-1 lg:mt-0">
+          <div className="lg:col-span-3 flex flex-col gap-4 self-start w-full">
             
             {/* Micro grid action controller buttons rows layout */}
             <ProfileActions 
