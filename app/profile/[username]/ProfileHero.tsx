@@ -128,10 +128,6 @@ avatarFile,
             <div className="w-full mt-1">
               <ProfileAchievements />
             </div>
-<ProfileTabs
-  activeTab={activeTab}
-  setActiveTab={setActiveTab}
-/>
 
 
 
@@ -161,6 +157,13 @@ avatarFile,
 
           </div>
 
+        </div>
+
+        <div className="mt-6 border-t border-zinc-900/60">
+          <ProfileTabs
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+          />
         </div>
 
       </div>

@@ -41,28 +41,30 @@ const tabs = [
 ]
 
  return (
-  <div className="w-full mt-4 border-b border-zinc-900/60">
-    <div className="flex items-center gap-6 overflow-x-auto no-scrollbar">
+  <div className="w-full sticky bottom-0 bg-[#02050a] border-t border-zinc-900/60">
+    <div className="flex w-full overflow-x-auto no-scrollbar snap-x snap-mandatory">
 
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => setActiveTab(tab.id)}
-          className={`
-            relative
-            flex
-            items-center
-            gap-2
-            pb-3
-            whitespace-nowrap
-            transition-all
-            duration-200
-            ${
-              activeTab === tab.id
-                ? "text-cyan-400"
-                : "text-zinc-500 hover:text-white"
-            }
-          `}
+className={`
+  relative
+  flex-1
+  flex
+  flex-col
+  items-center
+  justify-center
+  py-3
+  min-w-[90px]
+  transition-all
+  duration-200
+  ${
+    activeTab === tab.id
+      ? "text-cyan-400"
+      : "text-zinc-500 hover:text-white"
+  }
+`}
         >
           {tab.icon}
 
@@ -70,9 +72,12 @@ const tabs = [
             {tab.label}
           </span>
 
-          {activeTab === tab.id && (
-            <div className="absolute left-0 right-0 -bottom-[1px] h-[2px] rounded-full bg-cyan-400" />
-          )}
+{activeTab === tab.id && (
+  <>
+    <div className="absolute inset-0 rounded-xl bg-cyan-500/10" />
+    <div className="absolute left-4 right-4 bottom-0 h-[3px] rounded-full bg-cyan-400" />
+  </>
+)}
         </button>
       ))}
 
