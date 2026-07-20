@@ -336,7 +336,7 @@ if (!error) {
     avatar={profile.avatar_url}
   />
 
-  <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+  <div className="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
 
     <ProfileHero
   profile={profile}

@@ -72,10 +72,10 @@ avatarFile,
   reputation,
 }: ProfileHeroProps) {
   return (
-    <div className="w-full overflow-hidden bg-[#02050a] rounded-[20px] border border-zinc-900/80 shadow-2xl">
+    <div className="w-full overflow-hidden bg-[#02050a] rounded-none sm:rounded-[20px] border-x-0 sm:border-x border-y border-zinc-900/80 shadow-2xl">
       
       {/* 1. Fluid Banner Block */}
-      <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] max-h-[240px] overflow-hidden select-none">
+      <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] h-[180px] sm:max-h-[240px] overflow-hidden select-none">
         <ProfileCover
   coverUrl={profile.cover_url}
   onBack={onBack}
