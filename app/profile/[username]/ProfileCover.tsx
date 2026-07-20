@@ -4,9 +4,13 @@ import { ArrowLeft, MoreHorizontal, Crown } from "lucide-react"
 
 interface Props {
   coverUrl?: string | null
+  onBack?: () => void
 }
 
-export default function ProfileCover({ coverUrl }: Props) {
+export default function ProfileCover({
+  coverUrl,
+  onBack,
+}: Props) {
   return (
     <div className="relative h-[220px] xs:h-[260px] sm:h-[300px] w-full overflow-hidden select-none">
       {/* Background Image with Professional Cinematographic Filters */}
@@ -22,16 +26,38 @@ export default function ProfileCover({ coverUrl }: Props) {
 
       {/* Ultra-Compact Top Navigation bar */}
       <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
-        <button 
-          aria-label="Go back"
-          className="w-9 h-9 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-95 transition-transform"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 text-white/90" />
-        </button>
+<button 
+  onClick={onBack} 
+  type="button"
+  aria-label="Go back" 
+  className="
+    w-10 h-10 -ml-1 rounded-full 
+    flex items-center justify-center 
+    text-zinc-100 hover:text-white
+    active:bg-zinc-800/40 active:scale-95 
+    transition-all duration-200 outline-none select-none
+  "
+>
+  {/* WhatsApp-style thick, sharp micro back arrow path */}
+  <svg 
+    width="20" 
+    height="20" 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    className="stroke-current"
+    strokeWidth="2.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round"
+  >
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+</button>
+
         
         <button 
           aria-label="More options"
-          className="w-9 h-9 rounded-full bg-black/45 backdrop-blur-md flex items-center justify-center border border-white/10 active:scale-95 transition-transform"
+
         >
           <MoreHorizontal className="w-3.5 h-3.5 text-white/90" />
         </button>

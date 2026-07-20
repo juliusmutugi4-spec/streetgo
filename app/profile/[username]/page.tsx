@@ -31,6 +31,10 @@ const [followingCount, setFollowingCount] = useState(0)
 const [editing, setEditing] = useState(false)
 const [newUsername, setNewUsername] = useState('')
 const [newBio, setNewBio] = useState('')
+
+const [newWebsite, setNewWebsite] = useState('')
+const [newLocation, setNewLocation] = useState('')
+
 const [activeTab, setActiveTab] = useState('')
 const [showMenu, setShowMenu] = useState(false)
 const searchParams = useSearchParams()
@@ -152,7 +156,8 @@ if (session?.user) {
 
 setNewUsername(profileData.username || '')
 setNewBio(profileData.bio || '')
-  
+ setNewWebsite(profileData.website || '')
+setNewLocation(profileData.location || '') 
 }
   if (loading && !profile) {
 
@@ -229,11 +234,13 @@ const saveProfile = async () => {
 
   const { error } = await supabase
     .from('profiles')
-    .update({
-      username,
-      bio: newBio,
-      avatar_url,
-    })
+ .update({
+  username,
+  bio: newBio,
+  website: newWebsite,
+  location: newLocation,
+  avatar_url,
+})
     .eq('id', profile.id)
 
   if (error) {
@@ -241,12 +248,14 @@ const saveProfile = async () => {
     return
   }
 
-  setProfile({
-    ...profile,
-    username,
-    bio: newBio,
-    avatar_url,
-  })
+setProfile({
+  ...profile,
+  username,
+  bio: newBio,
+  website: newWebsite,
+  location: newLocation,
+  avatar_url,
+})
 
   setEditing(false)
 
@@ -319,14 +328,17 @@ if (!error) {
 
   return (
 
-  <main className="min-h-screen bg-[#060608] text-white">
+<main className="min-h-screen bg-[#060608] text-white">
 
-    <ProfileSchema
-      username={profile.username}
-      bio={profile.bio}
-      avatar={profile.avatar_url}
-    />
-<ProfileHero
+  <ProfileSchema
+    username={profile.username}
+    bio={profile.bio}
+    avatar={profile.avatar_url}
+  />
+
+  <div className="w-full max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+
+    <ProfileHero
   profile={profile}
   postsCount={posts.length}
   followersCount={followersCount}
@@ -343,6 +355,15 @@ if (!error) {
   newBio={newBio}
   setNewBio={setNewBio}
 
+newWebsite={newWebsite}
+setNewWebsite={setNewWebsite}
+
+newLocation={newLocation}
+setNewLocation={setNewLocation}
+
+activeTab={activeTab}
+setActiveTab={setActiveTab}
+
   avatarFile={avatarFile}
   setAvatarFile={setAvatarFile}
 
@@ -354,6 +375,8 @@ if (!error) {
   onMessage={() =>
     router.push(`/messages?user=${profile.id}`)
   }
+
+onBack={() => router.back()}
 
   onBecomeDriver={() =>
     router.push('/driver/register')
@@ -458,7 +481,7 @@ if (!error) {
   </>
 )}
 </div>
-
+</div> 
 {showFollowers && (
   <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center">
     <div className="w-full max-w-md rounded-xl border border-zinc-800 bg-zinc-950 p-6">

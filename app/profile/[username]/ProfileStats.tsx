@@ -1,109 +1,47 @@
 'use client'
 
-import {
-  Trophy,
-  Users,
-  UserPlus,
-  FileText,
-  TrendingUp,
-} from "lucide-react"
-
 interface Props {
   reputation: number
   followersCount: number
   followingCount: number
   postsCount: number
-
   onFollowersClick: () => void
   onPostsClick: () => void
 }
 
-function Card({
-  icon,
-  title,
-  value,
-  color,
-  onClick,
-}: {
-  icon: React.ReactNode
-  title: string
-  value: number | string
-  color: string
+interface StatItemProps {
+  value: number
+  label: string
+  suffix?: string
   onClick?: () => void
-}) {
+}
+
+function StatItem({ value, label, suffix = "", onClick }: StatItemProps) {
+  // Utility to cleanly format big numbers (e.g., 14200 -> "14.2K")
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M'
+    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
+    return num.toString()
+  }
+
+  const Component = onClick ? 'button' : 'div'
+
   return (
-    <button
+    <Component
       onClick={onClick}
-      className="
-        group
-        relative
-        overflow-hidden
-
-        rounded-2xl
-
-        border
-        border-white/10
-
-        bg-white/[0.03]
-        backdrop-blur-xl
-
-        p-4
-
-        transition-all
-        duration-300
-
-        hover:scale-[1.02]
-        hover:border-cyan-500/40
-      "
+      type={onClick ? "button" : undefined} // Prevents unintended form submissions if inside an edit form wrapper
+      className={`
+        flex items-baseline gap-1 select-none text-left
+        ${onClick ? 'hover:text-cyan-400 transition-colors active:scale-[0.98] outline-none' : ''}
+      `}
     >
-      <div
-        className={`
-          absolute
-          inset-0
-          opacity-0
-          group-hover:opacity-100
-          blur-3xl
-          transition
-          ${color}
-        `}
-      />
-
-      <div className="relative">
-
-        <div
-          className="
-mb-3
-w-10
-h-10
-rounded-xl
-
-            bg-zinc-900
-
-            flex
-            items-center
-            justify-center
-          "
-        >
-          {icon}
-        </div>
-
-        <p className="text-zinc-400 text-xs">
-          {title}
-        </p>
-
-        <h2
-          className="
-            mt-2
-            text-2xl
-            font-black
-          "
-        >
-          {value}
-        </h2>
-
-      </div>
-
-    </button>
+      <span className="text-xs font-bold text-zinc-100 tracking-tight transition-colors inherited-color">
+        {formatNumber(value)}{suffix}
+      </span>
+      <span className="text-[11px] text-zinc-500 font-medium">
+        {label}
+      </span>
+    </Component>
   )
 }
 
@@ -116,156 +54,32 @@ export default function ProfileStats({
   onPostsClick,
 }: Props) {
   return (
-    <div className="px-8 mt-5">
+    <div className="w-full p-0 m-0">
+      {/* High-density minimalist flex container */}
+      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 py-0.5">
+        
+        {/* Reputation Level Matrix */}
+        <StatItem value={reputation} label="Reputation" suffix=" XP" />
+        
+        {/* Sleek Dot Separator */}
+        <span className="text-[10px] text-zinc-700 select-none hidden xs:inline">•</span>
 
-      <div
-        className="
-          grid
-grid-cols-2
-lg:grid-cols-4
-gap-3
-        "
-      >
+        {/* Followers Active Listener Trigger */}
+        <StatItem value={followersCount} label="Followers" onClick={onFollowersClick} />
+        
+        {/* Sleek Dot Separator */}
+        <span className="text-[10px] text-zinc-700 select-none hidden xs:inline">•</span>
 
-        <Card
-          title="Reputation"
-          value={reputation}
-          color="bg-cyan-500/20"
-          icon={
-            <Trophy
-              className="
-                w-5
-                h-5
-                text-cyan-400
-              "
-            />
-          }
-        />
+        {/* Following Meta Counters */}
+        <StatItem value={followingCount} label="Following" />
+        
+        {/* Sleek Dot Separator */}
+        <span className="text-[10px] text-zinc-700 select-none hidden xs:inline">•</span>
 
-        <Card
-          title="Followers"
-          value={followersCount}
-          color="bg-blue-500/20"
-          onClick={onFollowersClick}
-          icon={
-            <Users
-              className="
-                w-5
-                h-5
-                text-blue-400
-              "
-            />
-          }
-        />
-
-        <Card
-          title="Following"
-          value={followingCount}
-          color="bg-violet-500/20"
-          icon={
-            <UserPlus
-              className="
-                w-5
-                h-5
-                text-violet-400
-              "
-            />
-          }
-        />
-
-        <Card
-          title="Posts"
-          value={postsCount}
-          color="bg-orange-500/20"
-          onClick={onPostsClick}
-          icon={
-   <FileText
-  className="
-    w-3
-    h- 3
-    text-orange-400
-  "
-/>
-          }
-        />
+        {/* Post History Data Metrics */}
+        <StatItem value={postsCount} label="Posts" onClick={onPostsClick} />
 
       </div>
-
-      {/* Reputation Progress */}
-
-      <div
-        className="
-          mt-8
-
-          rounded-3xl
-
-          border
-          border-white/10
-
-          bg-white/[0.03]
-
-          p-6
-        "
-      >
-
-        <div className="flex justify-between">
-
-          <div>
-
-            <p className="text-zinc-400">
-              Reputation Progress
-            </p>
-
-            <h2 className="text-2xl font-black mt-2">
-              {reputation} XP
-            </h2>
-
-          </div>
-
-          <TrendingUp
-            className="
-              w-8
-              h-8
-              text-emerald-400
-            "
-          />
-
-        </div>
-
-        <div
-          className="
-            mt-6
-            h-3
-
-            rounded-full
-
-            bg-zinc-800
-            overflow-hidden
-          "
-        >
-
-          <div
-            className="
-              h-full
-
-              rounded-full
-
-              bg-gradient-to-r
-              from-cyan-500
-              to-blue-500
-            "
-            style={{
-              width: `${Math.min(
-                reputation,
-                100
-              )}%`,
-            }}
-          />
-
-        </div>
-
-      </div>
-
     </div>
   )
 }

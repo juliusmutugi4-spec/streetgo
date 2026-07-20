@@ -9,6 +9,13 @@ interface Props {
   setNewUsername: React.Dispatch<React.SetStateAction<string>>
   newBio: string
   setNewBio: React.Dispatch<React.SetStateAction<string>>
+
+newWebsite: string
+setNewWebsite: React.Dispatch<React.SetStateAction<string>>
+newLocation: string
+setNewLocation: React.Dispatch<React.SetStateAction<string>>
+
+
   avatarFile: File | null
   setAvatarFile: React.Dispatch<React.SetStateAction<File | null>>
   saveProfile: () => void
@@ -21,6 +28,12 @@ export default function ProfileHeader({
   setNewUsername,
   newBio,
   setNewBio,
+
+  newWebsite,
+  setNewWebsite,
+  newLocation,
+  setNewLocation,
+
   avatarFile,
   setAvatarFile,
   saveProfile,
@@ -28,7 +41,7 @@ export default function ProfileHeader({
   return (
     <div className="w-full select-none px-1">
       {/* 1. Split-Row Avatar & Identity Header Block */}
-      <div className="flex flex-row items-end gap-3.5 sm:gap-5">
+      <div className="flex items-start gap-4 w-full">
         
         {/* Left Aspect: Profile Avatar Frame */}
         <div className="relative shrink-0 z-20">
@@ -36,7 +49,7 @@ export default function ProfileHeader({
             <img 
               src={avatarFile ? URL.createObjectURL(avatarFile) : (profile.avatar_url || "/avatar-placeholder.png")} 
               alt="User profile portrait" 
-              className="w-[84px] h-[84px] sm:w-[100px] sm:h-[100px] rounded-full object-cover border-[3px] border-[#02050a]" 
+              className="w-[72px] h-[72px] sm:w-[96px] sm:h-[96px] rounded-full object-cover border-[3px] border-[#02050a]" 
             />
           </div>
 
@@ -53,17 +66,17 @@ export default function ProfileHeader({
         </div>
 
         {/* Right Aspect: Identity Text Data Panel Block */}
-        <div className="flex flex-col pb-1 min-w-0">
+        <div className="flex-1 min-w-0 w-full">
           {/* Name Header and Verified Check Combo */}
-          <div className="flex items-center gap-1 min-w-0">
-            <h1 className="text-base sm:text-lg font-bold tracking-tight text-zinc-100 truncate leading-tight">
+          <div className="flex items-center gap-2 min-w-0 w-full">
+            <h1 className="w-full text-[15px] sm:text-xl font-bold tracking-tight text-zinc-100 truncate leading-tight">
               {profile.username || "Julius Mutugi"}
             </h1>
             <BadgeCheck size={15} className="text-sky-400 fill-sky-400/10 shrink-0" />
           </div>
 
           {/* User Universal Handle identifier */}
-          <p className="text-[11px] text-zinc-500 font-medium truncate mt-0.5">
+          <p className="mt-0.5 text-[10px] sm:text-[11px] text-zinc-500 truncate">
             @{profile.username?.toLowerCase().replace(/\s+/g, '') || "juliusmutugi"}
           </p>
 
@@ -104,15 +117,49 @@ export default function ProfileHeader({
               />
             </div>
 
+
+
+
+<div>
+  <label className="block text-[9px] uppercase font-bold tracking-wider text-zinc-500 mb-1">
+    Website
+  </label>
+
+  <input
+    type="text"
+    value={newWebsite}
+    onChange={(e) => setNewWebsite(e.target.value)}
+    className="w-full h-8 rounded-md bg-zinc-900/60 border border-zinc-800 text-[11px] px-2.5 text-white focus:outline-none focus:border-cyan-500/40"
+    placeholder="https://streetgo.app"
+  />
+</div>
+
+
+<div>
+  <label className="block text-[9px] uppercase font-bold tracking-wider text-zinc-500 mb-1">
+    Location
+  </label>
+
+  <input
+    type="text"
+    value={newLocation}
+    onChange={(e) => setNewLocation(e.target.value)}
+    className="w-full h-8 rounded-md bg-zinc-900/60 border border-zinc-800 text-[11px] px-2.5 text-white focus:outline-none focus:border-cyan-500/40"
+    placeholder="Nairobi, Kenya"
+  />
+</div>
+
+
             <button 
               onClick={saveProfile} 
               className="w-full h-8 rounded-md bg-gradient-to-r from-sky-500 to-cyan-500 font-semibold text-[11px] text-white active:scale-[0.98] transition-all shadow-md shadow-cyan-950/20"
             >
               Save Profile Changes
             </button>
+
           </div>
         ) : (
-          <p className="max-w-xl text-[11px] sm:text-xs text-zinc-400 font-normal leading-relaxed tracking-wide antialiased">
+          <p className="w-full text-[11px] sm:text-sm text-zinc-400 font-normal leading-relaxed tracking-wide antialiased">
             {profile.bio || "Building StreetGO into Africa's biggest social platform. Tech lover. Creator. Dreamer."}
           </p>
         )}

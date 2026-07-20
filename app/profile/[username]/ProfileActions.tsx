@@ -1,6 +1,18 @@
 'use client'
 
-import { Plus, Check, MessageSquare, Share2, Pencil, Car, X } from "lucide-react"
+import { useState } from "react"
+
+import {
+  Plus,
+  Check,
+  MessageSquare,
+  Share2,
+  Pencil,
+  Car,
+  X,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react"
 
 interface Props {
   currentUser: any
@@ -24,21 +36,21 @@ function ActionButton({
   variant?: "primary" | "secondary" | "danger"
   onClick: () => void 
 }) {
-  // Exact visual color mapping extracted directly from your reference screen design
   const styles = {
-    primary: "bg-gradient-to-r from-[#2da5f3] to-[#12c5de] hover:opacity-90 text-white border-transparent font-semibold shadow-[0_4px_20px_rgba(18,197,222,0.15)]",
-    secondary: "bg-[#0b121f]/40 border-zinc-800/80 text-zinc-200 hover:text-white hover:bg-[#121c2f]/60 hover:border-zinc-700",
-    danger: "bg-red-950/30 border-red-900/60 text-red-400 hover:bg-red-900/40"
+    primary: "bg-gradient-to-r from-[#2da5f3] to-[#12c5de] hover:opacity-90 text-white border-transparent font-semibold shadow-[0_2px_10px_rgba(18,197,222,0.1)]",
+    secondary: "bg-[#0b121f]/40 border-zinc-800/60 text-zinc-300 hover:text-white hover:bg-[#121c2f]/60 hover:border-zinc-700",
+    danger: "bg-red-950/20 border-red-900/40 text-red-400 hover:bg-red-900/30"
   }
 
   return (
     <button 
       onClick={onClick} 
-      className={`
-        w-full flex items-center justify-center gap-2 
-        rounded-[12px] border h-[42px] px-4
-        text-xs tracking-wide font-medium
-        transition-all duration-200 active:scale-[0.97]
+      type="button"
+className={`
+  w-full flex items-center justify-center gap-1.5
+  rounded-lg border h-9 px-3
+  text-xs font-medium
+        transition-all duration-200 active:scale-[0.97] outline-none
         ${styles[variant]}
       `}
     >
@@ -59,10 +71,11 @@ export default function ProfileActions({
   onBecomeDriver, 
 }: Props) {
   const isOwnProfile = currentUser?.id === profile?.id
-
+const [expanded, setExpanded] = useState(false)
   return (
     <div className="w-full p-0 m-0">
-      <div className="flex flex-col gap-2.5 w-full">
+      {/* Hyper-dense vertical column stack with minimized row gaps */}
+      <div className="grid grid-cols-2 gap-2 w-full lg:grid-cols-1">
         {!isOwnProfile && (
           <>
             {/* Primary Action Call: Follow Toggle */}
@@ -70,7 +83,7 @@ export default function ProfileActions({
               title={isFollowing ? "Following" : "Follow"} 
               onClick={onFollow} 
               variant={isFollowing ? "secondary" : "primary"}
-              icon={isFollowing ? <Check size={14} className="text-cyan-400" /> : <Plus size={14} strokeWidth={2.5} />} 
+              icon={isFollowing ? <Check size={12} className="text-cyan-400" /> : <Plus size={12} strokeWidth={2.5} />} 
             />
 
             {/* Core Message Action Panel */}
@@ -78,7 +91,7 @@ export default function ProfileActions({
               title="Message" 
               onClick={onMessage} 
               variant="secondary"
-              icon={<MessageSquare size={14} strokeWidth={2} className="opacity-80" />} 
+              icon={<MessageSquare size={12} strokeWidth={2} className="opacity-80" />} 
             />
 
             {/* Native OS Share Sheet Proxy Trigger */}
@@ -86,38 +99,79 @@ export default function ProfileActions({
               title="Share Profile" 
               onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 
               variant="secondary"
-              icon={<Share2 size={14} strokeWidth={2} className="opacity-80" />} 
+              icon={<Share2 size={12} strokeWidth={2} className="opacity-80" />} 
             />
           </>
         )}
+{isOwnProfile && (
+  <div className="w-full flex flex-col gap-2">
+    {/* Micro-Sized Expand/Collapse Control Bar */}
+    <button
+      onClick={() => setExpanded(!expanded)}
+      type="button"
+      className="
+        w-full h-7 rounded-[8px] border border-zinc-900/80 
+        bg-gradient-to-b from-[#0b121f]/40 to-[#050910]/60
+        flex items-center justify-center gap-1.5
+        text-[10px] font-semibold uppercase tracking-wider text-zinc-500
+        hover:text-cyan-400 hover:border-cyan-500/20
+        transition-all duration-300 active:scale-[0.98] outline-none group
+      "
+    >
+      <span>{expanded ? "Less Options" : "More Options"}</span>
+      <div className={`
+        transform transition-transform duration-300 ease-out text-zinc-500 group-hover:text-cyan-400
+        ${expanded ? "rotate-180" : "rotate-0"}
+      `}>
+        {/* Using a tight crisp icon metric layout for smartphone viewports */}
+        <svg 
+          width="10" 
+          height="6" 
+          viewBox="0 0 10 6" 
+          fill="none" 
+          xmlns="http://w3.org"
+          className="stroke-current"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M1 1L5 5L9 1" />
+        </svg>
+      </div>
+    </button>
 
-        {isOwnProfile && (
-          <>
-            {/* Owner Operational Toggles */}
-            <ActionButton 
-              title={editing ? "Cancel Editing" : "Edit Profile"} 
-              onClick={() => setEditing(!editing)} 
-              variant={editing ? "danger" : "primary"}
-              icon={editing ? <X size={14} /> : <Pencil size={14} />} 
-            />
+    {/* Content Area Section Wrapper */}
+    <div className={`
+      grid transition-all duration-300 ease-in-out
+      ${expanded ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 pointer-events-none"}
+    `}>
+      <div className="overflow-hidden flex flex-col gap-1.5 w-full">
+        <ActionButton 
+          title={editing ? "Cancel Editing" : "Edit Profile"} 
+          onClick={() => setEditing(!editing)} 
+          variant={editing ? "danger" : "primary"}
+          icon={editing ? <X size={12} /> : <Pencil size={12} />} 
+        />
+        
+        <ActionButton 
+          title="Become Driver" 
+          onClick={onBecomeDriver} 
+          variant="secondary"
+          icon={<Car size={12} className="opacity-80" />} 
+        />
+        
+        <ActionButton 
+          title="Share Profile" 
+          onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 
+          variant="secondary"
+          icon={<Share2 size={12} className="opacity-80" />} 
+        />
+      </div>
+    </div>
+  </div>
+)}
 
-            {/* Ancillary Marketplace Entry Trigger */}
-            <ActionButton 
-              title="Become Driver" 
-              onClick={onBecomeDriver} 
-              variant="secondary"
-              icon={<Car size={14} className="opacity-80" />} 
-            />
 
-            {/* Profile Card External Link Export */}
-            <ActionButton 
-              title="Share Profile" 
-              onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 
-              variant="secondary"
-              icon={<Share2 size={14} className="opacity-80" />} 
-            />
-          </>
-        )}
       </div>
     </div>
   )

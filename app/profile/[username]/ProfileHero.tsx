@@ -5,8 +5,8 @@ import ProfileHeader from "./ProfileHeader"
 import ProfileActions from "./ProfileActions"
 import ProfileStats from "./ProfileStats"
 import ProfileInfo from "./ProfileInfo"
-import ProfileAchievements from "./ProfileAchievements" // Added the horizontal component
-
+import ProfileAchievements from "./ProfileAchievements"
+import ProfileTabs from "./ProfileTabs"
 interface ProfileHeroProps {
   profile: any
   postsCount: number
@@ -19,12 +19,19 @@ interface ProfileHeroProps {
   setNewUsername: React.Dispatch<React.SetStateAction<string>>
   newBio: string
   setNewBio: React.Dispatch<React.SetStateAction<string>>
+newWebsite: string
+setNewWebsite: React.Dispatch<React.SetStateAction<string>>
+newLocation: string
+setNewLocation: React.Dispatch<React.SetStateAction<string>>
+  activeTab: string
+setActiveTab: React.Dispatch<React.SetStateAction<string>>
   avatarFile: File | null
   setAvatarFile: React.Dispatch<React.SetStateAction<File | null>>
   saveProfile: () => void
   isFollowing: boolean
   onFollow: () => void
   onMessage: () => void
+  onBack: () => void
   onBecomeDriver: () => void
   onPostsClick: () => void
   onFollowersClick: () => void
@@ -41,48 +48,72 @@ export default function ProfileHero({
   setEditing,
   newUsername,
   setNewUsername,
-  newBio,
-  setNewBio,
-  avatarFile,
+newBio,
+setNewBio,
+
+newWebsite,
+setNewWebsite,
+newLocation,
+setNewLocation,
+
+activeTab,
+setActiveTab,
+
+avatarFile,
   setAvatarFile,
   saveProfile,
   isFollowing,
   onFollow,
   onMessage,
+  onBack,
   onBecomeDriver,
   onPostsClick,
   onFollowersClick,
   reputation,
 }: ProfileHeroProps) {
   return (
-    <div className="w-full max-w-4xl mx-auto overflow-hidden rounded-[16px] border border-zinc-900/60 bg-[#02050a] shadow-xl">
+    <div className="w-full overflow-hidden bg-[#02050a] rounded-[20px] border border-zinc-900/80 shadow-2xl">
       
-      {/* 1. Cover Image Section */}
-      <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] max-h-[240px] overflow-hidden">
-        <ProfileCover coverUrl={profile.cover_url} />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#02050a] via-transparent to-transparent opacity-90" />
+      {/* 1. Fluid Banner Block */}
+      <div className="relative w-full aspect-[21/9] sm:aspect-[3/1] max-h-[240px] overflow-hidden select-none">
+        <ProfileCover
+  coverUrl={profile.cover_url}
+  onBack={onBack}
+/>
+        {/* Anti-aliasing shadow overlay to hide color banding on mobile screens */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#02050a] via-[#02050a]/20 to-transparent pointer-events-none z-10" />
       </div>
 
-      {/* 2. Micro-Spaced Content Workspace */}
-      <div className="relative px-4 sm:px-6 lg:px-8 -mt-16 sm:-mt-20 pb-6 z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-start">
+      {/* 2. Unified Content Layer */}
+      <div className="relative px-4 sm:px-6 lg:px-8 -mt-9 sm:-mt-12 pb-6 z-20">
+        
+        {/* Core Layout Grid System: Dynamic flex columns on mobile, dual column columns on desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
           
-          {/* Main User Identity Stack (Left Column) */}
-          <div className="lg:col-span-8 flex flex-col gap-4">
-            <ProfileHeader 
-              profile={profile} 
-              editing={editing} 
-              newUsername={newUsername} 
-              setNewUsername={setNewUsername} 
-              newBio={newBio} 
-              setNewBio={setNewBio} 
-              avatarFile={avatarFile} 
-              setAvatarFile={setAvatarFile} 
-              saveProfile={saveProfile} 
-            />
+          {/* Main User Identity Stack Column */}
+          <div className="lg:col-span-9 flex flex-col gap-3.5 w-full">
             
-            {/* Numerical Stats Area */}
-            <div className="w-full pt-3 border-t border-zinc-900/80">
+            {/* Split Avatar and Identification Data Text info row */}
+<ProfileHeader
+  profile={profile}
+  editing={editing}
+  newUsername={newUsername}
+  setNewUsername={setNewUsername}
+  newBio={newBio}
+  setNewBio={setNewBio}
+
+  newWebsite={newWebsite}
+  setNewWebsite={setNewWebsite}
+  newLocation={newLocation}
+  setNewLocation={setNewLocation}
+
+  avatarFile={avatarFile}
+  setAvatarFile={setAvatarFile}
+  saveProfile={saveProfile}
+/>
+            
+            {/* High Density Numerical Analytics Items inline sub-row */}
+            <div className="w-full pt-2.5 border-t border-zinc-900/60">
               <ProfileStats 
                 reputation={reputation} 
                 followersCount={followersCount} 
@@ -93,13 +124,25 @@ export default function ProfileHero({
               />
             </div>
 
-            {/* Horizontal Swipe Achievements Row */}
-            <ProfileAchievements />
+            {/* Horizontal Swipe Action Milestones Block */}
+            <div className="w-full mt-1">
+              <ProfileAchievements />
+            </div>
+<ProfileTabs
+  activeTab={activeTab}
+  setActiveTab={setActiveTab}
+/>
+
+
+
+
+
           </div>
 
-          {/* Micro Action Sidebar (Right Column) */}
-          <div className="lg:col-span-4 flex flex-col gap-4 lg:pt-14 self-start w-full">
-            {/* Functional Buttons Container */}
+          {/* Action and Structural Meta-Information Sidebar Panel */}
+          <div className="lg:col-span-3 flex flex-col gap-4 lg:pt-14 self-start w-full mt-1 lg:mt-0">
+            
+            {/* Micro grid action controller buttons rows layout */}
             <ProfileActions 
               currentUser={currentUser} 
               profile={profile} 
@@ -111,14 +154,17 @@ export default function ProfileHero({
               onBecomeDriver={onBecomeDriver} 
             />
             
-            {/* User Meta Meta-Data (Location, Date, Website) */}
-            <div className="pt-2 border-t border-zinc-900/40 lg:border-t-0">
+            {/* Personal Core Meta Coordinates (Joined, Website, Location Map details) */}
+            <div className="pt-3.5 border-t border-zinc-900/60 lg:border-t-0 lg:pt-0">
               <ProfileInfo profile={profile} />
             </div>
+
           </div>
 
         </div>
+
       </div>
+
     </div>
   )
 }
