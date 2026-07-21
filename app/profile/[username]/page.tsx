@@ -474,9 +474,10 @@ onBack={() => router.back()}
 )}
 
 {activeTab === 'predictions' && (
-  <ProfilePredictions
-    predictions={predictions}
-  />
+<ProfilePredictions
+  predictions={predictions}
+  onRefresh={loadPredictions}
+/>
 )}
 
 </div>

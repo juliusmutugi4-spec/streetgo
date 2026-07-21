@@ -44,9 +44,8 @@ useEffect(() => {
   return () => clearInterval(interval)
 }, [])
 
-  const fetchLeaderboard = async () => {
-    try {
-      setIsLoading(true)
+const fetchLeaderboard = async () => {
+  try {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
