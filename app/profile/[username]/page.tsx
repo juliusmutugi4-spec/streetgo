@@ -6,8 +6,10 @@ import { supabase } from '../../lib/supabase'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import ProfileSchema from '../../components/ProfileSchema'
 import ProfileHero from './ProfileHero'
+import ProfilePosts from './ProfilePosts'
+import ProfileVideos from './ProfileVideos'
 import { getCachedProfile, setCachedProfile } from '../../lib/profileCache'
-
+import ProfilePredictions from "./ProfilePredictions"
 export default function ProfilePage() {
   const params = useParams()
   const router = useRouter()
@@ -19,9 +21,10 @@ export default function ProfilePage() {
       .toLowerCase()
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [posts, setPosts] = useState<any[]>([])
-  const [currentUser, setCurrentUser] = useState<any>(null)
+const [profile, setProfile] = useState<any>(null)
+const [posts, setPosts] = useState<any[]>([])
+const [predictions, setPredictions] = useState<any[]>([])
+const [currentUser, setCurrentUser] = useState<any>(null)
   const [isFollowing, setIsFollowing] = useState(false)
   const [followersCount, setFollowersCount] = useState(0)
   const [followers, setFollowers] = useState<any[]>([])
@@ -54,6 +57,39 @@ useEffect(() => {
     mounted = false
   }
 }, [username])
+
+useEffect(() => {
+  if (
+    activeTab === "predictions" &&
+    profile &&
+    predictions.length === 0
+  ) {
+    loadPredictions()
+  }
+}, [activeTab, profile])
+
+
+useEffect(() => {
+  if (
+    activeTab === "posts" &&
+    profile &&
+    posts.length === 0
+  ) {
+    loadPosts()
+  }
+}, [activeTab, profile])
+
+useEffect(() => {
+  if (
+    activeTab === "videos" &&
+    profile &&
+    posts.length === 0
+  ) {
+    loadPosts()
+  }
+}, [activeTab, profile])
+
+
 const loadProfile = async () => {
   const cached = getCachedProfile(username)
 
@@ -276,6 +312,25 @@ const loadPosts = async () => {
   setPosts(data || [])
 }
 
+const loadPredictions = async () => {
+  if (!profile) return
+
+  const { data, error } = await supabase
+    .from("predictions")
+    .select("*")
+    .eq("user_id", profile.id)
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  setPredictions(data || [])
+}
+
+
+
 
 const toggleFollow = async () => {
   if (!currentUser || !profile) return
@@ -405,81 +460,25 @@ onBack={() => router.back()}
 
 
 {activeTab === 'posts' && (
-  <>
-    {/* POSTS SECTION */}
-    <div className="mt-8 flex items-center justify-between">
-      <h2 className="font-black tracking-widest text-zinc-400 text-sm">
-        DATAFEED // USER POSTS
-      </h2>
-
-      <div className="text-xs text-cyan-400 font-mono">
-        {posts.length} TRANSMISSIONS
-      </div>
-    </div>
-
-    <div className="mt-4 space-y-4">
-      {posts.length === 0 ? (
-        <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-10 text-center">
-          <p className="text-xs text-zinc-500">
-            No transmissions found.
-          </p>
-        </div>
-      ) : (
-        posts.map((post) => (
-          <div
-            key={post.id}
-            className="
-              rounded-xl
-              border
-              border-zinc-800
-              bg-zinc-950/60
-              backdrop-blur-xl
-              overflow-hidden
-            "
-          >
-            <div className="p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <img
-                  src={profile.avatar_url || '/avatar-placeholder.png'}
-                  className="w-10 h-10 rounded-xl object-cover"
-                />
-
-                <div>
-                  <p className="font-bold">
-                    {profile.username}
-                  </p>
-
-                  <p className="text-xs text-zinc-500">
-                    {new Date(post.created_at).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <p className="text-zinc-200 whitespace-pre-wrap">
-                {post.content}
-              </p>
-
-              {post.video_url && (
-                <video
-                  src={post.video_url}
-                  controls
-                  className="
-                    mt-4
-                    rounded-xl
-                    w-full
-                    border
-                    border-zinc-800
-                  "
-                />
-              )}
-            </div>
-          </div>
-        ))
-      )}
-    </div>
-   
-  </>
+  <ProfilePosts
+    posts={posts}
+    profile={profile}
+  />
 )}
+
+{activeTab === 'videos' && (
+<ProfileVideos
+  posts={posts}
+  setPosts={setPosts}
+/>
+)}
+
+{activeTab === 'predictions' && (
+  <ProfilePredictions
+    predictions={predictions}
+  />
+)}
+
 </div>
 </div> 
 {showFollowers && (
