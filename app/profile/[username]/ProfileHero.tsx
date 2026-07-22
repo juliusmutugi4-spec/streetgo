@@ -88,10 +88,9 @@ avatarFile,
       <div className="relative px-4 sm:px-6 lg:px-8 -mt-9 sm:-mt-12 pb-6 z-20">
         
         {/* Core Layout Grid System: Dynamic flex columns on mobile, dual column columns on desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
-          
-          {/* Main User Identity Stack Column */}
-          <div className="lg:col-span-9 w-full">
+     <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start w-full">
+
+  <div className="xl:col-span-12 w-full">
             
             {/* Split Avatar and Identification Data Text info row */}
 <div className="flex items-start gap-4">
@@ -126,22 +125,29 @@ avatarFile,
     />
   </div>
 </div>
-<ProfileStats
-  reputation={reputation}
-  followersCount={followersCount}
-  followingCount={followingCount}
-  postsCount={postsCount}
-  onFollowersClick={onFollowersClick}
-  onPostsClick={onPostsClick}
-/>
+<div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
 
-{/* Horizontal Swipe Action Milestones Block */}
-<div className="w-full mt-1">
-  <ProfileAchievements />
+  {/* Reputation + Followers */}
+  <div className="lg:col-span-9">
+    <ProfileStats
+      reputation={reputation}
+      followersCount={followersCount}
+      followingCount={followingCount}
+      postsCount={postsCount}
+      onFollowersClick={onFollowersClick}
+      onPostsClick={onPostsClick}
+    />
+  </div>
+
+  {/* Info */}
+  <div className="lg:col-span-3">
+    <ProfileInfo profile={profile} />
+  </div>
+
 </div>
 
-<div className="mt-4">
-  <ProfileInfo profile={profile} />
+<div className="w-full mt-5">
+  <ProfileAchievements />
 </div>
 
 

@@ -1,5 +1,7 @@
 'use client'
 
+import { Star, Users, UserPlus, FileText } from 'lucide-react'
+
 interface Props {
   reputation: number
   followersCount: number
@@ -7,42 +9,6 @@ interface Props {
   postsCount: number
   onFollowersClick: () => void
   onPostsClick: () => void
-}
-
-interface StatItemProps {
-  value: number
-  label: string
-  suffix?: string
-  onClick?: () => void
-}
-
-function StatItem({ value, label, suffix = "", onClick }: StatItemProps) {
-  // Utility to cleanly format big numbers (e.g., 14200 -> "14.2K")
-  const formatNumber = (num: number) => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M'
-    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K'
-    return num.toString()
-  }
-
-  const Component = onClick ? 'button' : 'div'
-
-  return (
-    <Component
-      onClick={onClick}
-      type={onClick ? "button" : undefined} // Prevents unintended form submissions if inside an edit form wrapper
-      className={`
-        flex items-baseline gap-1 select-none text-left
-        ${onClick ? 'hover:text-cyan-400 transition-colors active:scale-[0.98] outline-none' : ''}
-      `}
-    >
-      <span className="text-xs font-bold text-zinc-100 tracking-tight transition-colors inherited-color">
-        {formatNumber(value)}{suffix}
-      </span>
-      <span className="text-[11px] text-zinc-500 font-medium">
-        {label}
-      </span>
-    </Component>
-  )
 }
 
 export default function ProfileStats({
@@ -53,33 +19,104 @@ export default function ProfileStats({
   onFollowersClick,
   onPostsClick,
 }: Props) {
+  const formatNum = (num: number) => new Intl.NumberFormat('en-US', { notation: 'compact' }).format(num)
+
   return (
-    <div className="w-full p-0 m-0">
-      {/* High-density minimalist flex container */}
-      <div className="flex flex-wrap items-center gap-x-3.5 gap-y-1.5 py-0.5">
-        
-        {/* Reputation Level Matrix */}
-        <StatItem value={reputation} label="Reputation" suffix=" XP" />
-        
-        {/* Sleek Dot Separator */}
-        <span className="text-[10px] text-zinc-700 select-none hidden xs:inline">•</span>
-
-        {/* Followers Active Listener Trigger */}
-        <StatItem value={followersCount} label="Followers" onClick={onFollowersClick} />
-        
-        {/* Sleek Dot Separator */}
-        <span className="text-[10px] text-zinc-700 select-none hidden xs:inline">•</span>
-
-        {/* Following Meta Counters */}
-        <StatItem value={followingCount} label="Following" />
-        
-        {/* Sleek Dot Separator */}
-        <span className="text-[10px] text-zinc-700 select-none hidden xs:inline">•</span>
-
-        {/* Post History Data Metrics */}
-        <StatItem value={postsCount} label="Posts" onClick={onPostsClick} />
-
+    <div className="w-full grid grid-cols-12 gap-2 antialiased selection:bg-amber-500/20">
+      
+      {/* 1. Reputation (Lines up perfectly on mobile) */}
+      <div className="col-span-3 rounded-lg border border-zinc-800 bg-zinc-950 p-1.5 flex flex-col justify-between min-w-0">
+        <div className="flex items-center gap-1 min-w-0">
+          <Star className="h-2.5 w-2.5 text-amber-400 fill-amber-400/10 shrink-0" />
+          <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-500 truncate">Rep</span>
+        </div>
+        <div className="my-0.5 leading-none">
+          <span className="text-sm font-black tracking-tight text-white block truncate">
+            {formatNum(reputation)}
+          </span>
+        </div>
+        <div className="h-0.5 w-full rounded-full bg-zinc-900 overflow-hidden">
+          <div className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500" style={{ width: '70%' }} />
+        </div>
       </div>
+<div className="col-span-9 rounded-lg border border-zinc-800 bg-zinc-950 p-1.5">
+
+  <div className="grid grid-cols-3 h-full">
+
+    {/* Followers */}
+    <button
+      onClick={onFollowersClick}
+      className="flex flex-col justify-between text-left px-2 border-r border-zinc-800"
+    >
+      <div className="flex items-center gap-1">
+        <Users className="h-2.5 w-2.5 text-zinc-500" />
+        <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+          Followers
+        </span>
+      </div>
+
+      <span className="text-sm font-black text-white">
+        {formatNum(followersCount)}
+      </span>
+
+      <span className="text-[8px] text-emerald-400">
+        Stable
+      </span>
+    </button>
+
+{/* Following */}
+<div className="flex flex-col justify-between px-2 border-r border-zinc-800">
+
+  <div className="flex items-center gap-1">
+    <UserPlus className="h-2.5 w-2.5 text-zinc-500" />
+
+    <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+      Following
+    </span>
+  </div>
+
+  <span className="text-sm font-black text-white">
+    {formatNum(followingCount)}
+  </span>
+
+  <span className="text-[8px] text-zinc-500">
+    Network
+  </span>
+
+</div>
+
+
+{/* Posts */}
+<button
+  onClick={onPostsClick}
+  className="group flex flex-col justify-between text-left px-2"
+>
+  <div className="flex items-center gap-1">
+    <FileText className="h-2.5 w-2.5 text-zinc-500 group-hover:text-violet-400 transition-colors" />
+
+    <span className="text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+      Posts
+    </span>
+  </div>
+
+  <span className="text-sm font-black text-white group-hover:translate-x-0.5 transition-transform">
+    {formatNum(postsCount)}
+  </span>
+
+  <span className="text-[8px] text-zinc-500">
+    Total
+  </span>
+</button>
+
+
+    {/* Leav
+    
+    
+    e Following and Posts for the next step */}
+
+  </div>
+
+</div>
     </div>
   )
 }
