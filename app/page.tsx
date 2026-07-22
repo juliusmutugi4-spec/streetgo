@@ -259,7 +259,7 @@ const { data: updateData, error: updateError } = await supabase
 
 
 {/* MAIN FEED */}
-<div className="lg:col-span-6">
+<div className="w-full min-w-0 lg:col-span-6">
         {user && (
           <div className="group relative rounded-xl bg-zinc-900/20 border border-zinc-900 overflow-hidden shadow-2xl backdrop-blur-md transition-all duration-500 hover:border-zinc-800/80">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
@@ -291,14 +291,16 @@ const { data: updateData, error: updateError } = await supabase
 {predictions.map((prediction: any) => (
   <div
     key={prediction.id}
-    className="
-      rounded-2xl
-      border
-      border-cyan-500/20
-      bg-[#05070b]
-      p-5
-      mb-4
-    "
+className="
+  w-full
+  min-w-0
+  rounded-2xl
+  border
+  border-cyan-500/20
+  bg-[#05070b]
+  p-4
+  mb-4
+"
   >
     <div className="flex items-center gap-3">
       <img

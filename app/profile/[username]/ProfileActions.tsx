@@ -75,7 +75,7 @@ const [expanded, setExpanded] = useState(false)
   return (
     <div className="w-full p-0 m-0">
       {/* Hyper-dense vertical column stack with minimized row gaps */}
-      <div className="grid grid-cols-2 gap-2 w-full lg:grid-cols-1">
+      <div className="flex flex-col gap-2 w-full justify-start">
         {!isOwnProfile && (
           <>
             {/* Primary Action Call: Follow Toggle */}
@@ -96,7 +96,7 @@ const [expanded, setExpanded] = useState(false)
 
             {/* Native OS Share Sheet Proxy Trigger */}
             <ActionButton 
-              title="Share Profile" 
+              title="Share" 
               onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 
               variant="secondary"
               icon={<Share2 size={12} strokeWidth={2} className="opacity-80" />} 

@@ -69,7 +69,7 @@ useEffect(() => {
     duration-500
 "
 >
-      <div className="max-w-5xl mx-auto h-16 px-6 flex items-center justify-between">
+      <div className="w-full max-w-5xl mx-auto h-16 px-3 sm:px-6 flex items-center justify-between">
 
 
 {/* Top White Glow Bar */}
@@ -137,7 +137,7 @@ useEffect(() => {
 </div>
 
         {/* NAVIGATION */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 sm:gap-6 shrink-0">
 
 <button
   onClick={() => router.push('/videos')}

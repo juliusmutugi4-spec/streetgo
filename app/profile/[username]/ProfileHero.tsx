@@ -91,71 +91,63 @@ avatarFile,
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
           
           {/* Main User Identity Stack Column */}
-          <div className="lg:col-span-9 flex flex-col gap-3.5 w-full">
+          <div className="lg:col-span-9 w-full">
             
             {/* Split Avatar and Identification Data Text info row */}
-<ProfileHeader
-  profile={profile}
-  editing={editing}
-  newUsername={newUsername}
-  setNewUsername={setNewUsername}
-  newBio={newBio}
-  setNewBio={setNewBio}
+<div className="flex items-start gap-4">
+  <div className="flex-1 min-w-0">
+    <ProfileHeader
+      profile={profile}
+      editing={editing}
+      newUsername={newUsername}
+      setNewUsername={setNewUsername}
+      newBio={newBio}
+      setNewBio={setNewBio}
+      newWebsite={newWebsite}
+      setNewWebsite={setNewWebsite}
+      newLocation={newLocation}
+      setNewLocation={setNewLocation}
+      avatarFile={avatarFile}
+      setAvatarFile={setAvatarFile}
+      saveProfile={saveProfile}
+    />
+  </div>
 
-  newWebsite={newWebsite}
-  setNewWebsite={setNewWebsite}
-  newLocation={newLocation}
-  setNewLocation={setNewLocation}
-
-  avatarFile={avatarFile}
-  setAvatarFile={setAvatarFile}
-  saveProfile={saveProfile}
+  <div className="w-[96px] shrink-0">
+    <ProfileActions
+      currentUser={currentUser}
+      profile={profile}
+      editing={editing}
+      setEditing={setEditing}
+      isFollowing={isFollowing}
+      onFollow={onFollow}
+      onMessage={onMessage}
+      onBecomeDriver={onBecomeDriver}
+    />
+  </div>
+</div>
+<ProfileStats
+  reputation={reputation}
+  followersCount={followersCount}
+  followingCount={followingCount}
+  postsCount={postsCount}
+  onFollowersClick={onFollowersClick}
+  onPostsClick={onPostsClick}
 />
-            
-            {/* High Density Numerical Analytics Items inline sub-row */}
-            <div className="w-full pt-2.5 border-t border-zinc-900/60">
-              <ProfileStats 
-                reputation={reputation} 
-                followersCount={followersCount} 
-                followingCount={followingCount} 
-                postsCount={postsCount} 
-                onFollowersClick={onFollowersClick} 
-                onPostsClick={onPostsClick} 
-              />
-            </div>
 
-            {/* Horizontal Swipe Action Milestones Block */}
-            <div className="w-full mt-1">
-              <ProfileAchievements />
-            </div>
+{/* Horizontal Swipe Action Milestones Block */}
+<div className="w-full mt-1">
+  <ProfileAchievements />
+</div>
+
+<div className="mt-4">
+  <ProfileInfo profile={profile} />
+</div>
 
 
+</div>
 
 
-
-          </div>
-
-          {/* Action and Structural Meta-Information Sidebar Panel */}
-          <div className="lg:col-span-3 flex flex-col gap-4 self-start w-full">
-            
-            {/* Micro grid action controller buttons rows layout */}
-            <ProfileActions 
-              currentUser={currentUser} 
-              profile={profile} 
-              editing={editing} 
-              setEditing={setEditing} 
-              isFollowing={isFollowing} 
-              onFollow={onFollow} 
-              onMessage={onMessage} 
-              onBecomeDriver={onBecomeDriver} 
-            />
-            
-            {/* Personal Core Meta Coordinates (Joined, Website, Location Map details) */}
-            <div className="pt-3.5 border-t border-zinc-900/60 lg:border-t-0 lg:pt-0">
-              <ProfileInfo profile={profile} />
-            </div>
-
-          </div>
 
         </div>
 
