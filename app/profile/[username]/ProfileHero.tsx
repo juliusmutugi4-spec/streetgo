@@ -139,11 +139,13 @@ avatarFile,
     />
   </div>
 
-  {/* Info */}
-  <div className="lg:col-span-3">
-    <ProfileInfo profile={profile} />
-  </div>
+{/* Info */}
 
+</div>
+
+{/* Profile Information */}
+<div className="mt-5">
+  <ProfileInfo profile={profile} />
 </div>
 
 <div className="w-full mt-5">
