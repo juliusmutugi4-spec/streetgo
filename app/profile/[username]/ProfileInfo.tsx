@@ -7,9 +7,13 @@ import {
 
 interface Props {
   profile: any
+  isOwner: boolean
 }
 
-export default function ProfileInfo({ profile }: Props) {
+export default function ProfileInfo({
+  profile,
+  isOwner,
+}: Props) {
   const joinDate = profile?.created_at 
     ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) 
     : "Jul 2026"
@@ -56,7 +60,11 @@ export default function ProfileInfo({ profile }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
         
         {/* LEFT COLUMN: PERFECTLY ALIGNED DATA BLOCK (7 Columns) */}
-        <div className="md:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-[11px]">
+        <div
+  className={`${
+    isOwner ? "md:col-span-7" : "md:col-span-12"
+  } grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-[11px]`}
+>
           {/* Location */}
           <div className="flex items-center gap-2 min-w-0 h-5">
             <MapPin size={12} className="text-zinc-500 shrink-0" />
@@ -89,7 +97,9 @@ export default function ProfileInfo({ profile }: Props) {
         </div>
 
         {/* RIGHT COLUMN: REFINED WALLET EMBED (5 Columns) */}
-        <div className="md:col-span-5 bg-zinc-900/30 border border-zinc-900/80 rounded-lg p-2.5">
+
+{isOwner && (
+  <div className="md:col-span-5 bg-zinc-900/30 border border-zinc-900/80 rounded-lg p-2.5">
           {/* Top Row: Meta Descriptor */}
           <div className="flex items-center justify-between text-[9px] uppercase tracking-wider text-zinc-500 font-medium">
             <div className="flex items-center gap-1.5">
@@ -121,6 +131,7 @@ export default function ProfileInfo({ profile }: Props) {
             </button>
           </div>
         </div>
+      )}
 
       </div>
     </div>

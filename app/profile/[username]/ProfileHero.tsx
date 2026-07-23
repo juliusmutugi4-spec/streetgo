@@ -145,7 +145,10 @@ avatarFile,
 
 {/* Profile Information */}
 <div className="mt-5">
-  <ProfileInfo profile={profile} />
+  <ProfileInfo
+  profile={profile}
+  isOwner={currentUser?.id === profile?.id}
+/>
 </div>
 
 <div className="w-full mt-5">
