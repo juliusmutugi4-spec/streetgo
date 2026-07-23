@@ -8,11 +8,15 @@ import {
 interface Props {
   profile: any
   isOwner: boolean
+  wallet: any
+  onTopUp: () => void
 }
 
 export default function ProfileInfo({
   profile,
   isOwner,
+  wallet,
+  onTopUp,
 }: Props) {
   const joinDate = profile?.created_at 
     ? new Date(profile.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) 
@@ -111,7 +115,9 @@ export default function ProfileInfo({
 
           {/* Center Row: Financial Status */}
           <div className="flex items-baseline justify-between mt-1 mb-2">
-            <div className="text-xl font-black text-white tracking-tight">KSh 0</div>
+            <div className="text-xl font-black text-white tracking-tight">
+  KSh {Number(wallet?.balance ?? 0).toLocaleString()}
+</div>
             <div className="flex items-center gap-1 text-[9px] text-zinc-400 font-mono">
               <span className="bg-zinc-900 px-1 rounded text-zinc-300">0 CR</span>
               <span className="bg-emerald-950/40 text-emerald-400 px-1 rounded border border-emerald-900/20">0 PTS</span>
@@ -120,7 +126,10 @@ export default function ProfileInfo({
 
           {/* Bottom Row: Micro-Action Block */}
           <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-zinc-900/60">
-            <button className="flex items-center justify-center gap-1 bg-emerald-500 hover:bg-emerald-400 text-black rounded py-1 text-[10px] font-bold transition-all shadow-sm">
+            <button
+  onClick={onTopUp}
+  className="flex items-center justify-center gap-1 bg-emerald-500 hover:bg-emerald-400 text-black rounded py-1 text-[10px] font-bold transition-all shadow-sm"
+>
               <Plus size={10} strokeWidth={3} /> Top Up
             </button>
             <button className="flex items-center justify-center gap-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-200 rounded py-1 text-[10px] font-semibold transition-all">

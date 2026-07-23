@@ -1,5 +1,7 @@
 'use client'
 
+
+
 import { useState } from "react"
 
 import {
@@ -23,6 +25,9 @@ interface Props {
   onFollow: () => void
   onMessage: () => void
   onBecomeDriver: () => void
+
+  hasWallet: boolean
+  onRegisterWallet: () => void
 }
 
 function ActionButton({ 
@@ -42,6 +47,9 @@ function ActionButton({
     danger: "bg-red-950/20 border-red-900/40 text-red-400 hover:bg-red-900/30"
   }
 
+
+
+  
   return (
     <button 
       onClick={onClick} 
@@ -60,15 +68,17 @@ className={`
   )
 }
 
-export default function ProfileActions({ 
-  currentUser, 
-  profile, 
-  editing, 
-  setEditing, 
-  isFollowing, 
-  onFollow, 
-  onMessage, 
-  onBecomeDriver, 
+export default function ProfileActions({
+  currentUser,
+  profile,
+  editing,
+  setEditing,
+  isFollowing,
+  onFollow,
+  onMessage,
+  onBecomeDriver,
+  hasWallet,
+  onRegisterWallet,
 }: Props) {
   const isOwnProfile = currentUser?.id === profile?.id
 const [expanded, setExpanded] = useState(false)
@@ -160,6 +170,16 @@ const [expanded, setExpanded] = useState(false)
           icon={<Car size={12} className="opacity-80" />} 
         />
         
+{!hasWallet && (
+  <ActionButton
+    title="Register Wallet"
+    onClick={onRegisterWallet}
+    variant="primary"
+    icon={<Plus size={12} strokeWidth={2.5} />}
+  />
+)}
+
+
         <ActionButton 
           title="Share Profile" 
           onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 

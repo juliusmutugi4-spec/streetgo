@@ -1,5 +1,7 @@
 'use client'
-
+import TopUpWalletModal from "./TopUpWalletModal"
+import { useEffect, useState } from "react"
+import WalletRegistrationModal from "./WalletRegistrationModal"
 import ProfileCover from "./ProfileCover"
 import ProfileHeader from "./ProfileHeader"
 import ProfileActions from "./ProfileActions"
@@ -7,6 +9,7 @@ import ProfileStats from "./ProfileStats"
 import ProfileInfo from "./ProfileInfo"
 import ProfileAchievements from "./ProfileAchievements"
 import ProfileTabs from "./ProfileTabs"
+import { supabase } from "../../lib/supabase"
 interface ProfileHeroProps {
   profile: any
   postsCount: number
@@ -71,6 +74,29 @@ avatarFile,
   onFollowersClick,
   reputation,
 }: ProfileHeroProps) {
+
+const [showWalletModal, setShowWalletModal] = useState(false)
+const [showTopUpModal, setShowTopUpModal] = useState(false)
+const [hasWallet, setHasWallet] = useState(false)
+const [wallet, setWallet] = useState<any>(null)
+useEffect(() => {
+  async function checkWallet() {
+    if (!currentUser?.id) return
+
+const { data } = await supabase
+  .from("wallets")
+  .select("*")
+  .eq("user_id", currentUser.id)
+  .maybeSingle()
+
+setWallet(data)
+setHasWallet(!!data)
+  }
+
+  checkWallet()
+}, [currentUser])
+
+
   return (
     <div className="w-full overflow-hidden bg-[#02050a] rounded-none sm:rounded-[20px] border-x-0 sm:border-x border-y border-zinc-900/80 shadow-2xl">
       
@@ -113,16 +139,20 @@ avatarFile,
   </div>
 
   <div className="w-[96px] shrink-0">
-    <ProfileActions
-      currentUser={currentUser}
-      profile={profile}
-      editing={editing}
-      setEditing={setEditing}
-      isFollowing={isFollowing}
-      onFollow={onFollow}
-      onMessage={onMessage}
-      onBecomeDriver={onBecomeDriver}
-    />
+<ProfileActions
+  currentUser={currentUser}
+  profile={profile}
+  editing={editing}
+  setEditing={setEditing}
+  isFollowing={isFollowing}
+  onFollow={onFollow}
+  onMessage={onMessage}
+  onBecomeDriver={onBecomeDriver}
+
+  hasWallet={hasWallet}
+
+onRegisterWallet={() => setShowWalletModal(true)}
+/>
   </div>
 </div>
 <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
@@ -145,9 +175,11 @@ avatarFile,
 
 {/* Profile Information */}
 <div className="mt-5">
-  <ProfileInfo
+<ProfileInfo
   profile={profile}
   isOwner={currentUser?.id === profile?.id}
+  wallet={wallet}
+  onTopUp={() => setShowTopUpModal(true)}
 />
 </div>
 
@@ -162,15 +194,27 @@ avatarFile,
 
         </div>
 
-        <div className="mt-6 border-t border-zinc-900/60">
-          <ProfileTabs
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-          />
-        </div>
+<div className="mt-6 border-t border-zinc-900/60">
+  <ProfileTabs
+    activeTab={activeTab}
+    setActiveTab={setActiveTab}
+  />
+</div>
 
-      </div>
+<WalletRegistrationModal
+  open={showWalletModal}
+  onClose={() => setShowWalletModal(false)}
+  userId={currentUser?.id}
+  onSuccess={() => setHasWallet(true)}
+/>
 
-    </div>
+<TopUpWalletModal
+  open={showTopUpModal}
+  onClose={() => setShowTopUpModal(false)}
+  phone={wallet?.phone ?? ""}
+/>
+
+</div>
+</div>
   )
 }
