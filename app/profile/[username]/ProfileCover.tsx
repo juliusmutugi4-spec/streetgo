@@ -63,11 +63,7 @@ export default function ProfileCover({
         </button>
       </div>
 
-      {/* Micro-Sized Creator Badge Fitted Above Bottom Curve */}
-<div className="absolute left-4 bottom-[150px] inline-flex items-center gap-1 h-5 rounded px-1.5 bg-[#FBBF24] text-[9px] font-black uppercase tracking-wider text-black shadow-md shadow-black/40 antialiased z-10 select-none">
-  <Crown className="w-2.5 h-2.5 fill-black stroke-black stroke-[1.5]" />
-  <span>Elite Creator</span>
-</div>
+
 
 
       {/* Seamless Wave-to-Background Vector Curve */}
