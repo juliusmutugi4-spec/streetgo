@@ -12,7 +12,7 @@ export default function ProfileCover({
   onBack,
 }: Props) {
   return (
-    <div className="relative h-[220px] xs:h-[260px] sm:h-[300px] w-full overflow-hidden select-none">
+    <div className="relative h-[120px] xs:h-[140px] sm:h-[180px] w-full overflow-hidden select-none">
       {/* Background Image with Professional Cinematographic Filters */}
       <img 
         src={coverUrl || "/cover.jpg"} 
