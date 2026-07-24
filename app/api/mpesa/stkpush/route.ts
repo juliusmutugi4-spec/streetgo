@@ -63,7 +63,7 @@ export async function POST(req: Request) {
         PartyB: process.env.MPESA_SHORTCODE,
         PhoneNumber: formattedPhone,
         CallBackURL: process.env.MPESA_CALLBACK_URL,
-        AccountReference: 'StreetMarket',
+        AccountReference: 'StreetGO',
         TransactionDesc: 'Wallet Deposit',
       },
       {
