@@ -1,4 +1,6 @@
 'use client'
+
+import SendMoneyModal from "./SendMoneyModal"
 import TopUpWalletModal from "./TopUpWalletModal"
 import { useEffect, useState } from "react"
 import WalletRegistrationModal from "./WalletRegistrationModal"
@@ -79,6 +81,7 @@ const [showWalletModal, setShowWalletModal] = useState(false)
 const [showTopUpModal, setShowTopUpModal] = useState(false)
 const [hasWallet, setHasWallet] = useState(false)
 const [wallet, setWallet] = useState<any>(null)
+const [showSendModal, setShowSendModal] = useState(false)
 useEffect(() => {
   async function checkWallet() {
     if (!currentUser?.id) return
@@ -96,7 +99,7 @@ setHasWallet(!!data)
   checkWallet()
 }, [currentUser])
 
-
+const isOwner = currentUser?.id === profile?.id
   return (
     <div className="w-full overflow-hidden bg-[#02050a] rounded-none sm:rounded-[20px] border-x-0 sm:border-x border-y border-zinc-900/80 shadow-2xl">
       
@@ -177,9 +180,10 @@ onRegisterWallet={() => setShowWalletModal(true)}
 <div className="mt-5">
 <ProfileInfo
   profile={profile}
-  isOwner={currentUser?.id === profile?.id}
+  isOwner={isOwner}
   wallet={wallet}
   onTopUp={() => setShowTopUpModal(true)}
+  onSend={() => setShowSendModal(true)}
 />
 </div>
 
@@ -213,6 +217,13 @@ onRegisterWallet={() => setShowWalletModal(true)}
   onClose={() => setShowTopUpModal(false)}
   phone={wallet?.phone ?? ""}
 />
+
+<SendMoneyModal
+  open={showSendModal}
+  onClose={() => setShowSendModal(false)}
+/>
+
+
 
 </div>
 </div>

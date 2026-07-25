@@ -81,7 +81,13 @@ const { error } = await supabase.from("wallets").insert({
   user_id: userId,
   full_name: fullName.trim(),
   phone: phone.trim(),
+
+  // Cash wallet
   balance: 0,
+
+  // REAX account
+  reax_balance: 0,
+
   is_verified: false,
 })
 
@@ -90,7 +96,10 @@ alert("INSERT ERROR: " + JSON.stringify(error))
 
       if (error) throw error
 
-      setFeedback({ type: 'success', message: 'Your StreetGO Wallet has been activated successfully!' })
+      setFeedback({
+  type: 'success',
+  message: 'StreetGO Wallet activated successfully. Your REAX account is ready!'
+})
       setFullName("")
       setPhone("")
       
