@@ -6,7 +6,9 @@ import { supabase } from "../lib/supabase"
 export default function ReaxPage() {
 const [loading, setLoading] = useState(true)
 const [reaxBalance, setReaxBalance] = useState(0)
-
+const [todayEarned, setTodayEarned] = useState(0)
+const [lifetimeEarned, setLifetimeEarned] = useState(0)
+const [transactions, setTransactions] = useState<any[]>([])
 useEffect(() => {
   loadWallet()
 }, [])
@@ -36,6 +38,47 @@ async function loadWallet() {
   if (data) {
     setReaxBalance(data.reax_balance ?? 0)
   }
+
+const { data: transactions } = await supabase
+  .from("reax_transactions")
+  .select("*")
+  .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+  .order("created_at", {
+    ascending: false
+  })
+
+
+if (transactions) {
+setTransactions(transactions)
+  const lifetime = transactions.reduce(
+
+
+    (total, item) => total + Number(item.amount),
+    0
+  )
+
+  setLifetimeEarned(lifetime)
+
+
+  const today = new Date()
+    .toISOString()
+    .slice(0,10)
+
+
+  const todayTotal = transactions
+    .filter(item =>
+      item.created_at.startsWith(today)
+    )
+    .reduce(
+      (total,item)=> total + Number(item.amount),
+      0
+    )
+
+
+  setTodayEarned(todayTotal)
+}
+
+
 
   setLoading(false)
 }
@@ -188,9 +231,9 @@ async function loadWallet() {
       Today
     </p>
 
-    <h3 className="mt-2 text-2xl font-black text-white">
-      +0
-    </h3>
+<h3 className="mt-2 text-2xl font-black text-white">
+  +{todayEarned}
+</h3>
 
     <p className="text-xs text-zinc-500 mt-1">
       REAX Earned
@@ -202,9 +245,9 @@ async function loadWallet() {
       This Week
     </p>
 
-    <h3 className="mt-2 text-2xl font-black text-white">
-      +0
-    </h3>
+<h3 className="mt-2 text-2xl font-black text-emerald-400">
+  {lifetimeEarned}
+</h3>
 
     <p className="text-xs text-zinc-500 mt-1">
       REAX Earned
@@ -319,9 +362,64 @@ async function loadWallet() {
     {/* Activity Item */}
     <div className="flex items-center justify-between p-4 border-b border-zinc-800">
       <div>
+{transactions.length === 0 ? (
+
+  <div className="p-8 text-center">
+
+    <div className="text-5xl mb-3">
+      ⭐
+    </div>
+
+    <h3 className="text-lg font-bold text-white">
+      No REAX activity yet
+    </h3>
+
+    <p className="mt-2 text-sm text-zinc-500">
+      Your REAX activity will appear here.
+    </p>
+
+  </div>
+
+) : (
+
+  transactions.slice(0,5).map((item)=>(
+    
+    <div
+      key={item.id}
+      className="flex items-center justify-between p-4 border-b border-zinc-800"
+    >
+
+      <div>
+
         <p className="font-semibold text-white">
-          Welcome to REAX
+          {item.description}
         </p>
+
+        <p className="text-sm text-zinc-500">
+          {item.type}
+        </p>
+
+      </div>
+
+
+      <div className="text-right">
+
+        <p className="text-emerald-400 font-bold">
+          +{item.amount} REAX
+        </p>
+
+        <p className="text-xs text-zinc-600">
+          {new Date(item.created_at)
+            .toLocaleDateString()}
+        </p>
+
+      </div>
+
+    </div>
+
+  ))
+
+)}
 
         <p className="text-sm text-zinc-500">
           Start earning rewards on StreetGO.

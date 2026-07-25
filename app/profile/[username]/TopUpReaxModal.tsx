@@ -14,14 +14,18 @@ export default function TopUpReaxModal({
 }: Props) {
 
 const [amount, setAmount] = useState("")
+const [loading, setLoading] = useState(false)
 async function topUpReax() {
 
   const value = Number(amount)
+setLoading(true)
 
-  if (!value || value <= 0) {
-    alert("Enter a valid amount")
-    return
-  }
+
+if (!value || value <= 0) {
+  alert("Enter a valid amount")
+  setLoading(false)
+  return
+}
 
 
   const { data: wallet, error } = await supabase
@@ -31,16 +35,18 @@ async function topUpReax() {
     .single()
 
 
-  if (error || !wallet) {
-    alert("Wallet not found")
-    return
-  }
+if (error || !wallet) {
+  alert("Wallet not found")
+  setLoading(false)
+  return
+}
 
 
-  if (wallet.balance < value) {
-    alert("Insufficient wallet balance")
-    return
-  }
+ if (wallet.balance < value) {
+  alert("Insufficient wallet balance")
+  setLoading(false)
+  return
+}
 
 
   const { error: updateError } = await supabase
@@ -52,15 +58,36 @@ async function topUpReax() {
     .eq("user_id", userId)
 
 
-  if (updateError) {
-    alert(updateError.message)
-    return
-  }
+if (updateError) {
+  alert(updateError.message)
+  setLoading(false)
+  return
+}
+
+const { error: transactionError } = await supabase
+  .from("reax_transactions")
+  .insert({
+    sender_id: userId,
+    receiver_id: userId,
+    amount: value,
+    type: "topup",
+    description: "Wallet to REAX conversion",
+  })
 
 
-  alert("REAX added successfully ⭐")
+if (transactionError) {
+  alert(transactionError.message)
+  setLoading(false)
+  return
+}
 
-  onClose()
+
+alert("REAX added successfully ⭐")
+
+setAmount("")
+setLoading(false)
+
+window.location.reload()
 }
   if (!open) return null
 
@@ -117,9 +144,10 @@ async function topUpReax() {
 
 <button
   onClick={topUpReax}
-  className="flex-1 rounded-lg bg-emerald-500 py-2 font-bold text-black"
+  disabled={loading}
+  className="flex-1 rounded-lg bg-emerald-500 py-2 font-bold text-black disabled:opacity-50"
 >
-  Continue
+  {loading ? "Processing..." : "Continue"}
 </button>
 
         </div>

@@ -4,6 +4,7 @@
 import TopUpReaxModal from "./TopUpReaxModal"
 import { useState } from "react"
 import ReaxMenu from "./ReaxMenu"
+import WithdrawReaxModal from "./WithdrawReaxModal"
 import {
   Calendar,
   MapPin,
@@ -43,6 +44,7 @@ export default function ProfileInfo({
   const formattedUrl = websiteUrl.startsWith('http') ? websiteUrl : `https://${websiteUrl}`
   const userEmail = profile?.email || "support@streetgo.app"
 const [showTopUpReax, setShowTopUpReax] = useState(false)
+const [showWithdrawReax, setShowWithdrawReax] = useState(false)
   return (
     <div className="w-full bg-zinc-950 border border-zinc-900 rounded-lg p-2.5 font-sans antialiased text-zinc-300 selection:bg-sky-500/20 shadow-md">
       
@@ -164,7 +166,7 @@ const [showTopUpReax, setShowTopUpReax] = useState(false)
               </button>
 <ReaxMenu
   onTopUpReax={() => setShowTopUpReax(true)}
-  onWithdrawToWallet={() => console.log("Withdraw to Wallet")}
+ onWithdrawToWallet={() => setShowWithdrawReax(true)}
   onViewProgress={() => window.location.href = "/reax"}
 />     </div>
 
@@ -183,6 +185,12 @@ const [showTopUpReax, setShowTopUpReax] = useState(false)
   onClose={() => setShowTopUpReax(false)}
   userId={profile.id}
 />
+<WithdrawReaxModal
+  open={showWithdrawReax}
+  onClose={() => setShowWithdrawReax(false)}
+  userId={profile.id}
+/>
+
 
     </div>
   )
