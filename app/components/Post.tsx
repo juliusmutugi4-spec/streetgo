@@ -374,7 +374,8 @@ const handleSendReax = async () => {
     setShowLogin(true)
     return
   }
-
+console.log("CURRENT USER ID:", user.id)
+console.log("POST OWNER ID:", post.user_id)
   await sendPostReax({
     senderId: user.id,
     receiverId: post.user_id,

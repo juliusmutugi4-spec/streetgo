@@ -12,13 +12,17 @@ export async function sendPostReax({
   onSuccess: () => void
   onRollback: () => void
 }) {
-
+console.log("SENDER ID:", senderId)
+console.log("RECEIVER ID:", receiverId)
   // 1. Check sender REAX balance
-  const { data: senderWallet, error: senderError } = await supabase
-    .from("wallets")
-    .select("reax_balance")
-    .eq("user_id", senderId)
-    .single()
+const { data: senderWallet, error: senderError } = await supabase
+  .from("wallets")
+  .select("*")
+  .eq("user_id", senderId)
+  .maybeSingle()
+
+console.log("SENDER WALLET:", senderWallet)
+console.log("SENDER ERROR:", senderError)
 
 
   if (senderError || !senderWallet) {
@@ -33,18 +37,7 @@ export async function sendPostReax({
 
 
   // 2. Check receiver wallet exists
-  const { data: receiverWallet, error: receiverError } = await supabase
-    .from("wallets")
-    .select("reax_balance")
-    .eq("user_id", receiverId)
-    .single()
 
-
-if (receiverError || !receiverWallet) {
-  throw new Error(
-    receiverError?.message || "Receiver wallet not found"
-  )
-}
 
 
 
