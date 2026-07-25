@@ -17,8 +17,20 @@ const [amount, setAmount] = useState("")
 const [loading, setLoading] = useState(false)
 async function topUpReax() {
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+
+  if (!user) {
+    alert("User not logged in")
+    return
+  }
+
+
   const value = Number(amount)
-setLoading(true)
+
+  setLoading(true)
 
 
 if (!value || value <= 0) {
@@ -67,8 +79,8 @@ if (updateError) {
 const { error: transactionError } = await supabase
   .from("reax_transactions")
   .insert({
-    sender_id: userId,
-    receiver_id: userId,
+    sender_id: user.id,
+    receiver_id: user.id,
     amount: value,
     type: "topup",
     description: "Wallet to REAX conversion",
