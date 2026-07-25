@@ -157,46 +157,53 @@ const [showWalletSettings, setShowWalletSettings] = useState(false)
       </div>
     </button>
 
-            {/* Content Area Section Wrapper */}
-            <div className={`grid transition-all duration-200 ease-in-out ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 pointer-events-none"}`}>
-              <div className="overflow-hidden flex flex-col gap-1 w-full entry-content">
-                <ActionButton 
-                  title={editing ? "Cancel Editing" : "Edit Profile"} 
-                  onClick={() => setEditing(!editing)} 
-                  variant={editing ? "danger" : "primary"} 
-                  icon={editing ? <X size={10} /> : <Pencil size={10} />} 
-                />
-                <ActionButton 
-                  title="Become Driver" 
-                  onClick={onBecomeDriver} 
-                  variant="secondary" 
-                  icon={<Car size={10} className="opacity-70" />} 
-                />
-                {!moneyWalletActive ? (
-                  <ActionButton 
-                    title="Activate Wallet" 
-                    onClick={onRegisterWallet} 
-                    variant="primary" 
-                    icon={<Plus size={10} strokeWidth={2.5} />} 
-                  />
-                ) : (
-                  <ActionButton 
-                    title="Wallet Settings" 
-                    onClick={() => setShowWalletSettings(true)} 
-                    variant="secondary" 
-                    icon={<Wallet size={10} />} 
-                  />
-                )}
-                <ActionButton 
-                  title="Share Profile" 
-                  onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 
-                  variant="secondary" 
-                  icon={<Share2 size={10} className="opacity-70" />} 
-                />
-              </div>
-            </div>
-          </div>
-        )}
+    {/* Content Area Section Wrapper */}
+    <div className={`
+      grid transition-all duration-300 ease-in-out
+      ${expanded ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 pointer-events-none"}
+    `}>
+      <div className="overflow-hidden flex flex-col gap-1.5 w-full">
+        <ActionButton 
+          title={editing ? "Cancel Editing" : "Edit Profile"} 
+          onClick={() => setEditing(!editing)} 
+          variant={editing ? "danger" : "primary"}
+          icon={editing ? <X size={12} /> : <Pencil size={12} />} 
+        />
+        
+        <ActionButton 
+          title="Become Driver" 
+          onClick={onBecomeDriver} 
+          variant="secondary"
+          icon={<Car size={12} className="opacity-80" />} 
+        />
+        
+{!moneyWalletActive ? (
+  <ActionButton
+    title="Activate Wallet"
+    onClick={onRegisterWallet}
+    variant="primary"
+    icon={<Plus size={12} strokeWidth={2.5} />}
+  />
+) : (
+<ActionButton
+  title="Wallet Settings"
+onClick={() => setShowWalletSettings(true)}
+  variant="secondary"
+  icon={<Wallet size={12} />}
+/>
+)}
+        <ActionButton 
+          title="Share Profile" 
+          onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 
+          variant="secondary"
+          icon={<Share2 size={12} className="opacity-80" />} 
+        />
+      </div>
+    </div>
+  </div>
+)}
+
+
       </div>
 
 {showWalletSettings && (
