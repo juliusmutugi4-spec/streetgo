@@ -135,6 +135,19 @@ const loadProfile = async () => {
   // Set profile data in state
 setProfile(profileData)
 
+const { data: walletData, error: walletError } = await supabase
+  .from("wallets")
+  .select("*")
+  .eq("user_id", profileData.id)
+  .maybeSingle()
+
+if (walletError) {
+  console.error("Wallet load error:", walletError)
+}
+
+setWallet(walletData)
+
+
 setCachedProfile(profileData.username.toLowerCase(), {
   username: profileData.username,
   avatar_url: profileData.avatar_url,
