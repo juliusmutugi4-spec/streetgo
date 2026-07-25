@@ -26,8 +26,8 @@ interface Props {
   onMessage: () => void
   onBecomeDriver: () => void
 
-  hasWallet: boolean
-  onRegisterWallet: () => void
+ moneyWalletActive: boolean
+onRegisterWallet: () => void
 }
 
 function ActionButton({ 
@@ -77,8 +77,8 @@ export default function ProfileActions({
   onFollow,
   onMessage,
   onBecomeDriver,
-  hasWallet,
-  onRegisterWallet,
+moneyWalletActive,
+onRegisterWallet,
 }: Props) {
   const isOwnProfile = currentUser?.id === profile?.id
 const [expanded, setExpanded] = useState(false)
@@ -170,15 +170,14 @@ const [expanded, setExpanded] = useState(false)
           icon={<Car size={12} className="opacity-80" />} 
         />
         
-{!hasWallet && (
+{!moneyWalletActive && (
   <ActionButton
-    title="Register Wallet"
+    title="Activate Money Wallet"
     onClick={onRegisterWallet}
     variant="primary"
     icon={<Plus size={12} strokeWidth={2.5} />}
   />
 )}
-
 
         <ActionButton 
           title="Share Profile" 

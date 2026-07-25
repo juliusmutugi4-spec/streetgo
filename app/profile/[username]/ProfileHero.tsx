@@ -83,7 +83,7 @@ avatarFile,
 
 const [showWalletModal, setShowWalletModal] = useState(false)
 const [showTopUpModal, setShowTopUpModal] = useState(false)
-const hasWallet = !!wallet
+const moneyWalletActive = wallet?.money_wallet_active ?? false
 
 const [showSendModal, setShowSendModal] = useState(false)
 
@@ -141,7 +141,7 @@ const isOwner = currentUser?.id === profile?.id
   onMessage={onMessage}
   onBecomeDriver={onBecomeDriver}
 
-  hasWallet={hasWallet}
+ moneyWalletActive={moneyWalletActive}
 
 onRegisterWallet={() => setShowWalletModal(true)}
 />
