@@ -83,7 +83,7 @@ avatarFile,
 
 const [showWalletModal, setShowWalletModal] = useState(false)
 const [showTopUpModal, setShowTopUpModal] = useState(false)
-const [hasWallet, setHasWallet] = useState(false)
+const hasWallet = !!wallet
 
 const [showSendModal, setShowSendModal] = useState(false)
 
@@ -199,7 +199,7 @@ onRegisterWallet={() => setShowWalletModal(true)}
   open={showWalletModal}
   onClose={() => setShowWalletModal(false)}
   userId={currentUser?.id}
-  onSuccess={() => setHasWallet(true)}
+  onSuccess={refreshWallet}
 />
 
 <TopUpWalletModal
