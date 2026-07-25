@@ -114,20 +114,40 @@ const { data, error } = await supabase.auth.signUp({
       
       // 2. Create profile in profiles table
 if (data.user) {
-  const { error: profileError } = await supabase.from('profiles').insert({
-    id: data.user.id,
-username: cleanUsername,
-    avatar_url: null,
-    created_at: new Date().toISOString()
-  })
+
+  // Create profile
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      id: data.user.id,
+      username: cleanUsername,
+      avatar_url: null,
+      created_at: new Date().toISOString()
+    })
+
   if (profileError) {
-    if (profileError) {
-  console.log("PROFILE INSERT ERROR:", profileError)
-  alert(
-    JSON.stringify(profileError, null, 2)
-  )
-}
+    console.log("PROFILE INSERT ERROR:", profileError)
+    alert(profileError.message)
+    setLoading(false)
+    return
   }
+
+  // Automatically create REAX wallet
+  const { error: walletError } = await supabase
+    .from("wallets")
+    .insert({
+      user_id: data.user.id,
+      balance: 0,
+      reax_balance: 0
+    })
+
+  if (walletError) {
+    console.log("WALLET INSERT ERROR:", walletError)
+    alert(walletError.message)
+    setLoading(false)
+    return
+  }
+
 }
     } else {
 const { error } = await supabase.auth.signInWithPassword({

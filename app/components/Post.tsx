@@ -1,5 +1,5 @@
 'use client'
-import { sendReax } from "../lib/reax"
+import { sendPostReax } from "../lib/reaxEngine"
 import { memo, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -370,20 +370,24 @@ const loadPortalVideos = async () => {
 }
 
 const handleSendReax = async () => {
-
   if (!user) {
     setShowLogin(true)
     return
   }
 
-  await sendReax(
-    user.id,
-    post.user_id,
-    1
-  )
+  await sendPostReax({
+    senderId: user.id,
+    receiverId: post.user_id,
 
+    onSuccess: () => {
+      setReaxCount(prev => prev + 1)
+    },
+
+    onRollback: () => {
+      setReaxCount(prev => Math.max(0, prev - 1))
+    }
+  })
 }
-
 useEffect(() => {
   loadPostData()
 }, [post.id, user?.id])
