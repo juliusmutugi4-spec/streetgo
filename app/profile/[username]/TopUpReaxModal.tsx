@@ -26,7 +26,7 @@ async function topUpReax() {
     alert("User not logged in")
     return
   }
-
+alert("Logged user: " + user.id)
 
   const value = Number(amount)
 
