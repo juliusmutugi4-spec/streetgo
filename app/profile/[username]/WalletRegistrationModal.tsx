@@ -62,37 +62,19 @@ alert("userId prop: " + userId)
 
 
       // Check existing ledger
-const { data: existingWallet, error: selectError } = await supabase
-  .from("wallets")
-  .select("id")
-  .eq("user_id", userId)
-  .maybeSingle()
 
-alert("SELECT ERROR: " + JSON.stringify(selectError))
-
-      if (existingWallet) {
-        setFeedback({ type: 'error', message: 'A StreetGO Wallet is already linked to this account.' })
-        setIsLoading(false)
-        return
-      }
 
       // Secure Insertion
-const { error } = await supabase.from("wallets").insert({
-  user_id: userId,
-  full_name: fullName.trim(),
-  phone: phone.trim(),
+const { error } = await supabase
+  .from("wallets")
+  .update({
+    full_name: fullName.trim(),
+    phone: phone.trim(),
+    money_wallet_active: true,
+    is_verified: false,
+  })
+  .eq("user_id", userId)
 
-  // Cash wallet
-  balance: 0,
-
-  // REAX account
-  reax_balance: 0,
-
-  is_verified: false,
-})
-
-alert("INSERT ERROR: " + JSON.stringify(error))
-alert("INSERT ERROR: " + JSON.stringify(error))
 
       if (error) throw error
 

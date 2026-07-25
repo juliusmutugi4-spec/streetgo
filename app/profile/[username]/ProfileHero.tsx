@@ -134,6 +134,8 @@ const isOwner = currentUser?.id === profile?.id
 <ProfileActions
   currentUser={currentUser}
   profile={profile}
+  wallet={wallet}
+  refreshWallet={refreshWallet}
   editing={editing}
   setEditing={setEditing}
   isFollowing={isFollowing}

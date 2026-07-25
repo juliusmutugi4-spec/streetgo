@@ -1,6 +1,6 @@
 'use client'
 
-
+import WalletSettingsModal from "./WalletSettingsModal"
 
 import { useState } from "react"
 
@@ -11,6 +11,7 @@ import {
   Share2,
   Pencil,
   Car,
+  Wallet,
   X,
   ChevronDown,
   ChevronUp,
@@ -19,6 +20,8 @@ import {
 interface Props {
   currentUser: any
   profile: any
+  wallet: any
+  refreshWallet: () => Promise<void>
   editing: boolean
   setEditing: React.Dispatch<React.SetStateAction<boolean>>
   isFollowing: boolean
@@ -71,6 +74,8 @@ className={`
 export default function ProfileActions({
   currentUser,
   profile,
+  wallet,
+  refreshWallet,
   editing,
   setEditing,
   isFollowing,
@@ -82,6 +87,8 @@ onRegisterWallet,
 }: Props) {
   const isOwnProfile = currentUser?.id === profile?.id
 const [expanded, setExpanded] = useState(false)
+const [showWalletSettings, setShowWalletSettings] = useState(false)
+
   return (
     <div className="w-full p-0 m-0">
       {/* Hyper-dense vertical column stack with minimized row gaps */}
@@ -150,48 +157,57 @@ const [expanded, setExpanded] = useState(false)
       </div>
     </button>
 
-    {/* Content Area Section Wrapper */}
-    <div className={`
-      grid transition-all duration-300 ease-in-out
-      ${expanded ? "grid-rows-[1fr] opacity-100 mt-1" : "grid-rows-[0fr] opacity-0 pointer-events-none"}
-    `}>
-      <div className="overflow-hidden flex flex-col gap-1.5 w-full">
-        <ActionButton 
-          title={editing ? "Cancel Editing" : "Edit Profile"} 
-          onClick={() => setEditing(!editing)} 
-          variant={editing ? "danger" : "primary"}
-          icon={editing ? <X size={12} /> : <Pencil size={12} />} 
-        />
-        
-        <ActionButton 
-          title="Become Driver" 
-          onClick={onBecomeDriver} 
-          variant="secondary"
-          icon={<Car size={12} className="opacity-80" />} 
-        />
-        
-{!moneyWalletActive && (
-  <ActionButton
-    title="Activate Money Wallet"
-    onClick={onRegisterWallet}
-    variant="primary"
-    icon={<Plus size={12} strokeWidth={2.5} />}
-  />
+            {/* Content Area Section Wrapper */}
+            <div className={`grid transition-all duration-200 ease-in-out ${expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0 pointer-events-none"}`}>
+              <div className="overflow-hidden flex flex-col gap-1 w-full entry-content">
+                <ActionButton 
+                  title={editing ? "Cancel Editing" : "Edit Profile"} 
+                  onClick={() => setEditing(!editing)} 
+                  variant={editing ? "danger" : "primary"} 
+                  icon={editing ? <X size={10} /> : <Pencil size={10} />} 
+                />
+                <ActionButton 
+                  title="Become Driver" 
+                  onClick={onBecomeDriver} 
+                  variant="secondary" 
+                  icon={<Car size={10} className="opacity-70" />} 
+                />
+                {!moneyWalletActive ? (
+                  <ActionButton 
+                    title="Activate Wallet" 
+                    onClick={onRegisterWallet} 
+                    variant="primary" 
+                    icon={<Plus size={10} strokeWidth={2.5} />} 
+                  />
+                ) : (
+                  <ActionButton 
+                    title="Wallet Settings" 
+                    onClick={() => setShowWalletSettings(true)} 
+                    variant="secondary" 
+                    icon={<Wallet size={10} />} 
+                  />
+                )}
+                <ActionButton 
+                  title="Share Profile" 
+                  onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 
+                  variant="secondary" 
+                  icon={<Share2 size={10} className="opacity-70" />} 
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+{showWalletSettings && (
+<WalletSettingsModal
+  wallet={wallet}
+  refreshWallet={refreshWallet}
+  onClose={() => setShowWalletSettings(false)}
+/>
 )}
 
-        <ActionButton 
-          title="Share Profile" 
-          onClick={() => navigator.share?.({ title: profile?.username, url: window.location.href })} 
-          variant="secondary"
-          icon={<Share2 size={12} className="opacity-80" />} 
-        />
-      </div>
-    </div>
-  </div>
-)}
 
-
-      </div>
     </div>
   )
 }
