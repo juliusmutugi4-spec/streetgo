@@ -605,13 +605,15 @@ className="
 
 
       {/* Login Modal */}
-<LoginModal
-  onClose={() => setShowLogin(false)}
-  onLogin={async () => {
-    await checkUser()
-    await fetchPosts()
-  }}
-/>
+{showLogin && (
+  <LoginModal
+    onClose={() => setShowLogin(false)}
+    onLogin={async () => {
+      await checkUser()
+      await fetchPosts()
+    }}
+  />
+)}
 
 
 
