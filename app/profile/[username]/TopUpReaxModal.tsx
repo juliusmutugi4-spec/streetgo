@@ -23,6 +23,15 @@ async function topUpReax() {
     data: { user },
   } = await supabase.auth.getUser()
 
+console.log("AUTH USER:", user?.id)
+
+const {
+  data: { session },
+} = await supabase.auth.getSession()
+
+console.log("SESSION:", session?.access_token ? "TOKEN EXISTS" : "NO TOKEN")
+
+
 
   if (!user) {
     alert("User not logged in")
@@ -84,7 +93,7 @@ const { error: transactionError } = await supabase
     sender_id: user.id,
     receiver_id: user.id,
     amount: value,
-    type: "topup",
+    type: "bonus",
     description: "Wallet to REAX conversion",
   })
 

@@ -68,7 +68,7 @@ const { error: transactionError } = await supabase
     sender_id: userId,
     receiver_id: userId,
     amount: value,
-    type: "withdraw",
+   type: "refund",
     description: "REAX to Wallet conversion",
   })
 

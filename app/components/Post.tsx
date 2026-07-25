@@ -1,5 +1,5 @@
 'use client'
-
+import { sendReax } from "../lib/reax"
 import { memo, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -8,6 +8,7 @@ import PostSchema from './PostSchema'
 import LoginModal from './LoginModal'
 import { setCachedProfile } from "../lib/profileCache"
 import VideoPortal from "./VideoPortal"
+import ReactionButton from "./ReactionButton"
 import {
   Heart,
   MessageCircle,
@@ -60,6 +61,7 @@ const [imageComments, setImageComments] = useState<any[]>([])
 const [imageCommentText, setImageCommentText] = useState("")
 const [imageCommentCounts, setImageCommentCounts] = useState<number[]>([])
 const [imageLiked, setImageLiked] = useState<boolean[]>([])
+const [reaxCount, setReaxCount] = useState(0)
 useEffect(() => {
   setImageLikes(imageUrls.map(() => 0))
   setImageLiked(imageUrls.map(() => false))
@@ -98,7 +100,7 @@ const toggleImageLike = async () => {
   }
 
 
-  
+
 
   const liked = imageLiked[currentImage]
 console.log("LIKED:", liked)
@@ -367,6 +369,20 @@ const loadPortalVideos = async () => {
   ])
 }
 
+const handleSendReax = async () => {
+
+  if (!user) {
+    setShowLogin(true)
+    return
+  }
+
+  await sendReax(
+    user.id,
+    post.user_id,
+    1
+  )
+
+}
 
 useEffect(() => {
   loadPostData()
@@ -412,6 +428,9 @@ useEffect(() => {
       supabase.removeChannel(channel)
     }
   }, [post.id])
+
+
+
 
 
 useEffect(() => {
@@ -1306,30 +1325,13 @@ py-1.5
 </button>
 
 {/* TIP */}
-<button
-  className="
-    flex
-    items-center
-    gap-1.5
-    rounded-full
-    border
-    border-emerald-500/20
-    bg-emerald-500/10
-    px-3
-    py-1.5
-    text-[11px]
-    font-semibold
-    text-emerald-400
-    transition-all
-    duration-200
-    hover:bg-emerald-500/20
-    hover:scale-105
-    active:scale-95
-  "
->
-  <Coins size={14} />
-  Tip
-</button>
+<ReactionButton
+  handleSendReax={handleSendReax}
+  reaxCount={reaxCount}
+/>
+
+
+
 
 {/* VOICE */}
 <button
