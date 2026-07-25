@@ -6,12 +6,14 @@ interface Props {
   open: boolean
   onClose: () => void
   userId: string
+  onSuccess: () => void
 }
 export default function TopUpReaxModal({
   open,
   onClose,
   userId,
-}: Props) {
+  onSuccess,
+}: Props){
 
 const [amount, setAmount] = useState("")
 const [loading, setLoading] = useState(false)
@@ -26,7 +28,7 @@ async function topUpReax() {
     alert("User not logged in")
     return
   }
-alert("Logged user: " + user.id)
+
 
   const value = Number(amount)
 
@@ -99,7 +101,8 @@ alert("REAX added successfully ⭐")
 setAmount("")
 setLoading(false)
 
-window.location.reload()
+onSuccess()
+onClose()
 }
   if (!open) return null
 

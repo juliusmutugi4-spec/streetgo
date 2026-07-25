@@ -23,6 +23,7 @@ interface Props {
   profile: any
   isOwner: boolean
   wallet: any
+  refreshWallet: () => Promise<void>
   onTopUp: () => void
   onSend: () => void
 }
@@ -31,6 +32,7 @@ export default function ProfileInfo({
   profile,
   isOwner,
   wallet,
+  refreshWallet,
   onTopUp,
   onSend,
 }: Props) {
@@ -184,6 +186,7 @@ const [showWithdrawReax, setShowWithdrawReax] = useState(false)
   open={showTopUpReax}
   onClose={() => setShowTopUpReax(false)}
   userId={profile.id}
+  onSuccess={refreshWallet}
 />
 <WithdrawReaxModal
   open={showWithdrawReax}

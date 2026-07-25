@@ -22,6 +22,7 @@ export default function ProfilePage() {
 
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
 const [profile, setProfile] = useState<any>(null)
+const [wallet, setWallet] = useState<any>(null)
 const [posts, setPosts] = useState<any[]>([])
 const [predictions, setPredictions] = useState<any[]>([])
 const [currentUser, setCurrentUser] = useState<any>(null)
@@ -299,6 +300,30 @@ setProfile({
 }
 
 
+const refreshWallet = async () => {
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) return
+
+  const { data, error } = await supabase
+    .from("wallets")
+    .select("*")
+    .eq("user_id", user.id)
+    .single()
+
+  if (error) {
+    console.error("Wallet refresh error:", error)
+    return
+  }
+
+  setWallet(data)
+}
+
+
+
 const loadPosts = async () => {
   if (!profile) return
 
@@ -395,6 +420,8 @@ if (!error) {
 
     <ProfileHero
   profile={profile}
+    wallet={wallet}
+  refreshWallet={refreshWallet}
   postsCount={posts.length}
   followersCount={followersCount}
   followingCount={followingCount}

@@ -14,6 +14,8 @@ import ProfileTabs from "./ProfileTabs"
 import { supabase } from "../../lib/supabase"
 interface ProfileHeroProps {
   profile: any
+    wallet: any
+  refreshWallet: () => Promise<void>
   postsCount: number
   followersCount: number
   followingCount: number
@@ -45,6 +47,8 @@ setActiveTab: React.Dispatch<React.SetStateAction<string>>
 
 export default function ProfileHero({
   profile,
+  wallet,
+  refreshWallet,
   postsCount,
   followersCount,
   followingCount,
@@ -80,24 +84,9 @@ avatarFile,
 const [showWalletModal, setShowWalletModal] = useState(false)
 const [showTopUpModal, setShowTopUpModal] = useState(false)
 const [hasWallet, setHasWallet] = useState(false)
-const [wallet, setWallet] = useState<any>(null)
+
 const [showSendModal, setShowSendModal] = useState(false)
-useEffect(() => {
-  async function checkWallet() {
-    if (!currentUser?.id) return
 
-const { data } = await supabase
-  .from("wallets")
-  .select("*")
-  .eq("user_id", currentUser.id)
-  .maybeSingle()
-
-setWallet(data)
-setHasWallet(!!data)
-  }
-
-  checkWallet()
-}, [currentUser])
 
 const isOwner = currentUser?.id === profile?.id
   return (
@@ -182,6 +171,7 @@ onRegisterWallet={() => setShowWalletModal(true)}
   profile={profile}
   isOwner={isOwner}
   wallet={wallet}
+  refreshWallet={refreshWallet}
   onTopUp={() => setShowTopUpModal(true)}
   onSend={() => setShowSendModal(true)}
 />
