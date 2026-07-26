@@ -3,11 +3,13 @@
 interface StreetAIProps {
   visible: boolean
   username: string
+  viewerCount: number
 }
 
 export default function StreetAI({
   visible,
   username,
+  viewerCount,
 }: StreetAIProps) {
   if (!visible) return null
 
@@ -32,43 +34,53 @@ left-14
         duration-500
       "
     >
-      <div className="border-b border-white/5 px-4 py-3">
-        <span className="text-xs font-semibold text-cyan-400">
-          🤖 StreetGO AI
-        </span>
-      </div>
+<div className="border-b border-cyan-500/20 bg-cyan-500/5 px-4 py-3">
+  <div className="flex items-center justify-between">
+    <span className="text-xs font-bold text-cyan-400">
+      🔥 LIVE NOW
+    </span>
 
-      <div className="p-4">
-        <p className="text-sm text-white leading-relaxed">
-          Hi <span className="text-cyan-400">@{username}</span> 👋
-        </p>
+    <span className="rounded-full bg-emerald-500/20 px-2 py-1 text-[10px] font-semibold text-emerald-400">
+      {viewerCount} HERE
+    </span>
+  </div>
+</div>
 
-        <p className="mt-2 text-sm text-zinc-300">
-          I've noticed you're spending some time on this post...
-        </p>
+<div className="p-4">
+  <p className="text-sm font-semibold text-white">
+    🔥 Live Discussion Started
+  </p>
 
-        <p className="mt-3 text-sm text-white">
-          What caught your attention first?
-        </p>
-      </div>
+  <p className="mt-2 text-sm text-zinc-300">
+    <span className="font-semibold text-cyan-400">
+      {viewerCount}
+    </span>{" "}
+    people are viewing this post right now.
+  </p>
 
-      <div className="flex gap-2 overflow-x-auto px-4 pb-4">
-        <button className="rounded-full bg-cyan-500/10 px-3 py-2 text-xs text-cyan-300 whitespace-nowrap">
-          🔥 Title
-        </button>
+  <p className="mt-3 text-sm text-white">
+    Join the live conversation and react together.
+  </p>
+</div>
 
-        <button className="rounded-full bg-cyan-500/10 px-3 py-2 text-xs text-cyan-300 whitespace-nowrap">
-          📸 Image
-        </button>
-
-        <button className="rounded-full bg-cyan-500/10 px-3 py-2 text-xs text-cyan-300 whitespace-nowrap">
-          💬 Comments
-        </button>
-
-        <button className="rounded-full bg-cyan-500/10 px-3 py-2 text-xs text-cyan-300 whitespace-nowrap">
-          🎥 Video
-        </button>
-      </div>
+<div className="px-4 pb-4">
+  <button
+    className="
+      w-full
+      rounded-xl
+      bg-cyan-500
+      py-3
+      text-sm
+      font-semibold
+      text-black
+      transition
+      hover:scale-[1.02]
+      active:scale-95
+    "
+  >
+    🚀 Join Live Discussion
+  </button>
+</div>
     </div>
   )
 }

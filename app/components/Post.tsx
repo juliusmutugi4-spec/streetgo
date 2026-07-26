@@ -74,6 +74,8 @@ const [imageCommentCounts, setImageCommentCounts] = useState<number[]>([])
 const [imageLiked, setImageLiked] = useState<boolean[]>([])
 const [reaxCount, setReaxCount] = useState(0)
 const [showAIBubble, setShowAIBubble] = useState(false)
+const [viewerCount, setViewerCount] = useState(0)
+
 const [isActivePost, setIsActivePost] = useState(false)
 const [showVideoPortal, setShowVideoPortal] = useState(false)
 
@@ -104,17 +106,60 @@ if (entry.isIntersecting) {
 }, [post.id, setActivePostId])
 
 useEffect(() => {
-  if (!isActive) {
+  loadViewerCount()
+
+  const channel = supabase
+    .channel(`viewers-${post.id}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "post_viewers",
+        filter: `post_id=eq.${post.id}`,
+      },
+      () => {
+        loadViewerCount()
+      }
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [post.id])
+
+
+useEffect(() => {
+  if (!isActive || !user) {
     setShowAIBubble(false)
     return
   }
 
-  const timer = setTimeout(() => {
-    setShowAIBubble(true)
-  }, 4000)
+  const registerViewer = async () => {
+    await supabase
+      .from("post_viewers")
+      .upsert({
+        post_id: post.id,
+        user_id: user.id,
+      })
+  }
 
-  return () => clearTimeout(timer)
-}, [isActive])
+  registerViewer()
+
+setShowAIBubble(viewerCount >= 2)
+
+return () => {
+
+  if (user) {
+    supabase
+      .from("post_viewers")
+      .delete()
+      .eq("post_id", post.id)
+      .eq("user_id", user.id)
+  }
+}
+}, [isActive, user, post.id])
 
 useEffect(() => {
   setImageLikes(
@@ -220,7 +265,22 @@ console.log("IMAGE LIKE SAVED")
 }
 
 
+const loadViewerCount = async () => {
+  const { count, error } = await supabase
+    .from("post_viewers")
+    .select("*", {
+      count: "exact",
+      head: true,
+    })
+    .eq("post_id", post.id)
 
+  if (error) {
+    console.error(error)
+    return
+  }
+
+  setViewerCount(count || 0)
+}
 
   const loadPostData = async () => {
   // Likes count
@@ -919,6 +979,7 @@ return (
 <StreetAI
   visible={showAIBubble}
   username={username}
+  viewerCount={viewerCount}
 />
 
 
@@ -1560,7 +1621,7 @@ py-1.5
   "
 >
   <Users size={14} />
-  Here
+  {viewerCount} Here
 </button>
 
 {/* PLACE */}
