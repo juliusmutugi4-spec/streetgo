@@ -74,8 +74,11 @@ const [imageCommentCounts, setImageCommentCounts] = useState<number[]>([])
 const [imageLiked, setImageLiked] = useState<boolean[]>([])
 const [reaxCount, setReaxCount] = useState(0)
 const [showAIBubble, setShowAIBubble] = useState(false)
-const [viewerCount, setViewerCount] = useState(0)
+const [aiTimerFinished, setAiTimerFinished] = useState(false)
 
+
+const [viewerCount, setViewerCount] = useState(0)
+const [showSurprisePopup, setShowSurprisePopup] = useState(false)
 const [isActivePost, setIsActivePost] = useState(false)
 const [showVideoPortal, setShowVideoPortal] = useState(false)
 
@@ -157,6 +160,7 @@ const { data, error } = await supabase
     {
       post_id: post.id,
       user_id: authUser.id,
+      last_seen: new Date().toISOString(),
     },
     {
       onConflict: "post_id,user_id",
@@ -171,7 +175,7 @@ console.log("UPSERT ERROR:", error)
 
   registerViewer()
 
-  setShowAIBubble(viewerCount >= 2)
+
 
   return () => {
     if (user) {
@@ -182,7 +186,47 @@ console.log("UPSERT ERROR:", error)
         .eq("user_id", user.id)
     }
   }
-}, [isActive, user, post.id, viewerCount])
+}, [isActive, user, post.id])
+
+useEffect(() => {
+  if (!isActive || !user) return
+
+  const heartbeat = setInterval(async () => {
+    await supabase
+      .from("post_viewers")
+      .update({
+        last_seen: new Date().toISOString(),
+      })
+      .eq("post_id", post.id)
+      .eq("user_id", user.id)
+  }, 30000)
+
+  return () => clearInterval(heartbeat)
+}, [isActive, user, post.id])
+
+
+useEffect(() => {
+  if (!isActive || viewerCount < 2) {
+    setAiTimerFinished(false)
+    setShowAIBubble(false)
+    return
+  }
+
+  const timer = setTimeout(() => {
+    setAiTimerFinished(true)
+  }, 60000)
+
+  return () => clearTimeout(timer)
+}, [isActive, viewerCount, post.id])
+
+
+useEffect(() => {
+  if (aiTimerFinished && viewerCount >= 2) {
+    setShowAIBubble(true)
+  } else {
+    setShowAIBubble(false)
+  }
+}, [aiTimerFinished, viewerCount])
 
 useEffect(() => {
   setImageLikes(
@@ -289,6 +333,8 @@ console.log("IMAGE LIKE SAVED")
 
 
 const loadViewerCount = async () => {
+  const activeSince = new Date(Date.now() - 60000).toISOString()
+
   const { count, error } = await supabase
     .from("post_viewers")
     .select("*", {
@@ -296,6 +342,7 @@ const loadViewerCount = async () => {
       head: true,
     })
     .eq("post_id", post.id)
+    .gte("last_seen", activeSince)
 
   if (error) {
     console.error(error)
