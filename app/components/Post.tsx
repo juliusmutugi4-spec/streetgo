@@ -136,31 +136,52 @@ useEffect(() => {
     return
   }
 
-const registerViewer = async () => {
-  const { error } = await supabase
-    .from("post_viewers")
-    .upsert({
-      post_id: post.id,
-      user_id: user.id,
-    })
+  const registerViewer = async () => {
+    const {
+      data: { user: authUser },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-  console.log("REGISTER VIEWER ERROR:", error)
-}
+    console.log("AUTH USER:", authUser)
+    console.log("AUTH ERROR:", authError)
+    console.log("PROP USER:", user)
+
+    if (!authUser) {
+      console.error("❌ No authenticated user found.")
+      return
+    }
+
+const { data, error } = await supabase
+  .from("post_viewers")
+  .upsert(
+    {
+      post_id: post.id,
+      user_id: authUser.id,
+    },
+    {
+      onConflict: "post_id,user_id",
+      ignoreDuplicates: true,
+    }
+  )
+  .select()
+
+console.log("UPSERT DATA:", data)
+console.log("UPSERT ERROR:", error)
+  }
 
   registerViewer()
 
-setShowAIBubble(viewerCount >= 2)
+  setShowAIBubble(viewerCount >= 2)
 
-return () => {
-
-  if (user) {
-    supabase
-      .from("post_viewers")
-      .delete()
-      .eq("post_id", post.id)
-      .eq("user_id", user.id)
+  return () => {
+    if (user) {
+      supabase
+        .from("post_viewers")
+        .delete()
+        .eq("post_id", post.id)
+        .eq("user_id", user.id)
+    }
   }
-}
 }, [isActive, user, post.id, viewerCount])
 
 useEffect(() => {
