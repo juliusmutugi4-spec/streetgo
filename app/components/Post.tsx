@@ -136,14 +136,16 @@ useEffect(() => {
     return
   }
 
-  const registerViewer = async () => {
-    await supabase
-      .from("post_viewers")
-      .upsert({
-        post_id: post.id,
-        user_id: user.id,
-      })
-  }
+const registerViewer = async () => {
+  const { error } = await supabase
+    .from("post_viewers")
+    .upsert({
+      post_id: post.id,
+      user_id: user.id,
+    })
+
+  console.log("REGISTER VIEWER ERROR:", error)
+}
 
   registerViewer()
 
@@ -159,7 +161,7 @@ return () => {
       .eq("user_id", user.id)
   }
 }
-}, [isActive, user, post.id])
+}, [isActive, user, post.id, viewerCount])
 
 useEffect(() => {
   setImageLikes(
