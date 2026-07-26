@@ -9,6 +9,8 @@ import LoginModal from './LoginModal'
 import { setCachedProfile } from "../lib/profileCache"
 import VideoPortal from "./VideoPortal"
 import ReactionButton from "./ReactionButton"
+import { formatRelativeTime } from "../lib/time"
+import StreetAI from "./StreetAI"
 import {
   Heart,
   MessageCircle,
@@ -38,13 +40,22 @@ profile?: {
   predictions_correct?: number
   predictions_wrong?: number
 } | null
+
+
+isActive: boolean
+setActivePostId: React.Dispatch<React.SetStateAction<string | null>>
+
 }
 
 function Post({
   post,
   user,
   profile,
+  isActive,
+  setActivePostId,
 }: PostProps) {
+
+
   const router = useRouter()
   const [likes, setLikes] = useState(0)
   const [displayLikes, setDisplayLikes] = useState(0)
@@ -62,11 +73,49 @@ const [imageCommentText, setImageCommentText] = useState("")
 const [imageCommentCounts, setImageCommentCounts] = useState<number[]>([])
 const [imageLiked, setImageLiked] = useState<boolean[]>([])
 const [reaxCount, setReaxCount] = useState(0)
+const [showAIBubble, setShowAIBubble] = useState(false)
+const [isActivePost, setIsActivePost] = useState(false)
+const [showVideoPortal, setShowVideoPortal] = useState(false)
+
 useEffect(() => {
   setImageLikes(imageUrls.map(() => 0))
   setImageLiked(imageUrls.map(() => false))
 }, [post.id])
 const imageUrls = post.image_urls ?? []
+
+
+useEffect(() => {
+  if (!postRef.current) return
+
+  const observer = new IntersectionObserver(
+    ([entry]) => {
+      if (entry.isIntersecting) {
+        setActivePostId(post.id)
+      }
+    },
+    {
+      threshold: 0.8,
+    }
+  )
+
+  observer.observe(postRef.current)
+
+  return () => observer.disconnect()
+}, [post.id, setActivePostId])
+
+useEffect(() => {
+  if (!isActive) {
+    setShowAIBubble(false)
+    return
+  }
+
+  const timer = setTimeout(() => {
+    setShowAIBubble(true)
+  }, 4000)
+
+  return () => clearTimeout(timer)
+}, [isActive])
+
 useEffect(() => {
   setImageLikes(
     imageUrls.map(() => 0)
@@ -88,7 +137,7 @@ const [showImageViewer, setShowImageViewer] = useState(false)
 const videoRef = useRef<HTMLVideoElement>(null)
 const portalVideoRefs = useRef<(HTMLVideoElement | null)[]>([])
 const postRef = useRef<HTMLDivElement>(null)
-const [showVideoPortal, setShowVideoPortal] = useState(false)
+
 const [portalMode, setPortalMode] = useState(false)
 const [portalVideos, setPortalVideos] = useState<any[]>([])
   // Load likes & comments
@@ -661,7 +710,6 @@ const signalTheme =
 
 
 
-
 return (
   <>
     <PostSchema
@@ -721,34 +769,160 @@ return (
   <div className="flex items-center gap-3">
 
     <div className="relative">
-<img
-  src={avatarUrl}
-  alt=""
-  loading="lazy"
-  decoding="async"
-        className="
-          h-10
-          w-10
-          rounded-xl
-          object-cover
-          border
-          border-cyan-500/20
-        "
-      />
 
+{(() => {
+  const colorThemes = [
+    {
+      text: "text-cyan-300",
+      border: "from-cyan-500/80 via-cyan-300/20 to-cyan-500/80",
+      glow: "shadow-[0_0_18px_rgba(34,211,238,0.25)]",
+      accent: "bg-cyan-400",
+      bg: "from-cyan-500/10 to-cyan-900/20"
+    },
+    {
+      text: "text-violet-300",
+      border: "from-violet-500/80 via-violet-300/20 to-violet-500/80",
+      glow: "shadow-[0_0_18px_rgba(168,85,247,0.25)]",
+      accent: "bg-violet-400",
+      bg: "from-violet-500/10 to-violet-900/20"
+    },
+    {
+      text: "text-emerald-300",
+      border: "from-emerald-500/80 via-emerald-300/20 to-emerald-500/80",
+      glow: "shadow-[0_0_18px_rgba(16,185,129,0.25)]",
+      accent: "bg-emerald-400",
+      bg: "from-emerald-500/10 to-emerald-900/20"
+    },
+    {
+      text: "text-rose-300",
+      border: "from-rose-500/80 via-rose-300/20 to-rose-500/80",
+      glow: "shadow-[0_0_18px_rgba(244,63,94,0.25)]",
+      accent: "bg-rose-400",
+      bg: "from-rose-500/10 to-rose-900/20"
+    },
+    {
+      text: "text-amber-300",
+      border: "from-amber-500/80 via-amber-300/20 to-amber-500/80",
+      glow: "shadow-[0_0_18px_rgba(251,191,36,0.25)]",
+      accent: "bg-amber-400",
+      bg: "from-amber-500/10 to-amber-900/20"
+    }
+  ];
+
+  const nameString = username || "StreetGO";
+
+  let hash = 0;
+  for (let i = 0; i < nameString.length; i++) {
+    hash = nameString.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const theme = colorThemes[Math.abs(hash) % colorThemes.length];
+
+  const initial = nameString.charAt(0).toUpperCase();
+
+  return (
+    <div className="relative group shrink-0">
+
+      {/* Neon animated border */}
       <div
-        className="
-          absolute
-          bottom-0
-          right-0
-          h-3
-          w-3
-          rounded-full
-          bg-emerald-400
-          border-2
-          border-black
-        "
-      />
+        className={`
+          relative h-10 w-10 rounded-full p-[1px]
+          bg-gradient-to-br ${theme.border}
+          ${theme.glow}
+          transition-all duration-500
+          group-hover:scale-105
+        `}
+      >
+        {/* Glass body */}
+        <div className="
+          relative h-full w-full
+          overflow-hidden
+       rounded-full
+          bg-zinc-950/90
+          backdrop-blur-xl
+          border border-white/5
+        ">
+
+          {/* Scanner animation */}
+          <div className="
+            absolute inset-y-0
+            -left-8
+            w-6
+            rotate-12
+            bg-white/10
+            blur-md
+            group-hover:translate-x-20
+            transition-transform
+            duration-1000
+          " />
+
+          {post.avatar_url ? (
+            <img
+              src={post.avatar_url}
+              alt={nameString}
+              loading="lazy"
+              decoding="async"
+              className="
+                h-full
+                w-full
+                object-cover
+                transition-all
+                duration-500
+                group-hover:scale-110
+                group-hover:brightness-110
+              "
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+                e.currentTarget.nextElementSibling?.classList.remove("hidden");
+              }}
+            />
+          ) : null}
+
+          {/* Initial */}
+          <div
+            className={`
+              absolute inset-0
+              ${post.avatar_url ? "hidden" : ""}
+              flex items-center justify-center
+              bg-gradient-to-br ${theme.bg}
+              ${theme.text}
+              font-black
+              text-sm
+              tracking-tight
+              font-mono
+            `}
+          >
+            {initial}
+
+            {/* Corner accents */}
+            <div className={`absolute top-1 right-1 h-[2px] w-2 ${theme.accent}`} />
+            <div className={`absolute bottom-1 left-1 w-[2px] h-2 ${theme.accent}`} />
+          </div>
+
+          {/* Inner glow */}
+          <div className="
+            absolute
+            inset-0
+            rounded-[11px]
+            ring-1
+            ring-white/5
+            pointer-events-none
+          " />
+        </div>
+      </div>
+
+
+    </div>
+  );
+})()}
+
+<StreetAI
+  visible={showAIBubble}
+  username={username}
+/>
+
+
+
     </div>
 
     <div>
@@ -778,7 +952,7 @@ return (
         <span className="text-zinc-700">•</span>
 
         <span className="text-[11px] text-zinc-600">
-          {new Date(post.created_at).toLocaleDateString()}
+         {formatRelativeTime(post.created_at)}
         </span>
       </div>
 

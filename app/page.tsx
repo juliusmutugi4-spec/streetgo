@@ -79,6 +79,7 @@ const {
 const [showNav, setShowNav] = useState(true)
 const [videoPortalOpen, setVideoPortalOpen] = useState(false)
 const [showLoader, setShowLoader] = useState(false)
+const [activePostId, setActivePostId] = useState<string | null>(null)
 const lastScrollY = useRef(0)
 
 const [createMode, setCreateMode] = useState<
@@ -401,6 +402,8 @@ className="
   post={post}
   user={user}
   profile={profile}
+  isActive={activePostId === post.id}
+  setActivePostId={setActivePostId}
 />
 
 
