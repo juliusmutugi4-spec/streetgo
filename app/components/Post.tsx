@@ -42,8 +42,8 @@ profile?: {
 } | null
 
 
-isActive: boolean
-setActivePostId: React.Dispatch<React.SetStateAction<string | null>>
+isActive?: boolean
+setActivePostId?: React.Dispatch<React.SetStateAction<string | null>>
 
 }
 
@@ -89,9 +89,9 @@ useEffect(() => {
 
   const observer = new IntersectionObserver(
     ([entry]) => {
-      if (entry.isIntersecting) {
-        setActivePostId(post.id)
-      }
+if (entry.isIntersecting) {
+  setActivePostId?.(post.id)
+}
     },
     {
       threshold: 0.8,

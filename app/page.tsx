@@ -399,6 +399,7 @@ className="
 
 
 <Post
+  key={post.id}
   post={post}
   user={user}
   profile={profile}
