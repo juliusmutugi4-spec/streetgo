@@ -13,7 +13,7 @@ import { useFeed } from './hooks/useFeed'
 import { usePredictions } from "./hooks/usePredictions"
 import { useAuth } from "./hooks/useAuth"
 import { useDriver } from "./hooks/useDriver"
-
+import PredictionDrawer from './components/PredictionDrawer'
 type PostType = {
   id: string
   content: string
@@ -29,8 +29,9 @@ type PredictionType = {
   title: string
   description: string
   username?: string
-  avatar_url?: string
+  avatar_url?: string | null
   created_at: string
+  user_id: string
 }
 
 
@@ -81,7 +82,7 @@ const [videoPortalOpen, setVideoPortalOpen] = useState(false)
 const [showLoader, setShowLoader] = useState(false)
 const [activePostId, setActivePostId] = useState<string | null>(null)
 const lastScrollY = useRef(0)
-
+const [predictionDrawerOpen, setPredictionDrawerOpen] = useState(false)
 const [createMode, setCreateMode] = useState<
   'none' | 'post' | 'prediction'
 >('none')
@@ -287,106 +288,6 @@ const { data: updateData, error: updateError } = await supabase
 
 
 
-
-
-{predictions.map((prediction: any) => (
-  <div
-    key={prediction.id}
-className="
-  w-full
-  min-w-0
-  rounded-2xl
-  border
-  border-cyan-500/20
-  bg-[#05070b]
-  p-4
-  mb-4
-"
-  >
-    <div className="flex items-center gap-3">
-      <img
-        src={prediction.avatar_url || '/avatar-placeholder.png'}
-        className="w-10 h-10 rounded-xl object-cover"
-      />
-
-      <div>
-        <h3 className="font-bold text-white">
-          {prediction.username}
-        </h3>
-
-        <p className="text-xs text-cyan-400">
-          Prediction
-        </p>
-      </div>
-    </div>
-
-    <h2 className="mt-4 text-lg font-bold text-cyan-300">
-      {prediction.title}
-    </h2>
-
-    <p className="mt-2 text-zinc-400">
-      {prediction.description}
-    </p>
-
-<div className="mt-4 flex gap-3">
-  <button
-    onClick={() => votePrediction(prediction.id, 'agree')}
-    className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs"
-  >
-    👍agree {voteCounts[prediction.id]?.agree || 0}
-  </button>
-
-  <button
-    onClick={() => votePrediction(prediction.id, 'disagree')}
-    className="px-3 py-1 rounded-full bg-red-500/10 text-red-400 text-xs"
-  >
-    👎disagree {voteCounts[prediction.id]?.disagree || 0}
-  </button>
-</div>
-
-
-<div className="mt-4 flex items-center gap-3">
-  {/* Mark Correct Button */}
-  <button
-    type="button"
-    onClick={() =>
-      resolvePrediction(
-        prediction.id,
-        'correct',
-        prediction.user_id
-      )
-    }
-    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3.5 py-1.5 text-xs font-semibold text-emerald-700 transition-all duration-200 hover:bg-emerald-100 hover:text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1 active:scale-[0.98]"
-  >
-    <svg className="h-3.5 w-3.5 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-    </svg>
-    Mark Correct
-  </button>
-
-  {/* Mark Wrong Button */}
-  <button
-    type="button"
-    onClick={() =>
-      resolvePrediction(
-        prediction.id,
-        'wrong',
-        prediction.user_id
-      )
-    }
-    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3.5 py-1.5 text-xs font-semibold text-red-700 transition-all duration-200 hover:bg-red-100 hover:text-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 active:scale-[0.98]"
-  >
-    <svg className="h-3.5 w-3.5 stroke-[2.5]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-    Mark Wrong
-  </button>
-</div>
-
-  </div>
-))}
-
-
             {posts.map((post) => (
               <div 
                 key={post.id} 
@@ -415,6 +316,30 @@ className="
         )}
       </div>
 </div>
+
+
+
+
+<button 
+  onClick={() => setPredictionDrawerOpen(true)} 
+  className="fixed left-0 top-1/2 -translate-y-1/2 z-50 h-32 w-7 rounded-r-lg bg-slate-900 hover:bg-blue-600 border-y border-r border-slate-800 hover:border-blue-500 shadow-md hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-200 ease-in-out flex items-center justify-center group"
+  aria-label="Open predictions"
+> 
+  {/* Rotating Text */} 
+  <span className="block -rotate-90 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-400 group-hover:text-white transition-colors duration-200 pointer-events-none"> 
+    Predict 
+  </span> 
+
+  {/* Subtle indicator bar on the left edge */}
+  <div className="absolute left-0 top-1/4 h-1/2 w-[2px] bg-slate-700 group-hover:bg-white transition-colors duration-200" />
+</button>
+
+
+
+
+
+
+
       {/* BottomNav fixed */}
 {isApprovedDriver && (
   <div className="fixed bottom-20 left-4 right-4 z-40">
@@ -619,7 +544,13 @@ className="
   />
 )}
 
-
+<PredictionDrawer
+  open={predictionDrawerOpen}
+  onClose={() => setPredictionDrawerOpen(false)}
+  predictions={predictions}
+  voteCounts={voteCounts}
+  votePrediction={votePrediction}
+/>
 
 
     </main>

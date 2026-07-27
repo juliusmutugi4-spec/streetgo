@@ -36,7 +36,7 @@ if (error) {
   return
 }
 
-    cachedPredictions = data || []
+    cachedPredictions = (data as PredictionType[]) || []
     predictionsLoaded = true
     setPredictions(cachedPredictions)
   }
