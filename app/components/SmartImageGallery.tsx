@@ -288,11 +288,6 @@ ${
   `}
 />
 
-          <img 
-            src={imageUrls[prevHeroIndex]} 
-            alt="Background frame buffer" 
-            className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 dark:opacity-20" 
-          />
 
           {/* Minimalist Micro Progress Rails */}
           <div className="absolute bottom-3 inset-x-0 h-0.5 z-20 flex gap-1 px-4">
