@@ -11,6 +11,8 @@ import VideoPortal from "./VideoPortal"
 import ReactionButton from "./ReactionButton"
 import { formatRelativeTime } from "../lib/time"
 import StreetAI from "./StreetAI"
+import SmartImageGallery from "./SmartImageGallery"
+
 import {
   Heart,
   MessageCircle,
@@ -140,26 +142,16 @@ useEffect(() => {
   }
 
   const registerViewer = async () => {
-    const {
-      data: { user: authUser },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    console.log("AUTH USER:", authUser)
-    console.log("AUTH ERROR:", authError)
-    console.log("PROP USER:", user)
-
-    if (!authUser) {
-      console.error("❌ No authenticated user found.")
-      return
-    }
-
+if (!user) {
+  console.error("❌ No authenticated user found.")
+  return
+}
 const { data, error } = await supabase
   .from("post_viewers")
   .upsert(
     {
       post_id: post.id,
-      user_id: authUser.id,
+    user_id: user.id,
       last_seen: new Date().toISOString(),
     },
     {
@@ -1190,209 +1182,13 @@ return (
   </p>
 </div>
 
-
-
 {imageUrls.length > 0 && (
-  <div className="-mx-4 mt-4 relative">
-
-<div
-className={`
-  overflow-hidden
-  rounded-xl
-  bg-black
-
-  ${
-    imageUrls.length === 2
-      ? "grid grid-cols-2 gap-[3px]"
-      : ""
-  }
-`}
->
-
-
-{imageUrls.length === 3 && (
-  <div className="grid grid-cols-2 gap-[3px] h-[500px]">
-<img
-  src={imageUrls[0]}
-  alt=""
-  onClick={() => {
-  setCurrentImage(0)
-  setShowImageViewer(true)
-}}
-  className="
-    w-full
-    h-full
-    object-cover
-    cursor-pointer
-    hover:brightness-90
-    transition
-  "
-/>
-
-    <div className="grid grid-rows-2 gap-[3px]">
-<img
-  src={imageUrls[1]}
-  alt=""
-  onClick={() => {
-  setCurrentImage(1)
-  setShowImageViewer(true)
-}}
-  className="
-    w-full
-    h-full
-    object-cover
-    cursor-pointer
-    hover:brightness-90
-    transition
-  "
-/>
-
-<img
-  src={imageUrls[2]}
-  alt=""
-  onClick={() => {
-  setCurrentImage(2)
-  setShowImageViewer(true)
-}}
-  className="
-    w-full
-    h-full
-    object-cover
-    cursor-pointer
-    hover:brightness-90
-    transition
-  "
-/>
-    </div>
-  </div>
-)}
-
-{imageUrls.length === 4 && (
-  <div className="grid grid-cols-2 gap-[3px] h-[500px]">
-    {imageUrls.map((url, index) => (
-<img
-  key={index}
-  src={url}
-  onClick={() => {
-    setCurrentImage(index)
-    setShowImageViewer(true)
-  }}
-  className="
-    w-full
-    h-full
-    object-cover
-    cursor-pointer
-    hover:brightness-90
-    transition
-  "
-/>
-    ))}
-  </div>
-)}
-
-
-
-{imageUrls.length > 4 && (
-  <div className="grid grid-cols-2 gap-[3px] h-[500px]">
-    {imageUrls.slice(0, 4).map((url, index) => (
-      <div key={index} className="relative">
-<img
-  key={index}
-  src={url}
-  alt=""
-  onClick={() => {
-    setCurrentImage(index)
-    setShowImageViewer(true)
-  }}
-          className="w-full h-full object-cover"
-        />
-
-        {index === 3 && (
-          <div
-            className="
-              absolute
-              inset-0
-            bg-[#0b6b4b]
-              flex
-              items-center
-              justify-center
-              text-white
-              text-3xl
-              font-bold
-            "
-          >
-            +{imageUrls.length - 4}
-          </div>
-        )}
-      </div>
-    ))}
-  </div>
-)}
-
-
-
-{imageUrls.length <= 2 &&
- imageUrls.map((url, index) => (
- <img
-  key={index}
-  src={url}
-  alt=""
-  loading="lazy"
-  decoding="async"
-  onClick={() => {
-    setCurrentImage(index)
-    setShowImageViewer(true)
-  }}
-    className={`
-      w-full
-      cursor-pointer
-      transition-all
-      duration-300
-      hover:brightness-95
-
-      ${
-        imageUrls.length === 1
-          ? `
-            max-h-[700px]
-            object-contain
-            rounded-xl
-            bg-black
-          `
-          : imageUrls.length === 2
-          ? `
-            h-[420px]
-            object-cover
-          `
-          : `
-            h-64
-            object-cover
-          `
-      }
-    `}
+  <SmartImageGallery
+    imageUrls={imageUrls}
+    currentImage={currentImage}
+    setCurrentImage={setCurrentImage}
+    setShowImageViewer={setShowImageViewer}
   />
-))}
-    </div>
-
-
-
-
-<div
-  className="
-    pointer-events-none
-    absolute
-    bottom-0
-    left-0
-    right-0
-    h-32
-    bg-gradient-to-t
-    from-black/80
-    via-black/20
-    to-transparent
-  "
-/>
-
-
-  </div>
 )}
 
 {/* Video SEO */}

@@ -31,26 +31,24 @@ const sessionResult = await supabase.auth.getSession()
 
 console.log("Session Result:", sessionResult)
 
-    const result = await supabase
-      .from("predictions")
-      .insert({
+const { data, error } = await supabase
+  .from("predictions")
+  .insert({
+    title,
+    target_date: date || null,
+    user_id: userId,
+    username,
+    avatar_url: avatarUrl,
+  })
+  .select()
 
+console.log("Inserted data:", data)
+console.log("Insert error:", error)
 
-        
-        title,
-        target_date: date || null,
-        user_id: userId,
-        username,
-        avatar_url: avatarUrl,
-      })
-      .select()
-
-    console.log("Supabase result:", result)
-
-    if (result.error) {
-      alert(result.error.message)
-      return
-    }
+if (error) {
+  alert(error.message)
+  return
+}
 
     alert("Prediction created!")
 

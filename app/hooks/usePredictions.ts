@@ -3,43 +3,35 @@ import { supabase } from "../lib/supabase"
 
 export type PredictionType = {
   id: string
+  user_id: string
   title: string
   description: string
   username?: string
-  avatar_url?: string
+  avatar_url?: string | null
   created_at: string
 }
-
-let cachedPredictions: PredictionType[] = []
-let predictionsLoaded = false
 
 export function usePredictions(user: any) {
   const [predictions, setPredictions] = useState<PredictionType[]>([])
   const [voteCounts, setVoteCounts] = useState<any>({})
 
-  const fetchPredictions = async () => {
-    if (predictionsLoaded) {
-      setPredictions(cachedPredictions)
-      return
-    }
+const fetchPredictions = async () => {
+  const { data, error } = await supabase
+    .from("predictions")
+    .select("*")
+    .order("created_at", { ascending: false })
 
-    const { data, error } = await supabase
-      .from("predictions")
-      .select("*")
-
-if (error) {
-  console.log("Prediction Error:", error)
-  console.log("Message:", error.message)
-  console.log("Details:", error.details)
-  console.log("Hint:", error.hint)
-  console.log("Code:", error.code)
-  return
-}
-
-    cachedPredictions = (data as PredictionType[]) || []
-    predictionsLoaded = true
-    setPredictions(cachedPredictions)
+  if (error) {
+    console.log("Prediction Error:", error)
+    console.log("Message:", error.message)
+    console.log("Details:", error.details)
+    console.log("Hint:", error.hint)
+    console.log("Code:", error.code)
+    return
   }
+
+  setPredictions((data as PredictionType[]) || [])
+}
 
   const fetchVoteCounts = async () => {
     const { data } = await supabase
