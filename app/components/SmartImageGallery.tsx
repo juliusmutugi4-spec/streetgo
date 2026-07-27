@@ -117,7 +117,7 @@ useEffect(() => {
   const bentoContainer =
   "relative overflow-hidden rounded-2xl bg-black transition-all duration-500"
 const imageInteractions =
-  "w-full h-auto object-contain bg-black cursor-pointer transition-all duration-700 ease-out hover:scale-[1.02]"
+  "block w-full h-auto object-contain cursor-pointer transition-all duration-700 ease-out hover:scale-[1.02]"
 
   // =========================================================================
   // SINGLE IMAGE: THE SPOTLIGHT
@@ -125,7 +125,7 @@ const imageInteractions =
   if (imageUrls.length === 1) {
     return (
       <div className="w-full my-6">
-        <div className={`${bentoContainer} max-h-[600px] flex items-center justify-center p-2 bg-neutral-100/50 dark:bg-neutral-950/20`}>
+        <div className={`${bentoContainer} flex items-center justify-center`}>
           <img 
             src={imageUrls[0]} 
             alt="Gallery focus" 
@@ -186,7 +186,7 @@ const layoutClasses = [
 
   // 1 - Hero Right
   {
-    wrapper: "grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-auto lg:h-[48max-h-[900px]0px]",
+    wrapper: "grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-auto",
     hero: "lg:col-span-2 lg:col-start-2 order-2",
     side: "order-1",
   },
@@ -249,9 +249,9 @@ layoutIndex === 0
 
 ${
   layoutIndex === 0
-    ? "lg:col-span-2 order-1 flex items-center justify-center p-2"
+    ? "lg:col-span-2 order-1 flex items-center justify-center"
     : layoutIndex === 1
-    ? "lg:col-span-2 lg:order-2 flex items-center justify-center p-2"
+    ? "lg:col-span-2 lg:order-2 flex flex items-center justify-centeritems-center justify-center p-2"
     : layoutIndex === 2
     ? "order-1 flex items-center justify-center p-2"
     : "order-2 flex items-center justify-center p-2"
