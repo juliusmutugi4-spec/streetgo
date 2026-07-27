@@ -114,8 +114,10 @@ useEffect(() => {
   }
 
   // MINIMALIST DESIGN SYSTEM
-  const bentoContainer = "relative overflow-hidden rounded-2xl border border-neutral-200/50 dark:border-white/5 bg-neutral-50 dark:bg-neutral-900/30 shadow-sm transition-all duration-500"
-  const imageInteractions = "w-full h-full object-cover cursor-pointer transition-all duration-700 ease-out hover:scale-[1.02] hover:brightness-[1.02] active:scale-[0.99]"
+  const bentoContainer =
+  "relative overflow-hidden rounded-2xl bg-black transition-all duration-500"
+ const imageInteractions =
+  "w-full h-full object-contain bg-black cursor-pointer transition-all duration-700 ease-out hover:scale-[1.02]"
 
   // =========================================================================
   // SINGLE IMAGE: THE SPOTLIGHT
@@ -268,7 +270,7 @@ const currentLayout = layoutClasses[layoutIndex]
     inset-0
     w-full
     h-full
-    object-cover
+    className={imageInteractions}
     cursor-pointer
     z-10
 
@@ -293,7 +295,7 @@ const currentLayout = layoutClasses[layoutIndex]
           <img 
             src={imageUrls[prevHeroIndex]} 
             alt="Background frame buffer" 
-            className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 dark:opacity-20" 
+            className="absolute inset-0 w-full h-full className={imageInteractions} z-0 opacity-40 dark:opacity-20" 
           />
 
           {/* Minimalist Micro Progress Rails */}
