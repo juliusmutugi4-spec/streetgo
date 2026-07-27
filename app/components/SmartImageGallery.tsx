@@ -116,8 +116,8 @@ useEffect(() => {
   // MINIMALIST DESIGN SYSTEM
   const bentoContainer =
   "relative overflow-hidden rounded-2xl bg-black transition-all duration-500"
- const imageInteractions =
-  "w-full h-full object-contain bg-black cursor-pointer transition-all duration-700 ease-out hover:scale-[1.02]"
+const imageInteractions =
+  "w-full h-auto object-contain bg-black cursor-pointer transition-all duration-700 ease-out hover:scale-[1.02]"
 
   // =========================================================================
   // SINGLE IMAGE: THE SPOTLIGHT
@@ -179,14 +179,14 @@ const orderedIndexes = [
 const layoutClasses = [
   // 0 - Hero Left
   {
-    wrapper: "grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-auto lg:h-[480px]",
+    wrapper: "grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-auto max-h-[900px]",
     hero: "lg:col-span-2 order-1",
     side: "order-2",
   },
 
   // 1 - Hero Right
   {
-    wrapper: "grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-auto lg:h-[480px]",
+    wrapper: "grid grid-cols-1 lg:grid-cols-3 gap-3.5 h-auto lg:h-[48max-h-[900px]0px]",
     hero: "lg:col-span-2 lg:col-start-2 order-2",
     side: "order-1",
   },
@@ -230,13 +230,11 @@ const currentLayout = layoutClasses[layoutIndex]
     ease-in-out
 
     ${
-      layoutIndex === 0
-        ? "grid-cols-1 lg:grid-cols-3 h-auto lg:h-[480px]"
-        : layoutIndex === 1
-        ? "grid-cols-1 lg:grid-cols-3 h-auto lg:h-[480px]"
-        : layoutIndex === 2
-        ? "grid-cols-1 h-auto lg:h-[600px]"
-        : "grid-cols-1 h-auto lg:h-[600px]"
+layoutIndex === 0
+  ? "grid-cols-1 lg:grid-cols-3"
+  : layoutIndex === 1
+  ? "grid-cols-1 lg:grid-cols-3"
+  : "grid-cols-1"
     }
   `}
 >
@@ -249,15 +247,15 @@ const currentLayout = layoutClasses[layoutIndex]
     duration-1000
     ease-in-out
 
-    ${
-      layoutIndex === 0
-        ? "lg:col-span-2 order-1 min-h-[300px]"
-        : layoutIndex === 1
-        ? "lg:col-span-2 lg:order-2 min-h-[300px]"
-        : layoutIndex === 2
-        ? "order-1 min-h-[420px]"
-        : "order-2 min-h-[420px]"
-    }
+${
+  layoutIndex === 0
+    ? "lg:col-span-2 order-1 flex items-center justify-center p-2"
+    : layoutIndex === 1
+    ? "lg:col-span-2 lg:order-2 flex items-center justify-center p-2"
+    : layoutIndex === 2
+    ? "order-1 flex items-center justify-center p-2"
+    : "order-2 flex items-center justify-center p-2"
+}
   `}
 >
 <img
@@ -266,13 +264,11 @@ const currentLayout = layoutClasses[layoutIndex]
   loading="eager"
   onClick={() => openImage(heroIndex)}
   className={`
-    absolute
-    inset-0
     w-full
-    h-full
-    className={imageInteractions}
+    h-auto
+    max-h-[80vh]
+    object-contain
     cursor-pointer
-    z-10
 
     transition-all
     duration-700
@@ -295,7 +291,7 @@ const currentLayout = layoutClasses[layoutIndex]
           <img 
             src={imageUrls[prevHeroIndex]} 
             alt="Background frame buffer" 
-            className="absolute inset-0 w-full h-full className={imageInteractions} z-0 opacity-40 dark:opacity-20" 
+            className="absolute inset-0 w-full h-full object-cover z-0 opacity-40 dark:opacity-20" 
           />
 
           {/* Minimalist Micro Progress Rails */}
