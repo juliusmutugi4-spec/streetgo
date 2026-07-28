@@ -12,7 +12,7 @@ import ReactionButton from "./ReactionButton"
 import { formatRelativeTime } from "../lib/time"
 import StreetAI from "./StreetAI"
 import SmartImageGallery from "./SmartImageGallery"
-
+import PostActions from "./PostActions"
 import {
   Heart,
   MessageCircle,
@@ -1276,247 +1276,47 @@ py-1.5
 
 
 
-{/* SIGNAL PANEL */}
-<div className="mt-6 rounded-2xl border border-zinc-900 bg-zinc-950/50 backdrop-blur-xl overflow-hidden">
+{/* SIGNAL PANEL */} 
+<div className="mt-4 rounded-xl border border-[#3e4042] bg-[#1c1d1e] overflow-hidden shadow-sm">
+  {/* SIGNAL BODY */} 
+  <div className="px-4 py-3">
+    <div className="flex flex-wrap items-center gap-2">
+      
+      {/* STATUS BADGE */}
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#3a3b3c] px-3 py-1 text-[13px] font-semibold text-[#e4e6eb] hover:bg-[#4e4f50] transition-colors cursor-default">
+        <span className="text-[14px]">🔥</span>
+        <span>
+          { displayLikes < 100 ? "New" : 
+            displayLikes < 1000 ? "Active" : 
+            displayLikes < 10000 ? "Trending" : 
+            displayLikes < 100000 ? "Viral" : "Legend" }
+        </span>
+      </span>
 
+      {/* METRIC BADGE */}
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1877f2]/10 border border-[#1877f2]/20 px-3 py-1 text-[13px] font-semibold text-[#4599ff]">
+        <span className="text-[14px]">⚡</span>
+        <span>{(displayLikes * 0.01).toFixed(0)}% Boost</span>
+      </span>
 
-  {/* DIVIDER */}
-  <div className="h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent" />
-{/* SIGNAL */}
-<div className="px-5 py-4">
-
-  <div className="flex flex-wrap items-center gap-2">
-
-    <div className="rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1 text-[11px] font-semibold text-orange-400">
-      🔥 {
-        displayLikes < 100
-          ? "New"
-          : displayLikes < 1000
-          ? "Active"
-          : displayLikes < 10000
-          ? "Trending"
-          : displayLikes < 100000
-          ? "Viral"
-          : "Legend"
-      }
     </div>
-
-    <div className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-[11px] font-semibold text-cyan-400">
-      ⚡ {(displayLikes * 0.01).toFixed(0)}%
-    </div>
-
-    <div className="rounded-full border border-pink-500/20 bg-pink-500/10 px-3 py-1 text-[11px] font-semibold text-pink-400">
-      ❤️ {displayLikes}
-    </div>
-
-    <div className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-[11px] font-semibold text-purple-400">
-      💬 {comments.length}
-    </div>
-
   </div>
-
-
-
-  </div>
-
 </div>
 
 
 
-<div
-  className="
-    mt-2
-    flex
-    items-center
-    gap-2
-    overflow-x-auto
-    scrollbar-hide
-    whitespace-nowrap
-    border-t
-    border-white/5
-    pt-2
-    px-2
-    scroll-smooth
-  "
->
-
-{/* LIKE */}
-<button
-  onClick={toggleLike}
-  className="
-    flex
-    items-center
-    gap-1.5
-    rounded-full
-    px-3
-    py-2
-    transition-all
-    duration-200
-    hover:bg-pink-500/10
-    hover:scale-105
-    active:scale-95
-  "
->
-  <Heart
-    size={18}
-    fill={liked ? "currentColor" : "none"}
-    className={liked ? "text-pink-500" : "text-zinc-400"}
-  />
-
-  <span className="text-sm font-medium text-zinc-300">
-    {likes}
-  </span>
-</button>
-
-  {/* COMMENTS */}
-<button
-  onClick={() => setShowComments(!showComments)}
-  className="
-    flex
-    items-center
-    gap-1.5
-    rounded-full
-    px-3
-    py-2
-    transition-all
-    duration-200
-    hover:bg-cyan-500/10
-    hover:scale-105
-    active:scale-95
-  "
->
-  <MessageCircle
-    size={18}
-    className="text-cyan-400"
-  />
-
-  <span className="text-sm font-medium text-zinc-300">
-    {comments.length}
-  </span>
-</button>
-
-  {/* TRANSMIT */}
-<button
-  onClick={async () => {
-    const url = `${window.location.origin}/post/${post.id}`
-
-    if (navigator.share) {
-      await navigator.share({
-        title: "StreetGO",
-        text: post.content,
-        url,
-      })
-    } else {
-      await navigator.clipboard.writeText(url)
-      alert("Post link copied!")
-    }
-  }}
-  className="
-    flex
-    items-center
-    justify-center
-    rounded-full
-    p-2.5
-    transition-all
-    duration-200
-    hover:bg-orange-500/10
-    hover:scale-105
-    active:scale-95
-  "
->
-  <Send
-    size={18}
-    className="text-orange-400"
-  />
-</button>
-
-{/* TIP */}
-<ReactionButton
-  handleSendReax={handleSendReax}
+<PostActions
+  liked={liked}
+  likes={likes}
+  comments={comments}
+ 
   reaxCount={reaxCount}
+  showComments={showComments}
+  toggleLike={toggleLike}
+  handleSendReax={handleSendReax}
+  setShowComments={setShowComments}
+  post={post}
 />
-
-
-
-
-{/* VOICE */}
-<button
-  className="
-    flex
-    items-center
-    gap-1.5
-    rounded-full
-    border
-    border-purple-500/20
-    bg-purple-500/10
-    px-3
-    py-1.5
-    text-[11px]
-    font-semibold
-    text-purple-400
-    transition-all
-    duration-200
-    hover:bg-purple-500/20
-    hover:scale-105
-    active:scale-95
-  "
->
-  <Mic size={14} />
-  Voice
-</button>
-{/* HERE */}
-<button
-  className="
-    flex
-    items-center
-    gap-1.5
-    rounded-full
-    border
-    border-orange-500/20
-    bg-orange-500/10
-    px-3
-    py-1.5
-    text-[11px]
-    font-semibold
-    text-orange-400
-    transition-all
-    duration-200
-    hover:bg-orange-500/20
-    hover:scale-105
-    active:scale-95
-  "
->
-  <Users size={14} />
-  {viewerCount} Here
-</button>
-
-{/* PLACE */}
-<button
-  className="
-    flex
-    items-center
-    gap-1.5
-    rounded-full
-    border
-    border-blue-500/20
-    bg-blue-500/10
-    px-3
-    py-1.5
-    text-[11px]
-    font-semibold
-    text-blue-400
-    transition-all
-    duration-200
-    hover:bg-blue-500/20
-    hover:scale-105
-    active:scale-95
-  "
->
-  <MapPin size={14} />
-  Place
-</button>
-
-</div>
 
 
 {showComments && (
