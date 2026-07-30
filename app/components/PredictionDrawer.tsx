@@ -15,10 +15,7 @@ type PredictionDrawerProps = {
   onClose: () => void
   predictions: PredictionType[]
   voteCounts: Record<string, VoteData>
-  votePrediction: (
-    predictionId: string,
-    vote: "agree" | "disagree"
-  ) => void
+  votePrediction: (predictionId: string, vote: "agree" | "disagree") => void
 }
 
 export default function PredictionDrawer({
@@ -35,48 +32,65 @@ export default function PredictionDrawer({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* PROFESSIONAL DIM MEDIATED BACKDROP */}
       <div 
         onClick={onClose} 
-        className={`fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs transition-opacity duration-300 ${
+        className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-200 ${
           open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-        }`} 
+        }`}
         aria-hidden="true" 
       />
 
-      {/* Floating Panel (Aligned perfectly with left-side trigger button) */}
+      {/* MOBILE BOTTOM SHEET + DESKTOP RIGHT DRAWER COMBINED PANEL */}
       <aside 
         onClick={handlePanelClick} 
-        className={`fixed left-9 top-1/2 -translate-y-1/2 z-50 w-[320px] max-w-[calc(100vw-3rem)] max-h-[80vh] flex flex-col rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl pt-8 pb-3.5 px-3.5 shadow-[0_0_40px_-15px_rgba(6,182,212,0.15)] transition-all duration-300 ease-out ${
-          open ? 'opacity-100 translate-x-0 scale-100' : 'opacity-0 -translate-x-4 scale-95 pointer-events-none'
-        }`} 
+        className={`fixed z-50 bg-[#242526] text-[#e4e6eb] shadow-[0_16px_32px_rgba(0,0,0,0.5)] border-[#3e4042] transition-all duration-300 ease-out select-none flex flex-col
+          
+          /* Mobile Overrides (Bottom Sheet style layout) */
+          bottom-0 left-0 right-0 max-h-[85vh] rounded-t-2xl border-t
+          
+          /* Desktop Overrides (Right Side panel style layout) */
+          md:top-0 md:bottom-0 md:right-0 md:left-auto md:w-[380px] md:max-h-screen md:rounded-l-2xl md:rounded-tr-none md:border-l md:border-t-0
+          
+          /* Smooth Animation states */
+          ${open 
+            ? 'translate-y-0 md:translate-y-0 md:translate-x-0' 
+            : 'translate-y-full md:translate-y-0 md:translate-x-full'
+          }
+        `}
         role="dialog" 
-        aria-label="Predictions Dashboard"
+        aria-label="Predictions Dashboard" 
       >
-        {/* Professional Top Right Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-2.5 right-2.5 p-1 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-900 border border-transparent hover:border-zinc-800 focus:outline-none focus:ring-1 focus:ring-cyan-500/30 transition-all cursor-pointer"
-          aria-label="Close panel"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
+        
+        {/* MOBILE LAYOUT DRAG HANDLE TOP PILL */}
+        <div className="w-12 h-1 bg-[#3e4042] rounded-full mx-auto mt-3 md:hidden" />
 
-        {/* Decorative Pointing Indicator */}
-        <div className="absolute left-[-5px] top-1/2 -translate-y-1/2 w-2 h-2 rotate-45 border-b border-l border-cyan-500/20 bg-slate-950" />
+        {/* CONTAINER BOUNDARY COMPONENT HEADER */}
+        <div className="relative pl-5 pr-4 pt-4 pb-3 flex items-center justify-between border-b border-[#3e4042]">
+          <div className="flex items-center gap-2">
+            <PredictionsHeader />
+          </div>
+          
+          {/* FACEBOOK STYLE REINFORCED CLOSE ICON ROUND BUBBLE */}
+          <button 
+            onClick={onClose} 
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3a3b3c] text-[#b0b3b8] hover:bg-[#4e4f50] hover:text-[#e4e6eb] transition-all"
+            aria-label="Close panel" 
+          >
+            <X size={18} strokeWidth={2.5} />
+          </button>
+        </div>
 
-        <PredictionsHeader />
-
-        {/* Body Container */}
-        <div className="mt-2.5 flex-1 overflow-y-auto pr-0.5 space-y-2 max-h-[calc(80vh-6rem)] scrollbar-thin scrollbar-thumb-cyan-500/20 scrollbar-track-transparent">
+        {/* COMPONENT BODY CONTAINER BLOCK */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
           {predictions.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-zinc-800 bg-zinc-900/10 h-32 flex flex-col items-center justify-center gap-1.5 p-3 text-center">
-              <div className="p-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-500">
-                <Sparkles className="w-3 h-3" />
+            <div className="rounded-xl border border-dashed border-[#3e4042] bg-[#1c1e21]/40 h-40 flex flex-col items-center justify-center gap-2 p-4 text-center">
+              <div className="p-2 rounded-full bg-[#3a3b3c] text-zinc-400">
+                <Sparkles className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-[11px] font-medium text-zinc-400">No active forecasts</p>
-                <p className="text-[9px] text-zinc-600 mt-0.5">Check back later.</p>
+                <p className="text-[14px] font-semibold text-white">No active forecasts</p>
+                <p className="text-[12px] text-[#b0b3b8] mt-0.5">Check back later for updates.</p>
               </div>
             </div>
           ) : (
@@ -85,53 +99,64 @@ export default function PredictionDrawer({
               return (
                 <div 
                   key={prediction.id} 
-                  className="w-full rounded-lg border border-zinc-900 bg-zinc-950/40 hover:bg-zinc-900/30 p-2.5 transition-all duration-150 hover:border-cyan-500/10 group"
+                  className="w-full rounded-xl border border-[#3e4042] bg-[#1c1e21]/60 p-3.5 transition-colors hover:bg-[#1c1e21]/90"
                 >
-                  {/* User Profile Header */}
-                  <div className="flex items-center gap-2">
+                  {/* USER META CARD BANNER AREA */}
+                  <div className="flex items-center gap-2.5">
                     <img 
                       src={prediction.avatar_url || "/avatar-placeholder.png"} 
                       alt={`${prediction.username}'s avatar`} 
-                      className="w-6 h-6 rounded-md object-cover ring-1 ring-zinc-900 group-hover:ring-cyan-500/20 transition-all" 
+                      className="w-8 h-8 rounded-full object-cover border border-[#3e4042] bg-[#242526]" 
                     />
-                    <div className="leading-none">
-                      <h3 className="text-[10px] font-semibold text-zinc-300 tracking-tight">
+                    <div>
+                      <h3 className="text-[13px] font-bold text-white leading-tight">
                         {prediction.username}
                       </h3>
-<p className="text-[7px] font-bold text-cyan-400/50 bg-cyan-500/[0.03] px-1 py-0.5 rounded uppercase tracking-widest mt-0.5 inline-block w-fit">
-
-</p>
-
+                      <span className="text-[10px] text-[#b0b3b8] font-medium">
+                        Active Forecaster
+                      </span>
                     </div>
                   </div>
 
-                  {/* Main Content */}
-                  <div className="mt-2 space-y-0.5">
-                    <h4 className="text-[11px] font-medium text-zinc-100 tracking-tight leading-tight">
+                  {/* ESSENTIAL HEADLINE & DESCRIPTION PARAGRAPH BLOCKS */}
+                  <div className="mt-3 space-y-1">
+                    <h4 className="text-[14px] font-bold text-white leading-snug tracking-normal">
                       {prediction.title}
                     </h4>
-                    <p className="text-[10px] text-zinc-500 leading-normal line-clamp-2">
+                    <p className="text-[12px] text-[#b0b3b8] leading-normal font-normal">
                       {prediction.description}
                     </p>
                   </div>
 
-                  {/* Interactive Actions */}
-                  <div className="mt-2 flex gap-1.5 pt-2 border-t border-zinc-900/40">
+                  {/* NATIVE FACEBOOK TWO-WAY ACTION INTERACT BUTTON ARRAY */}
+                  <div className="mt-3.5 flex gap-2 pt-2.5 border-t border-[#3e4042]/60">
+                    
+                    {/* AGREE TRACKING ACTION ACTION ROW */}
                     <button 
                       onClick={() => votePrediction(prediction.id, "agree")} 
-                      className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-emerald-500/5 border border-emerald-500/10 hover:border-emerald-500/20 text-emerald-400/90 hover:bg-emerald-500/10 text-[9px] font-medium transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#3a3b3c]/50 border border-[#3e4042]/40 hover:bg-[#4e4f50]/60 active:scale-98 text-emerald-400 font-semibold text-[12px] transition-all"
                     >
-                      <ThumbsUp className="w-2.5 h-2.5" />
-                      <span>{currentVotes.agree}</span>
+                      <ThumbsUp size={14} strokeWidth={2.5} fill="currentColor" fillOpacity={0.1} />
+                      <span>Agree</span>
+                      <span className="ml-1 text-[11px] text-[#b0b3b8] font-bold bg-[#242526] px-1.5 py-0.5 rounded-md">
+                        {currentVotes.agree}
+                      </span>
                     </button>
+
+                    {/* DISAGREE TRACKING ACTION ACTION ROW */}
                     <button 
                       onClick={() => votePrediction(prediction.id, "disagree")} 
-                      className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-rose-500/5 border border-rose-500/10 hover:border-rose-500/20 text-rose-400/90 hover:bg-rose-500/10 text-[9px] font-medium transition-all"
+                      className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-[#3a3b3c]/50 border border-[#3e4042]/40 hover:bg-[#4e4f50]/60 active:scale-98 text-rose-400 font-semibold text-[12px] transition-all"
                     >
-                      <ThumbsDown className="w-2.5 h-2.5" />
-                      <span>{currentVotes.disagree}</span>
+                      <ThumbsDown size={14} strokeWidth={2.5} fill="currentColor" fillOpacity={0.1} />
+                      <span>Disagree</span>
+                      <span className="ml-1 text-[11px] text-[#b0b3b8] font-bold bg-[#242526] px-1.5 py-0.5 rounded-md">
+                        {currentVotes.disagree}
+                      </span>
                     </button>
+
                   </div>
+
                 </div>
               )
             })

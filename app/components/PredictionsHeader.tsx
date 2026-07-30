@@ -1,59 +1,52 @@
 'use client'
 
 import React from 'react'
-import { 
-  TrendingUp, 
-  ArrowUpRight, 
-  Calendar, 
-  SlidersHorizontal, 
-  RefreshCw, 
-  TrendingDown
-} from 'lucide-react'
+import { Calendar, SlidersHorizontal, RefreshCw } from 'lucide-react'
 
 export default function PredictionsHeader() {
   return (
-    <div className="w-full bg-zinc-950/50 border-b border-zinc-800 backdrop-blur-md px-6 py-4">
-      <div className="mx-auto w-full max-w-[1400px] flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="w-full bg-[#242526] select-none">
+      <div className="flex items-center justify-between gap-4 w-full">
         
-{/* Title Brand Block */}
-<div className="flex items-center gap-3">
+        {/* TITLE BRAND BLOCK */}
+        <div className="flex items-center gap-2">
+          <h1 className="text-[16px] font-bold tracking-normal text-white">
+            Predictions
+          </h1>
+          {/* LIVE STATUS INDICATOR */}
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-500 text-[10px] font-bold tracking-wide uppercase">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse" />
+            Live
+          </span>
+        </div>
 
-  <div>
-    <div className="flex items-center gap-2">
-      <h1 className="text-sm font-semibold tracking-wide text-zinc-100 uppercase">
-        Prediction Hub
-      </h1>
-      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/10 text-[10px] font-medium tracking-wide uppercase">
-        Live
-      </span>
-    </div>
-    <p className="text-xs text-zinc-400 mt-0.5">
-    
-    </p>
-  </div>
-</div>
-
-
-        {/* Global Action Toolbar */}
-        <div className="flex items-center gap-2 sm:justify-end">
-          <button className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-md hover:bg-zinc-800 hover:text-zinc-100 transition-colors cursor-pointer">
-            <Calendar className="w-3.5 h-3.5 text-zinc-500" />
-            <span>Q3 Forecast</span>
-          </button>
+        {/* COMPACT GLOBAL TOOLBAR */}
+        <div className="flex items-center gap-1.5">
           
-          <button className="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-zinc-300 bg-zinc-900 border border-zinc-800 rounded-md hover:bg-zinc-800 hover:text-zinc-100 transition-colors cursor-pointer">
-            <SlidersHorizontal className="w-3.5 h-3.5 text-zinc-500" />
-            <span>Filters</span>
+          {/* FORECAST TRIGGER */}
+          <button 
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3a3b3c] text-[#e4e6eb] hover:bg-[#4e4f50] active:scale-95 transition-all cursor-pointer" 
+            title="Q3 Forecast"
+          >
+            <Calendar size={15} />
           </button>
 
-          <div className="w-px h-5 bg-zinc-800 mx-1 hidden sm:block" />
-
+          {/* FILTERS TOGGLE */}
           <button 
-            className="p-1.5 text-zinc-400 hover:text-cyan-400 bg-zinc-900 border border-zinc-800 rounded-md hover:border-cyan-500/20 transition-colors cursor-pointer" 
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3a3b3c] text-[#e4e6eb] hover:bg-[#4e4f50] active:scale-95 transition-all cursor-pointer" 
+            title="Filters"
+          >
+            <SlidersHorizontal size={15} />
+          </button>
+
+          {/* REFRESH ACTIONS BUBBLE */}
+          <button 
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#3a3b3c] text-[#e4e6eb] hover:bg-[#4e4f50] active:scale-95 transition-all cursor-pointer" 
             title="Refresh Data"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw size={14} strokeWidth={2.5} />
           </button>
+
         </div>
 
       </div>
