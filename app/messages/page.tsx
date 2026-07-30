@@ -1300,7 +1300,6 @@ duration-300
 {!mobileChatOpen && (
   <div className="lg:hidden">
 <BottomNav
-  user={user}
   profile={profile}
   unreadCount={unreadCount}
   onCreateSelect={() => {}}
