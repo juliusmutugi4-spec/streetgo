@@ -192,6 +192,7 @@ const [showWithdrawReax, setShowWithdrawReax] = useState(false)
   open={showWithdrawReax}
   onClose={() => setShowWithdrawReax(false)}
   userId={profile.id}
+  
 />
 
 

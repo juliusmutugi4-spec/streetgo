@@ -82,10 +82,21 @@ const [videoPortalOpen, setVideoPortalOpen] = useState(false)
 const [showLoader, setShowLoader] = useState(false)
 const [activePostId, setActivePostId] = useState<string | null>(null)
 const lastScrollY = useRef(0)
+
 const [predictionDrawerOpen, setPredictionDrawerOpen] = useState(false)
+
 const [createMode, setCreateMode] = useState<
   'none' | 'post' | 'prediction'
 >('none')
+
+const onCreateSelect = (
+  mode: 'post' | 'prediction'
+) => {
+  setCreateMode(mode)
+}
+
+
+
   // Fetch unread messages count
 
 
@@ -245,7 +256,7 @@ const { data: updateData, error: updateError } = await supabase
   />
 </div>
 
-      {/* Feed scrollable */}
+      {/* Feeleo  ni  kunyambad scrollable */}
 <div
   className="
     max-w-7xl
@@ -443,16 +454,11 @@ const { data: updateData, error: updateError } = await supabase
 
 
   
-  <BottomNav
-  
-    user={user}
-    profile={profile}
-    unreadCount={unreadCount}
-    onCreateSelect={(mode) => {
-      
-      setCreateMode(mode)
-    }}
-  />
+<BottomNav
+  profile={profile}
+  unreadCount={unreadCount}
+  onCreateSelect={onCreateSelect}
+/>
 </div>
 
 {createMode === 'post' && (
