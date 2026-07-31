@@ -7,7 +7,7 @@ import React, {
   useEffect,
 } from 'react'
 import LiveCommentCard from './LiveCommentCard'
-
+import CommentCard from "./CommentCard"
 
 
 export interface Comment {
@@ -89,7 +89,14 @@ const ids = Array.from(visible.values())
   return () => observer.disconnect()
 }, [comments, openRoom])
 
+const visibleSet = useMemo(() => {
+  const ids =
+    visibleIds.length > 0
+      ? visibleIds
+      : comments.slice(0, 2).map(c => String(c.id))
 
+  return new Set(ids)
+}, [visibleIds, comments])
 
   if (!openRoom) return null
 
@@ -142,9 +149,9 @@ const ids = Array.from(visible.values())
         </div>
 
         {/* Content Stream Matrix */}
-        <div
+<div
   ref={scrollRef}
-  className="flex-1 overflow-y-auto p-6 space-y-4 bg-transparent"
+  className="flex-1 overflow-y-auto p-6 pb-32 space-y-4 bg-transparent"
 >
           {tab === 'ai' ? (
             <div className="rounded-xl border border-white/10 bg-transparent p-8 text-center max-w-sm mx-auto mt-6 backdrop-blur-sm">
@@ -155,121 +162,142 @@ const ids = Array.from(visible.values())
             <>
               {comments.length === 0 && <div className="text-center font-mono text-white/40 text-xs pt-16 animate-pulse">[ Inbound Stream Empty ]</div>}
 {comments.map((c) => {
-  const words =
-    c.content?.trim().split(/\s+/).filter(Boolean).length || 0
 
-  const isBig = words >= 25
-const effectiveVisible =
-  visibleIds.length > 0
-    ? visibleIds
-    : comments.slice(0, 2).map(c => String(c.id))
 
-const liveIndex = effectiveVisible.indexOf(String(c.id))
 
-const isLive = liveIndex >= 0 && liveIndex < 2
+const id = String(c.id)
 
-  if (isLive) {
-    return (
-      <div
-        key={c.id}
-        data-comment-id={String(c.id)}
-      >
-        <LiveCommentCard
-          comment={c}
-          priority={liveIndex}
-        />
-      </div>
-    )
-  }
+const liveIndex = visibleIds.indexOf(id)
 
+const isLive =
+  visibleSet.has(id) &&
+  liveIndex >= 0 &&
+  liveIndex < 2
+
+if (isLive) {
   return (
-    <div
-      key={c.id}
-      data-comment-id={String(c.id)}
-      className={`group relative overflow-hidden rounded-xl bg-transparent transition-all ${
-        isBig
-          ? 'border border-white/20 bg-white/[0.01] p-5'
-          : 'border border-white/5 p-4 hover:border-white/20'
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <img
-            src={c.avatar_url || "/avatar-placeholder.png"}
-            alt=""
-            className="h-8 w-8 rounded-lg object-cover border border-white/10 filter grayscale"
-          />
-
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-white">
-              {c.username}
-
-              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded uppercase bg-transparent text-white/60 border border-white/10">
-                {isBig ? 'Abstract' : 'Signal'}
-              </span>
-            </div>
-
-            <div className="text-[10px] text-white/40 font-mono">
-              {new Date(c.created_at).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </div>
-          </div>
-        </div>
-
-        <span className="text-[10px] font-mono text-white/40 border border-white/10 rounded px-1.5 py-0.5">
-          {isBig
-            ? `${Math.max(1, Math.ceil(words / 200))}m read`
-            : `${words}w`}
-        </span>
-      </div>
-
-      {isBig ? (
-        <div className="mt-3 pl-11 space-y-2">
-          <div className="rounded-lg border border-white/10 p-2.5 text-[11px] font-mono text-white/60">
-            <span className="text-white font-semibold">
-              [ Abstract ]:
-            </span>{" "}
-            Multi-sentence density trace verified.
-          </div>
-
-          <p className="text-sm text-white/80 leading-relaxed">
-            {c.content}
-          </p>
-        </div>
-      ) : (
-        <p className="mt-2 pl-11 text-sm text-white/80 font-mono tracking-wide">
-          {c.content}
-        </p>
-      )}
+   <div
+  key={c.id}
+  data-comment-id={id}
+>
+      <LiveCommentCard
+        comment={c}
+        priority={liveIndex}
+      />
     </div>
   )
+}
+
+return (
+  <div
+    key={c.id}
+    data-comment-id={id}
+  >
+    <CommentCard comment={c} />
+  </div>
+)
 })}
             </>
           )}
         </div>
 
         {/* Input Interface */}
-        <form onSubmit={handleSubmit} className="border-t border-white/10 p-4 bg-transparent">
-          <div className="flex gap-2 rounded-xl border border-white/20 bg-transparent px-3.5 py-2.5 focus-within:border-white/40 transition-all backdrop-blur-sm">
-            <input 
-              type="text" 
-              value={newComment} 
-              onChange={(e) => setNewComment(e.target.value)} 
-              placeholder="Append telemetry log..." 
-              className="flex-1 bg-transparent text-xs font-mono text-white placeholder-white/30 outline-none" 
-            />
-            <button 
-              type="submit" 
-              disabled={!newComment.trim()} 
-              className="rounded-lg bg-white px-3.5 py-1 text-xs font-medium text-black hover:bg-white/90 disabled:opacity-20 transition shadow-sm font-mono uppercase tracking-wider"
-            >
-              Execute
-            </button>
-          </div>
-        </form>
 
+<form
+  onSubmit={handleSubmit}
+  className="border-t border-white/10 bg-gradient-to-t from-black/30 to-transparent p-4 backdrop-blur-xl"
+>
+  <div
+  className="
+    relative
+    flex
+    w-full
+    items-end
+    gap-2
+    rounded-2xl
+    border
+    border-white/10
+    bg-white/[0.03]
+    p-2
+    backdrop-blur-xl
+    transition-all
+    duration-300
+    focus-within:border-cyan-400/40
+    focus-within:shadow-[0_0_25px_rgba(34,211,238,0.12)]
+  "
+>
+
+    {/* Message Input */}
+    <textarea
+      value={newComment}
+      onChange={(e) => setNewComment(e.target.value)}
+      rows={1}
+      placeholder="Share your thoughts..."
+className="
+  flex-1
+  resize-none
+  overflow-y-auto
+  bg-transparent
+  px-4
+  py-3
+  text-[15px]
+  leading-6
+  text-white
+  placeholder:text-white/30
+  outline-none
+  max-h-36
+  min-h-[48px]
+"
+    />
+
+    {/* Send Button */}
+    <button
+      type="submit"
+      disabled={!newComment.trim()}
+      className="
+        ml-2
+        flex
+        h-11
+        w-11
+        items-center
+        justify-center
+        rounded-xl
+        bg-cyan-500
+        text-white
+        transition-all
+        duration-300
+        hover:scale-105
+        hover:bg-cyan-400
+        disabled:scale-100
+        disabled:cursor-not-allowed
+        disabled:bg-white/10
+        disabled:text-white/30
+      "
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M22 2L11 13"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M22 2L15 22L11 13L2 9L22 2Z"
+        />
+      </svg>
+    </button>
+
+  </div>
+</form>
+        
       </div>
     </div>
   )

@@ -303,3 +303,18 @@ body {
   animation:liveEdge 3.5s linear infinite;
 
 }
+
+.smooth-scroll {
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  overscroll-behavior: contain;
+
+  -webkit-overflow-scrolling: touch;
+
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+
+  will-change: transform;
+  contain: layout paint style;
+}

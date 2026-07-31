@@ -1,5 +1,5 @@
 'use client'
-
+import React from 'react'
 interface Comment {
   id: string | number
   username: string
@@ -19,12 +19,44 @@ const PROFILES = [
   { badge: "SYNC", color: "border-cyan-500/20 bg-cyan-500/5 text-cyan-400", dot: "bg-cyan-400" }
 ]
 
-export default function LiveCommentCard({ comment, priority }: LiveCommentCardProps) {
+function LiveCommentCard({ comment, priority }: LiveCommentCardProps) {
   const profile = PROFILES[priority] ?? PROFILES[0]
-  const isLong = (comment.content?.trim().split(/\s+/).length ?? 0) >= 25
+  const words =
+  comment.content?.trim().split(/\s+/).filter(Boolean).length ?? 0
+
+const isLong = words >= 25
+
+const size =
+  words <= 6
+    ? "compact"
+    : words <= 24
+      ? "normal"
+      : "large"
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-950 p-3 text-xs w-full max-w-xs shadow-2xl">
+    <div
+  className={`
+    relative
+    overflow-hidden
+    rounded-xl
+    border
+    border-white/5
+    bg-zinc-950
+    w-full
+    max-w-full
+    shadow-2xl
+    transition-all
+    duration-300
+
+    ${
+      size === "compact"
+        ? "p-2"
+        : size === "normal"
+        ? "p-3"
+        : "p-5"
+    }
+  `}
+>
       {/* Animated Scan Line */}
       <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-liveEdge" />
 
@@ -68,3 +100,5 @@ export default function LiveCommentCard({ comment, priority }: LiveCommentCardPr
     </div>
   )
 }
+
+export default React.memo(LiveCommentCard)
