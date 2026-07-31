@@ -4,7 +4,7 @@
   <img src="./public/og-image.png" alt="StreetGO Banner" width="100%">
 </p>
 
-# 🚀 StreetGO
+# StreetGO is an all-in-one social platform that combines real-time messaging, community feeds, maps, driver services, predictions, and mobile experiences into a single application.
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)
