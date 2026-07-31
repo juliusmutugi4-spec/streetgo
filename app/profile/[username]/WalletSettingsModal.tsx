@@ -13,27 +13,55 @@ export default function WalletSettingsModal({ wallet, refreshWallet, onClose }: 
   const [editingPhone, setEditingPhone] = useState(false)
   const [phone, setPhone] = useState(wallet?.phone ?? "")
   const [saving, setSaving] = useState(false)
+async function savePhone() {
+  const cleanPhone = phone.trim()
 
-  async function savePhone() {
-    if (!phone.trim()) return
-    setSaving(true)
-    
-    try {
-      const { error } = await supabase
-        .from("wallets")
-        .update({ phone: phone.trim() })
-        .eq("user_id", wallet.user_id)
-
-      if (error) throw error
-
-      await refreshWallet()
-      onClose()
-    } catch (error: any) {
-      alert(error.message || "An error occurred.")
-    } finally {
-      setSaving(false)
-    }
+  if (!cleanPhone) {
+    alert("Enter a phone number.")
+    return
   }
+
+  setSaving(true)
+
+  try {
+    // Make sure the wallet exists
+    const { data: existingWallet, error: walletError } = await supabase
+      .from("wallets")
+      .select("user_id")
+      .eq("user_id", wallet.user_id)
+      .maybeSingle()
+
+    if (walletError) throw walletError
+
+    if (!existingWallet) {
+      throw new Error("Wallet not found.")
+    }
+
+    // Update phone
+    const { data, error } = await supabase
+      .from("wallets")
+      .update({
+        phone: cleanPhone,
+      })
+      .eq("user_id", wallet.user_id)
+      .select()
+      .single()
+
+    if (error) throw error
+
+    console.log("PHONE UPDATED:", data)
+
+    // Refresh wallet from database
+    await refreshWallet()
+
+    onClose()
+  } catch (error: any) {
+    console.error(error)
+    alert(error.message || "Failed to save phone number.")
+  } finally {
+    setSaving(false)
+  }
+}
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs">
