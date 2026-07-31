@@ -239,7 +239,7 @@ const { data: updateData, error: updateError } = await supabase
     right-0
     z-50
     transition-all
-    duration-300
+duration-700 ease-in-out
     ${
       videoPortalOpen
         ? "-translate-y-full opacity-0"
@@ -261,6 +261,7 @@ const { data: updateData, error: updateError } = await supabase
   className="
     max-w-7xl
     mx-auto
+    pt-[64px]
     px-0
     pb-20
     lg:px-4
@@ -443,12 +444,15 @@ const { data: updateData, error: updateError } = await supabase
     right-0
     z-[9999]
     transition-all
-    duration-300
-    ${
-      videoPortalOpen
-        ? "translate-y-full opacity-0 pointer-events-none"
-        : "translate-y-0 opacity-100"
-    }
+    duration-700
+    ease-in-out
+ ${
+  videoPortalOpen
+    ? "translate-y-full opacity-0 pointer-events-none"
+    : showNav
+    ? "translate-y-0 opacity-100"
+    : "translate-y-full opacity-0 pointer-events-none"
+}
   `}
 >
 
