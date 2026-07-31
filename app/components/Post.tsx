@@ -13,6 +13,9 @@ import { formatRelativeTime } from "../lib/time"
 import StreetAI from "./StreetAI"
 import SmartImageGallery from "./SmartImageGallery"
 import PostActions from "./PostActions"
+
+import DiscussionRoom from "./DiscussionRoom"
+
 import {
   Heart,
   MessageCircle,
@@ -63,8 +66,7 @@ function Post({
   const [displayLikes, setDisplayLikes] = useState(0)
   const [liked, setLiked] = useState(false)
   const [comments, setComments] = useState<any[]>([])
-  const [commentText, setCommentText] = useState('')
-const [showComments, setShowComments] = useState(false)
+
   const username = post.username || 'Anonymous'
 const [portalOpening, setPortalOpening] = useState(false)
 const [portalStartTime, setPortalStartTime] = useState(0)
@@ -83,6 +85,13 @@ const [viewerCount, setViewerCount] = useState(0)
 const [showSurprisePopup, setShowSurprisePopup] = useState(false)
 const [isActivePost, setIsActivePost] = useState(false)
 const [showVideoPortal, setShowVideoPortal] = useState(false)
+const [openRoom, setOpenRoom] = useState(false)
+
+useEffect(() => {
+  if (!isActive) {
+    setOpenRoom(false)
+  }
+}, [isActive])
 
 useEffect(() => {
   setImageLikes(imageUrls.map(() => 0))
@@ -336,10 +345,11 @@ const loadViewerCount = async () => {
     .eq("post_id", post.id)
     .gte("last_seen", activeSince)
 
-  if (error) {
-    console.error(error)
-    return
-  }
+if (error) {
+  console.log("VIEWER ERROR:", JSON.stringify(error, null, 2))
+  console.log(error)
+  return
+}
 
   setViewerCount(count || 0)
 }
@@ -754,20 +764,20 @@ const toggleLike = async () => {
 }
 
   // Add comment
-const addComment = async () => {
+const addComment = async (message: string) => {
   if (!user) {
     if (!showLogin) {setShowLogin(true)}
     return
   }
 
-  if (!commentText.trim()) return
+  if (!message.trim()) return
 
 const { error } = await supabase
   .from('comments')
   .insert({
     post_id: post.id,
     user_id: user.id,
-    content: commentText,
+    content: message,
     username: profile?.username || 'Anonymous',
     avatar_url: profile?.avatar_url || null,
   })
@@ -778,7 +788,7 @@ if (error) {
   alert(error.message)
   return
 }
-    setCommentText('')
+   
     loadPostData()
   }
 
@@ -1304,178 +1314,25 @@ py-1.5
 </div>
 
 
+<DiscussionRoom
+  openRoom={openRoom}
+  setOpenRoom={setOpenRoom}
+  comments={comments}
+  onSendMessage={addComment}
+/>
 
 <PostActions
   liked={liked}
   likes={likes}
   comments={comments}
- 
   reaxCount={reaxCount}
-  showComments={showComments}
+ 
   toggleLike={toggleLike}
   handleSendReax={handleSendReax}
-  setShowComments={setShowComments}
+ 
+  setOpenRoom={setOpenRoom}
   post={post}
 />
-
-
-{showComments && (
-  <>
-<div className="mt-4 flex gap-3">
-
-  {/* USER AVATAR */}
-  <img
-    src={profile?.avatar_url || '/avatar-placeholder.png'}
-    alt=""
-    className="
-      h-10
-      w-10
-      rounded-xl
-      object-cover
-      border
-      border-cyan-500/20
-    "
-  />
-
-  {/* INPUT AREA */}
-  <div className="flex-1">
-
-    <div
-      className="
-        relative
-        overflow-hidden
-        rounded-xl
-        border
-        border-cyan-500/20
-        bg-zinc-950/80
-        backdrop-blur-xl
-      "
-    >
-<input
-  value={commentText}
-  onChange={(e) => setCommentText(e.target.value)}
-  placeholder="Write a comment..."
-  className="
-    w-full
-    rounded-xl
-    bg-zinc-900
-    px-4
-    py-3
-    text-white
-    outline-none
-  "
-/>
-      <div
-        className="
-          absolute
-          top-0
-          left-0
-          right-0
-          h-[1px]
-          bg-gradient-to-r
-          from-transparent
-          via-cyan-400/40
-          to-transparent
-        "
-      />
-    </div>
-
-    <div className="mt-2 flex items-center justify-between">
-
-      <span className="text-[10px] font-mono text-zinc-600">
-        SIGNAL LENGTH: {commentText.length}/280
-      </span>
-
-      <button
-        onClick={addComment}
-        disabled={!commentText.trim()}
-        className="
-          rounded-lg
-          border
-          border-cyan-500/20
-          bg-cyan-500/10
-          px-4
-          py-2
-          text-[11px]
-          font-mono
-          tracking-wide
-          text-cyan-400
-          transition-all
-          duration-300
-          hover:border-cyan-400/50
-          hover:bg-cyan-500/20
-          hover:shadow-[0_0_20px_rgba(34,211,238,0.2)]
-          disabled:opacity-40
-          disabled:cursor-not-allowed
-        "
-      >
-        💬 Post
-      </button>
-
-    </div>
-
-  </div>
-
-</div>
-
-<div className="mt-4 space-y-3">
-  {comments.map((c) => (
-    <div
-      key={c.id}
-      className="flex gap-2.5 rounded-xl bg-zinc-900/60 p-2.5 hover:bg-zinc-800/60 transition"
-    >
-      {/* Avatar */}
-<img
-  src={c.avatar_url || "/avatar-placeholder.png"}
-  loading="lazy"
-  decoding="async"
-        alt=""
-        className="h-8 w-8 rounded-full object-cover"
-      />
-
-      {/* Content */}
-      <div className="flex-1">
-        {/* Header */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-white">
-            {c.username}
-          </span>
-
-          <span className="text-[11px] text-zinc-500">
-            @{c.username?.replace(/\s+/g, "").toLowerCase()}
-          </span>
-
-          <span className="text-[11px] text-zinc-600">
-            • {new Date(c.created_at).toLocaleString()}
-          </span>
-        </div>
-
-
-
-
-
-
-        {/* Comment */}
-        <p className="mt-1 text-[13px] text-zinc-200 leading-relaxed">
-          {c.content}
-        </p>
-
-        {/* Actions */}
-        <div className="mt-2 flex gap-4 text-[11px]">
-          <button className="text-zinc-500 hover:text-pink-400 transition">
-            ❤️ Like
-          </button>
-
-          <button className="text-zinc-500 hover:text-cyan-400 transition">
-            💬 Reply
-          </button>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
-  </>
-)}
 
 
 {showVideoPortal && (

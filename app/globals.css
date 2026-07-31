@@ -246,3 +246,60 @@ body {
   animation: portalDown 0.25s ease forwards;
 }
 
+/* =======================================================
+   LIVE COMMENT SCANNER
+======================================================= */
+
+@keyframes commentScanner {
+  0% {
+    transform: translateX(-160%) rotate(12deg);
+    opacity: 0;
+  }
+
+  8% {
+    opacity: .25;
+  }
+
+  18% {
+    opacity: .9;
+  }
+
+  50% {
+    opacity: .65;
+  }
+
+  82% {
+    opacity: .9;
+  }
+
+  92% {
+    opacity: .25;
+  }
+
+  100% {
+    transform: translateX(420%) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+.animate-commentScanner {
+  animation: commentScanner 2.8s linear infinite;
+  will-change: transform;
+}
+@keyframes liveEdge {
+
+  0%{
+    transform:translateX(-120px);
+  }
+
+  100%{
+    transform:translateX(calc(100vw));
+  }
+
+}
+
+.animate-liveEdge{
+
+  animation:liveEdge 3.5s linear infinite;
+
+}

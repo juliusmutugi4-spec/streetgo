@@ -8,10 +8,11 @@ interface PostActionsProps {
   likes: number
   comments: any[]
   reaxCount: number
-  showComments: boolean
+ 
   toggleLike: () => void
   handleSendReax: () => Promise<void>
-  setShowComments: React.Dispatch<React.SetStateAction<boolean>>
+ 
+  setOpenRoom: React.Dispatch<React.SetStateAction<boolean>>
   post: { id: string; content: string }
 }
 
@@ -20,11 +21,12 @@ export default function PostActions({
   likes,
   comments,
   reaxCount,
-  showComments,
+  
   toggleLike,
   handleSendReax,
-  setShowComments,
-  post,
+
+setOpenRoom,
+post,
 }: PostActionsProps) {
   
   const handleShare = async () => {
@@ -66,12 +68,12 @@ export default function PostActions({
           {/* Right: Comments & Shares */}
           <div className="flex items-center gap-3 text-[#b0b3b8]">
             {comments.length > 0 && (
-              <button 
-                onClick={() => setShowComments(!showComments)} 
-                className="hover:underline text-[13px]"
-              >
-                {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
-              </button>
+<button
+  onClick={() => setOpenRoom(true)}
+  className="hover:underline text-[13px]"
+>
+  {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
+</button>
             )}
           </div>
         </div>
@@ -94,10 +96,8 @@ export default function PostActions({
 
         {/* COMMENT BUTTON */}
         <button
-          onClick={() => setShowComments(!showComments)}
-          className={`flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md font-semibold text-[14px] transition-colors duration-150 ease-in-out hover:bg-white/10 active:scale-95 ${
-            showComments ? "text-[#1877f2]" : "text-[#b0b3b8]"
-          }`}
+         onClick={() => setOpenRoom(true)}
+className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-[#b0b3b8] font-semibold text-[14px] transition-colors duration-150 ease-in-out hover:bg-white/10 active:scale-95"
         >
           <MessageCircle size={18} />
           <span>Comment</span>
