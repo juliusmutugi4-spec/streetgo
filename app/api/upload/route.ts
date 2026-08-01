@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import { PutObjectCommand } from "@aws-sdk/client-s3"
+import { r2 } from "@/app/lib/r2"
+
 
 export async function POST(req: NextRequest) {
 const formData = await req.formData()
@@ -23,22 +21,21 @@ if (!file) {
   )
 }
 
-const { error } = await supabase.storage
-  .from(bucket)
-  .upload(fileName, file, {
-    upsert: false
+await r2.send(
+  new PutObjectCommand({
+    Bucket: process.env.R2_BUCKET!,
+    Key: fileName,
+    Body: Buffer.from(await file.arrayBuffer()),
+    ContentType: file.type,
   })
+)
 
-if (error) {
-  throw error
-}
 
-const { data } = supabase.storage
-  .from(bucket)
-  .getPublicUrl(fileName)
+
+const url = `${process.env.R2_PUBLIC_URL}/${fileName}`
 
 return NextResponse.json({
   success: true,
-  url: data.publicUrl
+  url
 })
 }

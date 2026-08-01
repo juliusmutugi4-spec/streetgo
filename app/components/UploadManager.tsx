@@ -43,15 +43,27 @@ const generateStoragePath = (userId: string, originalName: string): string => {
  */
 async function uploadSingleImage(userId: string, file: File): Promise<string> {
   const compressed = await imageCompression(file, COMPRESSION_CONFIG)
+
   const fileName = generateStoragePath(userId, file.name)
 
-  const { error } = await supabase.storage
-    .from('images')
-    .upload(fileName, compressed, { cacheControl: '3600' })
+  const formData = new FormData()
 
-  if (error) throw new Error(`Image upload failed: ${error.message}`)
+  formData.append("file", compressed)
+  formData.append("bucket", "images")
+  formData.append("fileName", fileName)
 
-  return supabase.storage.from('images').getPublicUrl(fileName).data.publicUrl
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new Error("Image upload failed")
+  }
+
+  const data = await response.json()
+
+  return data.url
 }
 
 /**
@@ -60,17 +72,24 @@ async function uploadSingleImage(userId: string, file: File): Promise<string> {
 async function uploadVideoFile(userId: string, video: File): Promise<string> {
   const fileName = generateStoragePath(userId, video.name)
 
-  const { error } = await supabase.storage
-    .from('videos')
-    .upload(fileName, video, {
-      cacheControl: '3600',
-      upsert: false,
-      contentType: video.type,
-    })
+  const formData = new FormData()
 
-  if (error) throw new Error(`Video upload failed: ${error.message}`)
+  formData.append("file", video)
+  formData.append("bucket", "videos")
+  formData.append("fileName", fileName)
 
-  return supabase.storage.from('videos').getPublicUrl(fileName).data.publicUrl
+  const response = await fetch("/api/upload", {
+    method: "POST",
+    body: formData,
+  })
+
+  if (!response.ok) {
+    throw new Error("Video upload failed")
+  }
+
+  const data = await response.json()
+
+  return data.url
 }
 
 /**
@@ -83,23 +102,34 @@ async function savePostToDatabase(
   imageUrls: string[],
   videoUrl: string | null
 ): Promise<Post> {
-  console.log("➡️ Inserting post...")
-
+  
   const start = performance.now()
 
-  const query = supabase
-    .from("posts")
-    .insert({
-      user_id: userId,
-      content,
-      avatar_url: avatarUrl,
-      image_urls: imageUrls,
-      video_url: videoUrl,
-    })
-    .select()
-    .single()
+const { data: authData } = await supabase.auth.getUser()
 
-  const { data, error } = await query
+
+const { error } = await supabase
+  .from("posts")
+  .insert({
+    user_id: userId,
+    content,
+    avatar_url: avatarUrl,
+    image_urls: imageUrls,
+    video_url: videoUrl,
+  })
+
+if (error) throw error
+
+
+const { data, error: fetchError } = await supabase
+  .from("posts")
+  .select("*")
+  .eq("user_id", userId)
+  .order("created_at", { ascending: false })
+  .limit(1)
+  .single()
+
+if (fetchError) throw fetchError
 
   console.log(
     `Database took ${(performance.now() - start).toFixed(0)} ms`
@@ -156,11 +186,14 @@ const animateProgress = () => {
 }
 
 animationId = requestAnimationFrame(animateProgress)
+
+console.log("🔥 Starting upload")
 const [imageUrls, videoUrl] = await Promise.all([
+
   Promise.all(images.map((img) => uploadSingleImage(userId, img))),
   video ? uploadVideoFile(userId, video) : Promise.resolve(null),
 ])
-
+console.log("🔥 Upload finished")
 cancelAnimationFrame(animationId)
 
  console.log("✅ Media upload complete")
@@ -172,6 +205,7 @@ const timer = `Database Save ${Date.now()}`
 console.time(timer)
 
 const post = await savePostToDatabase(
+
   userId,
   content,
   avatar_url,
@@ -179,16 +213,13 @@ const post = await savePostToDatabase(
   videoUrl
 )
 
-console.timeEnd(timer)
-console.log("✅ Database saved")
-
 onProgress?.(100, 'Success', totalFiles, totalFiles)
 
-console.log("✅ Progress 100%")
+
 
 onSuccess?.(post)
 
-console.log("✅ onSuccess complete")
+
     
     return post
   } catch (err) {

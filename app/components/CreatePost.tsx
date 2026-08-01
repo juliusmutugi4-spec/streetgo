@@ -6,6 +6,7 @@ import CreateTransmission from './CreateTransmission'
 import UploadProgress from './UploadProgress'
 import MediaPicker from './MediaPicker'
 import TransmitButton from './TransmitButton'
+import { supabase } from "../lib/supabase"
 interface CreatePostProps {
   userId: string
   profile: {
@@ -63,7 +64,13 @@ setDisplayProgress(0)
   setCurrentUpload("📡 Preparing transmission...")
 
   try {
-    const post = await uploadPost({
+ const { data } = await supabase.auth.getSession()
+
+alert(
+  `SESSION: ${data.session ? "YES" : "NO"}\n\nUSER:\n${data.session?.user?.id ?? "NONE"}`
+)
+
+  const post = await uploadPost({
       userId,
       content,
       images,
@@ -91,10 +98,21 @@ setDisplayProgress(0)
         await Promise.resolve(onPosted(newPost))
       },
 
-      onError: (error) => {
-        console.error("UPLOAD ERROR:", error)
-        alert(JSON.stringify(error, null, 2))
-      },
+onError: (error: any) => {
+  console.error("UPLOAD ERROR:", error)
+
+  alert(
+    `
+Message: ${error?.message}
+
+Code: ${error?.code ?? "none"}
+
+Details: ${error?.details ?? "none"}
+
+Hint: ${error?.hint ?? "none"}
+`
+  )
+},
     })
 
     console.log("UPLOAD COMPLETE", post)
