@@ -13,9 +13,10 @@ import { formatRelativeTime } from "../lib/time"
 import StreetAI from "./StreetAI"
 import SmartImageGallery from "./SmartImageGallery"
 import PostActions from "./PostActions"
-
+import SimilarVideosMenu from "./SimilarVideosMenu"
 import DiscussionRoom from "./DiscussionRoom"
-
+import VideoPortalButton from "./VideoPortalButton"
+import PostVideo from "./PostVideo"
 import {
   Heart,
   MessageCircle,
@@ -86,7 +87,7 @@ const [showSurprisePopup, setShowSurprisePopup] = useState(false)
 const [isActivePost, setIsActivePost] = useState(false)
 const [showVideoPortal, setShowVideoPortal] = useState(false)
 const [openRoom, setOpenRoom] = useState(false)
-
+const [showSimilarVideos, setShowSimilarVideos] = useState(false)
 useEffect(() => {
   if (!isActive) {
     setOpenRoom(false)
@@ -248,11 +249,22 @@ const menuRef = useRef<HTMLDivElement>(null)
 const [currentImage, setCurrentImage] = useState(0)
 const [showImageViewer, setShowImageViewer] = useState(false)
 const videoRef = useRef<HTMLVideoElement>(null)
+
+
 const portalVideoRefs = useRef<(HTMLVideoElement | null)[]>([])
 const postRef = useRef<HTMLDivElement>(null)
 
 const [portalMode, setPortalMode] = useState(false)
 const [portalVideos, setPortalVideos] = useState<any[]>([])
+const [currentVideo, setCurrentVideo] = useState(post)
+useEffect(() => {
+  if (!videoRef.current) return
+
+  videoRef.current.load()
+
+  videoRef.current.play().catch(() => {})
+}, [currentVideo])
+
   // Load likes & comments
 
 const toggleImageLike = async () => {
@@ -1200,89 +1212,11 @@ return (
     setShowImageViewer={setShowImageViewer}
   />
 )}
-
-{/* Video SEO */}
 {post.video_url && (
-  <VideoSchema
-    id={post.id}
-    title={post.content || 'StreetGO Video'}
-    description={post.content || 'Watch this video on StreetGO'}
-    thumbnail="https://streetgo.app/og-image.png"
-    videoUrl={post.video_url}
-    uploadDate={post.created_at}
+  <PostVideo
+    post={post}
   />
 )}
-
-{/* Video */}
-{post.video_url && (
-  <div
-    className={`
-      mt-4
-      overflow-hidden
-      rounded-xl
-      border
-      border-orange-500/20
-      bg-zinc-950
-      transition-all
-      duration-500
-
-      ${
-        portalOpening
-          ? `
-            fixed
-            inset-0
-            z-[99998]
-            rounded-none
-            border-0
-            m-0
-          `
-          : ""
-      }
-    `}
-  >
-<video
-  ref={videoRef}
-  style={{
-    transition: "all .45s ease",
-  }}
-  onTimeUpdate={(e) => {
-  const video = e.currentTarget
-
-  if (
-    video.currentTime >= 10 &&
-    !showVideoPortal
-  ) {
-    setShowVideoPortal(true)
-  }
-}}
-  src={post.video_url}
-  controls
-  preload="metadata"
-  playsInline
-  className="
-    w-full
-    max-h-[600px]
-    object-cover
-  "
-/>
-
-    <div
-      className="
-  px-3
-py-1.5
-        text-[10px]
-        uppercase
-        tracking-widest
-        text-orange-400
-        border-t
-        border-orange-500/20
-      "
-    >
-      
-    </div>
-  </div>
-)}
-
 
 
 
@@ -1335,35 +1269,15 @@ py-1.5
 />
 
 
-{showVideoPortal && (
-  <div className="absolute top-8 left-1/2 z-50 -translate-x-1/2 pointer-events-auto">
-    <button 
-      onClick={async () => { 
-        if (videoRef.current) { 
-          setPortalStartTime(videoRef.current.currentTime) 
-        } 
-        setPortalOpening(true) 
-        await loadPortalVideos() 
-        setTimeout(() => { 
-          setPortalMode(true) 
-          setShowVideoPortal(false) 
-          setPortalOpening(false) 
-        }, 350) 
-      }} 
-      className="h-3 w-3 rounded-full bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)] transition duration-200 hover:scale-150"
-      aria-label="Enter"
-    />
-  </div>
-)}
-
-
+{/* 
 {portalMode && (
-<VideoPortal
-  videos={portalVideos}
-  startTime={portalStartTime}
-  onClose={() => setPortalMode(false)}
-/>
+  <VideoPortal
+    videos={portalVideos}
+    startTime={portalStartTime}
+    onClose={() => setPortalMode(false)}
+  />
 )}
+*/}
 
 
 

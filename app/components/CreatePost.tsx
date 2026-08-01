@@ -69,7 +69,13 @@ setDisplayProgress(0)
 alert(
   `SESSION: ${data.session ? "YES" : "NO"}\n\nUSER:\n${data.session?.user?.id ?? "NONE"}`
 )
+alert(`
+Images: ${images.length}
 
+Video: ${video ? video.name : "NONE"}
+
+Total files: ${images.length + (video ? 1 : 0)}
+`)
   const post = await uploadPost({
       userId,
       content,
