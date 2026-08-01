@@ -1,5 +1,5 @@
 'use client'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { uploadPost } from './UploadManager'
 import { ImagePlus, Video, Send, Loader2, Image, Sparkles } from 'lucide-react'
 import CreateTransmission from './CreateTransmission'
@@ -24,6 +24,7 @@ export default function CreatePost({
   const [images, setImages] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
+  const [displayProgress, setDisplayProgress] = useState(0)
 const [currentUpload, setCurrentUpload] = useState("")
 const [currentFile, setCurrentFile] = useState(0)
 const [totalFiles, setTotalFiles] = useState(0)
@@ -31,13 +32,32 @@ const [secondsLeft, setSecondsLeft] = useState<number | null>(null)
 
 const fileInputRef = useRef<HTMLInputElement>(null)
 
+useEffect(() => {
+  if (displayProgress >= uploadProgress) return
+
+  const timer = setInterval(() => {
+    setDisplayProgress((prev) => {
+      if (prev >= uploadProgress) {
+        clearInterval(timer)
+        return uploadProgress
+      }
+
+      return prev + 1
+    })
+  }, 20)
+
+  return () => clearInterval(timer)
+}, [uploadProgress, displayProgress])
+
+
 const handlePost = async () => {
   if (!content.trim() && !video && images.length === 0) {
     return
   }
 
-  setUploading(true)
-  setUploadProgress(0)
+setUploading(true)
+setUploadProgress(0)
+setDisplayProgress(0)
   setCurrentFile(0)
   setTotalFiles(0)
   setCurrentUpload("📡 Preparing transmission...")
@@ -79,8 +99,9 @@ const handlePost = async () => {
 
     console.log("UPLOAD COMPLETE", post)
   } finally {
-    setUploading(false)
-    setUploadProgress(0)
+setUploading(false)
+setUploadProgress(0)
+setDisplayProgress(0)
     setCurrentFile(0)
     setTotalFiles(0)
     setSecondsLeft(null)
@@ -111,7 +132,7 @@ const handlePost = async () => {
 
 <UploadProgress
   uploading={uploading}
-  uploadProgress={uploadProgress}
+  uploadProgress={displayProgress}
   currentUpload={currentUpload}
   currentFile={currentFile}
   totalFiles={totalFiles}

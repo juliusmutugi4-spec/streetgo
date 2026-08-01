@@ -129,13 +129,39 @@ export async function uploadPost({
   
   try {
     // Phase 1: Uploading Media
-    onProgress?.(10, 'Processing media payloads...', 0, totalFiles)
+    for (let i = 1; i <= 10; i++) {
+  onProgress?.(i, 'Processing media payloads...', 0, totalFiles)
+  await new Promise(resolve => setTimeout(resolve, 30))
+}
 
     // Run image and video asset pipelines concurrently
-    const [imageUrls, videoUrl] = await Promise.all([
-      Promise.all(images.map((img) => uploadSingleImage(userId, img))),
-      video ? uploadVideoFile(userId, video) : Promise.resolve(null),
-    ])
+let fakeProgress = 10
+let animationId: number
+
+const animateProgress = () => {
+  if (fakeProgress < 89) {
+    const speed = (89 - fakeProgress) * 0.03
+
+    fakeProgress += Math.max(speed, 0.05)
+
+    onProgress?.(
+      Math.round(fakeProgress),
+      'Uploading media...',
+      0,
+      totalFiles
+    )
+
+    animationId = requestAnimationFrame(animateProgress)
+  }
+}
+
+animationId = requestAnimationFrame(animateProgress)
+const [imageUrls, videoUrl] = await Promise.all([
+  Promise.all(images.map((img) => uploadSingleImage(userId, img))),
+  video ? uploadVideoFile(userId, video) : Promise.resolve(null),
+])
+
+cancelAnimationFrame(animationId)
 
  console.log("✅ Media upload complete")
 
