@@ -8,9 +8,12 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+const text = await req.text();
 
-    console.log("M-PESA CALLBACK:", JSON.stringify(body, null, 2));
+console.log("========== CALLBACK RECEIVED ==========");
+console.log(text);
+
+const body = text ? JSON.parse(text) : {};
 
     const callback = body.Body?.stkCallback;
 
