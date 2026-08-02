@@ -34,8 +34,27 @@ export async function POST(req: Request) {
     const amount =
       items.find((i: any) => i.Name === "Amount")?.Value;
 
-    const receipt =
-      items.find((i: any) => i.Name === "MpesaReceiptNumber")?.Value;
+const receipt =
+  items.find((i: any) => i.Name === "MpesaReceiptNumber")?.Value;
+
+// =======================================
+// CHECK IF THIS PAYMENT WAS ALREADY PROCESSED
+// =======================================
+
+const { data: existingTransaction } = await supabase
+  .from("wallet_transactions")
+  .select("id")
+  .eq("mpesa_receipt", receipt)
+  .maybeSingle();
+
+if (existingTransaction) {
+  console.log("Duplicate callback ignored:", receipt);
+
+  return NextResponse.json({
+    ResultCode: 0,
+    ResultDesc: "Already processed",
+  });
+}
 
 const rawPhone = String(
   items.find((i: any) => i.Name === "PhoneNumber")?.Value
@@ -83,15 +102,16 @@ const phone = rawPhone.startsWith("254")
     }
 
     // Save transaction
-    await supabase
-      .from("wallet_transactions")
-      .insert({
-        wallet_id: wallet.id,
-        amount,
-        type: "deposit",
-        reference: receipt,
-        status: "completed",
-      });
+await supabase
+  .from("wallet_transactions")
+  .insert({
+    wallet_id: wallet.id,
+    amount,
+    type: "deposit",
+    mpesa_receipt: receipt,
+    phone,
+    status: "completed",
+  });
 
     console.log("Wallet credited successfully.");
 
