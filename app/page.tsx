@@ -397,7 +397,7 @@ duration-700 ease-in-out
 > 
   {/* Rotating Text */} 
   <span className="block -rotate-90 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-400 group-hover:text-white transition-colors duration-200 pointer-events-none"> 
-    Predict 
+    rada ya mtaa 
   </span> 
 
   {/* Subtle indicator bar on the left edge */}

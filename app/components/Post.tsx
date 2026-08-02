@@ -17,6 +17,7 @@ import SimilarVideosMenu from "./SimilarVideosMenu"
 import DiscussionRoom from "./DiscussionRoom"
 import VideoPortalButton from "./VideoPortalButton"
 import PostVideo from "./PostVideo"
+import ImageViewer from "./ImageViewer"
 import {
   Heart,
   MessageCircle,
@@ -1219,25 +1220,26 @@ return (
 )}
 
 
-
-{/* SIGNAL PANEL */} 
+{/*
 <div className="mt-4 rounded-xl border border-[#3e4042] bg-[#1c1d1e] overflow-hidden shadow-sm">
-  {/* SIGNAL BODY */} 
   <div className="px-4 py-3">
     <div className="flex flex-wrap items-center gap-2">
-      
-      {/* STATUS BADGE */}
+
       <span className="inline-flex items-center gap-1.5 rounded-full bg-[#3a3b3c] px-3 py-1 text-[13px] font-semibold text-[#e4e6eb] hover:bg-[#4e4f50] transition-colors cursor-default">
         <span className="text-[14px]">🔥</span>
         <span>
-          { displayLikes < 100 ? "New" : 
-            displayLikes < 1000 ? "Active" : 
-            displayLikes < 10000 ? "Trending" : 
-            displayLikes < 100000 ? "Viral" : "Legend" }
+          {displayLikes < 100
+            ? "New"
+            : displayLikes < 1000
+            ? "Active"
+            : displayLikes < 10000
+            ? "Trending"
+            : displayLikes < 100000
+            ? "Viral"
+            : "Legend"}
         </span>
       </span>
 
-      {/* METRIC BADGE */}
       <span className="inline-flex items-center gap-1.5 rounded-full bg-[#1877f2]/10 border border-[#1877f2]/20 px-3 py-1 text-[13px] font-semibold text-[#4599ff]">
         <span className="text-[14px]">⚡</span>
         <span>{(displayLikes * 0.01).toFixed(0)}% Boost</span>
@@ -1246,6 +1248,7 @@ return (
     </div>
   </div>
 </div>
+*/}
 
 
 <DiscussionRoom
@@ -1279,366 +1282,34 @@ return (
 )}
 */}
 
+<ImageViewer
+  show={showImageViewer}
+  imageUrls={imageUrls}
+  currentImage={currentImage}
+  setCurrentImage={setCurrentImage}
 
+  username={username}
+  avatarUrl={avatarUrl}
 
-{showImageViewer && (
-<div
-  onClick={() => {
-  setShowImageComments(false)
-  setShowImageViewer(false)
-}}
-  className="
-    fixed
-    inset-0
-    z-[99999]
-    bg-black/95
-    flex
-    items-center
-    justify-center
-  "
->
-<div
-  className="
-    absolute
-    top-0
-    left-0
-    right-0
-    z-20
-    flex
-    items-center
-    justify-between
-    px-6
-    py-4
-    bg-gradient-to-b
-    from-black/80
-    to-transparent
-  "
->
-  <button
-onClick={(e) => {
-  e.stopPropagation()
-
-  setShowImageComments(false)
-  setShowImageViewer(false)
-}}
-    className="
-      text-white
-      text-3xl
-      hover:text-red-400
-      transition
-    "
-  >
-    ✕
-  </button>
-
- <div className="flex items-center gap-3">
-
-  <img
-    src={avatarUrl}
-    alt=""
-    className="
-      h-10
-      w-10
-      rounded-full
-      object-cover
-      border
-      border-white/20
-    "
-  />
-<div>
-  <div className="font-semibold text-white">
-    {username}
-  </div>
-
-  {imageUrls.length > 1 && (
-    <div className="text-xs text-zinc-400">
-      Image {currentImage + 1} of {imageUrls.length}
-    </div>
-  )}
-</div>
-
-</div>
-
-  <button
-    className="
-      text-white
-      text-2xl
-      hover:text-cyan-400
-    "
-  >
-    ⋯
-  </button>
-</div>
-{imageUrls.length > 1 && (
-<button
-  onClick={(e) => {
-    e.stopPropagation()
-
-    setCurrentImage(
-      (currentImage - 1 + imageUrls.length) %
-      imageUrls.length
-    )
+  onClose={() => {
+    setShowImageComments(false)
+    setShowImageViewer(false)
   }}
-  className="
-    absolute
-    left-6
-    text-white
-    text-5xl
-    px-4
-    py-2
-    hover:bg-white/10
-    rounded-full
-    transition
-  "
->
-  ‹
-</button>
 
-)}
-<img
-  src={imageUrls[currentImage]}
-  alt=""
-  onClick={(e) => e.stopPropagation()}
-className="
-  max-w-[95vw]
-  max-h-[75vh]
-  object-contain
-  select-none
-"
+  showImageComments={showImageComments}
+  setShowImageComments={setShowImageComments}
+
+  imageLikes={imageLikes}
+  imageCommentCounts={imageCommentCounts}
+
+  toggleImageLike={toggleImageLike}
+
+  imageComments={imageComments}
+  imageCommentText={imageCommentText}
+  setImageCommentText={setImageCommentText}
+
+  addImageComment={addImageComment}
 />
-
-{imageUrls.length > 1 && (
-<button
-  onClick={(e) => {
-    e.stopPropagation()
-    setCurrentImage(
-      (currentImage + 1) % imageUrls.length
-    )
-  }}
-  className="
-    absolute
-    right-6
-    text-white
-    text-5xl
-    px-4
-    py-2
-    hover:bg-white/10
-    rounded-full
-    transition
-  "
->
-  ›
-</button>
-)}
-
-{imageUrls.length > 1 && (
-<div
-  className="
-    absolute
-    bottom-0
-    left-0
-    right-0
-    z-20
-    flex
-    items-center
-    justify-center
-    gap-8
-    px-6
-    py-4
-    bg-gradient-to-t
-    from-black/90
-    to-transparent
-  "
->
-<button
-onClick={(e) => {
-  e.stopPropagation()
-  console.log("HEART CLICKED")
-  toggleImageLike()
-}}
-  className="
-    flex
-    items-center
-    gap-2
-    text-zinc-300
-    hover:text-pink-500
-    transition
-  "
->
-  <Heart size={22} />
-
-  <span>
-    {imageLikes[currentImage] || 0}
-  </span>
-</button>
-
-<button
-  onClick={(e) => {
-    e.stopPropagation()
-    setShowImageComments(true)
-  }}
-  className="
-    flex
-    items-center
-    gap-2
-    text-zinc-300
-    hover:text-cyan-400
-    transition
-  "
->
-  <MessageCircle size={22} />
-
-<span>
-  {imageCommentCounts[currentImage] || 0}
-</span>
-</button>
-
-<button
-  className="
-    flex
-    items-center
-    gap-2
-    text-zinc-300
-    hover:text-emerald-400
-    transition
-  "
->
-  <Bookmark size={22} />
-  <span>Save</span>
-</button>
-
-
-</div>
-)}
-{showImageComments && (
-  <div
-    onClick={(e) => e.stopPropagation()}
-    className="
-      absolute
-      bottom-0
-      left-0
-      right-0
-      h-[55vh]
-      rounded-t-3xl
-      bg-zinc-950
-      border-t
-      border-zinc-700
-      z-30
-      flex
-      flex-col
-    "
-  >
-    <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
-
-      <h2 className="text-white font-semibold">
-        Comments
-      </h2>
-
-      <button
-        onClick={() => setShowImageComments(false)}
-        className="text-zinc-400 text-2xl hover:text-white"
-      >
-        ✕
-      </button>
-
-    </div>
-
-<div className="flex-1 overflow-y-auto p-4 space-y-4">
-
-  {imageComments.length === 0 && (
-    <div className="text-center text-zinc-500 py-8">
-      No comments yet.
-    </div>
-  )}
-
-  {imageComments.map((comment) => (
-    <div
-      key={comment.id}
-      className="
-        flex
-        gap-3
-        rounded-xl
-        bg-zinc-900/70
-        p-3
-      "
-    >
-      <img
-        src={comment.avatar_url || "/avatar-placeholder.png"}
-        alt=""
-        className="
-          h-10
-          w-10
-          rounded-full
-          object-cover
-        "
-      />
-
-      <div className="flex-1">
-
-        <div className="flex items-center gap-2">
-
-          <span className="font-semibold text-white">
-            {comment.username}
-          </span>
-
-          <span className="text-xs text-zinc-500">
-            {new Date(comment.created_at).toLocaleDateString()}
-          </span>
-
-        </div>
-
-        <p className="mt-1 text-sm text-zinc-300">
-          {comment.content}
-        </p>
-
-      </div>
-    </div>
-  ))}
-
-</div>
-
-  <div className="border-t border-zinc-800 p-4 flex gap-3">
-  <input
-    value={imageCommentText}
-    onChange={(e) => setImageCommentText(e.target.value)}
-    placeholder="Write a comment..."
-    className="
-      flex-1
-      rounded-xl
-      bg-zinc-900
-      px-4
-      py-3
-      text-white
-      outline-none
-    "
-  />
-
-<button
-  onClick={addImageComment}
-  disabled={!imageCommentText.trim()}
-  className="
-    px-5
-    rounded-xl
-    bg-cyan-500
-    text-white
-    font-semibold
-    disabled:opacity-50
-  "
->
-  Post
-</button>
-</div>
-
-    
-  </div>
-)}
-
-  </div>
-
-
-
-
-)}
 
 
 {showLogin ? (

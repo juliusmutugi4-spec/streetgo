@@ -318,3 +318,25 @@ body {
   will-change: transform;
   contain: layout paint style;
 }
+@theme {
+  --animate-fb-bounce: fb-bounce 0.45s ease;
+
+  @keyframes fb-bounce {
+    0% {
+      transform: scale(1);
+    }
+
+    40% {
+      transform: scale(1.35) rotate(-8deg);
+    }
+
+    70% {
+      transform: scale(0.92) rotate(4deg);
+    }
+
+    100% {
+      transform: scale(1) rotate(0deg);
+    }
+  }
+}
+
