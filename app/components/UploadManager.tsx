@@ -83,10 +83,14 @@ async function uploadVideoFile(userId: string, video: File): Promise<string> {
     body: formData,
   })
 
-  if (!response.ok) {
-    throw new Error("Video upload failed")
-  }
+if (!response.ok) {
+  const text = await response.text()
 
+  console.error("UPLOAD API ERROR:", response.status)
+  console.error(text)
+
+  throw new Error(text)
+}
   const data = await response.json()
 
   return data.url
