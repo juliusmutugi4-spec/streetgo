@@ -18,6 +18,23 @@ export default function PostVideo({ post }: PostVideoProps) {
   const [showPortal, setShowPortal] = useState(false)
   const [showSimilar, setShowSimilar] = useState(false)
   const [portalVideos, setPortalVideos] = useState<any[]>([])
+const [showControls, setShowControls] = useState(false)
+
+const [isMobile, setIsMobile] = useState(false)
+
+useEffect(() => {
+  const checkMobile = () => {
+    setIsMobile(window.innerWidth < 768)
+  }
+
+  checkMobile()
+
+  window.addEventListener("resize", checkMobile)
+
+  return () => window.removeEventListener("resize", checkMobile)
+}, [])
+
+
 
   // Smart Telemetry: Auto-play when 60% of video is visible inside viewport
   useEffect(() => {
@@ -84,21 +101,35 @@ export default function PostVideo({ post }: PostVideoProps) {
   return (
   <div
     ref={containerRef}
-    className="
+className="
       group/player
       relative
-      mt-6
+      mt-4
+      w-full
+      aspect-video
+      md:max-w-[854px]
       overflow-hidden
       bg-black
-      w-full
-      max-w-[854px]
-      aspect-video
+      rounded-none
+      md:rounded-xl
       select-none
+      touch-manipulation
       font-sans
-    "
+"
   >
     {/* Video Surface Container */}
-    <div onClick={handleTogglePlay} className="relative w-full h-full cursor-pointer flex items-center justify-center">
+    <div
+  onClick={() => {
+    handleTogglePlay()
+
+    if (isMobile) {
+      setShowControls(true)
+
+      setTimeout(() => {
+        setShowControls(false)
+      }, 3000)
+    }
+  }} className="relative w-full h-full cursor-pointer flex items-center justify-center">
       <video
         ref={videoRef}
         src={post.video_url}
