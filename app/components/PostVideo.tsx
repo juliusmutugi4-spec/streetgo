@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import VideoPortalButton from './VideoPortalButton'
-
+import VideoTimeline from './VideoTimeline'
 interface PostVideoProps {
   post: any
 }
@@ -14,6 +14,8 @@ export default function PostVideo({ post }: PostVideoProps) {
   // Intelligence Engine States
   const [isPlaying, setIsPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+const [duration, setDuration] = useState(0)
   const [isMuted, setIsMuted] = useState(true)
   const [showPortal, setShowPortal] = useState(false)
   const [showSimilar, setShowSimilar] = useState(false)
@@ -66,7 +68,8 @@ useEffect(() => {
     const handleTimeUpdate = () => {
       const pct = (video.currentTime / video.duration) * 100
       setProgress(pct || 0)
-      
+      setCurrentTime(video.currentTime)
+setDuration(video.duration || 0)
       // Auto-unlock AI Portal recommendations during the final 30% of playback
       if (pct > 70 && !showPortal) {
         setShowPortal(true)
@@ -173,8 +176,19 @@ className="
       </div>
 
       {/* Micro Center Action Icon */}
-      <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-        <div className="p-2 rounded-full border border-white/30 bg-black/40 text-white opacity-0 scale-75 group-hover/player:opacity-100 group-hover/player:scale-100 transition-all duration-200 backdrop-blur-xs">
+<div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
+  <div
+    className={`
+      rounded-full border border-white/20 bg-neutral-900/60 p-2.5 text-white 
+      backdrop-blur-md transition-all duration-300 ease-out context-visibility-auto
+      ${isMobile 
+        ? showControls 
+          ? "visible opacity-100 scale-100" 
+          : "invisible opacity-0 scale-95"
+        : "invisible opacity-0 scale-95 group-hover/player:visible group-hover/player:opacity-100 group-hover/player:scale-100"
+      }
+    `}
+  >
           {isPlaying ? (
             <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
           ) : (
@@ -188,32 +202,12 @@ className="
         className="absolute bottom-0 inset-x-0 px-3 pb-2 pt-6 flex flex-col gap-1.5 opacity-0 group-hover/player:opacity-100 transition-opacity duration-200 z-20 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        
-        {/* Micro Timeline Rail */}
-        <div className="group/rail flex items-center h-2 w-full cursor-pointer">
-          <div 
-            onClick={(e) => {
-              if (!videoRef.current) return;
-              const rect = e.currentTarget.getBoundingClientRect();
-              const clickX = e.clientX - rect.left;
-              const pct = Math.min(Math.max(0, clickX / rect.width), 1);
-              videoRef.current.currentTime = pct * videoRef.current.duration;
-            }}
-            className="relative h-[2px] w-full bg-white/20 transition-all duration-150 group-hover/rail:h-[3px]"
-          >
-            {/* Netflix Red Progress Bar */}
-            <div 
-              style={{ width: `${progress}%` }}
-              className="absolute inset-y-0 left-0 bg-[#E50914]"
-            />
-            {/* Micro Scrubber Knob */}
-            <div 
-              style={{ left: `${progress}%` }}
-              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full bg-[#E50914] scale-100 transition-transform duration-150 group-hover/rail:scale-[1.4]"
-            />
-          </div>
-        </div>
-
+<VideoTimeline
+  videoRef={videoRef}
+  progress={progress}
+  currentTime={currentTime}
+  duration={duration}
+/>
         {/* Media Interaction Buttons Group */}
         <div className="flex items-center justify-between text-white font-medium">
           <div className="flex items-center gap-3">
