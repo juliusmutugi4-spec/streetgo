@@ -141,7 +141,15 @@ className="
       />
 
       {/* Micro Netflix Vignette Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 opacity-0 group-hover/player:opacity-100 transition-opacity duration-200 pointer-events-none z-10" />
+      <div
+  className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 transition-opacity duration-200 pointer-events-none z-10 ${
+    isMobile
+      ? showControls
+        ? 'opacity-100'
+        : 'opacity-0'
+      : 'opacity-0 group-hover/player:opacity-100'
+  }`}
+/>
 
       {/* Top Bar Action Layer */}
       <div 
