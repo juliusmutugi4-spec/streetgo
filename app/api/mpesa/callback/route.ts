@@ -84,12 +84,14 @@ const phone = rawPhone.startsWith("254")
     });
 
     // Find wallet
-    const { data: wallet, error: walletError } = await supabase
-      .from("wallets")
-      .select("*")
-      .eq("phone", phone)
-      .single();
+const { data: wallet, error: walletError } = await supabase
+  .from("wallets")
+  .select("*")
+  .eq("phone", phone)
+  .single();
 
+console.log("Wallet query result:", wallet);
+console.log("Wallet query error:", walletError);
     if (walletError || !wallet) {
       console.error("Wallet not found", walletError);
 
@@ -103,19 +105,22 @@ const phone = rawPhone.startsWith("254")
     const newBalance =
       Number(wallet.balance || 0) + Number(amount);
 
-    const { error: updateError } = await supabase
-      .from("wallets")
-      .update({
-        balance: newBalance,
-      })
-      .eq("id", wallet.id);
+const { error: updateError } = await supabase
+  .from("wallets")
+  .update({
+    balance: newBalance,
+  })
+  .eq("id", wallet.id);
+
+console.log("Wallet update error:", updateError);
 
     if (updateError) {
       console.error(updateError);
     }
 
     // Save transaction
-await supabase
+// Save transaction
+const { error: transactionError } = await supabase
   .from("wallet_transactions")
   .insert({
     wallet_id: wallet.id,
@@ -126,7 +131,9 @@ await supabase
     status: "completed",
   });
 
-    console.log("Wallet credited successfully.");
+console.log("Transaction insert error:", transactionError);
+
+console.log("Wallet credited successfully.");
 
     return NextResponse.json({
       ResultCode: 0,
