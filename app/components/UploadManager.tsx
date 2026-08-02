@@ -72,28 +72,38 @@ async function uploadSingleImage(userId: string, file: File): Promise<string> {
 async function uploadVideoFile(userId: string, video: File): Promise<string> {
   const fileName = generateStoragePath(userId, video.name)
 
-  const formData = new FormData()
-
-  formData.append("file", video)
-  formData.append("bucket", "videos")
-  formData.append("fileName", fileName)
-
-  const response = await fetch("/api/upload", {
+  // Ask the server for a presigned upload URL
+  const response = await fetch("/api/upload-url", {
     method: "POST",
-    body: formData,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      fileName,
+      fileType: video.type,
+    }),
   })
 
-if (!response.ok) {
-  const text = await response.text()
+  if (!response.ok) {
+    throw new Error("Failed to generate upload URL")
+  }
 
-  console.error("UPLOAD API ERROR:", response.status)
-  console.error(text)
+  const { uploadUrl } = await response.json()
 
-  throw new Error(text)
-}
-  const data = await response.json()
+  // Upload directly to Cloudflare R2
+  const upload = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": video.type,
+    },
+    body: video,
+  })
 
-  return data.url
+  if (!upload.ok) {
+    throw new Error("Video upload failed")
+  }
+
+  return `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${fileName}`
 }
 
 /**

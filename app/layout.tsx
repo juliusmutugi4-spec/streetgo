@@ -103,7 +103,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-<body className="transition-colors duration-300">
+<body className="bg-[#060608] text-white transition-colors duration-300">
 {/* <Schema /> */}
 {/* <WebsiteSchema /> */}
 {/* <BreadcrumbSchema /> */}
