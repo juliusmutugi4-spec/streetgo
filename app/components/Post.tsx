@@ -856,12 +856,12 @@ const signalTheme =
 
 return (
   <>
-    <PostSchema
-      id={post.id}
-      author={username}
-      content={post.content}
-      createdAt={post.created_at}
-    />
+{/* <PostSchema
+  id={post.id}
+  author={username}
+  content={post.content}
+  createdAt={post.created_at}
+/> */}
 
 <div
   ref={postRef}

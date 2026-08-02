@@ -104,13 +104,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
 <body className="transition-colors duration-300">
-  <Schema />
-  <WebsiteSchema />
-  <BreadcrumbSchema />
-  <OrganizationSchema />
-  <WebApplicationSchema />
-  <KnowledgeGraph />
-  <SearchAction />
+{/* <Schema /> */}
+{/* <WebsiteSchema /> */}
+{/* <BreadcrumbSchema /> */}
+{/* <OrganizationSchema /> */}
+{/* <WebApplicationSchema /> */}
+{/* <KnowledgeGraph /> */}
+{/* <SearchAction /> */}
 
 <Providers>
   {children}

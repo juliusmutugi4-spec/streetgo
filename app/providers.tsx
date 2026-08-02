@@ -33,9 +33,7 @@ const [queryClient] = useState(
 
 return (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider attribute="class" defaultTheme="dark">
-      {children}
-    </ThemeProvider>
+{children}
   </QueryClientProvider>
 )
 }

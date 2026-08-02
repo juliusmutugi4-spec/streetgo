@@ -1,4 +1,11 @@
+
+
+
 export default function Schema() {
+
+
+
+
   const schema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -11,12 +18,12 @@ export default function Schema() {
     sameAs: [],
   }
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: JSON.stringify(schema),
-      }}
-    />
-  )
+return (
+  <script
+    type="application/ld+json"
+    dangerouslySetInnerHTML={{
+      __html: JSON.stringify(schema),
+    }}
+  />
+)
 }

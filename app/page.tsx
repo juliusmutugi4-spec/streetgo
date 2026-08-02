@@ -7,7 +7,7 @@ import LoginModal from './components/LoginModal'
 import TopNav from './components/TopNav'
 import BottomNav from './components/BottomNav'
 import CreatePrediction from './components/CreatePrediction'
-import PostSchema from './components/PostSchema'
+
 import { registerPushNotifications } from './lib/pushNotifications'
 import { useFeed } from './hooks/useFeed'
 import { usePredictions } from "./hooks/usePredictions"
@@ -82,6 +82,7 @@ const [showNav, setShowNav] = useState(true)
 const [videoPortalOpen, setVideoPortalOpen] = useState(false)
 const [showLoader, setShowLoader] = useState(false)
 const [showSplash, setShowSplash] = useState(true)
+const [hydrated, setHydrated] = useState(false)
 const [loadingProgress, setLoadingProgress] = useState(0)
 const [loadingStatus, setLoadingStatus] = useState("Starting StreetGO...")
 const [activePostId, setActivePostId] = useState<string | null>(null)
@@ -104,44 +105,68 @@ const onCreateSelect = (
   // Fetch unread messages count
 
 
+useEffect(() => {
+  setHydrated(true)
 
+  const hasLoaded =
+    sessionStorage.getItem("streetgo_splash") === "done"
+
+  setShowSplash(!hasLoaded)
+}, [])
 
 
 
 
 
 useEffect(() => {
-  const initialize = async () => {
-    setLoadingStatus("Loading driver...")
-    setLoadingProgress(15)
-    await loadDriver()
+  let isMounted = true;
 
-    setLoadingStatus("Loading predictions...")
-    setLoadingProgress(35)
-    await fetchPredictions()
+  const initializeApp = async () => {
+    try {
+      setLoadingProgress(10);
+      await loadDriver();
+      if (!isMounted) return;
 
-    setLoadingStatus("Loading votes...")
-    setLoadingProgress(55)
-    await fetchVoteCounts()
+      setLoadingProgress(40);
+      await Promise.all([
+        fetchPredictions(),
+        fetchVoteCounts(),
+        loadPendingRideCount()
+      ]);
+      if (!isMounted) return;
 
-    setLoadingStatus("Loading rides...")
-    setLoadingProgress(75)
-    await loadPendingRideCount()
+      setLoadingProgress(80);
+      await registerPushNotifications();
+      if (!isMounted) return;
 
-    setLoadingStatus("Registering notifications...")
-    setLoadingProgress(90)
-    await registerPushNotifications()
+      setLoadingProgress(100);
+ setTimeout(() => {
+  if (!isMounted) return
 
-    setLoadingStatus("Ready")
-    setLoadingProgress(100)
+  setLoadingStatus("Ready")
+  setLoadingProgress(100)
 
-    setTimeout(() => {
-      setShowSplash(false)
-    }, 400)
-  }
+  sessionStorage.setItem("streetgo_splash", "done")
+  setShowSplash(false)
+}, 400)
+    } catch (error) {
+      console.error("App initialization failed:", error);
+      // Optional: Add a simple error message if needed
+    }
+  };
 
-  initialize()
-}, [user])
+if (
+  user &&
+  sessionStorage.getItem("streetgo_splash") !== "done"
+) {
+  initializeApp();
+}
+
+  return () => {
+    isMounted = false;
+  };
+}, [user]);
+
 
 
 useEffect(() => {
@@ -158,15 +183,7 @@ useEffect(() => {
   return () => clearTimeout(timer)
 }, [loading])
 
-useEffect(() => {
-  if (!loading) {
-    const timer = setTimeout(() => {
-      setShowSplash(false)
-    }, 1200)
 
-    return () => clearTimeout(timer)
-  }
-}, [loading])
 
 
 useEffect(() => {
@@ -254,6 +271,10 @@ const { data: updateData, error: updateError } = await supabase
   }
 
   fetchPredictions()
+}
+
+if (!hydrated) {
+  return null
 }
 
 if (showSplash) {
