@@ -152,12 +152,18 @@ className="
 />
 
       {/* Top Bar Action Layer */}
-      <div 
-        className="absolute top-0 inset-x-0 p-2 flex justify-end opacity-0 group-hover/player:opacity-100 transition-opacity duration-200 z-20"
-        onClick={(e) => e.stopPropagation()}
-      >
+<div
+  className={`absolute top-0 inset-x-0 p-2 flex justify-end transition-opacity duration-200 z-20 ${
+    isMobile
+      ? showControls
+        ? 'opacity-100'
+        : 'opacity-0'
+      : 'opacity-0 group-hover/player:opacity-100'
+  }`}
+  onClick={(e) => e.stopPropagation()}
+>
         <VideoPortalButton
-          showVideoPortal={showPortal || true}
+          showVideoPortal={isMobile ? true : showPortal}
           portalVideos={portalVideos}
           loadPortalVideos={handleLoadPortalVideos}
           showSimilarVideos={showSimilar}
