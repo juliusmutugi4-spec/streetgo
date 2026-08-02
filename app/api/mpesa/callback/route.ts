@@ -81,6 +81,9 @@ const phone = rawPhone.startsWith("254")
   ? "0" + rawPhone.slice(3)
   : rawPhone;
 
+console.log("RAW PHONE:", rawPhone);
+console.log("FORMATTED PHONE:", phone);
+
     console.log({
       amount,
       receipt,
@@ -88,23 +91,31 @@ const phone = rawPhone.startsWith("254")
     });
 
     // Find wallet
+console.log("Looking for wallet phone:", phone);
+
 const { data: wallet, error: walletError } = await supabase
   .from("wallets")
   .select("*")
   .eq("phone", phone)
   .single();
 
+console.log("Wallet found:", wallet);
+console.log("Wallet error:", walletError);
+
 console.log("Wallet query result:", wallet);
 console.log("Wallet query error:", walletError);
-    if (walletError || !wallet) {
-      console.error("Wallet not found", walletError);
+if (walletError) {
+  console.error("Wallet query failed:", walletError);
+}
 
-      return NextResponse.json({
-        ResultCode: 0,
-        ResultDesc: "Success",
-      });
-    }
+if (!wallet) {
+  console.error("No wallet found for phone:", phone);
 
+  return NextResponse.json({
+    ResultCode: 0,
+    ResultDesc: "Success",
+  });
+}
     // Update balance
     const newBalance =
       Number(wallet.balance || 0) + Number(amount);
