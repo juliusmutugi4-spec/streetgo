@@ -11,11 +11,15 @@ console.log(
   process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 20)
 );
 
+console.log(
+  "SUPABASE URL:",
+  process.env.NEXT_PUBLIC_SUPABASE_URL
+);
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
-
 export async function POST(req: Request) {
   try {
 const text = await req.text();
