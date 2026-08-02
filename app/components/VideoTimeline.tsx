@@ -43,11 +43,7 @@ export default function VideoTimeline({
   }, [videoRef])
 
   // Handles clicking on the track
-  const handlePointerDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return // Only left click
-    setIsDragging(true)
-    updateTime(e.clientX)
-  }
+ 
 
   // Handles active scrubbing/dragging
   useEffect(() => {
@@ -115,7 +111,11 @@ export default function VideoTimeline({
       {/* Hitbox/Interactive Rail Container */}
       <div
         ref={railRef}
-        onMouseDown={handlePointerDown}
+        onPointerDown={(e) => {
+  if (e.pointerType === "mouse" && e.button !== 0) return
+  setIsDragging(true)
+  updateTime(e.clientX)
+}}
         onKeyDown={handleKeyDown}
         role="slider"
         aria-label="Video progress"
