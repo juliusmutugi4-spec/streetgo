@@ -14,6 +14,7 @@ import { usePredictions } from "./hooks/usePredictions"
 import { useAuth } from "./hooks/useAuth"
 import { useDriver } from "./hooks/useDriver"
 import PredictionDrawer from './components/PredictionDrawer'
+import SplashScreen from './components/SplashScreen'
 type PostType = {
   id: string
   content: string
@@ -80,6 +81,9 @@ const {
 const [showNav, setShowNav] = useState(true)
 const [videoPortalOpen, setVideoPortalOpen] = useState(false)
 const [showLoader, setShowLoader] = useState(false)
+const [showSplash, setShowSplash] = useState(true)
+const [loadingProgress, setLoadingProgress] = useState(0)
+const [loadingStatus, setLoadingStatus] = useState("Starting StreetGO...")
 const [activePostId, setActivePostId] = useState<string | null>(null)
 const lastScrollY = useRef(0)
 
@@ -108,14 +112,32 @@ const onCreateSelect = (
 
 useEffect(() => {
   const initialize = async () => {
-    await Promise.all([
-      loadDriver(),
-      fetchPredictions(),
-      fetchVoteCounts(),
-      loadPendingRideCount(),
-    ])
+    setLoadingStatus("Loading driver...")
+    setLoadingProgress(15)
+    await loadDriver()
 
-    registerPushNotifications()
+    setLoadingStatus("Loading predictions...")
+    setLoadingProgress(35)
+    await fetchPredictions()
+
+    setLoadingStatus("Loading votes...")
+    setLoadingProgress(55)
+    await fetchVoteCounts()
+
+    setLoadingStatus("Loading rides...")
+    setLoadingProgress(75)
+    await loadPendingRideCount()
+
+    setLoadingStatus("Registering notifications...")
+    setLoadingProgress(90)
+    await registerPushNotifications()
+
+    setLoadingStatus("Ready")
+    setLoadingProgress(100)
+
+    setTimeout(() => {
+      setShowSplash(false)
+    }, 400)
   }
 
   initialize()
@@ -136,7 +158,15 @@ useEffect(() => {
   return () => clearTimeout(timer)
 }, [loading])
 
+useEffect(() => {
+  if (!loading) {
+    const timer = setTimeout(() => {
+      setShowSplash(false)
+    }, 1200)
 
+    return () => clearTimeout(timer)
+  }
+}, [loading])
 
 
 useEffect(() => {
@@ -226,7 +256,14 @@ const { data: updateData, error: updateError } = await supabase
   fetchPredictions()
 }
 
-
+if (showSplash) {
+  return (
+    <SplashScreen
+      progress={loadingProgress}
+      status={loadingStatus}
+    />
+  )
+}
 
   return (
     <main className="min-h-screen bg-[#060608] text-[#f4f4f5] antialiased selection:bg-emerald-500/30 font-sans tracking-tight relative overflow-x-hidden">

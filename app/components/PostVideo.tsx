@@ -133,16 +133,22 @@ className="
       }, 3000)
     }
   }} className="relative w-full h-full cursor-pointer flex items-center justify-center">
-      <video
-        ref={videoRef}
-        src={post.video_url}
-        preload="metadata"
-        playsInline
-        muted={isMuted}
-        loop
-        className="w-full h-full object-contain"
-      />
-
+<video
+  ref={videoRef}
+  src={post.video_url}
+  preload="metadata"
+  playsInline
+  muted={isMuted}
+  loop
+  controlsList="nodownload noremoteplayback"
+  disablePictureInPicture
+  onContextMenu={(e) => e.preventDefault()}
+  style={{
+    WebkitTouchCallout: "none",
+    userSelect: "none",
+  }}
+  className="w-full h-full object-contain select-none"
+/>
       {/* Micro Netflix Vignette Overlay */}
       <div
   className={`absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 transition-opacity duration-200 pointer-events-none z-10 ${
