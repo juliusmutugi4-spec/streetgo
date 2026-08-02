@@ -103,7 +103,15 @@ async function uploadVideoFile(userId: string, video: File): Promise<string> {
     throw new Error("Video upload failed")
   }
 
+
+console.log(
+  "R2 URL:",
+  process.env.NEXT_PUBLIC_R2_PUBLIC_URL
+)
+
   return `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${fileName}`
+
+  
 }
 
 /**
