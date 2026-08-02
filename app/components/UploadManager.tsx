@@ -188,11 +188,14 @@ const animateProgress = () => {
 animationId = requestAnimationFrame(animateProgress)
 
 console.log("🔥 Starting upload")
-const [imageUrls, videoUrl] = await Promise.all([
+console.time("MEDIA_UPLOAD")
 
+const [imageUrls, videoUrl] = await Promise.all([
   Promise.all(images.map((img) => uploadSingleImage(userId, img))),
   video ? uploadVideoFile(userId, video) : Promise.resolve(null),
 ])
+
+console.timeEnd("MEDIA_UPLOAD")
 console.log("🔥 Upload finished")
 cancelAnimationFrame(animationId)
 
