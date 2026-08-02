@@ -128,3 +128,12 @@ await supabase
     });
   }
 }
+
+export async function GET() {
+  console.log("GET callback route reached");
+
+  return NextResponse.json({
+    success: true,
+    message: "Callback route is working",
+  });
+}
