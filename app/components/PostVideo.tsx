@@ -199,7 +199,11 @@ className="
 
       {/* Micro Floating Control Deck Overlay */}
       <div 
-        className="absolute bottom-0 inset-x-0 px-3 pb-2 pt-6 flex flex-col gap-1.5 opacity-0 group-hover/player:opacity-100 transition-opacity duration-200 z-20 pointer-events-auto"
+        className={`absolute bottom-0 inset-x-0 px-3 pb-2 pt-6 flex flex-col gap-1.5 transition-opacity duration-200 z-20 pointer-events-auto ${
+  isMobile
+    ? (showControls ? "opacity-100" : "opacity-0")
+    : "opacity-0 group-hover/player:opacity-100"
+}`}
         onClick={(e) => e.stopPropagation()}
       >
 <VideoTimeline
