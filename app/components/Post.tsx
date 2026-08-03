@@ -617,9 +617,9 @@ useEffect(() => {
           table: 'comments',
           filter: `post_id=eq.${post.id}`,
         },
-        (payload) => {
-          setComments((prev) => [payload.new, ...prev])
-        }
+(payload: any) => {
+  setComments((prev) => [payload.new, ...prev])
+}
       )
       .subscribe()
 
