@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-
+import AdminAccessButton from "../../components/AdminAccessButton"
 import { supabase } from '../../lib/supabase'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import ProfileSchema from '../../components/ProfileSchema'
@@ -426,6 +426,13 @@ if (!error) {
 
 
   <div className="w-full max-w-7xl mx-auto sm:px-6 lg:px-8">
+
+
+
+<AdminAccessButton
+  userId={profile.id}
+/>
+
 
     <ProfileHero
   profile={profile}

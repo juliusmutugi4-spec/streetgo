@@ -8,49 +8,150 @@ export default function AdminManagement() {
   const [admins, setAdmins] = useState<any[]>([])
 const [users, setUsers] = useState<any[]>([])
 const [selectedUser, setSelectedUser] = useState("")
+const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+const [checking, setChecking] = useState(true)
 const [role, setRole] = useState("driver_admin")
 useEffect(() => {
+async function loadData(){
 
-  async function loadData(){
-
-    const { data: adminData } = await supabase
-      .from('admins')
-      .select('*')
-      .order('created_at', {
-        ascending:false
-      })
-
-    setAdmins(adminData || [])
+  const { data: authData } = await supabase.auth.getUser()
 
 
-    const { data: userData } = await supabase
-      .from('profiles')
-      .select('id, username')
+  if(authData.user){
+
+    const { data: currentAdmin } = await supabase
+      .from("admins")
+      .select("role")
+      .eq("user_id", authData.user.id)
+      .eq("status","active")
+      .maybeSingle()
 
 
-    setUsers(userData || [])
+    if(currentAdmin?.role === "super_admin"){
+      setIsSuperAdmin(true)
+    }
 
   }
+
+
+
+  const { data: adminData } = await supabase
+    .from('admins')
+    .select(`
+      *,
+      profiles:user_id (
+        username
+      )
+    `)
+    .order('created_at', {
+      ascending:false
+    })
+
+
+  setAdmins(adminData || [])
+
+
+
+  const { data: userData } = await supabase
+    .from('profiles')
+    .select('id, username')
+
+
+  setUsers(userData || [])
+
+}
+setChecking(false)
+
+
+
 
 
   loadData()
 
 }, [])
 
+async function removeAdmin(id:number){
+
+  const confirmDelete = confirm(
+    "Remove this admin?"
+  )
+
+  if(!confirmDelete) return
+
+
+  const { error } = await supabase
+    .from("admins")
+    .delete()
+    .eq("admin_id", id)
+
+
+  if(error){
+    console.log(error)
+    alert(error.message)
+    return
+  }
+
+
+  alert("Admin removed")
+
+  window.location.reload()
+
+}
+
+
 
 async function createAdmin(){
 
   if(!selectedUser) return
 
+const { data: existing } = await supabase
+  .from("admins")
+  .select("id")
+  .eq("user_id", selectedUser)
+  .maybeSingle()
 
+
+if(existing){
+  alert("This user is already an admin")
+  return
+}
   const { error } = await supabase
     .from('admins')
     .insert({
       user_id: selectedUser,
       role: role,
       status: 'active',
-      permissions:{
-        all:false
+permissions:
+  role === "driver_admin"
+    ? {
+        manage_drivers: true,
+        manage_videos: false,
+        manage_wallet: false,
+        manage_users: false
+      }
+    : role === "content_admin"
+    ? {
+        manage_drivers: false,
+        manage_videos: true,
+        manage_wallet: false,
+        manage_users: false
+      }
+    : role === "finance_admin"
+    ? {
+        manage_drivers: false,
+        manage_videos: false,
+        manage_wallet: true,
+        manage_users: false
+      }
+    : role === "support_admin"
+    ? {
+        manage_drivers: false,
+        manage_videos: false,
+        manage_wallet: false,
+        manage_users: true
+      }
+    : {
+        all: true
       }
     })
 
@@ -67,6 +168,24 @@ async function createAdmin(){
 
 }
 
+
+
+if(checking){
+  return (
+    <main className="min-h-screen bg-[#09090b] text-white flex items-center justify-center">
+      Checking permissions...
+    </main>
+  )
+}
+
+
+if(!isSuperAdmin){
+  return (
+    <main className="min-h-screen bg-[#09090b] text-white flex items-center justify-center">
+      Access Denied
+    </main>
+  )
+}
 
 
   return (
@@ -165,9 +284,13 @@ async function createAdmin(){
           >
 
             <div>
-              <p>
-                👤 {admin.role}
-              </p>
+<p>
+  👤 {admin.profiles?.username}
+</p>
+
+<p className="text-xs text-zinc-400">
+  {admin.role}
+</p>
 
               <p className="text-xs text-zinc-500">
                 {admin.status}
@@ -175,9 +298,31 @@ async function createAdmin(){
             </div>
 
 
-            <span className="text-xs">
-              #{admin.admin_id}
-            </span>
+<div className="flex items-center gap-3">
+
+
+<span className="text-xs text-zinc-500">
+ #{admin.admin_id}
+</span>
+
+
+<button
+ onClick={()=>removeAdmin(admin.admin_id)}
+ className="
+ text-xs
+ px-3
+ py-1
+ rounded-lg
+ bg-red-500/20
+ text-red-400
+ hover:bg-red-500/30
+ "
+>
+ Remove
+</button>
+
+
+</div>
 
           </div>
         ))}
