@@ -141,8 +141,8 @@ if (data) {
         driver.longitude
       )
     }))
-    .filter(driver => driver.distance <= 5)
-    .sort((a, b) => a.distance - b.distance)
+    .filter((driver: any) => driver.distance <= 5)
+   .sort((a: any, b: any) => a.distance - b.distance)
 console.log("Nearby drivers:", nearby)
 console.log("Count:", nearby.length)
 
@@ -363,7 +363,7 @@ if (!user) return
           table: 'ride_requests'
         },
 
-        async (payload) => {
+        async (payload: any) => {
 
           const ride = payload.new as any
 console.log("Realtime event:", ride)
@@ -463,7 +463,7 @@ loadInitialDriverLocation()
         table: 'driver_locations'
       },
 
-      async (payload) => {
+      async (payload: any) => {
 
         const location = payload.new as any
 
