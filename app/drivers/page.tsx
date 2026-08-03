@@ -56,7 +56,7 @@ export default function DriversPage() {
 
     let total = 0
 
-    trips?.forEach((trip) => {
+   trips?.forEach((trip: any) => {
       total += trip.fare || 0
     })
 
