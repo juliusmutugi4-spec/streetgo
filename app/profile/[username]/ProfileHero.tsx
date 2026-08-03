@@ -7,6 +7,7 @@ import WalletRegistrationModal from "./WalletRegistrationModal"
 import ProfileCover from "./ProfileCover"
 import ProfileHeader from "./ProfileHeader"
 import ProfileActions from "./ProfileActions"
+import AdminAccessButton from "../../components/AdminAccessButton"
 import ProfileStats from "./ProfileStats"
 import ProfileInfo from "./ProfileInfo"
 import ProfileAchievements from "./ProfileAchievements"
@@ -130,7 +131,8 @@ const isOwner = currentUser?.id === profile?.id
     />
   </div>
 
-  <div className="w-[96px] shrink-0">
+<div className="w-[96px] shrink-0">
+
 <ProfileActions
   currentUser={currentUser}
   profile={profile}
@@ -142,12 +144,16 @@ const isOwner = currentUser?.id === profile?.id
   onFollow={onFollow}
   onMessage={onMessage}
   onBecomeDriver={onBecomeDriver}
-
- moneyWalletActive={moneyWalletActive}
-
-onRegisterWallet={() => setShowWalletModal(true)}
+  moneyWalletActive={moneyWalletActive}
+  onRegisterWallet={() => setShowWalletModal(true)}
 />
-  </div>
+
+
+<AdminAccessButton
+  userId={profile.id}
+/>
+
+</div>
 </div>
 <div className="mt-5 grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
 
