@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { registerPushNotifications } from '../lib/pushNotifications'
+import LoginForm from './LoginForm'
+import SignupForm from './SignupForm'
 export default function LoginModal({ onClose, onLogin }: { onClose: () => void, onLogin: () => void }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -14,14 +16,9 @@ export default function LoginModal({ onClose, onLogin }: { onClose: () => void, 
     }
 
     const { error } =
-      await supabase.auth.resetPasswordForEmail(
-        email,
-        {
-          redirectTo:
-            window.location.origin +
-            '/reset-password',
-        }
-      )
+await supabase.auth.resetPasswordForEmail(email, {
+  redirectTo: "https://streetgo.app/reset-password",
+})
 
     if (error) {
       return alert(error.message)
@@ -175,82 +172,32 @@ await registerPushNotifications()
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-slate-800 rounded-xl p-6 w-96">
-        <h2 className="text-2xl font-bold mb-4">{isSignup? 'Sign Up' : 'Login'}</h2>
+   
         
-{isSignup && (
-  <>
-    <input
-      type="text"
-      placeholder="Username"
-      value={username}
-      onChange={(e) =>
-        setUsername(
-          e.target.value
-            .toLowerCase()
-            .replace(/[^a-z0-9_]/g, '')
-        )
-      }
-      maxLength={20}
-      className="
-        w-full
-        bg-slate-700
-        border
-        border-slate-600
-        rounded-xl
-        p-3
-        mb-2
-        text-white
-        focus:outline-none
-        focus:border-cyan-500
-      "
-    />
-
-    <p className="text-xs text-slate-400 mb-3">
-      {username.length}/20 • only letters, numbers and _
-    </p>
-  </>
+{isSignup ? (
+  <SignupForm
+    username={username}
+    email={email}
+    password={password}
+    loading={loading}
+    onUsernameChange={setUsername}
+    onEmailChange={setEmail}
+    onPasswordChange={setPassword}
+    onSignup={handleAuth}
+    onSwitchToLogin={() => setIsSignup(false)}
+  />
+) : (
+  <LoginForm
+    email={email}
+    password={password}
+    loading={loading}
+    onEmailChange={setEmail}
+    onPasswordChange={setPassword}
+    onLogin={handleAuth}
+    onForgotPassword={resetPassword}
+    onSwitchToSignup={() => setIsSignup(true)}
+  />
 )}
-        
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full bg-slate-700 rounded p-3 mb-3 text-white"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full bg-slate-700 rounded p-3 mb-4 text-white"
-        />
-        
-        <button
-          onClick={handleAuth}
-          disabled={loading}
-          className="bg-blue-600 w-full py-3 rounded-lg font-bold disabled:opacity-50"
-        >
-          {loading? 'Loading...' : isSignup? 'Sign Up' : 'Login'}
-        </button>
-
-{!isSignup && (
-  <button
-    onClick={resetPassword}
-    className="mt-3 text-cyan-400 text-sm w-full"
-  >
-    Forgot Password?
-  </button>
-)}
-
-
-        <button 
-          onClick={() => setIsSignup(!isSignup)} 
-          className="mt-3 text-blue-400 text-sm w-full"
-        >
-          {isSignup? 'Have account? Login' : "No account? Sign Up"}
-        </button>
-        
         <button onClick={onClose} className="mt-2 text-gray-400 text-sm w-full">Cancel</button>
       </div>
     </div>

@@ -3,12 +3,48 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
-
+import { useEffect } from 'react'
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
 
   const router = useRouter()
+
+useEffect(() => {
+  const handleRecovery = async () => {
+    const hash = window.location.hash
+
+    if (!hash) return
+
+    const params = new URLSearchParams(hash.substring(1))
+
+    const access_token = params.get("access_token")
+    const refresh_token = params.get("refresh_token")
+
+    if (access_token && refresh_token) {
+      const { error } = await supabase.auth.setSession({
+        access_token,
+        refresh_token,
+      })
+
+      if (error) {
+        console.error(error)
+        alert("Unable to verify reset link.")
+      }
+    }
+  }
+
+  handleRecovery()
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((event) => {
+    console.log("AUTH EVENT:", event)
+  })
+
+  return () => subscription.unsubscribe()
+}, [])
+
 
   const updatePassword = async () => {
     if (password.length < 8) {
