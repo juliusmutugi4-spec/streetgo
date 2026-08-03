@@ -247,11 +247,11 @@ console.log('OTHER USER ID:', otherUserId)
 
 
 const unreadCount = (data || []).filter(
-  (m) =>
+  (m: any) =>
     m.sender_id === otherUserId &&
     m.receiver_id === userId &&
     m.is_read === false
-).length
+)
 
 uniqueUsers.set(otherUserId, {
   userId: otherUserId,
@@ -319,9 +319,9 @@ if (error) {
   return
 }
 
-  const uniqueMessages = Array.from(
+const uniqueMessages = Array.from(
   new Map(
-    (data || []).map((m) => [m.id, m])
+    (data || []).map((m: any) => [m.id, m])
   ).values()
 )
 
@@ -374,16 +374,16 @@ useEffect(() => {
         schema: 'public',
         table: 'chat_messages',
       },
-      (payload) => {
-        console.log('REALTIME EVENT:', payload)
+(payload: any) => {
+  console.log('REALTIME EVENT:', payload)
 console.log('EVENT TYPE:', payload.eventType)
         fetchConversations(user.id)
         fetchUnread(user.id)
       }
     )
-    .subscribe((status) => {
-      console.log('REALTIME STATUS:', status)
-    })
+.subscribe((status: any) => {
+  console.log('REALTIME STATUS:', status)
+})
 
   return () => {
     supabase.removeChannel(channel)
@@ -402,7 +402,7 @@ useEffect(() => {
         schema: 'public',
         table: 'chat_messages',
       },
-(payload) => {
+(payload: any) => {
 
   // Handle delete
   if (payload.eventType === 'DELETE') {
