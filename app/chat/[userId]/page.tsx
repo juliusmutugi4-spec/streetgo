@@ -91,8 +91,8 @@ useEffect(() => {
         schema: 'public',
         table: 'chat_messages',
       },
-      (payload) => {
-        const msg = payload.new as any
+(payload: any) => {
+  const msg = payload.new as any
 
 if (
   msg.sender_id === otherUserId &&
