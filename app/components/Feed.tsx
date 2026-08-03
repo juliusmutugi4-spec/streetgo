@@ -78,7 +78,7 @@ export default function Feed({ user }: { user: any }) {
           schema: 'public',
           table: 'posts',
         },
-        (payload) => {
+       (payload: any) => {
           setPosts((prev) => {
             const exists = prev.find((p) => p.id === payload.new.id)
             if (exists) return prev
