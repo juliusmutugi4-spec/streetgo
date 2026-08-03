@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { supabase } from "../lib/supabase"
+import { getSupabaseBrowser } from "../lib/supabase-browser"
+
 
 interface Props {
   userId: string
 }
+
 
 export default function AdminAccessButton({
   userId
@@ -17,86 +19,158 @@ export default function AdminAccessButton({
 
   useEffect(() => {
 
+    let mounted = true
+
+
     async function checkAdmin(){
 
-      const { data, error } = await supabase
+      if(!userId) return
+
+
+      const supabase = getSupabaseBrowser()
+
+
+      // Get current logged in user
+      const {
+        data: sessionData,
+        error: sessionError
+      } = await supabase.auth.getSession()
+
+
+      if(sessionError){
+
+        console.log("SESSION ERROR:", sessionError)
+        return
+
+      }
+
+
+      const user = sessionData.session?.user
+
+
+      console.log("ADMIN CURRENT USER:", user)
+
+
+
+      if(!user){
+
+        console.log("NO LOGIN SESSION")
+        return
+
+      }
+
+
+
+      // Check admin table
+      const {
+        data: adminData,
+        error: adminError
+
+      } = await supabase
+
         .from("admins")
         .select("role")
-        .eq("user_id", userId)
+        .eq("user_id", user.id)
         .eq("status", "active")
         .maybeSingle()
 
 
-      if(error){
-        console.log(error)
-        return
-      }
+
+      console.log("ADMIN RESULT:", adminData)
+      console.log("ADMIN ERROR:", adminError)
 
 
-      if(data){
-        setRole(data.role)
+
+      if(adminData && mounted){
+
+        setRole(adminData.role)
+
       }
+
 
     }
+
 
 
     checkAdmin()
 
+
+
+    return () => {
+
+      mounted = false
+
+    }
+
+
   }, [userId])
 
 
+
+
   if(!role){
+
     return null
+
   }
+
+
 
 
   const adminLinks:any = {
 
-    super_admin: {
-      url: "/admin/control-center",
-      text: "Control Center 👑"
+    super_admin:{
+      url:"/admin/control-center",
+      text:"Control Center 👑"
     },
 
-    driver_admin: {
-      url: "/admin/drivers",
-      text: "Driver Operations 🚗"
+
+    driver_admin:{
+      url:"/admin/drivers",
+      text:"Driver Operations 🚗"
     },
 
-    content_admin: {
-      url: "/admin/videos",
-      text: "Content Studio 🎬"
+
+    content_admin:{
+      url:"/admin/videos",
+      text:"Content Studio 🎬"
     },
 
-    finance_admin: {
-      url: "/admin/wallet",
-      text: "Finance Center 💰"
+
+    finance_admin:{
+      url:"/admin/wallet",
+      text:"Finance Center 💰"
     }
 
   }
+
 
 
   const admin = adminLinks[role]
 
 
+
   return (
 
     <Link
+
       href={admin?.url || "/admin"}
+
       className="
       inline-flex
       items-center
-      gap-2
-      mt-3
-      px-4
-      py-2
-      rounded-xl
-      bg-yellow-500
-      text-black
-      font-bold
-      text-sm
-      hover:bg-yellow-400
+      gap-1.5
+      rounded-md
+      bg-neutral-900
+      px-2
+      py-1
+      text-xs
+      font-medium
+      text-white
       transition
+      hover:bg-neutral-800
       "
+
     >
 
       👑 {admin?.text || "Admin Panel"}
@@ -104,4 +178,5 @@ export default function AdminAccessButton({
     </Link>
 
   )
+
 }

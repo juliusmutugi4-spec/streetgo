@@ -1,13 +1,19 @@
 import { useEffect, useState } from "react"
-import { supabase } from "../lib/supabase"
+import { getSupabaseBrowser } from "../lib/supabase-browser"
+
 
 export function useAuth() {
+
+  const supabase = getSupabaseBrowser()
+
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [unreadCount, setUnreadCount] = useState(0)
 
+
   const fetchUnreadMessages = async (userId: string) => {
-    const { count } = await supabase
+
+    const { count, error } = await supabase
       .from("chat_messages")
       .select("*", {
         count: "exact",
@@ -15,22 +21,19 @@ export function useAuth() {
       })
       .eq("receiver_id", userId)
 
+
+    if(error){
+      console.log("Unread messages error:", error)
+    }
+
     setUnreadCount(count || 0)
   }
 
-  const checkUser = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
 
-    setUser(session?.user ?? null)
 
-    if (!session?.user) {
-      setProfile(null)
-      return
-    }
+  const loadProfile = async (userId: string) => {
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select(`
         username,
@@ -39,65 +42,127 @@ export function useAuth() {
         predictions_correct,
         predictions_wrong
       `)
-      .eq("id", session.user.id)
-      .single()
+      .eq("id", userId)
+      .maybeSingle()
+
+
+    if(error){
+      console.log("Profile load error:", error)
+    }
+
 
     setProfile(data)
 
-    await fetchUnreadMessages(session.user.id)
+    await fetchUnreadMessages(userId)
+
   }
 
+
+
+  const checkUser = async () => {
+
+    const {
+      data:{
+        session
+      }
+    } = await supabase.auth.getSession()
+
+
+    const currentUser = session?.user ?? null
+
+    setUser(currentUser)
+
+
+    if(!currentUser){
+
+      setProfile(null)
+      setUnreadCount(0)
+
+      return
+    }
+
+
+    await loadProfile(currentUser.id)
+
+  }
+
+
+
   const handleLogout = async () => {
-    await supabase.auth.signOut()
+
+    const { error } = await supabase.auth.signOut()
+
+
+    if(error){
+      console.log("Logout error:", error)
+    }
+
+
     setUser(null)
     setProfile(null)
     setUnreadCount(0)
+
   }
 
-useEffect(() => {
-  checkUser()
 
-  const { data: sub } = supabase.auth.onAuthStateChange(
-    async (_event, session) => {
-      setUser(session?.user ?? null)
 
-      if (!session?.user) {
-        setProfile(null)
-        setUnreadCount(0)
-        return
+
+  useEffect(()=>{
+
+
+    checkUser()
+
+
+ const {
+  data:{
+    subscription
+  }
+} = supabase.auth.onAuthStateChange(
+  (_event: string, session: any)=>{
+
+
+        const currentUser = session?.user ?? null
+
+
+        setUser(currentUser)
+
+
+        if(!currentUser){
+
+          setProfile(null)
+          setUnreadCount(0)
+
+          return
+        }
+
+
+        loadProfile(currentUser.id)
+
       }
+    )
 
-      const { data } = await supabase
-        .from("profiles")
-        .select(`
-          username,
-          avatar_url,
-          reputation,
-          predictions_correct,
-          predictions_wrong
-        `)
-        .eq("id", session.user.id)
-        .single()
 
-      setProfile(data)
 
-      await fetchUnreadMessages(session.user.id)
+    return ()=>{
+
+      subscription.unsubscribe()
+
     }
-  )
 
-  return () => {
-    sub.subscription.unsubscribe()
+
+  },[])
+
+
+
+  return {
+
+    user,
+    profile,
+    unreadCount,
+
+    checkUser,
+    handleLogout
+
   }
-}, [])
 
-
-
- return {
-  user,
-  profile,
-  unreadCount,
-
-  checkUser,
-  handleLogout,
-}
 }

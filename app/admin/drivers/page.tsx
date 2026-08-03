@@ -45,9 +45,9 @@ console.log("=============================")
 
 if (!error && data) {
 
-  const driversWithUrls = await Promise.all(
+const driversWithUrls = await Promise.all(
 
-    data.map(async (driver) => {
+  data.map(async (driver: any) => {
 
       const { data: license } = await supabase.storage
         .from('driver-license')
@@ -67,10 +67,10 @@ const { data: vehicle } = await supabase.storage
 
 return {
   ...driver,
-  license_url: license?.signedUrl || '',
-  id_front_url: front?.signedUrl || '',
-  id_back_url: back?.signedUrl || '',
-  vehicle_photo_url: vehicle?.signedUrl || ''
+  license_url: license?.signedUrl || null,
+  id_front_url: front?.signedUrl || null,
+  id_back_url: back?.signedUrl || null,
+  vehicle_photo_url: vehicle?.signedUrl || null
 }
     })
 
@@ -391,145 +391,182 @@ setProcessingId(null)
 
   <div className="grid grid-cols-2 gap-4">
 
-<a
-  href={driver.license_url}
-  target="_blank"
-  className="
-    block
-    bg-zinc-800
-    border
-    border-zinc-700
-    rounded-2xl
-    overflow-hidden
-    hover:border-cyan-500
-    transition-all
-    duration-300
-    hover:scale-[1.02]
-  "
->
-
-  <img
-    src={driver.license_url}
-    alt="Driving License"
+{driver.license_url ? (
+  <a
+    href={driver.license_url}
+    target="_blank"
+    rel="noopener noreferrer"
     className="
-      w-full
-      h-40
-      object-cover
+      block
+      bg-zinc-800
+      border
+      border-zinc-700
+      rounded-2xl
+      overflow-hidden
+      hover:border-cyan-500
+      transition-all
+      duration-300
+      hover:scale-[1.02]
     "
-  />
+  >
 
-  <div className="p-4">
+    <img
+      src={driver.license_url}
+      alt="Driving License"
+      className="
+        w-full
+        h-40
+        object-cover
+      "
+    />
 
-    <p className="font-bold">
-      🪪 Driving License
-    </p>
+    <div className="p-4">
 
-    <p className="text-cyan-400 text-sm mt-1">
-      Click to view full image
-    </p>
+      <p className="font-bold">
+        🪪 Driving License
+      </p>
 
+      <p className="text-cyan-400 text-sm mt-1">
+        Click to view full image
+      </p>
+
+    </div>
+
+  </a>
+
+) : (
+
+  <div
+    className="
+      bg-zinc-800
+      border
+      border-zinc-700
+      rounded-2xl
+      p-4
+      text-zinc-500
+    "
+  >
+    🪪 No Driving License Uploaded
   </div>
 
-</a>
-
+)}
 {/* ID Front */}
+{driver.id_front_url ? (
+  <a
+    href={driver.id_front_url}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="
+      block
+      bg-zinc-800
+      border
+      border-zinc-700
+      rounded-2xl
+      overflow-hidden
+      hover:border-cyan-500
+      transition-all
+    "
+  >
 
-<a
-  href={driver.id_front_url}
-  target="_blank"
-  className="
-    block
-    bg-zinc-800
-    border
-    border-zinc-700
-    rounded-2xl
-    overflow-hidden
-    hover:border-cyan-500
-    transition-all
-  "
->
+    <img
+      src={driver.id_front_url}
+      className="w-full h-40 object-cover"
+      alt="ID Front"
+    />
 
-  <img
-    src={driver.id_front_url}
-    className="w-full h-40 object-cover"
-    alt="ID Front"
-  />
+    <div className="p-4">
+      <p className="font-bold">
+        🆔 ID Front
+      </p>
+    </div>
 
-  <div className="p-4">
+  </a>
 
-    <p className="font-bold">
-      🆔 ID Front
-    </p>
+) : (
 
+  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-zinc-500">
+    🆔 No ID Front Uploaded
   </div>
 
-</a>
+)}
 
-{/* ID Back */}
+{driver.id_back_url ? (
+  <a
+    href={driver.id_back_url}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="
+      block
+      bg-zinc-800
+      border
+      border-zinc-700
+      rounded-2xl
+      overflow-hidden
+      hover:border-cyan-500
+      transition-all
+    "
+  >
 
-<a
-  href={driver.id_back_url}
-  target="_blank"
-  className="
-    block
-    bg-zinc-800
-    border
-    border-zinc-700
-    rounded-2xl
-    overflow-hidden
-    hover:border-cyan-500
-    transition-all
-  "
->
+    <img
+      src={driver.id_back_url}
+      className="w-full h-40 object-cover"
+      alt="ID Back"
+    />
 
-  <img
-    src={driver.id_back_url}
-    className="w-full h-40 object-cover"
-    alt="ID Back"
-  />
+    <div className="p-4">
+      <p className="font-bold">
+        🆔 ID Back
+      </p>
+    </div>
 
-  <div className="p-4">
+  </a>
 
-    <p className="font-bold">
-      🆔 ID Back
-    </p>
+) : (
 
+  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-zinc-500">
+    🆔 No ID Back Uploaded
   </div>
 
-</a>
-
+)}
 {/* Vehicle */}
+{driver.vehicle_photo_url ? (
+  <a
+    href={driver.vehicle_photo_url}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="
+      block
+      bg-zinc-800
+      border
+      border-zinc-700
+      rounded-2xl
+      overflow-hidden
+      hover:border-cyan-500
+      transition-all
+    "
+  >
 
-<a
-  href={driver.vehicle_photo_url}
-  target="_blank"
-  className="
-    block
-    bg-zinc-800
-    border
-    border-zinc-700
-    rounded-2xl
-    overflow-hidden
-    hover:border-cyan-500
-    transition-all
-  "
->
+    <img
+      src={driver.vehicle_photo_url}
+      className="w-full h-40 object-cover"
+      alt="Vehicle"
+    />
 
-  <img
-    src={driver.vehicle_photo_url}
-    className="w-full h-40 object-cover"
-    alt="Vehicle"
-  />
+    <div className="p-4">
+      <p className="font-bold">
+        🏍️ Vehicle Photo
+      </p>
+    </div>
 
-  <div className="p-4">
+  </a>
 
-    <p className="font-bold">
-      🏍️ Vehicle Photo
-    </p>
+) : (
 
+  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-zinc-500">
+    🏍️ No Vehicle Photo Uploaded
   </div>
 
-</a>
+)}
 
   </div>
 

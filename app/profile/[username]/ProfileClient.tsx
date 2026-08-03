@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import AdminAccessButton from "../../components/AdminAccessButton"
+import { getCurrentUser } from "@/app/lib/currentUser"
 import { supabase } from '../../lib/supabase'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import ProfileSchema from '../../components/ProfileSchema'
@@ -105,11 +105,12 @@ const loadProfile = async () => {
     setLoading(true)
   }
 
-  // Get current session
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  setCurrentUser(session?.user ?? null)
+// Load logged in account
+const loggedUser = await getCurrentUser()
+
+console.log("CURRENT ACCOUNT:", loggedUser)
+
+setCurrentUser(loggedUser)
 
   const searchUsername = username.trim().toLowerCase()
 
@@ -135,6 +136,14 @@ const loadProfile = async () => {
   // Set profile data in state
 setProfile(profileData)
 
+console.log("PROFILE OWNER CHECK")
+console.log("Logged user:", loggedUser?.id)
+console.log("Profile id:", profileData.id)
+console.log(
+  "IS OWNER:",
+  loggedUser?.id === profileData.id
+)
+
 const { data: walletData, error: walletError } = await supabase
   .from("wallets")
   .select("*")
@@ -142,10 +151,10 @@ const { data: walletData, error: walletError } = await supabase
   .maybeSingle()
 
 if (walletError) {
-  console.error("Wallet load error:", walletError)
+  console.log("No wallet yet:", walletError.message)
 }
 
-setWallet(walletData)
+setWallet(walletData || null)
 
 
 setCachedProfile(profileData.username.toLowerCase(), {
@@ -194,11 +203,11 @@ setFollowingCount(followingResult.count || 0)
 setFollowers(followersListResult.data || [])
 
 
-if (session?.user) {
+if (loggedUser) {
   const { data: followRows } = await supabase
     .from('followers')
     .select('id')
-    .eq('follower_id', session.user.id)
+    .eq('follower_id', loggedUser.id)
     .eq('following_id', profileData.id)
 
   setIsFollowing((followRows?.length || 0) > 0)
@@ -321,11 +330,11 @@ const refreshWallet = async () => {
 
   if (!user) return
 
-  const { data, error } = await supabase
-    .from("wallets")
-    .select("*")
-    .eq("user_id", user.id)
-    .single()
+const { data, error } = await supabase
+  .from("wallets")
+  .select("*")
+  .eq("user_id", user.id)
+  .maybeSingle()
 
   if (error) {
     console.error("Wallet refresh error:", error)
@@ -371,6 +380,14 @@ const loadPredictions = async () => {
 
 
 const toggleFollow = async () => {
+
+  if (!currentUser || !profile) return
+
+
+  if(currentUser.id === profile.id){
+    console.log("Cannot follow yourself")
+    return
+  }
   if (!currentUser || !profile) return
 
   if (isFollowing) {
@@ -418,6 +435,9 @@ if (!error) {
     setFollowersCount((prev) => prev + 1)
   }
 }
+const isOwner =
+  currentUser?.id === profile?.id
+
 
   return (
 
@@ -429,9 +449,6 @@ if (!error) {
 
 
 
-<AdminAccessButton
-  userId={profile.id}
-/>
 
 
     <ProfileHero

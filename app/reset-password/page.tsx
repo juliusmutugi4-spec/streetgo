@@ -10,67 +10,137 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  
+  const [recoveryReady, setRecoveryReady] = useState(false)
   const router = useRouter()
+useEffect(() => {
 
-  useEffect(() => {
-    const handleRecovery = async () => {
-      const hash = window.location.hash
-      if (!hash) return
+  async function handleRecovery(){
 
-      const params = new URLSearchParams(hash.substring(1))
-      const access_token = params.get("access_token")
-      const refresh_token = params.get("refresh_token")
+    const code =
+      new URLSearchParams(
+        window.location.search
+      ).get("code")
 
-      if (access_token && refresh_token) {
-        const { error } = await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        })
 
-        if (error) {
-          setErrorMsg("The reset link is invalid or has expired.")
-        }
-      }
+    if(!code){
+
+      setErrorMsg("Missing recovery code")
+      return
+
     }
 
-    handleRecovery()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      console.log("AUTH EVENT:", event)
-    })
+    const {
+      data,
+      error
+    } = await supabase.auth.exchangeCodeForSession(
+      code
+    )
 
-    return () => subscription.unsubscribe()
-  }, [])
 
-  const updatePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrorMsg('')
+    if(error){
 
-    if (password.length < 8) {
-      return setErrorMsg('Password must be at least 8 characters long.')
+      console.log(
+        "RECOVERY ERROR",
+        error
+      )
+
+      setErrorMsg(
+        "Reset link expired. Request a new one."
+      )
+
+      return
     }
 
-    if (password !== confirmPassword) {
-      return setErrorMsg('Passwords do not match.')
+
+    if(data.session){
+
+      console.log(
+        "RECOVERY READY",
+        data.session.user.email
+      )
+
+      setRecoveryReady(true)
+
     }
 
-    setLoading(true)
 
-    const { error } = await supabase.auth.updateUser({
-      password,
-    })
-
-    setLoading(false)
-
-    if (error) {
-      return setErrorMsg(error.message)
-    }
-
-    setSuccess(true)
-    setPassword('')
-    setConfirmPassword('')
   }
+
+
+  handleRecovery()
+
+
+},[])
+const updatePassword = async (
+  e: React.FormEvent
+) => {
+
+  e.preventDefault()
+
+  setErrorMsg("")
+
+
+  if(password.length < 8){
+    setErrorMsg(
+      "Password must be at least 8 characters long."
+    )
+    return
+  }
+
+
+  if(password !== confirmPassword){
+
+    setErrorMsg(
+      "Passwords do not match."
+    )
+
+    return
+  }
+
+
+  setLoading(true)
+
+if(!recoveryReady){
+
+ setErrorMsg(
+ "Please wait while we verify your reset link."
+ )
+
+ return
+
+}
+
+
+  const {
+    error
+  } = await supabase.auth.updateUser({
+    password
+  })
+
+
+
+  setLoading(false)
+
+
+
+  if(error){
+
+    setErrorMsg(
+      error.message
+    )
+
+    return
+  }
+
+
+
+  setSuccess(true)
+
+  setPassword("")
+  setConfirmPassword("")
+
+}
 
   // Success State View
   if (success) {
@@ -163,7 +233,7 @@ export default function ResetPasswordPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || !recoveryReady}
             className="w-full bg-zinc-50 hover:bg-zinc-200 disabled:opacity-50 disabled:hover:bg-zinc-50 text-zinc-900 transition-all py-2.5 px-4 rounded-xl font-medium text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-zinc-400 focus:ring-offset-2 focus:ring-offset-zinc-900 mt-2 flex justify-center items-center gap-2"
           >
             {loading && (

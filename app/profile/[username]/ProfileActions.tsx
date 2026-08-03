@@ -24,8 +24,9 @@ interface Props {
   refreshWallet: () => Promise<void>
   editing: boolean
   setEditing: React.Dispatch<React.SetStateAction<boolean>>
-  isFollowing: boolean
-  onFollow: () => void
+isFollowing: boolean
+isOwner: boolean
+onFollow: () => void
   onMessage: () => void
   onBecomeDriver: () => void
 
@@ -78,14 +79,15 @@ export default function ProfileActions({
   refreshWallet,
   editing,
   setEditing,
-  isFollowing,
-  onFollow,
+isFollowing,
+isOwner,
+onFollow,
   onMessage,
   onBecomeDriver,
 moneyWalletActive,
 onRegisterWallet,
 }: Props) {
-  const isOwnProfile = currentUser?.id === profile?.id
+  const isOwnProfile = isOwner
 const [expanded, setExpanded] = useState(false)
 const [showWalletSettings, setShowWalletSettings] = useState(false)
 

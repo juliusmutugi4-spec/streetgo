@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '../lib/supabase'
+import { getSupabaseBrowser } from '../lib/supabase-browser'
 import DashboardCards from './components/DashboardCards'
 import QuickActions from './components/QuickActions'
 import RecentActivity from './components/RecentActivity'
@@ -10,7 +10,7 @@ import SystemHealth from './components/SystemHealth'
 import LatestDrivers from './components/LatestDrivers'
 import AnalyticsCharts from './components/AnalyticsCharts'
 import { checkAdmin } from '../lib/isAdmin'
-import { redirect } from 'next/navigation'
+
 import { useRouter } from 'next/navigation'
 interface ActivityItem {
   username: string
@@ -18,6 +18,8 @@ interface ActivityItem {
 }
 
 export default function AdminDashboard() {
+
+  const supabase = getSupabaseBrowser()
   const router = useRouter()
   const [stats, setStats] = useState({ users: 0, videos: 0, drivers: 0 })
   const [activities, setActivities] = useState<ActivityItem[]>([])
@@ -38,10 +40,10 @@ useEffect(() => {
 
     const admin = await checkAdmin(data.user.id)
 
-    if (!admin) {
-      redirect('/')
-      return
-    }
+if (!admin) {
+  router.push('/')
+  return
+}
 
     setAuthorized(true)
   }

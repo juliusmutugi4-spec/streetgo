@@ -139,6 +139,7 @@ const isOwner = currentUser?.id === profile?.id
   wallet={wallet}
   refreshWallet={refreshWallet}
   editing={editing}
+  isOwner={isOwner}
   setEditing={setEditing}
   isFollowing={isFollowing}
   onFollow={onFollow}
@@ -148,10 +149,11 @@ const isOwner = currentUser?.id === profile?.id
   onRegisterWallet={() => setShowWalletModal(true)}
 />
 
-
-<AdminAccessButton
-  userId={profile.id}
-/>
+{isOwner && (
+  <AdminAccessButton
+    userId={currentUser?.id}
+  />
+)}
 
 </div>
 </div>

@@ -136,7 +136,11 @@ useEffect(() => {
       if (!isMounted) return;
 
       setLoadingProgress(80);
-      await registerPushNotifications();
+      try {
+  await registerPushNotifications();
+} catch(err) {
+  console.log("Push skipped", err)
+}
       if (!isMounted) return;
 
       setLoadingProgress(100);
@@ -156,7 +160,6 @@ useEffect(() => {
   };
 
 if (
-  user &&
   sessionStorage.getItem("streetgo_splash") !== "done"
 ) {
   initializeApp();

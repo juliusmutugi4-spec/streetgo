@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { getSupabaseBrowser } from '../../lib/supabase-browser'
 
 export default function AdminManagement() {
-
+const supabase = getSupabaseBrowser()
   const [admins, setAdmins] = useState<any[]>([])
 const [users, setUsers] = useState<any[]>([])
 const [selectedUser, setSelectedUser] = useState("")

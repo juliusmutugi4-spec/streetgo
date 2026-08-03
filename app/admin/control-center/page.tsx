@@ -1,8 +1,22 @@
-'use client'
+
 
 import Link from 'next/link'
+import { getAdminRole } from "../../lib/adminGuard"
+export default async function ControlCenter(){
 
-export default function ControlCenter() {
+const admin = await getAdminRole()
+
+
+if(!admin){
+
+return (
+<div className="min-h-screen bg-black text-white flex items-center justify-center">
+Access Denied
+</div>
+)
+
+}
+
 
   return (
     <main className="min-h-screen bg-[#09090b] text-white p-8">
@@ -16,7 +30,7 @@ export default function ControlCenter() {
       </p>
 
 
-      <div className="grid md:grid-cols-3 gap-5 mt-8">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-5 mt-8">
 
 
         <Link
@@ -59,6 +73,9 @@ export default function ControlCenter() {
             🎬 Content
           </h2>
 
+
+
+
           <p className="text-sm text-zinc-400 mt-2">
             Manage videos and uploads.
           </p>
@@ -66,7 +83,40 @@ export default function ControlCenter() {
         </Link>
 
 
+
+<Link
+  href="/admin/wallet"
+  className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:bg-zinc-800"
+>
+  <h2 className="font-semibold">
+    💰 Finance
+  </h2>
+
+  <p className="text-sm text-zinc-400 mt-2">
+    Manage wallets, payments and transactions.
+  </p>
+
+</Link>
+
+
+<Link
+  href="/admin/users"
+  className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:bg-zinc-800"
+>
+  <h2 className="font-semibold">
+    👥 Users
+  </h2>
+
+  <p className="text-sm text-zinc-400 mt-2">
+    Manage users, verification and security.
+  </p>
+
+</Link>
+
       </div>
+
+
+
 
     </main>
   )
