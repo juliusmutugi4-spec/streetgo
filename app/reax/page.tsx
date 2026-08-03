@@ -54,8 +54,7 @@ const [walletRes, transRes] = await Promise.all([
         let txLifetime = 0
         let txToday = 0
         const todayStr = new Date().toISOString().slice(0, 10)
-
-        transRes.data.forEach(item => {
+transRes.data.forEach((item: any) => {
           const amt = Number(item.amount) || 0
           txLifetime += amt
           if (item.created_at?.startsWith(todayStr)) {
