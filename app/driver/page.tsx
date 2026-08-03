@@ -228,8 +228,8 @@ useEffect(() => {
         schema: 'public',
         table: 'drivers'
       },
-      (payload) => {
-        const driver = payload.new as any
+(payload: any) => {
+  const driver = payload.new as any
 
         if (driver.id === driverId) {
           setDriverStatus(driver.status)
@@ -277,7 +277,7 @@ useEffect(() => {
     schema: "public",
     table: "ride_requests",
   },
-  (payload) => {
+  (payload: any) => {
 
     const ride = payload.new as any
 
@@ -313,7 +313,7 @@ useEffect(() => {
         schema: 'public',
         table: 'ride_requests'
       },
-      async (payload) => {
+      async (payload: any) => {
         const ride = payload.new as any
 
 if (ride.status !== "searching") return
