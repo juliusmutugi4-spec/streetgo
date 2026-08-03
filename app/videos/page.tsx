@@ -43,7 +43,7 @@ setTrendingVideos(trending || [])
 
 
 const featuredMovie =
-  data?.find((v) => v.featured)
+data?.find((v: any) => v.featured)
 
 setFeatured(featuredMovie)
   setLoading(false)
