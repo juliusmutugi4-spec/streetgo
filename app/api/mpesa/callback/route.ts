@@ -118,13 +118,16 @@ if (!wallet) {
     const newBalance =
       Number(wallet.balance || 0) + Number(amount);
 
-const { error: updateError } = await supabase
+const { data: updatedWallet, error: updateError } = await supabase
   .from("wallets")
   .update({
     balance: newBalance,
   })
-  .eq("id", wallet.id);
+  .eq("id", wallet.id)
+  .select()
+  .single();
 
+console.log("UPDATED WALLET:", updatedWallet);
 console.log("Wallet update error:", updateError);
 
     if (updateError) {
