@@ -6,8 +6,6 @@ console.log(
   !!process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-
-
 console.log(
   "SUPABASE URL:",
   process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -17,17 +15,19 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+
 export async function POST(req: Request) {
   try {
-const text = await req.text();
+    const text = await req.text();
 
-console.log("========== CALLBACK RECEIVED ==========");
-console.log(text);
+    console.log("========== CALLBACK RECEIVED ==========");
+    console.log(text);
 
-const body = text ? JSON.parse(text) : {};
+    const body = text ? JSON.parse(text) : {};
 
     const callback = body.Body?.stkCallback;
 
+    // Safaricom verification callback
     if (!callback) {
       return NextResponse.json({
         ResultCode: 0,
@@ -35,133 +35,67 @@ const body = text ? JSON.parse(text) : {};
       });
     }
 
+    // Payment failed
     if (callback.ResultCode !== 0) {
       console.log("Payment failed.");
+
       return NextResponse.json({
         ResultCode: 0,
         ResultDesc: "Success",
       });
     }
 
-    const items =
-  callback.CallbackMetadata?.Item || [];
+    const items = callback.CallbackMetadata?.Item || [];
 
-    const amount =
-      items.find((i: any) => i.Name === "Amount")?.Value;
+    const amount = Number(
+      items.find((i: any) => i.Name === "Amount")?.Value || 0
+    );
 
-const receipt =
-  items.find((i: any) => i.Name === "MpesaReceiptNumber")?.Value;
+    const receipt =
+      items.find((i: any) => i.Name === "MpesaReceiptNumber")?.Value || "";
 
-// =======================================
-// CHECK IF THIS PAYMENT WAS ALREADY PROCESSED
-// =======================================
+    const rawPhone = String(
+      items.find((i: any) => i.Name === "PhoneNumber")?.Value || ""
+    );
 
-const { data: existingTransaction } = await supabase
-  .from("transactions")
-  .select("id")
-  .eq("reference", receipt)
-  .maybeSingle();
+    const phone = rawPhone.startsWith("254")
+      ? "0" + rawPhone.slice(3)
+      : rawPhone;
 
-if (existingTransaction) {
-  console.log("Duplicate callback ignored:", receipt);
-
-  return NextResponse.json({
-    ResultCode: 0,
-    ResultDesc: "Already processed",
-  });
-}
-
-const rawPhone = String(
-  items.find((i: any) => i.Name === "PhoneNumber")?.Value
-);
-
-const phone = rawPhone.startsWith("254")
-  ? "0" + rawPhone.slice(3)
-  : rawPhone;
-
-console.log("RAW PHONE:", rawPhone);
-console.log("FORMATTED PHONE:", phone);
-
+    console.log("============== PAYMENT ==============");
     console.log({
       amount,
       receipt,
+      rawPhone,
       phone,
     });
 
-    // Find wallet
-console.log("Looking for wallet phone:", phone);
+    // ====================================================
+    // Process Deposit (Atomic PostgreSQL Transaction)
+    // ====================================================
 
-const { data: wallet, error: walletError } = await supabase
-  .from("wallets")
-  .select("*")
-  .eq("phone", phone)
-  .single();
+    const { error } = await supabase.rpc(
+      "process_wallet_deposit",
+      {
+        p_phone: phone,
+        p_amount: amount,
+        p_reference: receipt,
+      }
+    );
 
-console.log("Wallet found:", wallet);
-console.log("Wallet error:", walletError);
-
-console.log("Wallet query result:", wallet);
-console.log("Wallet query error:", walletError);
-if (walletError) {
-  console.error("Wallet query failed:", walletError);
-}
-
-if (!wallet) {
-  console.error("No wallet found for phone:", phone);
-
-  return NextResponse.json({
-    ResultCode: 0,
-    ResultDesc: "Success",
-  });
-}
-    // Update balance
-    const newBalance =
-      Number(wallet.balance || 0) + Number(amount);
-
-const { data: updatedWallet, error: updateError } = await supabase
-  .from("wallets")
-  .update({
-    balance: newBalance,
-  })
-  .eq("id", wallet.id)
-  .select()
-  .single();
-
-console.log("UPDATED WALLET:", updatedWallet);
-console.log("Wallet update error:", updateError);
-
-    if (updateError) {
-      console.error(updateError);
+    if (error) {
+      console.error("RPC ERROR:", error);
+    } else {
+      console.log("Deposit processed successfully.");
     }
-
-    // Save transaction
-// Save transaction
-const { data: transaction, error: transactionError } = await supabase
-  .from("transactions")
-  .insert({
-    user_id: wallet.user_id,
-    wallet_id: wallet.id,
-    type: "deposit",
-    category: "wallet_funding",
-    amount: Number(amount),
-    status: "completed",
-    payment_method: "mpesa",
-    reference: receipt,
-    description: "M-Pesa wallet deposit"
-  })
-  .select();
-
-console.log("TRANSACTION:", transaction);
-console.log("TRANSACTION ERROR:", transactionError);
-
-console.log("Wallet credited successfully.");
 
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: "Success",
     });
+
   } catch (err) {
-    console.error(err);
+    console.error("CALLBACK ERROR:", err);
 
     return NextResponse.json({
       ResultCode: 0,
