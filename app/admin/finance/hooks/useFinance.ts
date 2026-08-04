@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
+import type { RealtimePostgresChangesPayload, RealtimeChannel } from "@supabase/supabase-js"
 
 
 export default function useFinance(
@@ -38,6 +39,10 @@ useState(true)
 
 
 useEffect(()=>{
+
+console.log("🔥 useFinance effect started");
+console.log("AUTHORIZED =", authorized);
+
 
 if(!authorized)
 return
@@ -194,9 +199,15 @@ setLoading(false)
 
 
 loadFinance()
-
 const channel = supabase
   .channel("finance-transactions")
+  .on(
+    "system",
+    {},
+    (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+      console.log("SYSTEM EVENT:", payload);
+    }
+  )
   .on(
     "postgres_changes",
     {
@@ -204,12 +215,14 @@ const channel = supabase
       schema: "public",
       table: "transactions",
     },
-    async () => {
-      console.log("📢 Finance transaction changed");
-      await loadFinance();
+    (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+      console.log("📢 TRANSACTION CHANGED:", payload);
+      loadFinance();
     }
   )
-  .subscribe();
+  .subscribe((status: RealtimeChannel["state"]) => {
+    console.log("REALTIME STATUS:", status);
+  });
 
 return () => {
   cancelled = true;

@@ -1,5 +1,5 @@
 'use client'
-
+import useWalletRealtime from "@/app/hooks/useWalletRealtime"
 import { useEffect, useState } from 'react'
 import { getCurrentUser } from "@/app/lib/currentUser"
 import { supabase } from '../../lib/supabase'
@@ -23,6 +23,11 @@ export default function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
 const [profile, setProfile] = useState<any>(null)
 const [wallet, setWallet] = useState<any>(null)
+useWalletRealtime({
+  userId: profile?.id,
+  setWallet,
+})
+
 const [posts, setPosts] = useState<any[]>([])
 const [predictions, setPredictions] = useState<any[]>([])
 const [currentUser, setCurrentUser] = useState<any>(null)
