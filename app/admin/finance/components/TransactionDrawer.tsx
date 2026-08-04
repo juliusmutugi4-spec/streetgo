@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import Detail from "./Detail";
-
-// 1. Define explicit types for data structures and event callbacks
+import TransactionTimeline from "./TransactionTimeline";
 export interface TransactionProfile {
   username?: string | null;
 }
@@ -15,17 +14,20 @@ export interface TransactionData {
   category: string;
   payment_method: string;
   reference: string;
-  status: 'SUCCESS' | 'PENDING' | 'FAILED' | string;
+  status: string;
+  description?: string | null;
+  created_at?: string;
   wallet_id?: string | null;
+  user_id?: string | null;
   profiles?: TransactionProfile | null;
 }
 
 interface TransactionDrawerProps {
   transaction: TransactionData | null | undefined;
   onClose: () => void;
-  onCopy: (reference: string) => void; // Enhanced: passes reference directly to callback
-  onViewWallet: (walletId: string) => void; // Enhanced: passes wallet ID directly
-  onFreezeWallet: (walletId: string) => void; // Enhanced: passes wallet ID directly
+  onCopy: (reference: string) => void;
+  onViewWallet: (walletId: string) => void;
+  onFreezeWallet: (walletId: string) => void;
 }
 
 export default function TransactionDrawer({
@@ -37,7 +39,7 @@ export default function TransactionDrawer({
 }: TransactionDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  // 2. Production UX: Handle closing drawer via Escape key
+  // Close on Escape & Lock Body Scroll
   useEffect(() => {
     if (!transaction) return;
 
@@ -46,7 +48,6 @@ export default function TransactionDrawer({
     };
 
     document.addEventListener('keydown', handleKeyDown);
-    // Prevent background scrolling while the drawer is active
     document.body.style.overflow = 'hidden';
 
     return () => {
@@ -55,35 +56,63 @@ export default function TransactionDrawer({
     };
   }, [transaction, onClose]);
 
-  // 3. Production UX: Close drawer when clicking outside the container
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (drawerRef.current && !drawerRef.current.contains(e.target as Node)) {
       onClose();
     }
   };
 
+  // Performance-optimized layout & values calculation
+  const formattedAmount = useMemo(() => {
+    if (!transaction) return 'KSh 0';
+    const num = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
+    return isNaN(num) ? 'KSh 0' : `KSh ${num.toLocaleString('en-KE')}`;
+  }, [transaction]);
+
+  const statusBadge = useMemo(() => {
+    if (!transaction) return null;
+    const norm = transaction.status.toUpperCase();
+    
+    if (norm.includes('SUCC') || norm === 'COMPLETED') {
+      return <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold tracking-wider rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Success</span>;
+    }
+    if (norm.includes('PEND') || norm === 'PROCESSING') {
+      return <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold tracking-wider rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 uppercase">Pending</span>;
+    }
+    return <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] font-semibold tracking-wider rounded bg-red-500/10 text-red-400 border border-red-500/20 uppercase">Failed</span>;
+  }, [transaction]);
+
+  const detailsList = useMemo(() => {
+    if (!transaction) return [];
+    return [
+      { label: 'Status', value: statusBadge },
+      { label: 'Amount', value: formattedAmount },
+      { label: 'Transaction Type', value: transaction.type },
+      { label: 'Category', value: transaction.category },
+      { label: 'Payment Method', value: transaction.payment_method },
+      { label: 'Username', value: transaction.profiles?.username },
+      { label: 'Reference', value: transaction.reference, allowCopy: true },
+      { label: 'Wallet ID', value: transaction.wallet_id, allowCopy: true },
+      { label: 'User ID', value: transaction.user_id, allowCopy: true },
+      { label: 'Description', value: transaction.description },
+      {
+        label: 'Created At',
+        value: transaction.created_at
+          ? new Date(transaction.created_at).toLocaleString('en-KE', {
+              dateStyle: 'medium',
+              timeStyle: 'short',
+            })
+          : null,
+      },
+    ];
+  }, [transaction, formattedAmount, statusBadge]);
+
   if (!transaction) return null;
-
-  // Safe currency conversion utility
-  const formattedAmount = (): string => {
-    const numericAmount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount;
-    return isNaN(numericAmount) 
-      ? 'KSh 0' 
-      : `KSh ${numericAmount.toLocaleString('en-KE', { minimumFractionDigits: 0 })}`;
-  };
-
-  // Status badge style lookup engine
-  const getStatusStyles = (status: string) => {
-    const normalized = status.toUpperCase();
-    if (normalized.includes('SUCC') || normalized === 'COMPLETED') return 'text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20 w-fit text-xs tracking-wider';
-    if (normalized.includes('PEND') || normalized === 'PROCESSING') return 'text-amber-400 font-semibold bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 w-fit text-xs tracking-wider';
-    return 'text-red-400 font-semibold bg-red-500/10 px-2 py-0.5 rounded border border-red-500/20 w-fit text-xs tracking-wider';
-  };
 
   return (
     <div
       onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex justify-end bg-black/70 backdrop-blur-sm transition-all duration-300 animate-fade-in"
+      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-[1px] transition-all duration-200"
       role="dialog"
       aria-modal="true"
       aria-labelledby="drawer-title"
@@ -91,89 +120,81 @@ export default function TransactionDrawer({
       {/* Sliding Sheet Panel */}
       <div
         ref={drawerRef}
-        className="flex h-full w-full max-w-md flex-col border-l border-zinc-800 bg-gradient-to-b from-zinc-900 to-zinc-950 p-6 shadow-2xl transition-transform duration-300 ease-out animate-slide-in"
+        className="flex h-full w-full max-w-sm flex-col border-l border-zinc-900 bg-zinc-950 p-4 shadow-2xl transition-transform duration-200"
       >
         {/* Header Section */}
-        <div className="flex items-center justify-between border-b border-zinc-800/60 pb-4">
-          <h2 id="drawer-title" className="text-lg font-bold tracking-tight text-zinc-100">
-            Transaction Details
-          </h2>
+        <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
+          <div>
+            <h2 id="drawer-title" className="text-xs font-semibold tracking-tight text-zinc-100 uppercase opacity-90">
+              Transaction Details
+            </h2>
+            <p className="text-[10px] text-zinc-500 font-mono mt-0.5 tracking-wide">{transaction.id}</p>
+          </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+            className="rounded p-1 text-zinc-500 transition-colors hover:bg-zinc-900 hover:text-zinc-300 focus:outline-none focus:ring-1 focus:ring-zinc-800"
             aria-label="Close drawer"
           >
-            <span className="text-xl">✕</span>
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        {/* Scrollable Data Body */}
-        <div className="mt-6 flex-1 space-y-5 overflow-y-auto pr-1">
-          <Detail
-            label="User"
-            value={transaction.profiles?.username || "Unknown"}
-          />
+        {/* Dynamic Scrollable Body */}
+        <div className="flex-1 mt-3.5 pr-0.5 space-y-2.5 overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-900 scrollbar-track-transparent">
+          {detailsList.map(({ label, value, allowCopy }) => (
+            <Detail
+              key={label}
+              label={label}
+              value={value || '—'}
+              allowCopy={allowCopy}
+            />
 
-          <Detail
-            label="Amount"
-            value={formattedAmount()}
-          />
 
-          <div className="grid grid-cols-2 gap-4">
-            <Detail label="Type" value={transaction.type} />
-            <Detail label="Category" value={transaction.category} />
-          </div>
-
-          <Detail
-            label="Payment Method"
-            value={transaction.payment_method}
-          />
-
-          {/* Uses copy feature built into refactored Detail code */}
-          <Detail
-            label="Reference"
-            value={transaction.reference}
-            allowCopy
-          />
-
-          <div>
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-              Status
-            </span>
-            <div className="mt-1.5">
-              <span className={getStatusStyles(transaction.status)}>
-                {transaction.status}
-              </span>
-            </div>
-          </div>
+            
+          ))}
         </div>
+
+<TransactionTimeline
+  transaction={transaction}
+/>
+
 
         {/* Action Panel Footer */}
-        <div className="mt-6 space-y-3 border-t border-zinc-800/60 pt-4">
-          <button
-            onClick={() => onCopy(transaction.reference)}
-            className="flex w-full items-center justify-center space-x-2 rounded-xl border border-zinc-800 bg-zinc-900 py-3 text-sm font-semibold text-zinc-200 transition-colors hover:bg-zinc-800 active:bg-zinc-850"
-          >
-            <span>📋</span>
-            <span>Copy Reference</span>
-          </button>
+        <div className="mt-4 space-y-1.5 border-t border-zinc-900 pt-3.5">
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              onClick={() => onCopy(transaction.reference)}
+              className="flex items-center justify-center space-x-1.5 rounded-md border border-zinc-900 bg-zinc-900/40 py-2 text-[11px] font-medium text-zinc-300 transition-colors hover:bg-zinc-900 hover:text-zinc-200"
+            >
+              <svg className="h-3.5 w-3.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+              </svg>
+              <span>Copy Ref</span>
+            </button>
 
-          <button
-            onClick={() => transaction.wallet_id && onViewWallet(transaction.wallet_id)}
-            disabled={!transaction.wallet_id}
-            className="flex w-full items-center justify-center space-x-2 rounded-xl bg-zinc-100 py-3 text-sm font-semibold text-zinc-950 transition-colors hover:bg-zinc-200 active:bg-zinc-300 disabled:opacity-50"
-          >
-            <span>👛</span>
-            <span>View Wallet</span>
-          </button>
+            <button
+              onClick={() => transaction.wallet_id && onViewWallet(transaction.wallet_id)}
+              disabled={!transaction.wallet_id}
+              className="flex items-center justify-center space-x-1.5 rounded-md bg-zinc-100 py-2 text-[11px] font-semibold text-zinc-950 transition-colors hover:bg-zinc-200 disabled:opacity-30"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              <span>View Wallet</span>
+            </button>
+          </div>
 
           {transaction.wallet_id && (
             <button
               onClick={() => onFreezeWallet(transaction.wallet_id!)}
-              className="flex w-full items-center justify-center space-x-2 rounded-xl border border-red-500/20 bg-red-500/10 py-3 text-sm font-semibold text-red-400 transition-all hover:bg-red-500/20 active:bg-red-500/30"
+              className="flex w-full items-center justify-center space-x-1.5 rounded-md border border-red-500/10 bg-red-500/5 py-2 text-[11px] font-medium text-red-400 transition-all hover:bg-red-500/10 active:bg-red-500/15"
             >
-              <span>🔒</span>
-              <span>Freeze Wallet</span>
+              <svg className="h-3.5 w-3.5 text-red-400/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>Freeze Wallet Account</span>
             </button>
           )}
         </div>

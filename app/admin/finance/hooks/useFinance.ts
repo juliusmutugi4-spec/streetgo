@@ -195,7 +195,27 @@ setLoading(false)
 
 loadFinance()
 
+const channel = supabase
+  .channel("finance-transactions")
+  .on(
+    "postgres_changes",
+    {
+      event: "*",
+      schema: "public",
+      table: "transactions",
+    },
+    async () => {
+      console.log("📢 Finance transaction changed");
+      await loadFinance();
+    }
+  )
+  .subscribe();
 
+return () => {
+  cancelled = true;
+
+  supabase.removeChannel(channel);
+};
 
 },[authorized])
 
