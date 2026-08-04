@@ -6,10 +6,7 @@ console.log(
   !!process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-console.log(
-  "SERVICE ROLE PREFIX:",
-  process.env.SUPABASE_SERVICE_ROLE_KEY?.slice(0, 20)
-);
+
 
 console.log(
   "SUPABASE URL:",
@@ -46,7 +43,8 @@ const body = text ? JSON.parse(text) : {};
       });
     }
 
-    const items = callback.CallbackMetadata.Item;
+    const items =
+  callback.CallbackMetadata?.Item || [];
 
     const amount =
       items.find((i: any) => i.Name === "Amount")?.Value;
@@ -59,9 +57,9 @@ const receipt =
 // =======================================
 
 const { data: existingTransaction } = await supabase
-  .from("wallet_transactions")
+  .from("transactions")
   .select("id")
-  .eq("mpesa_receipt", receipt)
+  .eq("reference", receipt)
   .maybeSingle();
 
 if (existingTransaction) {
@@ -135,18 +133,23 @@ console.log("Wallet update error:", updateError);
 
     // Save transaction
 // Save transaction
-const { error: transactionError } = await supabase
-  .from("wallet_transactions")
+const { data: transaction, error: transactionError } = await supabase
+  .from("transactions")
   .insert({
+    user_id: wallet.user_id,
     wallet_id: wallet.id,
-    amount,
     type: "deposit",
-    mpesa_receipt: receipt,
-    phone,
+    category: "wallet_funding",
+    amount: Number(amount),
     status: "completed",
-  });
+    payment_method: "mpesa",
+    reference: receipt,
+    description: "M-Pesa wallet deposit"
+  })
+  .select();
 
-console.log("Transaction insert error:", transactionError);
+console.log("TRANSACTION:", transaction);
+console.log("TRANSACTION ERROR:", transactionError);
 
 console.log("Wallet credited successfully.");
 

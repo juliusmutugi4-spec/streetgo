@@ -1,668 +1,166 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useState } from 'react'
+import useDrivers from "./hooks/useDrivers"
+import DriverCard from "./components/DriverCard"
+import { approveDriver, rejectDriver } from "./actions/driverActions"
+import type { Driver } from "./types"
+type FilterType = 'pending' | 'approved' | 'rejected'
 
 export default function AdminDriversPage() {
-  const [drivers, setDrivers] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-  const [processingId, setProcessingId] = useState<string | null>(null)
-const [approvedCount, setApprovedCount] = useState(0)
-const [rejectedCount, setRejectedCount] = useState(0)
-const [pendingCount, setPendingCount] = useState(0)
-const [filter, setFilter] = useState<'pending' | 'approved' | 'rejected'>('pending')
-useEffect(() => {
+  const [filter, setFilter] = useState<FilterType>('pending')
+  const {
+    drivers,
+    setDrivers,
+    loading,
+    loadDrivers,
+    pendingCount,
+    approvedCount,
+    rejectedCount
+  } = useDrivers(filter)
 
-  async function init() {
+  // Unified action handler for optimistic state updates
+  async function handleDriverAction(
+  driver: Driver,
+  action: 'approve' | 'reject'
+) {
+    // Optimistic UI update: Remove from list immediately
+    setDrivers((prev: Driver[]) =>
+  prev.filter((d) => d.id !== driver.id)
+)
 
-    const {
-      data: { user }
-    } = await supabase.auth.getUser()
+    try {
+      const success = action === 'approve' 
+        ? await approveDriver(driver) 
+        : await rejectDriver(driver.id)
 
-    console.log("ADMIN USER:", user)
-
-    loadDrivers()
-
+      if (!success) {
+        // Revert back or re-sync if the server action failed
+        await loadDrivers()
+      }
+    } catch (error) {
+      console.error(`Failed to ${action} driver:`, error)
+      await loadDrivers()
+    }
   }
 
-  init()
-
-}, [filter])
-  async function loadDrivers() {
-    setLoading(true)
-
-const { data, error } = await supabase
-  .from('drivers')
-  .select('*')
-  .eq('status', filter)
-  .order('created_at', { ascending: false })
-
-console.log("========== DRIVERS ==========")
-console.log("Filter:", filter)
-console.log("Data:", data)
-console.log("Error:", error)
-console.log("=============================")
-
-if (!error && data) {
-
-const driversWithUrls = await Promise.all(
-
-  data.map(async (driver: any) => {
-
-      const { data: license } = await supabase.storage
-        .from('driver-license')
-        .createSignedUrl(driver.license_url, 3600)
-const { data: front } = await supabase.storage
-  .from('driver-id')
-  .createSignedUrl(driver.id_front_url, 3600)
-
-  const { data: back } = await supabase.storage
-  .from('driver-id')
-  .createSignedUrl(driver.id_back_url, 3600)
-
-const { data: vehicle } = await supabase.storage
-  .from('driver-vehicle')
-  .createSignedUrl(driver.vehicle_photo_url, 3600)
-
-
-return {
-  ...driver,
-  license_url: license?.signedUrl || null,
-  id_front_url: front?.signedUrl || null,
-  id_back_url: back?.signedUrl || null,
-  vehicle_photo_url: vehicle?.signedUrl || null
-}
-    })
-
-  )
-
-  setDrivers(driversWithUrls)
-  const { count: pending } = await supabase
-  .from('drivers')
-  .select('*', { count: 'exact', head: true })
-  .eq('status', 'pending')
-
-setPendingCount(pending || 0)
-
-}
-const { count: approved, error: approvedError } = await supabase
-  .from('drivers')
-  .select('*', { count: 'exact', head: true })
-  .eq('status', 'approved')
-
-console.log("Approved Count:", approved)
-console.log("Approved Error:", approvedError)
-
-setApprovedCount(approved || 0)
-
-const { count: rejected } = await supabase
-  .from('drivers')
-  .select('*', { count: 'exact', head: true })
-  .eq('status', 'rejected')
-
-
-  
-setRejectedCount(rejected || 0)
-
-    setLoading(false)
+  // Stat card style definitions for cleaner JSX
+  const statConfig = {
+    pending: { label: 'Pending', count: pendingCount, color: 'border-amber-500/30 text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 active:border-amber-500' },
+    approved: { label: 'Approved', count: approvedCount, color: 'border-emerald-500/30 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10 active:border-emerald-500' },
+    rejected: { label: 'Rejected', count: rejectedCount, color: 'border-rose-500/30 text-rose-500 bg-rose-500/5 hover:bg-rose-500/10 active:border-rose-500' }
   }
 
-async function approveDriver(driver: any) {
-setProcessingId(driver.id)
-  // Remove card immediately
-  setDrivers(prev => prev.filter(d => d.id !== driver.id))
-
-  // Update counters immediately
-  setPendingCount(prev => Math.max(prev - 1, 0))
-  setApprovedCount(prev => prev + 1)
-
-  // Update database
- const { error } = await supabase
-  .from('drivers')
-  .update({
-    status: 'approved'
-  })
-  .eq('id', driver.id)
-
-console.log("APPROVE ERROR:", error)
-
-if (error) {
-  console.error(error)
-  alert(error.message)
-
-  setProcessingId(null)
-  loadDrivers()
-  return
-}
-  // Create driver location
-  await supabase
-    .from('driver_locations')
-    .insert({
-      driver_id: driver.id,
-      latitude: 0,
-      longitude: 0,
-      online: false
-    })
-setProcessingId(null)
-}
-
-
-  
   return (
-    <main className="min-h-screen bg-[#060608] text-white p-6">
-
-      <div className="max-w-5xl mx-auto">
-
-<div className="mb-8">
-
-  <h1 className="text-4xl font-black">
-    🚖 Driver Management
-  </h1>
-
-  <p className="text-zinc-400 mt-2">
-    Review, approve and manage driver applications.
-  </p>
-
-</div>
-
-        {loading && (
-          <div className="text-zinc-400">
-            Loading...
-          </div>
-        )}
-
-<div className="grid grid-cols-3 gap-4 mb-8">
-
-  <div
-  onClick={() => setFilter('pending')}
-  className={`
-    cursor-pointer
-    rounded-3xl
-    p-5
-    text-center
-    border
-    transition-all
-    duration-300
-
-    ${
-      filter === 'pending'
-        ? 'bg-yellow-500/20 border-yellow-500 scale-[1.02]'
-        : 'bg-yellow-500/10 border-yellow-500/30 hover:bg-yellow-500/15'
-    }
-  `}
->
-    <p className="text-4xl">🟡</p>
-
-    <h2 className="text-3xl font-black mt-2">
-      {pendingCount}
-    </h2>
-
-    <p className="text-zinc-400 text-sm mt-1">
-      Pending
-    </p>
-  </div>
-
-  <div
-  onClick={() => setFilter('approved')}
-  className={`
-    cursor-pointer
-    rounded-3xl
-    p-5
-    text-center
-    border
-    transition-all
-    duration-300
-
-    ${
-      filter === 'approved'
-        ? 'bg-green-500/20 border-green-500 scale-[1.02]'
-        : 'bg-green-500/10 border-green-500/30 hover:bg-green-500/15'
-    }
-  `}
->
-    <p className="text-4xl">✅</p>
-
-    <h2 className="text-3xl font-black mt-2">
-      {approvedCount}
-    </h2>
-
-    <p className="text-zinc-400 text-sm mt-1">
-      Approved
-    </p>
-  </div>
-
-  <div
-  onClick={() => setFilter('rejected')}
-  className={`
-    cursor-pointer
-    rounded-3xl
-    p-5
-    text-center
-    border
-    transition-all
-    duration-300
-
-    ${
-      filter === 'rejected'
-        ? 'bg-red-500/20 border-red-500 scale-[1.02]'
-        : 'bg-red-500/10 border-red-500/30 hover:bg-red-500/15'
-    }
-  `}
->
-    <p className="text-4xl">❌</p>
-
-    <h2 className="text-3xl font-black mt-2">
-      {rejectedCount}
-    </h2>
-
-    <p className="text-zinc-400 text-sm mt-1">
-      Rejected
-    </p>
-  </div>
-
-</div>
-
-
-        <div className="space-y-5">
-
-          {drivers.map((driver) => (
-
-            <div
-              key={driver.id}
-              className="
-              bg-zinc-900
-              border border-zinc-800
-              rounded-3xl
-              p-6
-              "
-            >
-
-<div className="flex items-center justify-between">
-
-  <div className="flex items-center gap-4">
-
-    <div
-      className="
-        w-16
-        h-16
-        rounded-full
-        bg-gradient-to-br
-        from-cyan-500
-        to-blue-600
-        flex
-        items-center
-        justify-center
-        text-3xl
-        shadow-lg
-      "
-    >
-      👤
-    </div>
-
-    <div>
-
-      <h2 className="text-2xl font-black">
-        {driver.full_name}
-      </h2>
-
-      <p className="text-zinc-400">
-        Driver Applicant
-      </p>
-
-    </div>
-
-  </div>
-
-<div
-  className={`
-    px-4
-    py-2
-    rounded-full
-    font-bold
-    text-sm
-    border
-
-    ${
-      driver.status === 'approved'
-        ? 'bg-green-500/20 text-green-400 border-green-500/30'
-        : driver.status === 'rejected'
-        ? 'bg-red-500/20 text-red-400 border-red-500/30'
-        : 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-    }
-  `}
->
-  {driver.status === 'approved'
-    ? '🟢 APPROVED'
-    : driver.status === 'rejected'
-    ? '🔴 REJECTED'
-    : '🟡 PENDING'}
-</div>
-
-</div>
-<div className="mt-6 grid grid-cols-2 gap-4 text-sm">
-
-  <div className="bg-zinc-800 rounded-2xl p-4">
-    <p className="text-zinc-500">📞 Phone</p>
-    <p className="font-bold text-white mt-1">
-      {driver.phone}
-    </p>
-  </div>
-
-  <div className="bg-zinc-800 rounded-2xl p-4">
-    <p className="text-zinc-500">🪪 National ID</p>
-    <p className="font-bold text-white mt-1">
-      {driver.national_id}
-    </p>
-  </div>
-
-  <div className="bg-zinc-800 rounded-2xl p-4">
-    <p className="text-zinc-500">🏍 Vehicle Type</p>
-    <p className="font-bold text-white mt-1">
-      {driver.vehicle_type}
-    </p>
-  </div>
-
-  <div className="bg-zinc-800 rounded-2xl p-4">
-    <p className="text-zinc-500">🚘 Plate Number</p>
-    <p className="font-bold text-white mt-1">
-      {driver.plate_number}
-    </p>
-  </div>
-
-  <div className="bg-zinc-800 rounded-2xl p-4">
-    <p className="text-zinc-500">🚘 Vehicle Model</p>
-    <p className="font-bold text-white mt-1">
-      {driver.vehicle_model}
-    </p>
-  </div>
-
-  <div className="bg-zinc-800 rounded-2xl p-4">
-    <p className="text-zinc-500">🎨 Vehicle Color</p>
-    <p className="font-bold text-white mt-1">
-      {driver.vehicle_color}
-    </p>
-  </div>
-
-<div className="mt-8">
-
-  <h3 className="text-lg font-bold mb-4">
-    📂 Verification Documents
-  </h3>
-
-  <div className="grid grid-cols-2 gap-4">
-
-{driver.license_url ? (
-  <a
-    href={driver.license_url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="
-      block
-      bg-zinc-800
-      border
-      border-zinc-700
-      rounded-2xl
-      overflow-hidden
-      hover:border-cyan-500
-      transition-all
-      duration-300
-      hover:scale-[1.02]
-    "
-  >
-
-    <img
-      src={driver.license_url}
-      alt="Driving License"
-      className="
-        w-full
-        h-40
-        object-cover
-      "
-    />
-
-    <div className="p-4">
-
-      <p className="font-bold">
-        🪪 Driving License
-      </p>
-
-      <p className="text-cyan-400 text-sm mt-1">
-        Click to view full image
-      </p>
-
-    </div>
-
-  </a>
-
-) : (
-
-  <div
-    className="
-      bg-zinc-800
-      border
-      border-zinc-700
-      rounded-2xl
-      p-4
-      text-zinc-500
-    "
-  >
-    🪪 No Driving License Uploaded
-  </div>
-
-)}
-{/* ID Front */}
-{driver.id_front_url ? (
-  <a
-    href={driver.id_front_url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="
-      block
-      bg-zinc-800
-      border
-      border-zinc-700
-      rounded-2xl
-      overflow-hidden
-      hover:border-cyan-500
-      transition-all
-    "
-  >
-
-    <img
-      src={driver.id_front_url}
-      className="w-full h-40 object-cover"
-      alt="ID Front"
-    />
-
-    <div className="p-4">
-      <p className="font-bold">
-        🆔 ID Front
-      </p>
-    </div>
-
-  </a>
-
-) : (
-
-  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-zinc-500">
-    🆔 No ID Front Uploaded
-  </div>
-
-)}
-
-{driver.id_back_url ? (
-  <a
-    href={driver.id_back_url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="
-      block
-      bg-zinc-800
-      border
-      border-zinc-700
-      rounded-2xl
-      overflow-hidden
-      hover:border-cyan-500
-      transition-all
-    "
-  >
-
-    <img
-      src={driver.id_back_url}
-      className="w-full h-40 object-cover"
-      alt="ID Back"
-    />
-
-    <div className="p-4">
-      <p className="font-bold">
-        🆔 ID Back
-      </p>
-    </div>
-
-  </a>
-
-) : (
-
-  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-zinc-500">
-    🆔 No ID Back Uploaded
-  </div>
-
-)}
-{/* Vehicle */}
-{driver.vehicle_photo_url ? (
-  <a
-    href={driver.vehicle_photo_url}
-    target="_blank"
-    rel="noopener noreferrer"
-    className="
-      block
-      bg-zinc-800
-      border
-      border-zinc-700
-      rounded-2xl
-      overflow-hidden
-      hover:border-cyan-500
-      transition-all
-    "
-  >
-
-    <img
-      src={driver.vehicle_photo_url}
-      className="w-full h-40 object-cover"
-      alt="Vehicle"
-    />
-
-    <div className="p-4">
-      <p className="font-bold">
-        🏍️ Vehicle Photo
-      </p>
-    </div>
-
-  </a>
-
-) : (
-
-  <div className="bg-zinc-800 border border-zinc-700 rounded-2xl p-4 text-zinc-500">
-    🏍️ No Vehicle Photo Uploaded
-  </div>
-
-)}
-
-  </div>
-
-</div>
-
-  <p>
-    Status:
-    <span className="text-yellow-400 ml-2">
-      {driver.status}
-    </span>
-  </p>
-
-</div>
-
-<div className="mt-6 flex gap-4">
-
-<button
-  disabled={
-    driver.status === 'approved' ||
-    processingId === driver.id
-  }
-  onClick={() => approveDriver(driver)}
-  className={`
-    flex-1
-    py-4
-    rounded-2xl
-    font-black
-    transition
-
-    ${
-      driver.status === 'approved'
-        ? 'bg-emerald-800 text-green-300 cursor-default'
-        : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:scale-[1.02] text-white'
-    }
-  `}
->
-{processingId === driver.id
-  ? '⏳ Approving...'
-  : driver.status === 'approved'
-  ? '✔ Approved'
-  : '✅ Approve'}
-</button>
-
-<button
-  onClick={async () => {
-
-    // Remove immediately
-    setDrivers(prev => prev.filter(d => d.id !== driver.id))
-
-    // Update counters immediately
-    setPendingCount(prev => Math.max(prev - 1, 0))
-    setRejectedCount(prev => prev + 1)
-
-    // Update database
-    const { error } = await supabase
-      .from('drivers')
-      .update({
-        status: 'rejected'
-      })
-      .eq('id', driver.id)
-
-    if (error) {
-      loadDrivers()
-    }
-
-  }}
-  className="
-flex-1
-py-4
-rounded-2xl
-bg-gradient-to-r
-from-red-500
-to-rose-600
-hover:scale-[1.02]
-transition-all
-duration-300
-font-black
-text-lg
-text-white
-shadow-lg
-shadow-red-500/20
-"
->
-  ❌ Reject
-</button>
-
-</div>
-
-            </div>
-
-          ))}
-
-        </div>
-
+    <main className="min-h-screen bg-[#09090b] text-zinc-50 antialiased selection:bg-zinc-800 selection:text-white">
+      <div className="max-w-5xl mx-auto px-4 py-12 md:px-8">
+        
+        {/* Header Section */}
+<header className="mb-10 border-b border-zinc-800/50 pb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+  
+  {/* Branding & Scope Titles */}
+  <div>
+    <div className="flex items-center gap-2.5">
+      <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center shadow-inner">
+        <span className="text-base text-zinc-400" role="img" aria-label="taxi">🚖</span>
       </div>
+      <h1 className="text-2xl font-semibold tracking-tight text-zinc-50">
+        Driver Management
+      </h1>
+      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-zinc-900 text-zinc-400 border border-zinc-800 font-mono">
+        <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+        Live Operations
+      </span>
+    </div>
+    <p className="text-zinc-400 text-xs font-medium mt-2 max-w-xl leading-relaxed">
+      Verify corporate credentials, manage commercial fleet regulations, and supervise real-time driver compliance verification matrix logs.
+    </p>
+  </div>
 
+  {/* Control System Actions */}
+  <div className="flex items-center gap-3 self-start md:self-center">
+    <button 
+      onClick={() => window.location.reload()}
+      className="p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-zinc-700"
+      title="Refresh Registry"
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+      </svg>
+    </button>
+    <button 
+      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-zinc-900 border border-zinc-800 text-zinc-300 hover:bg-zinc-800/60 hover:text-zinc-100 transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-zinc-700"
+    >
+      Export CSV Log
+    </button>
+  </div>
+
+</header>
+
+
+        {/* Status Filter Cards */}
+        <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10" aria-label="Filter applications">
+          {(Object.keys(statConfig) as FilterType[]).map((type) => {
+            const isActive = filter === type
+            const cfg = statConfig[type]
+            return (
+              <button
+                key={type}
+                onClick={() => setFilter(type)}
+                className={`w-full flex items-center justify-between p-5 rounded-2xl border transition-all duration-200 text-left backdrop-blur-sm group focus:outline-none focus:ring-2 focus:ring-zinc-700
+                  ${isActive 
+                    ? `${cfg.color.split(' ')[0].replace('/30', '')} bg-zinc-900 shadow-lg shadow-black/40 scale-[1.01]` 
+                    : 'border-zinc-800/80 bg-zinc-900/40 text-zinc-400 hover:text-zinc-200'
+                  }`}
+              >
+                <div>
+                  <p className="text-xs font-semibold tracking-wider uppercase text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                    {cfg.label}
+                  </p>
+                  <h2 className={`text-3xl font-bold mt-1 tracking-tight ${isActive ? '' : 'text-zinc-200'}`}>
+                    {cfg.count}
+                  </h2>
+                </div>
+                <span className={`w-2.5 h-2.5 rounded-full transition-transform duration-300 group-hover:scale-125
+                  ${type === 'pending' ? 'bg-amber-500' : type === 'approved' ? 'bg-emerald-500' : 'bg-rose-500'}`} 
+                />
+              </button>
+            )
+          })}
+        </section>
+
+        {/* Main Content Area */}
+        <section className="relative min-h-[300px]">
+          {loading && (
+            <div className="absolute inset-0 bg-[#09090b]/60 backdrop-blur-xs flex items-center justify-center z-10 transition-opacity">
+              <div className="flex items-center gap-2 text-zinc-400 font-medium text-sm">
+                <svg className="animate-spin h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Updating registry...
+              </div>
+            </div>
+          )}
+
+          {drivers.length === 0 ? (
+            <div className="text-center py-16 border border-dashed border-zinc-800 rounded-2xl bg-zinc-900/10">
+              <p className="text-zinc-500 text-sm font-medium">No {filter} driver applications found.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {drivers.map((driver) => (
+                <DriverCard
+                  key={driver.id}
+                  driver={driver}
+                  onApprove={(d) => handleDriverAction(d, 'approve')}
+                  onReject={(d) => handleDriverAction(d, 'reject')}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </main>
   )
 }

@@ -1,53 +1,102 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { 
+  LayoutDashboard, 
+  Car, 
+  Film, 
+  CircleDollarSign, 
+  LogOut, 
+  User 
+} from 'lucide-react'
+
+interface NavigationItem {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+}
+
+const navigation: NavigationItem[] = [
+  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+  { name: 'Drivers', href: '/admin/drivers', icon: Car },
+  { name: 'Videos', href: '/admin/videos', icon: Film },
+  { name: 'Finance', href: '/admin/finance', icon: CircleDollarSign },
+]
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+
   return (
-    <div className="min-h-screen bg-[#060608] text-white flex">
+    <div className="flex min-h-screen bg-zinc-950 text-zinc-50 antialiased">
+      
+      {/* Sidebar Navigation */}
+      <aside className="fixed inset-y-0 left-0 flex w-64 flex-col border-r border-zinc-800 bg-zinc-900/50 backdrop-blur-xl px-6 py-8">
+        
+        {/* Brand Header */}
+        <div className="flex h-10 items-center px-4">
+          <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white to-zinc-400 bg-clip-text text-transparent">
+            StreetGO Admin
+          </span>
+        </div>
 
-      {/* Sidebar */}
-      <aside className="w-64 bg-zinc-900 border-r border-zinc-800 p-6">
+        {/* Main Navigation Links */}
+        <nav className="mt-10 flex-1 space-y-1">
+          {navigation.map((item) => {
+            const isActive = pathname === item.href
+            const Icon = item.icon
 
-        <h1 className="text-2xl font-black mb-10">
-          StreetGO Admin
-        </h1>
-
-        <nav className="space-y-2">
-
-          <Link
-            href="/admin"
-            className="block px-4 py-3 rounded-xl hover:bg-zinc-800"
-          >
-            📊 Dashboard
-          </Link>
-
-          <Link
-            href="/admin/drivers"
-            className="block px-4 py-3 rounded-xl hover:bg-zinc-800"
-          >
-            🚖 Drivers
-          </Link>
-
-          <Link
-            href="/admin/videos"
-            className="block px-4 py-3 rounded-xl hover:bg-zinc-800"
-          >
-            🎬 Videos
-          </Link>
-
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm font-medium transition-all duration-200 group ${
+                  isActive
+                    ? 'bg-zinc-800 text-white shadow-sm ring-1 ring-zinc-700'
+                    : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200'
+                }`}
+              >
+                <Icon 
+                  className={`h-4 w-4 shrink-0 transition-colors ${
+                    isActive ? 'text-white' : 'text-zinc-500 group-hover:text-zinc-300'
+                  }`} 
+                />
+                {item.name}
+              </Link>
+            )
+          })}
         </nav>
+
+        {/* Sidebar Footer / User Profile */}
+        <div className="mt-auto border-t border-zinc-800 pt-6">
+          <div className="flex items-center justify-between px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 border border-zinc-700">
+                <User className="h-4 w-4 text-zinc-400" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium text-zinc-200">Admin User</span>
+                <span className="text-[10px] text-zinc-500">System Control</span>
+              </div>
+            </div>
+            <button className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-zinc-300 transition-colors">
+              <LogOut className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
 
       </aside>
 
-      {/* Page Content */}
-      <main className="flex-1 p-8">
-        {children}
-      </main>
+      {/* Main Page Layout */}
+      <div className="pl-64 flex flex-1 flex-col">
+        <main className="flex-1 p-8 lg:p-12 max-w-7xl w-full mx-auto">
+          {children}
+        </main>
+      </div>
 
     </div>
   )
