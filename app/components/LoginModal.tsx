@@ -187,15 +187,16 @@ export default function LoginModal({ onClose, onLogin }: LoginModalProps) {
 
 
 
-      const {
-        data,
-        error
-      } = await supabaseBrowser.auth.signUp({
-
-        email,
-        password
-
-      })
+const {
+  data,
+  error
+} = await supabaseBrowser.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth/callback`
+  }
+})
 
 
 

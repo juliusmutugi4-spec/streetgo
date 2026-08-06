@@ -1,50 +1,38 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import Post from './Post'
+import { getPosts, subscribeToPosts } from '../lib/feed'
 
 export default function Feed({ user }: { user: any }) {
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
-  const [page, setPage] = useState(0)
   const [hasMore, setHasMore] = useState(true)
+  const [cursor, setCursor] = useState<string | null>(null)
 
   const loaderRef = useRef<HTMLDivElement | null>(null)
 
-  const LIMIT = 10
-
-  // REMOVE DUPLICATES
+  // Merge posts without duplicates
   const mergeUnique = (oldPosts: any[], newPosts: any[]) => {
     const map = new Map()
-    ;[...newPosts, ...oldPosts].forEach((p) => {
-      map.set(p.id, p)
+
+    ;[...oldPosts, ...newPosts].forEach((post) => {
+      map.set(post.id, post)
     })
+
     return Array.from(map.values())
   }
 
-  // LOAD POSTS
+  // Load posts
   const loadPosts = async (reset = false) => {
     if (loading) return
 
     setLoading(true)
 
-    const from = reset ? 0 : page * LIMIT
-    const to = from + LIMIT - 1
-
-    const { data, error } = await supabase
-.from('posts')
-.select(`
-  *,
-  profiles (
-    username
-  )
-`)
-      .order('created_at', { ascending: false })
-      .range(from, to)
+    const { data, error } = await getPosts(reset ? null : cursor)
 
     if (error) {
-      console.log('LOAD POSTS ERROR:', error)
+      console.error(error)
       setLoading(false)
       return
     }
@@ -59,77 +47,78 @@ export default function Feed({ user }: { user: any }) {
       reset ? data : mergeUnique(prev, data)
     )
 
+    // Save cursor using the last post
+    setCursor(data[data.length - 1].created_at)
+
     setLoading(false)
   }
 
-  // INITIAL LOAD
+  // Initial load
   useEffect(() => {
     loadPosts(true)
   }, [])
 
-  // REALTIME POSTS (PREVENT DUPLICATES)
+  // Realtime
   useEffect(() => {
-    const channel = supabase
-      .channel('posts-live-feed')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'posts',
-        },
-       (payload: any) => {
-          setPosts((prev) => {
-            const exists = prev.find((p) => p.id === payload.new.id)
-            if (exists) return prev
-            return [payload.new, ...prev]
-          })
+    const unsubscribe = subscribeToPosts((newPost) => {
+      setPosts((prev) => {
+        if (prev.some((p) => p.id === newPost.id)) {
+          return prev
         }
-      )
-      .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
-
-  // INFINITE SCROLL
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !loading && hasMore) {
-        setPage((p) => p + 1)
-      }
+        return [newPost, ...prev]
+      })
     })
 
-    const el = loaderRef.current
-    if (el) observer.observe(el)
+    return unsubscribe
+  }, [])
+
+  // Infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          !loading &&
+          hasMore
+        ) {
+          loadPosts()
+        }
+      },
+{
+    rootMargin: "600px"
+}
+    )
+
+    const loader = loaderRef.current
+
+    if (loader) {
+      observer.observe(loader)
+    }
 
     return () => observer.disconnect()
-  }, [loading, hasMore])
-
-  // LOAD MORE WHEN PAGE CHANGES
-  useEffect(() => {
-    if (page === 0) return
-    loadPosts()
-  }, [page])
+  }, [loading, hasMore, cursor])
 
   return (
     <div className="flex flex-col gap-4">
-
       {posts.map((post) => (
-        <Post key={post.id} post={post} user={user} />
+        <Post
+          key={post.id}
+          post={post}
+          user={user}
+        />
       ))}
 
       {loading && (
         <div className="space-y-3">
-          <div className="h-24 bg-zinc-900/50 animate-pulse rounded-xl" />
-          <div className="h-24 bg-zinc-900/50 animate-pulse rounded-xl" />
-          <div className="h-24 bg-zinc-900/50 animate-pulse rounded-xl" />
+          <div className="h-24 rounded-xl bg-zinc-900/50 animate-pulse" />
+          <div className="h-24 rounded-xl bg-zinc-900/50 animate-pulse" />
+          <div className="h-24 rounded-xl bg-zinc-900/50 animate-pulse" />
         </div>
       )}
 
       {!hasMore && (
-        <p className="text-center text-xs text-zinc-500 py-4">
+        <p className="py-4 text-center text-xs text-zinc-500">
           No more posts
         </p>
       )}
