@@ -1,59 +1,58 @@
 'use client'
 
-import { Wallet } from 'lucide-react'
+import { useState } from "react"
+
+import WalletHeader from "./WalletHeader"
+import WalletBalance from "./WalletBalance"
+import WalletActions from "./WalletActions"
+import WalletSecurity from "./WalletSecurity"
+import WalletModals from "./WalletModals"
 
 interface Props {
   profile: any
+  wallet: any
+  refreshWallet: () => Promise<void>
+  onTopUp: () => void
+  onSend: () => void
 }
 
-export default function ProfileWallet({ profile }: Props) {
+export default function ProfileWallet({
+  profile,
+  wallet,
+  refreshWallet,
+  onTopUp,
+  onSend,
+}: Props) {
+  const [showTopUpReax, setShowTopUpReax] = useState(false)
+  const [showWithdrawReax, setShowWithdrawReax] = useState(false)
+
   return (
-    <div className="rounded-xl border border-zinc-900 bg-zinc-950/40 p-4">
+    <>
+      <div className="md:col-span-5 rounded-2xl border border-slate-700/40 bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 p-6 shadow-2xl shadow-slate-950/50 backdrop-blur-md">
 
-      <div className="flex items-center gap-2 mb-4">
-        <Wallet className="w-5 h-5 text-emerald-400" />
-        <h3 className="text-sm font-bold text-white uppercase tracking-wide">
-          StreetGO Credit
-        </h3>
-      </div>
+        <WalletHeader />
 
-      <div className="space-y-3">
+        <WalletBalance wallet={wallet} />
 
-        <div>
-          <p className="text-[11px] text-zinc-500 uppercase">
-            Balance
-          </p>
+        <WalletActions
+          onTopUp={onTopUp}
+          onSend={onSend}
+          onTopUpReax={() => setShowTopUpReax(true)}
+          onWithdrawReax={() => setShowWithdrawReax(true)}
+        />
 
-          <p className="text-2xl font-black text-white">
-            KSh 0
-          </p>
-        </div>
-
-<div className="grid grid-cols-3 gap-2 mt-4">
-
-  <button className="rounded-lg border border-emerald-800 bg-emerald-500/10 py-2 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-500/20 transition">
-    Top Up
-  </button>
-
-  <button className="rounded-lg border border-zinc-800 bg-zinc-900 py-2 text-[11px] font-semibold text-white hover:bg-zinc-800 transition">
-    Transfer
-  </button>
-
-  <button className="rounded-lg border border-zinc-800 bg-zinc-900 py-2 text-[11px] font-semibold text-white hover:bg-zinc-800 transition">
-    History
-  </button>
-
-</div>
-
-
-        <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
-          <p className="text-xs text-zinc-400">
-            Top up your StreetGO Credit using M-Pesa to unlock premium features.
-          </p>
-        </div>
+        <WalletSecurity />
 
       </div>
 
-    </div>
+      <WalletModals
+        profile={profile}
+        refreshWallet={refreshWallet}
+        showTopUpReax={showTopUpReax}
+        setShowTopUpReax={setShowTopUpReax}
+        showWithdrawReax={showWithdrawReax}
+        setShowWithdrawReax={setShowWithdrawReax}
+      />
+    </>
   )
 }

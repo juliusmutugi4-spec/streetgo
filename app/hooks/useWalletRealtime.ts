@@ -84,9 +84,10 @@ export default function useWalletRealtime({
           console.log("✅ Wallet realtime connected")
         }
 
-        if (status === "CHANNEL_ERROR") {
-          console.error("❌ Wallet realtime channel error")
-        }
+if (status === "CHANNEL_ERROR") {
+  console.error("❌ Wallet realtime channel error")
+  console.log(channel)
+}
 
         if (status === "TIMED_OUT") {
           console.warn("⌛ Wallet realtime timeout")
