@@ -227,7 +227,6 @@ export default function DiscussionRoom({
           aria-live="polite"
         >
 
-
 {post && (
   <article 
     className="
@@ -235,11 +234,10 @@ export default function DiscussionRoom({
       relative 
       mb-4 
       w-full 
-      max-w-3xl 
-      mx-auto 
       overflow-hidden 
-      rounded-xl 
-      border 
+      rounded-none 
+      border-y 
+      border-x-0 
       border-[#EAE4D7] 
       border-t-2 
       border-t-[#D4A574] 
@@ -248,9 +246,9 @@ export default function DiscussionRoom({
     "
     role="article"
   >
-    {/* Compact Header Profiler Area */}
-    <div className="relative flex items-center justify-between border-b border-[#EAE4D7] bg-[#F1EDE4]/50 px-3.5 py-2.5 select-none">
-      <div className="flex items-center gap-2.5">
+    {/* Compact Mobile Native Header */}
+    <div className="relative flex items-center justify-between border-b border-[#EAE4D7] bg-[#F1EDE4]/50 px-4 py-2.5 select-none">
+      <div className="flex items-center gap-2.5 min-w-0">
         
         {/* Streamlined Profile Avatar Frame */}
         <div className="relative h-9 w-9 shrink-0 rounded-full border border-[#D4A574]/30 bg-[#FAF8F5] p-0.5 shadow-xs">
@@ -272,9 +270,9 @@ export default function DiscussionRoom({
           <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border border-[#FAF8F5]" />
         </div>
 
-        {/* Minimalist Identity Details Stack */}
-        <div className="flex flex-col">
-          <h3 className="text-xs font-bold tracking-tight text-[#2B2521] truncate max-w-[140px] sm:max-w-xs">
+        {/* Identity Details Stack */}
+        <div className="flex flex-col min-w-0">
+          <h3 className="text-xs font-bold tracking-tight text-[#2B2521] truncate pr-1">
             {post.username || 'Anonymous User'}
           </h3>
           <span className="text-[10px] font-bold text-[#A89B8F] mt-0.5">
@@ -284,14 +282,14 @@ export default function DiscussionRoom({
       </div>
 
       {/* Lightweight Contextual Mini Badge */}
-      <span className="inline-flex h-4 items-center justify-center rounded bg-[#D4A574]/15 border border-[#D4A574]/20 px-1.5 text-[9px] font-black uppercase tracking-widest text-[#C28D56]">
+      <span className="inline-flex h-4 items-center justify-center rounded bg-[#D4A574]/15 border border-[#D4A574]/20 px-1.5 text-[9px] font-black uppercase tracking-widest text-[#C28D56] shrink-0">
         OP
       </span>
     </div>
 
-    {/* Primary Responsive Structural Content Body */}
+    {/* Primary Full Width Structural Content Body */}
     {post.content && (
-      <div className="relative p-3.5 selection:bg-[#D4A574]/20 selection:text-[#2B2521]">
+      <div className="relative px-4 py-3.5 selection:bg-[#D4A574]/20 selection:text-[#2B2521]">
         <p className="text-[14px] leading-5 text-[#2B2521] whitespace-pre-wrap break-words font-medium tracking-wide">
           {post.content}
         </p>
