@@ -14,7 +14,7 @@ import StreetAI from "./StreetAI"
 import SmartImageGallery from "./SmartImageGallery"
 import PostActions from "./PostActions"
 import SimilarVideosMenu from "./SimilarVideosMenu"
-import DiscussionRoom from "./DiscussionRoom"
+
 import VideoPortalButton from "./VideoPortalButton"
 import PostVideo from "./PostVideo"
 import ImageViewer from "./ImageViewer"
@@ -29,29 +29,31 @@ import {
   MapPin,
 } from "lucide-react"
 interface PostProps {
-post: {
-  id: string
-  content: string
-  image_urls?: string[] | null
-  video_url?: string | null
+  post: {
+    id: string
+    content: string
+    image_urls?: string[] | null
+    video_url?: string | null
     user_id: string
     created_at: string
     username?: string
     avatar_url?: string | null
   }
+
   user: any
-profile?: {
-  username?: string
-  avatar_url?: string | null
-  reputation?: number
-  predictions_correct?: number
-  predictions_wrong?: number
-} | null
 
+  profile?: {
+    username?: string
+    avatar_url?: string | null
+    reputation?: number
+    predictions_correct?: number
+    predictions_wrong?: number
+  } | null
 
-isActive?: boolean
-setActivePostId?: React.Dispatch<React.SetStateAction<string | null>>
+  isActive?: boolean
+  setActivePostId?: React.Dispatch<React.SetStateAction<string | null>>
 
+  onOpenDiscussion?: (post: any, comments: any[]) => void
 }
 
 function Post({
@@ -60,8 +62,8 @@ function Post({
   profile,
   isActive,
   setActivePostId,
+  onOpenDiscussion,
 }: PostProps) {
-
 
   const router = useRouter()
   const [likes, setLikes] = useState(0)
@@ -87,13 +89,9 @@ const [viewerCount, setViewerCount] = useState(0)
 const [showSurprisePopup, setShowSurprisePopup] = useState(false)
 const [isActivePost, setIsActivePost] = useState(false)
 const [showVideoPortal, setShowVideoPortal] = useState(false)
-const [openRoom, setOpenRoom] = useState(false)
+
 const [showSimilarVideos, setShowSimilarVideos] = useState(false)
-useEffect(() => {
-  if (!isActive) {
-    setOpenRoom(false)
-  }
-}, [isActive])
+
 
 useEffect(() => {
   setImageLikes(imageUrls.map(() => 0))
@@ -1251,23 +1249,20 @@ return (
 */}
 
 
-<DiscussionRoom
-  openRoom={openRoom}
-  setOpenRoom={setOpenRoom}
-  comments={comments}
-  onSendMessage={addComment}
-/>
+
+
+ 
 
 <PostActions
   liked={liked}
   likes={likes}
   comments={comments}
   reaxCount={reaxCount}
- 
   toggleLike={toggleLike}
   handleSendReax={handleSendReax}
- 
-  setOpenRoom={setOpenRoom}
+  setOpenRoom={() => {
+    onOpenDiscussion?.(post, comments)
+  }}
   post={post}
 />
 

@@ -7,7 +7,7 @@ import LoginModal from './components/LoginModal'
 import TopNav from './components/TopNav'
 import BottomNav from './components/BottomNav'
 import CreatePrediction from './components/CreatePrediction'
-
+import DiscussionRoom from "@/app/components/DiscussionRoom"
 import { registerPushNotifications } from './lib/pushNotifications'
 import { useFeed } from './hooks/useFeed'
 import { usePredictions } from "./hooks/usePredictions"
@@ -86,6 +86,11 @@ const [hydrated, setHydrated] = useState(false)
 const [loadingProgress, setLoadingProgress] = useState(0)
 const [loadingStatus, setLoadingStatus] = useState("Starting StreetGO...")
 const [activePostId, setActivePostId] = useState<string | null>(null)
+const [discussionOpen, setDiscussionOpen] = useState(false)
+
+const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
+
+const [discussionComments, setDiscussionComments] = useState<any[]>([])
 const lastScrollY = useRef(0)
 
 const [predictionDrawerOpen, setPredictionDrawerOpen] = useState(false)
@@ -115,7 +120,17 @@ useEffect(() => {
 }, [])
 
 
+useEffect(() => {
+  if (discussionOpen) {
+    document.body.style.overflow = "hidden"
+  } else {
+    document.body.style.overflow = ""
+  }
 
+  return () => {
+    document.body.style.overflow = ""
+  }
+}, [discussionOpen])
 
 
 useEffect(() => {
@@ -379,6 +394,11 @@ duration-700 ease-in-out
   profile={profile}
   isActive={activePostId === post.id}
   setActivePostId={setActivePostId}
+  onOpenDiscussion={(post, comments) => {
+    setSelectedPost(post)
+    setDiscussionComments(comments)
+    setDiscussionOpen(true)
+  }}
 />
 
 
@@ -622,7 +642,13 @@ duration-700 ease-in-out
   voteCounts={voteCounts}
   votePrediction={votePrediction}
 />
-
+<DiscussionRoom
+  openRoom={discussionOpen}
+  setOpenRoom={setDiscussionOpen}
+  post={selectedPost}
+  comments={discussionComments}
+  onSendMessage={() => {}}
+/>
 
     </main>
   )
