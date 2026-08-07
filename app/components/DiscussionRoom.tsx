@@ -233,77 +233,66 @@ export default function DiscussionRoom({
     className="
       group 
       relative 
-      mb-6 
+      mb-4 
       w-full 
       max-w-3xl 
       mx-auto 
       overflow-hidden 
       rounded-xl 
       border 
-      border-[#4A4038] 
+      border-[#EAE4D7] 
       border-t-2 
       border-t-[#D4A574] 
-      bg-gradient-to-b 
-      from-[#2B2521] 
-      to-[#1F1A17] 
-      shadow-[0_12px_32px_-12px_rgba(22,19,17,0.4)]
-      transition-all 
-      duration-300 
-      hover:shadow-[0_16px_40px_-10px_rgba(22,19,17,0.6)]
+      bg-[#FAF8F5] 
+      shadow-xs
     "
     role="article"
   >
-    {/* Subtle Luxury Ambient Mesh Background Accent */}
-    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(212,165,116,0.03),transparent_45%)] pointer-events-none" />
-
-    {/* Header Profiler Layout Area */}
-    <div className="relative flex items-center justify-between border-b border-[#4A4038]/40 bg-[#161311]/40 px-5 py-4 backdrop-blur-xs select-none">
-      <div className="flex items-center gap-3.5">
+    {/* Compact Header Profiler Area */}
+    <div className="relative flex items-center justify-between border-b border-[#EAE4D7] bg-[#F1EDE4]/50 px-3.5 py-2.5 select-none">
+      <div className="flex items-center gap-2.5">
         
-        {/* Profile Avatar Frame Matrix */}
-        <div className="relative h-11 w-11 shrink-0 rounded-full border border-[#4A4038] bg-[#1F1A17] p-0.5 shadow-md transition-transform duration-300 group-hover:scale-[1.02]">
-          <div className="h-full w-full rounded-full overflow-hidden flex items-center justify-center bg-[#2B2521] shadow-inner">
+        {/* Streamlined Profile Avatar Frame */}
+        <div className="relative h-9 w-9 shrink-0 rounded-full border border-[#D4A574]/30 bg-[#FAF8F5] p-0.5 shadow-xs">
+          <div className="h-full w-full rounded-full overflow-hidden flex items-center justify-center bg-[#F1EDE4]">
             {post.avatar_url ? (
               <img
                 src={post.avatar_url}
-                alt={`${post.username || 'Author'}'s avatar profile`}
-                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                alt={`${post.username || 'Author'}'s avatar`}
+                className="h-full w-full object-cover"
                 loading="lazy"
               />
             ) : (
-              <span className="text-xs font-black tracking-wider text-[#D4A574] tabular-nums">
+              <span className="text-[10px] font-black tracking-wider text-[#C28D56] tabular-nums">
                 {userInitial}
               </span>
             )}
           </div>
-          {/* Subtle Online State Node Indicator */}
-          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-[#1F1A17] ring-1 ring-emerald-500/30" />
+          {/* Flat Online Status Node */}
+          <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border border-[#FAF8F5]" />
         </div>
 
-        {/* Descriptive Meta Stack */}
+        {/* Minimalist Identity Details Stack */}
         <div className="flex flex-col">
-          <h3 className="text-sm font-bold tracking-tight text-[#F5EFE6] transition-colors group-hover:text-[#D4A574]/90">
-            {post.username || 'Anonymous Creator'}
+          <h3 className="text-xs font-bold tracking-tight text-[#2B2521] truncate max-w-[140px] sm:max-w-xs">
+            {post.username || 'Anonymous User'}
           </h3>
-          <span className="text-[11px] font-semibold tracking-wider uppercase text-[#A89B8F] mt-0.5 opacity-90">
-           Original Post 
+          <span className="text-[10px] font-bold text-[#A89B8F] mt-0.5">
+            Original Post
           </span>
         </div>
       </div>
 
-      {/* High-End Contextual Ribbon Label Badge */}
-      <div className="flex items-center gap-2">
-        <span className="inline-flex h-5 items-center justify-center rounded-md bg-[#D4A574]/10 border border-[#D4A574]/30 px-2.5 text-[10px] font-extrabold uppercase tracking-widest text-[#D4A574] shadow-xs">
-          OP
-        </span>
-      </div>
+      {/* Lightweight Contextual Mini Badge */}
+      <span className="inline-flex h-4 items-center justify-center rounded bg-[#D4A574]/15 border border-[#D4A574]/20 px-1.5 text-[9px] font-black uppercase tracking-widest text-[#C28D56]">
+        OP
+      </span>
     </div>
 
-    {/* Primary Structural Body Content Window */}
+    {/* Primary Responsive Structural Content Body */}
     {post.content && (
-      
-      <div className="relative p-5 selection:bg-[#D4A574] selection:text-[#1F1A17]">
-        <p className="text-[15px] leading-7 text-[#F5EFE6]/90 whitespace-pre-wrap break-words font-medium tracking-wide">
+      <div className="relative p-3.5 selection:bg-[#D4A574]/20 selection:text-[#2B2521]">
+        <p className="text-[14px] leading-5 text-[#2B2521] whitespace-pre-wrap break-words font-medium tracking-wide">
           {post.content}
         </p>
       </div>
@@ -311,6 +300,7 @@ export default function DiscussionRoom({
 
   </article>
 )}
+
 
 
 
