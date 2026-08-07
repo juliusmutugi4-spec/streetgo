@@ -304,6 +304,13 @@ if (showSplash) {
   )
 }
 
+
+const handleSendComment = async (message: string) => {
+  console.log("Comment:", message)
+}
+
+
+
   return (
     <main className="min-h-screen bg-[#060608] text-[#f4f4f5] antialiased selection:bg-emerald-500/30 font-sans tracking-tight relative overflow-x-hidden">
       {/* TopNav fixed */}
@@ -647,7 +654,7 @@ duration-700 ease-in-out
   setOpenRoom={setDiscussionOpen}
   post={selectedPost}
   comments={discussionComments}
-  onSendMessage={() => {}}
+  onSendMessage={handleSendComment}
 />
 
     </main>
