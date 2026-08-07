@@ -15,12 +15,20 @@ export interface Comment {
 interface DiscussionRoomProps {
   openRoom: boolean
   setOpenRoom: (open: boolean) => void
+
   post: {
     username?: string
     content?: string
     avatar_url?: string | null
   } | null
+
+  currentUser: {
+    username?: string
+    avatar_url?: string | null
+  } | null
+
   comments: Comment[]
+
   onSendMessage?: (msg: string) => Promise<void> | void
 }
 
@@ -31,7 +39,8 @@ export default function DiscussionRoom({
   setOpenRoom,
   comments = [],
   onSendMessage,
-  post
+  post,
+  currentUser
 }: DiscussionRoomProps) {
   const [newComment, setNewComment] = useState<string>('')
   const [activeTab, setActiveTab] = useState<TabType>('chat')
@@ -78,7 +87,11 @@ export default function DiscussionRoom({
     }
   }
 
-  const userInitial = post?.username ? post.username.charAt(0).toUpperCase() : 'U'
+const postInitial =
+  post?.username?.charAt(0).toUpperCase() || "P"
+
+const currentUserInitial =
+  currentUser?.username?.charAt(0).toUpperCase() || "U"
 
   return (
 <div
@@ -262,7 +275,7 @@ export default function DiscussionRoom({
               />
             ) : (
               <span className="text-[10px] font-black tracking-wider text-[#C28D56] tabular-nums">
-                {userInitial}
+                {postInitial}
               </span>
             )}
           </div>
@@ -336,12 +349,22 @@ export default function DiscussionRoom({
   <div className="flex items-end gap-3.5 max-w-3xl mx-auto w-full">
 
     {/* Current User Profile Token */}
-    <div
-      className="flex h-10 w-10 shrink-0 select-none items-center justify-center rounded-full border border-[#4A4038] bg-[#1F1A17] text-sm font-bold tracking-wide text-[#F5EFE6] shadow-inner"
-      aria-hidden="true"
-    >
-      {userInitial}
+{/* Current User Avatar */}
+<div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[#4A4038] bg-[#1F1A17]">
+
+  {currentUser?.avatar_url ? (
+    <img
+      src={currentUser.avatar_url}
+      alt={currentUser.username || "You"}
+      className="h-full w-full object-cover"
+    />
+  ) : (
+    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[#F5EFE6]">
+      {currentUserInitial}
     </div>
+  )}
+
+</div>
 
     {/* Input Matrix Shield */}
     <div

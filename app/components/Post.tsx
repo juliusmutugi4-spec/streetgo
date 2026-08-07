@@ -242,6 +242,10 @@ console.log(
 )
 
   const avatarUrl = post.avatar_url || '/avatar-placeholder.png'
+
+console.log("POST AVATAR:", post.avatar_url)
+console.log("POST USERNAME:", post.username)
+
 const [showLogin, setShowLogin] = useState(false)
 const [showMenu, setShowMenu] = useState(false)
 const menuRef = useRef<HTMLDivElement>(null)

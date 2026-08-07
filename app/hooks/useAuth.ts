@@ -32,7 +32,7 @@ export function useAuth() {
 
 
   const loadProfile = async (userId: string) => {
-
+console.log("LOADING PROFILE FOR:", userId)
     const { data, error } = await supabase
       .from("profiles")
       .select(`
@@ -52,7 +52,7 @@ export function useAuth() {
 
 
     setProfile(data)
-
+console.log("PROFILE FROM DATABASE:", data)
     await fetchUnreadMessages(userId)
 
   }

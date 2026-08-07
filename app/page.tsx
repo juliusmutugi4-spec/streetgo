@@ -52,6 +52,8 @@ const {
   checkUser,
   handleLogout,
 } = useAuth()
+
+console.log("PROFILE:", profile)
   const [showLogin, setShowLogin] = useState(false)
   
 const {
@@ -676,11 +678,15 @@ duration-700 ease-in-out
   votePrediction={votePrediction}
 />
 <DiscussionRoom
-  openRoom={discussionOpen}
-  setOpenRoom={setDiscussionOpen}
-  post={selectedPost}
-  comments={discussionComments}
-  onSendMessage={handleSendComment}
+    openRoom={discussionOpen}
+    setOpenRoom={setDiscussionOpen}
+    post={selectedPost}
+    currentUser={{
+        username: profile?.username,
+        avatar_url: profile?.avatar_url,
+    }}
+    comments={discussionComments}
+    onSendMessage={handleSendComment}
 />
 
     </main>
