@@ -1,10 +1,14 @@
 'use client'
 
-import TopUpReaxModal from "./TopUpReaxModal"
-import WithdrawReaxModal from "./WithdrawReaxModal"
+import React from 'react'
+import TopUpReaxModal from './TopUpReaxModal'
+import WithdrawReaxModal from './WithdrawReaxModal'
 
 interface Props {
-  profile: any
+  profile: {
+    id: string
+  }
+
   refreshWallet: () => Promise<void>
 
   showTopUpReax: boolean

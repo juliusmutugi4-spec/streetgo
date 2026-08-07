@@ -28,22 +28,36 @@ export default function ProfileWallet({
 
   return (
     <>
-      <div className="md:col-span-5 rounded-2xl border border-slate-700/40 bg-gradient-to-b from-slate-900 via-slate-900/90 to-slate-950 p-6 shadow-2xl shadow-slate-950/50 backdrop-blur-md">
+{/* Container Frame: Rendered as a zero-weight invisible layer that only acts as a micro-structural layout grid */}
+<div className="md:col-span-5 flex flex-col gap-2 w-full max-w-sm bg-transparent border-none p-0 shadow-none backdrop-blur-none transition-none">
+  
+  {/* Segment Header */}
+  <div className="w-full opacity-90 transition-opacity duration-200 hover:opacity-100">
+    <WalletHeader />
+  </div>
 
-        <WalletHeader />
+  {/* Balance Matrix */}
+  <div className="w-full">
+    <WalletBalance wallet={wallet} />
+  </div>
 
-        <WalletBalance wallet={wallet} />
+  {/* Control System Matrix */}
+  <div className="w-full mt-0.5">
+    <WalletActions
+      onTopUp={onTopUp}
+      onSend={onSend}
+      onTopUpReax={() => setShowTopUpReax(true)}
+      onWithdrawReax={() => setShowWithdrawReax(true)}
+    />
+  </div>
 
-        <WalletActions
-          onTopUp={onTopUp}
-          onSend={onSend}
-          onTopUpReax={() => setShowTopUpReax(true)}
-          onWithdrawReax={() => setShowWithdrawReax(true)}
-        />
+  {/* Footer Security Baseline */}
+  <div className="w-full mt-1 border-t border-[#1a1a1a]/40 pt-2 opacity-60">
+    <WalletSecurity />
+  </div>
 
-        <WalletSecurity />
+</div>
 
-      </div>
 
       <WalletModals
         profile={profile}
