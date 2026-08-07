@@ -304,11 +304,37 @@ if (showSplash) {
   )
 }
 
-
 const handleSendComment = async (message: string) => {
-  console.log("Comment:", message)
-}
+  if (!user) {
+    console.error("No logged in user")
+    return
+  }
 
+  if (!selectedPost) {
+    console.error("No selected post")
+    return
+  }
+
+  const { data, error } = await supabase
+    .from("comments")
+    .insert({
+      post_id: selectedPost.id,
+      user_id: user.id,
+      username: profile?.username ?? "Unknown",
+      avatar_url: profile?.avatar_url,
+      content: message,
+      
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error("COMMENT ERROR:", error)
+    return
+  }
+
+  setDiscussionComments(prev => [...prev, data])
+}
 
 
   return (
