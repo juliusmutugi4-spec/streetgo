@@ -266,18 +266,12 @@ const currentUserInitial =
         {/* Streamlined Profile Avatar Frame */}
         <div className="relative h-9 w-9 shrink-0 rounded-full border border-[#D4A574]/30 bg-[#FAF8F5] p-0.5 shadow-xs">
           <div className="h-full w-full rounded-full overflow-hidden flex items-center justify-center bg-[#F1EDE4]">
-            {post.avatar_url ? (
-              <img
-                src={post.avatar_url}
-                alt={`${post.username || 'Author'}'s avatar`}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <span className="text-[10px] font-black tracking-wider text-[#C28D56] tabular-nums">
-                {postInitial}
-              </span>
-            )}
+<img
+  src={post.avatar_url || "/avatar-placeholder.png"}
+  alt={`${post.username || "Author"} avatar`}
+  className="h-full w-full object-cover"
+  loading="lazy"
+/>
           </div>
           {/* Flat Online Status Node */}
           <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border border-[#FAF8F5]" />
@@ -352,17 +346,11 @@ const currentUserInitial =
 {/* Current User Avatar */}
 <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[#4A4038] bg-[#1F1A17]">
 
-  {currentUser?.avatar_url ? (
-    <img
-      src={currentUser.avatar_url}
-      alt={currentUser.username || "You"}
-      className="h-full w-full object-cover"
-    />
-  ) : (
-    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-[#F5EFE6]">
-      {currentUserInitial}
-    </div>
-  )}
+<img
+  src={currentUser?.avatar_url || "/avatar-placeholder.png"}
+  alt={currentUser?.username || "You"}
+  className="h-full w-full object-cover"
+/>
 
 </div>
 
