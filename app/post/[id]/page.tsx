@@ -200,394 +200,225 @@ if (!post) {
     </div>
   )
 }
-
 return (
-
-
-
-    
-  <div className="min-h-screen bg-black text-white">
-
+  <div className="min-h-screen bg-black text-zinc-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
     {/* Premium Header */}
-<header
-  className="
-    sticky
-    top-0
-    z-50
-    border-b
-    border-white/10
-    bg-[#05070b]/95
-    backdrop-blur-2xl
-  "
->
-  <div className="max-w-3xl mx-auto flex items-center justify-between px-4 py-3">
-
-    {/* Back */}
-    <button
-      onClick={() => history.back()}
-      className="
-        flex
-        h-11
-        w-11
-        items-center
-        justify-center
-        rounded-full
-        border
-        border-cyan-500/20
-        bg-cyan-500/5
-        text-cyan-300
-        transition-all
-        duration-300
-        hover:scale-105
-        hover:border-cyan-400/50
-        hover:bg-cyan-500/10
-      "
-    >
-      ←
-    </button>
-
-    {/* Logo */}
-    <div className="text-center">
-
-      <h1 className="text-xl font-black tracking-wide">
-        Street<span className="text-cyan-400">GO</span>
-      </h1>
-
-      <p className="text-[11px] uppercase tracking-[4px] text-zinc-500">
-        POST
-      </p>
-
-    </div>
-
-    {/* Menu */}
-    <button
-      className="
-        flex
-        h-11
-        w-11
-        items-center
-        justify-center
-        rounded-full
-        border
-        border-white/10
-        bg-white/[0.03]
-        text-zinc-400
-        transition-all
-        duration-300
-        hover:text-white
-        hover:bg-white/[0.08]
-      "
-    >
-      ⋮
-    </button>
-
-  </div>
-</header>
-    <main className="max-w-2xl mx-auto p-4">
-
-      <div
-  className="
-    relative
-    overflow-hidden
-    rounded-3xl
-    border
-    border-cyan-500/10
-    bg-[#05070b]/90
-    backdrop-blur-2xl
-    shadow-[0_20px_60px_rgba(0,0,0,0.45)]
-  "
->
-<div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent" />
-
-<div className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-cyan-500/10 blur-[120px]" />
-
-<div className="absolute -bottom-20 -right-20 h-56 w-56 rounded-full bg-orange-500/10 blur-[120px]" />
-        {/* User */}
-<div className="flex items-center justify-between p-5">
-
-  <div className="flex items-center gap-3">
-
-    <img
-      src={profile?.avatar_url || post.avatar_url || "/avatar-placeholder.png"}
-      alt=""
-      className="
-        h-14
-        w-14
-        rounded-2xl
-        object-cover
-        border
-        border-cyan-500/20
-      "
-    />
-
-    <div>
-
-      <div className="flex items-center gap-2">
-
-        <h2 className="text-lg font-bold text-white">
-          {profile?.username || "StreetGO User"}
-        </h2>
-
-        <span
-          className="
-            rounded-full
-            bg-cyan-500/15
-            px-2
-            py-0.5
-            text-[10px]
-            font-bold
-            text-cyan-300
-          "
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-[#05070b]/80 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+        {/* Back Button */}
+        <button
+          onClick={() => history.back()}
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-cyan-500/20 bg-cyan-500/5 text-cyan-400 transition-all duration-200 hover:border-cyan-400/50 hover:bg-cyan-500/10 active:scale-95"
+          aria-label="Go back"
         >
-          VERIFIED
-        </span>
+          ←
+        </button>
 
-      </div>
-
- <p className="text-sm text-zinc-500">
-  @{(profile?.username || "streetgo").toLowerCase()}
-</p>
-
-<div className="mt-1 flex items-center gap-3 text-xs text-zinc-500">
-
-  <span>
-    👥 {followersCount.toLocaleString()} Followers
-  </span>
-
-  <span>•</span>
-
-  <span>
-    {new Date(post.created_at).toLocaleString()}
-  </span>
-
-</div>
-
-    </div>
-
-  </div>
-
-<button
-  onClick={toggleFollow}
-  disabled={user?.id === post.user_id}
-  className={`
-    rounded-full
-    px-5
-    py-2
-    text-sm
-    font-bold
-    transition-all
-    duration-300
-    ${
-      following
-        ? "bg-zinc-700 text-white hover:bg-zinc-600"
-        : "bg-emerald-500 text-white hover:bg-emerald-400"
-    }
-    ${
-      user?.id === post.user_id
-        ? "opacity-50 cursor-not-allowed"
-        : ""
-    }
-  `}
->
-  {user?.id === post.user_id
-    ? "You"
-    : following
-    ? "Following"
-    : "Follow"}
-</button>
-
-</div>
-
-        {/* Text */}
-
-        <div className="px-5 pb-5">
-          <p className="text-lg leading-8 whitespace-pre-wrap">
-            {post.content}
+        {/* Logo */}
+        <div className="text-center">
+          <h1 className="text-xl font-black tracking-wide text-white">
+            Street<span className="bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">GO</span>
+          </h1>
+          <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-zinc-500">
+            POST
           </p>
         </div>
 
-        {/* Image */}
+        {/* Menu Button */}
+        <button
+          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/5 bg-white/[0.02] text-zinc-400 transition-all duration-200 hover:bg-white/[0.08] hover:text-white active:scale-95"
+          aria-label="More options"
+        >
+          ⋮
+        </button>
+      </div>
+    </header>
 
-        {post.image_url && (
-          <img
-            src={post.image_url}
-            alt=""
-            className="w-full"
-          />
-        )}
+    <main className="mx-auto max-w-2xl px-4 py-6">
+      {/* Main Content Card Panel */}
+      <div className="relative overflow-hidden rounded-3xl border border-white/5 bg-[#05070b]/60 backdrop-blur-2xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.7)]">
+        {/* Decorative Top Accent Glows */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent" />
+        <div className="absolute -top-24 -left-24 -z-10 h-64 w-64 rounded-full bg-cyan-500/10 blur-[120px] pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 -z-10 h-64 w-64 rounded-full bg-orange-500/5 blur-[120px] pointer-events-none" />
 
-        {/* Video */}
+        {/* User Profile Header section */}
+        <div className="flex items-center justify-between p-5 border-b border-white/[0.03]">
+          <div className="flex items-center gap-3.5">
+            <img
+              src={profile?.avatar_url || post?.avatar_url || "/avatar-placeholder.png"}
+              alt=""
+              className="h-12 w-12 rounded-2xl border border-white/10 bg-zinc-900 object-cover shadow-md"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-base font-bold tracking-tight text-white">
+                  {profile?.username || "StreetGO User"}
+                </h2>
+                <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-[9px] font-extrabold tracking-wider text-cyan-400 border border-cyan-500/20">
+                  VERIFIED
+                </span>
+              </div>
+              <p className="text-xs font-medium text-zinc-500 mt-0.5">
+                @{(profile?.username || "streetgo").toLowerCase()}
+              </p>
+              <div className="mt-1.5 flex items-center gap-2 text-[11px] font-medium text-zinc-500">
+                <span>👥 {Number(followersCount || 0).toLocaleString()} Followers</span>
+                <span>•</span>
+                <span>{post?.created_at ? new Date(post.created_at).toLocaleString() : "Just now"}</span>
+              </div>
+            </div>
+          </div>
 
-        {post.video_url && (
-          <video
-            src={post.video_url}
-            controls
-            playsInline
-            className="w-full bg-black"
-          />
-        )}
-
-        {/* Footer */}
-
-        <div className="flex items-center justify-between border-t border-zinc-800 p-5 text-zinc-400">
-
-<button
-  onClick={toggleLike}
-  className="
-    flex
-    items-center
-    gap-2
-    rounded-full
-    px-4
-    py-2
-    transition-all
-    duration-300
-    hover:bg-red-500/10
-  "
->
-  <span className="text-2xl">
-    {liked ? "❤️" : "🤍"}
-  </span>
-
-  <div className="text-left">
-    <p
-      className={`font-bold ${
-        liked ? "text-red-500" : "text-white"
-      }`}
-    >
-      {likesCount}
-    </p>
-
-    <p className="text-xs text-zinc-500">
-      Likes
-    </p>
-  </div>
-</button>
-
-<button
-  onClick={() => setShowComments(!showComments)}
-  className="
-    flex
-    items-center
-    gap-2
-    rounded-full
-    px-4
-    py-2
-    transition-all
-    duration-300
-    hover:bg-cyan-500/10
-    hover:text-cyan-400
-  "
->
-  💬
-
-  <div className="text-left">
-    <p className="font-bold text-white">
-      {comments.length}
-    </p>
-
-    <p className="text-xs text-zinc-500">
-      Comments
-    </p>
-  </div>
-</button>
-
-          <button className="hover:text-green-400 transition">
-            🔄 Share
+          <button
+            onClick={toggleFollow}
+            disabled={user?.id === post?.user_id}
+            className={`rounded-xl px-4 py-2 text-xs font-bold tracking-wide shadow-sm transition-all duration-200 active:scale-95 ${
+              following
+                ? "bg-zinc-800 text-zinc-300 hover:bg-zinc-700 border border-white/5"
+                : "bg-emerald-500 text-white hover:bg-emerald-400 shadow-emerald-950/20"
+            } ${user?.id === post?.user_id ? "opacity-40 cursor-not-allowed" : ""}`}
+          >
+            {user?.id === post?.user_id ? "You" : following ? "Following" : "Follow"}
           </button>
-
         </div>
 
-      </div>
+        {/* Post Text Body */}
+        <div className="px-5 pt-5 pb-4">
+          <p className="text-[17px] font-normal leading-relaxed text-zinc-200 whitespace-pre-wrap tracking-wide">
+            {post?.content}
+          </p>
+        </div>
 
-    </main>
-{showComments && (
-  <div className="border-t border-zinc-800 p-5">
-
-    <h3 className="mb-4 text-lg font-bold text-white">
-      Comments
-    </h3><div className="mb-6 flex gap-3">
-
-  <input
-    value={comment}
-    onChange={(e) => setComment(e.target.value)}
-    placeholder="Write a comment..."
-    className="
-      flex-1
-      rounded-2xl
-      border
-      border-zinc-700
-      bg-zinc-900
-      px-4
-      py-3
-      text-white
-      outline-none
-      focus:border-cyan-400
-    "
-  />
-
-  <button
-    onClick={addComment}
-    className="
-      rounded-2xl
-      bg-cyan-500
-      px-5
-      py-3
-      font-bold
-      text-white
-      hover:bg-cyan-400
-      transition
-    "
-  >
-    Post
-  </button>
-
-</div>
-
-    {comments.length === 0 ? (
-      <p className="text-zinc-500">
-        No comments yet.
-      </p>
-    ) : (
-      <div className="space-y-4">
-
-        {comments.map((c) => (
-          <div
-            key={c.id}
-            className="
-              rounded-2xl
-              border
-              border-zinc-800
-              bg-zinc-900/50
-              p-4
-            "
-          >
-            <p className="font-semibold text-white">
-              {c.username}
-            </p>
-
-            <p className="mt-2 text-zinc-300">
-              {c.content}
-            </p>
+        {/* Embedded Post Image Asset */}
+        {post?.image_url && (
+          <div className="px-5 pb-4">
+            <img
+              src={post.image_url}
+              alt="Uploaded content"
+              className="w-full rounded-2xl object-cover border border-white/5 max-h-[450px]"
+            />
           </div>
-        ))}
+        )}
 
+        {/* Embedded Post Video Asset */}
+        {post?.video_url && (
+          <div className="px-5 pb-4">
+            <video
+              src={post.video_url}
+              controls
+              playsInline
+              className="w-full rounded-2xl border border-white/5 bg-black max-h-[450px]"
+            />
+          </div>
+        )}
+
+        {/* Footer Metrics Panel */}
+        <div className="flex items-center justify-between border-t border-white/[0.04] px-4 py-3 text-zinc-400 bg-white/[0.01]">
+          <div className="flex items-center gap-2">
+            {/* Like Interactive Metric */}
+            <button
+              onClick={toggleLike}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all duration-200 hover:bg-red-500/10 hover:text-red-400 active:scale-95"
+            >
+              <span className={`text-xl transition-transform duration-200 ${liked ? "scale-110" : ""}`}>
+                {liked ? "❤️" : "🤍"}
+              </span>
+              <div className="text-left leading-none">
+                <p className={`text-sm font-bold ${liked ? "text-red-500" : "text-white"}`}>
+                  {likesCount}
+                </p>
+                <p className="text-[10px] font-medium text-zinc-500 mt-0.5">Likes</p>
+              </div>
+            </button>
+
+            {/* Comments Open Trigger */}
+            <button
+              onClick={() => setShowComments(!showComments)}
+              className={`flex items-center gap-2.5 rounded-xl px-3 py-2 transition-all duration-200 active:scale-95 ${
+                showComments 
+                  ? "bg-cyan-500/10 text-cyan-400 border border-cyan-500/10" 
+                  : "hover:bg-cyan-500/5 hover:text-cyan-400 border border-transparent"
+              }`}
+            >
+              <span className="text-lg">💬</span>
+              <div className="text-left leading-none">
+                <p className={`text-sm font-bold ${showComments ? "text-cyan-400" : "text-white"}`}>
+                  {comments?.length || 0}
+                </p>
+                <p className="text-[10px] font-medium text-zinc-500 mt-0.5">Comments</p>
+              </div>
+            </button>
+          </div>
+
+          {/* Quick Share Integration */}
+          <button className="flex items-center gap-2 text-xs font-semibold hover:text-emerald-400 transition-colors duration-200 px-3 py-2 rounded-xl hover:bg-emerald-500/5 active:scale-95">
+            <span>🔄</span> Share
+          </button>
+        </div>
+
+        {/* Dynamic Nested Comments Shell */}
+        {showComments && (
+          <div className="border-t border-white/[0.04] bg-[#020306]/40 p-5">
+            <h3 className="mb-4 text-sm font-bold uppercase tracking-wider text-zinc-400">
+              Discussion
+            </h3>
+            
+            {/* Input Action Form Block */}
+            <div className="mb-5 flex gap-2">
+              <input
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Write a community dispatch comment..."
+                className="flex-1 rounded-xl border border-white/10 bg-zinc-950 px-4 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-all focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20"
+              />
+              <button
+                onClick={addComment}
+                className="rounded-xl bg-cyan-500 px-5 py-2.5 text-sm font-bold text-black hover:bg-cyan-400 transition-colors duration-200 shadow-lg shadow-cyan-950/20 active:scale-95"
+              >
+                Post
+              </button>
+            </div>
+
+            {/* List Array Render */}
+            {!comments || comments.length === 0 ? (
+              <div className="py-6 text-center rounded-2xl border border-dashed border-white/5 bg-zinc-950/20">
+                <p className="text-sm text-zinc-600">No telemetry comments yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {comments.map((c) => (
+                  <div
+                    key={c.id}
+                    className="rounded-xl border border-white/[0.03] bg-white/[0.01] p-4 shadow-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-cyan-400">
+                        @{c.username || "anonymous"}
+                      </p>
+                    </div>
+                    <p className="mt-1.5 text-sm text-zinc-300 leading-relaxed">
+                      {c.content}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+    </main>
+
+    {/* Global Modal Layer Layouts */}
+    {showLogin && (
+      <LoginModal
+        onClose={() => setShowLogin(false)}
+        onLogin={() => {
+          setShowLogin(false)
+          initialize()
+        }}
+      />
     )}
-
-  </div>
-)}
-
-{showLogin && (
-  <LoginModal
-    onClose={() => setShowLogin(false)}
-    onLogin={() => {
-      setShowLogin(false)
-      initialize()
-    }}
-  />
-)}
-
   </div>
 )
 }
