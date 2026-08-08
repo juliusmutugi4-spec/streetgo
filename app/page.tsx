@@ -18,6 +18,8 @@ import { useAuth } from "./hooks/useAuth"
 import { useDriver } from "./hooks/useDriver"
 import PredictionDrawer from './components/PredictionDrawer'
 import SplashScreen from './components/SplashScreen'
+import DriverOperationsHub from './components/DriverOperationsHub'
+import { useRouter } from 'next/navigation'
 type PostType = {
   id: string
   content: string
@@ -46,8 +48,7 @@ type PredictionType = {
 
 
 export default function Home() {
-
-  
+const router = useRouter()
   const {
   posts,
   setPosts,
@@ -546,7 +547,7 @@ const addImageComment = async () => {
 
   return (
     <main className="min-h-screen bg-[#060608] text-[#f4f4f5] antialiased selection:bg-emerald-500/30 font-sans tracking-tight relative overflow-x-hidden">
-      {/* TopNav fixed */}
+{/* TopNav fixed wrapper */}
 <div
   className={`
     fixed
@@ -554,16 +555,19 @@ const addImageComment = async () => {
     left-0
     right-0
     z-50
-    transition-all
-duration-700 ease-in-out
+    transform
+    transition-transform
+    duration-500
     ${
-      videoPortalOpen
-        ? "-translate-y-full opacity-0"
-        : showNav
-        ? "translate-y-0 opacity-100"
-        : "-translate-y-full opacity-0"
+      videoPortalOpen || !showNav
+        ? "-translate-y-full"
+        : "translate-y-0"
     }
   `}
+  style={{
+    // A slightly deeper fluid curve for a silky, smooth slide at 500ms
+    transitionTimingFunction: 'cubic-bezier(0.25, 1, 0.3, 1)'
+  }}
 >
   <TopNav
     user={user}
@@ -681,108 +685,64 @@ const counts = imageUrls.map(
 
 
 
-<button 
-  onClick={() => setPredictionDrawerOpen(true)} 
-  className="fixed left-0 top-1/2 -translate-y-1/2 z-50 h-32 w-7 rounded-r-lg bg-slate-900 hover:bg-blue-600 border-y border-r border-slate-800 hover:border-blue-500 shadow-md hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-200 ease-in-out flex items-center justify-center group"
-  aria-label="Open predictions"
-> 
-  {/* Rotating Text */} 
-  <span className="block -rotate-90 whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.25em] text-slate-400 group-hover:text-white transition-colors duration-200 pointer-events-none"> 
-    rada ya mtaa 
-  </span> 
-
-  {/* Subtle indicator bar on the left edge */}
-  <div className="absolute left-0 top-1/4 h-1/2 w-[2px] bg-slate-700 group-hover:bg-white transition-colors duration-200" />
-</button>
-
-
-
-
-
-
-
-      {/* BottomNav fixed */}
-{isApprovedDriver && (
-  <div className="fixed bottom-20 left-4 right-4 z-40">
-   <div
-  className="
-    absolute
-    top-0
-    left-0
-    right-0
-    h-1
-    rounded-t-2xl
-    bg-gradient-to-r
-    from-green-400
-    via-emerald-500
-    to-green-400
-  "
-/> 
-<div
-  role="button"
-  tabIndex={0}
-  onClick={() => {
-    window.location.href = '/driver'
-  }}
-  onKeyDown={(e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      window.location.href = '/driver'
-    }
-  }}
-  className="
-    relative
-    w-full
-    rounded-2xl
-    bg-[#111315]
-    px-4
-    py-3
-    shadow-xl
-    border
-    border-zinc-800
-    flex
-    items-center
-    justify-between
-    text-white
-    transition-all
-    duration-300
-    hover:border-green-500/40
-  "
->
-      <div>
-        <h2 className="font-bold text-lg">
-          🚗 Driver Dashboard
-        </h2>
-
-<p className="text-sm text-red-200">
-  {driverOnline
-    ? `${pendingRideCount} ride request${pendingRideCount === 1 ? '' : 's'} waiting`
-    : 'Tap to start driving'}
-</p>
-      </div>
 <button
-  onClick={(e) => {
-    e.stopPropagation()
-    toggleDriverOnline()
-  }}
+  onClick={() => setPredictionDrawerOpen(true)}
   className={`
-    px-3
-    py-2
-    rounded-full
-    text-xs
-    font-bold
-    transition-all
-    duration-300
+    fixed left-0 top-1/2 z-50
+    flex h-28 w-6 items-center justify-center rounded-r-md
+    border-y border-r border-slate-800 bg-slate-950/90 backdrop-blur-sm
+    text-slate-400 shadow-lg shadow-black/20
+    
+    transition-all duration-300 ease-out
+    hover:bg-slate-900 hover:text-blue-400 hover:border-slate-700
+    
     ${
-      driverOnline
-        ? 'bg-green-500 text-white'
-        : 'bg-red-500 text-white'
+      videoPortalOpen || !showNav
+        ? "-translate-x-full opacity-0 pointer-events-none"
+        : "translate-x-0 -translate-y-1/2 opacity-100"
     }
+    
+    group
   `}
+  aria-label="Open predictions"
 >
-  {driverOnline ? '🟢 ONLINE' : '🔴 OFFLINE'}
+  {/* Rotating Text */}
+  <span
+    className="
+      block -rotate-90 whitespace-nowrap
+      text-[9px] font-bold uppercase tracking-[0.3em]
+      transition-colors duration-200
+      pointer-events-none
+    "
+  >
+    rada ya mtaa
+  </span>
+
+  {/* Glow indicator bar on the left edge */}
+  <div
+    className="
+      absolute left-0 top-1/4 h-1/2 w-[2px]
+      bg-transparent group-hover:bg-blue-500
+      shadow-[0_0_8px_#3b82f6]
+      transition-colors duration-200
+    "
+  />
 </button>
-   </div>
-  </div>
+
+
+
+
+
+
+
+
+{isApprovedDriver && (
+  <DriverOperationsHub
+    driverOnline={driverOnline}
+    pendingRideCount={pendingRideCount}
+    toggleDriverOnline={toggleDriverOnline}
+    onOpenDriver={() => router.push('/driver')}
+  />
 )}
 
 <div
@@ -793,25 +753,22 @@ const counts = imageUrls.map(
     right-0
     z-[9999]
     transition-all
-    duration-700
+    duration-[1500ms]
     ease-in-out
- ${
-  videoPortalOpen
-    ? "translate-y-full opacity-0 pointer-events-none"
-    : showNav
-    ? "translate-y-0 opacity-100"
-    : "translate-y-full opacity-0 pointer-events-none"
-}
+    ${
+      videoPortalOpen
+        ? "translate-y-full opacity-0 pointer-events-none"
+        : showNav
+        ? "translate-y-0 opacity-100"
+        : "translate-y-full opacity-0 pointer-events-none"
+    }
   `}
 >
-
-
-  
-<BottomNav
-  profile={profile}
-  unreadCount={unreadCount}
-  onCreateSelect={onCreateSelect}
-/>
+  <BottomNav
+    profile={profile}
+    unreadCount={unreadCount}
+    onCreateSelect={onCreateSelect}
+  />
 </div>
 
 {createMode === 'post' && (

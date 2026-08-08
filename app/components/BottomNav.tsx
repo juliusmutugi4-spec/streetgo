@@ -2,10 +2,17 @@
 
 import { Home, MessageCircle, User } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import CreateButton from './CreateButton'
 
-type BottomNavProps = {
-  profile: { username?: string; avatar_url?: string | null } | null
+// Strict UI Types
+interface UserProfile {
+  username?: string
+  avatar_url?: string | null
+}
+
+interface BottomNavProps {
+  profile: UserProfile | null
   unreadCount: number
   onCreateSelect: (mode: 'post' | 'prediction') => void
 }
@@ -15,55 +22,59 @@ export default function BottomNav({ profile, unreadCount, onCreateSelect }: Bott
   const navigate = (path: string) => router.push(path)
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#3e4042] bg-[#242526]/95 backdrop-blur-xl text-[#e4e6eb] shadow-[0_-4px_12px_rgba(0,0,0,0.15)] select-none">
-      {/* PERFECTLY BALANCED COLUMNS MATCHING THE TOP NAV GEOMETRY */}
-      <div className="mx-auto h-14 max-w-xl grid grid-cols-4 items-center justify-items-center">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-zinc-800 bg-zinc-950/70 backdrop-blur-xl text-zinc-400 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] select-none transition-all duration-300">
+      {/* PERFECTLY BALANCED INTERFACE AXIS */}
+      <div className="mx-auto h-14 max-w-xl grid grid-cols-4 items-center justify-items-center px-4">
         
-        {/* FEED */}
+        {/* SUBSYSTEM COMMLINK: FEED */}
         <button 
           onClick={() => navigate('/')} 
-          className="flex w-full flex-col items-center py-1 text-zinc-400 hover:text-white transition-colors duration-100 active:scale-95"
+          className="group flex w-full flex-col items-center justify-center py-1 transition-all duration-200 hover:text-zinc-100 active:scale-95"
         >
-          <Home size={20} />
-          <span className="text-[10px] font-semibold mt-0.5 tracking-wide">Feed</span>
+          <Home size={18} className="transition-transform duration-200 group-hover:scale-110" />
+          <span className="text-[10px] font-bold mt-1 uppercase tracking-wider text-zinc-500 group-hover:text-zinc-300">
+            Feed
+          </span>
         </button>
 
-        {/* CREATE CONTAINER WITH CORRECT VERTICAL ALIGNMENT ANCHOR */}
+        {/* CORE UTILITY: ACTION TRIGGER */}
         <div className="relative w-full flex items-center justify-center">
           <CreateButton onCreateSelect={onCreateSelect} />
         </div>
 
-        {/* MESSAGES */}
+        {/* SUBSYSTEM COMMLINK: TELEMETRY ALERTS */}
         <button 
           onClick={() => navigate('/messages')} 
-          className="relative flex w-full flex-col items-center py-1 text-zinc-400 hover:text-white transition-colors duration-100 active:scale-95"
+          className="group relative flex w-full flex-col items-center justify-center py-1 transition-all duration-200 hover:text-zinc-100 active:scale-95"
         >
           <div className="relative">
-            <MessageCircle size={20} />
+            <MessageCircle size={18} className="transition-transform duration-200 group-hover:scale-110" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-2 min-w-[14px] h-[14px] px-0.5 rounded-full bg-red-500 text-white text-[8px] font-black flex items-center justify-center border border-[#242526] shadow-sm">
+              <span className="absolute -top-1.5 -right-2.5 min-w-[14px] h-[14px] px-1 rounded-full bg-red-500 text-white text-[8px] font-black flex items-center justify-center border border-zinc-950 shadow-[0_0_8px_#ef4444] animate-pulse">
                 {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </div>
-          <span className="text-[10px] font-semibold mt-0.5 tracking-wide">Messages</span>
+          <span className="text-[10px] font-bold mt-1 uppercase tracking-wider text-zinc-500 group-hover:text-zinc-300">
+            Comms
+          </span>
         </button>
 
-        {/* PROFILE */}
+        {/* SUBSYSTEM COMMLINK: USER IDENTITY */}
         <button 
           onClick={() => navigate(profile?.username ? `/profile/${profile.username}` : '/')} 
-          className="flex w-full flex-col items-center py-1 text-zinc-400 hover:text-white transition-colors duration-100 active:scale-95"
+          className="group flex w-full flex-col items-center justify-center py-1 transition-all duration-200 hover:text-zinc-100 active:scale-95"
         >
           {profile?.avatar_url ? (
-            <img 
-              src={profile.avatar_url} 
-              alt={profile.username ?? 'Profile'} 
-              className="w-5 h-5 rounded-full object-cover border border-[#3e4042]" 
-            />
+            <div className="relative w-5 h-5 rounded-md overflow-hidden border border-zinc-800 transition-all duration-200 group-hover:border-zinc-500 group-hover:scale-110">
+              <Image src={profile.avatar_url} alt="Profile" fill className="object-cover" />
+            </div>
           ) : (
-            <User size={20} />
+            <User size={18} className="transition-transform duration-200 group-hover:scale-110" />
           )}
-          <span className="text-[10px] font-semibold mt-0.5 tracking-wide">Profile</span>
+          <span className="text-[10px] font-bold mt-1 uppercase tracking-wider text-zinc-500 group-hover:text-zinc-300">
+            User
+          </span>
         </button>
 
       </div>
