@@ -14,7 +14,7 @@ interface PostActionsProps {
   handleSendReax: () => Promise<void>
   setOpenRoom: React.Dispatch<React.SetStateAction<boolean>>
   post: { id: string; content: string }
-onOpenDispatch: () => void
+onOpenDispatch: (post: any) => void
 }
 
 export default function PostActions({
@@ -170,7 +170,7 @@ export default function PostActions({
   <button
 onClick={() => {
   playSound('success')
-  onOpenDispatch()
+  onOpenDispatch(post)
 }}
     aria-label="Dispatch post"
     className="

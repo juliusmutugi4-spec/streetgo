@@ -54,7 +54,7 @@ interface PostProps {
   setActivePostId?: React.Dispatch<React.SetStateAction<string | null>>
 
   onOpenDiscussion?: (post: any, comments: any[]) => void
-onOpenDispatch: () => void
+onOpenDispatch: (post: any) => void
 onOpenImageViewer?: (
   imageUrls: string[],
   imageIndex: number,

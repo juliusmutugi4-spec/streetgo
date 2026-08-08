@@ -4,7 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 import Post from './Post'
 import { getPosts, subscribeToPosts } from '../lib/feed'
 
-export default function Feed({ user }: { user: any }) {
+interface FeedProps {
+  user: any
+  onOpenDispatch: (post: any) => void
+}
+
+export default function Feed({ user, onOpenDispatch }: FeedProps) {
   const [posts, setPosts] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
@@ -106,6 +111,7 @@ export default function Feed({ user }: { user: any }) {
           key={post.id}
           post={post}
           user={user}
+          onOpenDispatch={onOpenDispatch}
         />
       ))}
 
