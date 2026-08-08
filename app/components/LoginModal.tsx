@@ -197,6 +197,13 @@ const {
     emailRedirectTo: `${window.location.origin}/auth/callback`
   }
 })
+console.log("=== SIGNUP DEBUG ===")
+console.log("USER ID:", data.user?.id)
+console.log("SESSION EXISTS:", !!data.session)
+console.log("SESSION USER ID:", data.session?.user?.id)
+console.log("AUTH ERROR:", error)
+
+
 
 
 
@@ -245,36 +252,36 @@ const {
 
 
 
-        const {
-          error: walletError
-        } =
-        await supabaseBrowser
-        .from("wallets")
-        .insert({
-
-          user_id:data.user.id,
-          balance:0,
-          reax_balance:0
-
-        })
 
 
 
-        if(walletError){
+const {
+  error: walletError
+} = await supabaseBrowser
+  .from("wallets")
+  .insert({
+    user_id: data.user.id,
+    balance: 0,
+    reax_balance: 0
+  })
 
-          console.error(
-            "WALLET INSERT ERROR:",
-            walletError
-          )
+if (walletError) {
 
-          setLoading(false)
+  console.error("=== WALLET INSERT ERROR ===")
+  console.error("MESSAGE:", walletError.message)
+  console.error("CODE:", walletError.code)
+  console.error("DETAILS:", walletError.details)
+  console.error("HINT:", walletError.hint)
 
-          return setErrorMsg(
-            walletError.message
-          )
+  setLoading(false)
 
-        }
+  return setErrorMsg(
+    `Wallet creation failed: ${walletError.message}`
+  )
+}
 
+console.log("=== WALLET CREATED SUCCESSFULLY ===")
+console.log("USER ID:", data.user.id)
       }
 
 

@@ -1,8 +1,11 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from './lib/supabase'
-import Post from './components/Post'
+import PostCard from './components/PostCard'
+import DispatchMenu from "./components/DispatchMenu"
 import CreatePost from './components/CreatePost'
+import ImageViewer from './components/ImageViewer'
+
 import LoginModal from './components/LoginModal'
 import TopNav from './components/TopNav'
 import BottomNav from './components/BottomNav'
@@ -24,6 +27,12 @@ type PostType = {
   username?: string
   avatar_url?: string | null
 }
+
+type ImageLikeRow = {
+  image_index: number
+  user_id: string
+}
+
 
 type PredictionType = {
   id: string
@@ -55,6 +64,7 @@ const {
 
 console.log("PROFILE:", profile)
   const [showLogin, setShowLogin] = useState(false)
+
   
 const {
   isApprovedDriver,
@@ -89,10 +99,77 @@ const [loadingProgress, setLoadingProgress] = useState(0)
 const [loadingStatus, setLoadingStatus] = useState("Starting StreetGO...")
 const [activePostId, setActivePostId] = useState<string | null>(null)
 const [discussionOpen, setDiscussionOpen] = useState(false)
-
+const [dispatchPost, setDispatchPost] = useState<PostType | null>(null)
 const [selectedPost, setSelectedPost] = useState<PostType | null>(null)
 
 const [discussionComments, setDiscussionComments] = useState<any[]>([])
+
+const [imageViewerOpen, setImageViewerOpen] = useState(false)
+
+const [viewerImages, setViewerImages] = useState<string[]>([])
+
+const [viewerCurrentImage, setViewerCurrentImage] = useState(0)
+
+const [viewerUsername, setViewerUsername] = useState('')
+
+const [viewerAvatarUrl, setViewerAvatarUrl] = useState('')
+
+
+const [isImageLiked, setIsImageLiked] = useState(false)
+const [imageLikes, setImageLikes] = useState<number[]>([])
+const [imageComments, setImageComments] = useState<any[]>([])
+const [imageCommentText, setImageCommentText] = useState('')
+const [showImageComments, setShowImageComments] = useState(false)
+
+
+
+const imageCommentsRequest = useRef(0)
+
+const loadImageComments = async (
+  postId: string,
+  imageIndex: number
+) => {
+  const requestId = ++imageCommentsRequest.current
+
+  // Remove comments belonging to the previous image immediately
+  setImageComments([])
+
+  const { data, error } = await supabase
+    .from("image_comments")
+    .select("*")
+    .eq("post_id", postId)
+    .eq("image_index", imageIndex)
+    .order("created_at", {
+      ascending: false,
+    })
+
+  if (error) {
+    console.error("IMAGE COMMENTS LOAD ERROR:", error)
+    return
+  }
+
+  // Ignore an old request if the user already moved
+  // to another image.
+  if (requestId !== imageCommentsRequest.current) return
+
+  setImageComments(data || [])
+}
+
+
+useEffect(() => {
+  if (!imageViewerOpen || !selectedPost) return
+
+  loadImageComments(
+    selectedPost.id,
+    viewerCurrentImage
+  )
+}, [
+  imageViewerOpen,
+  selectedPost,
+  viewerCurrentImage,
+])
+
+
 const lastScrollY = useRef(0)
 
 const [predictionDrawerOpen, setPredictionDrawerOpen] = useState(false)
@@ -123,7 +200,7 @@ useEffect(() => {
 
 
 useEffect(() => {
-  if (discussionOpen) {
+  if (discussionOpen || dispatchPost !== null) {
     document.body.style.overflow = "hidden"
   } else {
     document.body.style.overflow = ""
@@ -132,7 +209,7 @@ useEffect(() => {
   return () => {
     document.body.style.overflow = ""
   }
-}, [discussionOpen])
+}, [discussionOpen, dispatchPost])
 
 
 useEffect(() => {
@@ -338,6 +415,134 @@ const handleSendComment = async (message: string) => {
   setDiscussionComments(prev => [...prev, data])
 }
 
+const toggleImageLike = async () => {
+  if (!user) {
+    setShowLogin(true)
+    return
+  }
+
+  const postId = selectedPost?.id
+
+  if (!postId) {
+    console.error("No post selected for image like")
+    return
+  }
+
+  const imageIndex = viewerCurrentImage
+
+  const { data: existingLike, error: checkError } = await supabase
+    .from("image_likes")
+    .select("id")
+    .eq("post_id", postId)
+    .eq("image_index", imageIndex)
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (checkError) {
+    console.error("IMAGE LIKE CHECK ERROR:", checkError)
+    return
+  }
+
+  if (existingLike) {
+    const { error } = await supabase
+      .from("image_likes")
+      .delete()
+      .eq("id", existingLike.id)
+
+    if (error) {
+      console.error("IMAGE UNLIKE ERROR:", error)
+      return
+    }
+
+    setIsImageLiked(false)
+
+setImageLikes(prev => {
+  const updated = [...prev]
+  updated[viewerCurrentImage] = Math.max(
+    0,
+    (updated[viewerCurrentImage] || 0) - 1
+  )
+  return updated
+})
+
+  } else {
+    const { error } = await supabase
+      .from("image_likes")
+      .insert({
+        post_id: postId,
+        image_index: imageIndex,
+        user_id: user.id,
+      })
+
+if (error) {
+  console.error("=== IMAGE LIKE ERROR ===")
+  console.error("message:", error.message)
+  console.error("code:", error.code)
+  console.error("details:", error.details)
+  console.error("hint:", error.hint)
+  console.error("full error:", JSON.stringify(error, null, 2))
+  return
+}
+
+    setIsImageLiked(true)
+
+setImageLikes(prev => {
+  const updated = [...prev]
+  updated[viewerCurrentImage] =
+    (updated[viewerCurrentImage] || 0) + 1
+  return updated
+})
+
+
+  }
+}
+
+
+const addImageComment = async () => {
+  if (!user) {
+    setShowLogin(true)
+    return
+  }
+
+  const postId = selectedPost?.id
+
+  if (!postId) {
+    console.error("No post selected for image comment")
+    return
+  }
+
+  const content = imageCommentText.trim()
+
+  if (!content) return
+
+  const imageIndex = viewerCurrentImage
+
+  const { data, error } = await supabase
+    .from("image_comments")
+    .insert({
+      post_id: postId,
+      image_index: imageIndex,
+      user_id: user.id,
+      username: profile?.username ?? "Unknown",
+      avatar_url: profile?.avatar_url ?? null,
+      content,
+    })
+    .select()
+    .single()
+
+  if (error) {
+    console.error("IMAGE COMMENT ERROR:", error)
+    return
+  }
+
+  setImageComments(prev => [...prev, data])
+  setImageCommentText("")
+}
+
+
+
+
+
 
   return (
     <main className="min-h-screen bg-[#060608] text-[#f4f4f5] antialiased selection:bg-emerald-500/30 font-sans tracking-tight relative overflow-x-hidden">
@@ -405,43 +610,71 @@ duration-700 ease-in-out
           <div className="rounded-xl bg-zinc-900/10 border border-zinc-900/60 p-12 text-center backdrop-blur-md">
             <p className="text-sm font-mono text-zinc-500 tracking-wide"> INDEX_EMPTY: No packets detected on this stream. </p>
           </div>
-        ) : (
-          <div className="space-y-4">
 
+          
+) : (
+  <div className="space-y-2">
+    {posts.map((post) => (
+      <PostCard
+        key={post.id}
+        post={post}
+        user={user}
+        profile={profile}
+        isActive={activePostId === post.id}
+        setActivePostId={setActivePostId}
+        onOpenDiscussion={(currentPost, comments) => {
+          setSelectedPost(currentPost);
+          setDiscussionComments(comments);
+          setDiscussionOpen(true);
+        }}
 
+onOpenDispatch={() => setDispatchPost(post)}
 
+        onOpenImageViewer={(imageUrls, imageIndex, username, avatarUrl) => {
+          setSelectedPost(post);
+          setViewerImages(imageUrls);
+          setViewerCurrentImage(imageIndex);
+          setViewerUsername(username);
+          setViewerAvatarUrl(avatarUrl);
+          setImageComments([]);
+          setImageCommentText("");
+          setShowImageComments(false);
+          setImageViewerOpen(true);
 
-            {posts.map((post) => (
-              <div 
-                key={post.id} 
-                className="group relative rounded-xl bg-[#0d0d11]/40 border border-zinc-900/80 overflow-hidden shadow-xl backdrop-blur-md transition-all duration-300 hover:border-zinc-800 hover:shadow-black/50 hover:-translate-y-[1px]"
-              >
-                <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/0 to-transparent group-hover:via-emerald-500/20 transition-all duration-500" />
-                <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/0 to-transparent group-hover:via-red-500/10 transition-all duration-500" />
-                <div className="p-0.5 relative z-10">
+          (async () => {
+            try {
+              const { data, error } = await supabase
+                .from("image_likes")
+                .select("image_index, user_id")
+                .eq("post_id", post.id);
 
+              if (error) throw error;
 
+const counts = imageUrls.map(
+  (_: string, idx: number) =>
+    data?.filter(
+      (row: ImageLikeRow) => row.image_index === idx
+    ).length ?? 0
+);
+              setImageLikes(counts);
 
-<Post
-  key={post.id}
-  post={post}
-  user={user}
-  profile={profile}
-  isActive={activePostId === post.id}
-  setActivePostId={setActivePostId}
-  onOpenDiscussion={(post, comments) => {
-    setSelectedPost(post)
-    setDiscussionComments(comments)
-    setDiscussionOpen(true)
-  }}
-/>
+         const currentUserLiked =
+  data?.some(
+    (row: ImageLikeRow) =>
+      row.image_index === imageIndex &&
+      row.user_id === user?.id
+  ) ?? false;
+              setIsImageLiked(currentUserLiked);
+            } catch (err) {
+              console.error("IMAGE LIKES LOAD ERROR:", err);
+            }
+          })();
+        }}
+      />
+    ))}
+  </div>
+)}
 
-
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 </div>
 
@@ -688,6 +921,38 @@ duration-700 ease-in-out
     comments={discussionComments}
     onSendMessage={handleSendComment}
 />
+
+<ImageViewer
+  show={imageViewerOpen}
+  imageUrls={viewerImages}
+  currentImage={viewerCurrentImage}
+  setCurrentImage={setViewerCurrentImage}
+isImageLiked={isImageLiked}
+
+  username={viewerUsername}
+  avatarUrl={viewerAvatarUrl}
+  onClose={() => setImageViewerOpen(false)}
+
+ showImageComments={showImageComments}
+setShowImageComments={setShowImageComments}
+
+  imageLikes={imageLikes}
+  imageCommentCounts={[imageComments.length]}
+imageComments={imageComments}
+imageCommentText={imageCommentText}
+setImageCommentText={setImageCommentText}
+
+  addImageComment={addImageComment}
+
+  toggleImageLike={toggleImageLike}
+/>
+
+{dispatchPost && (
+  <DispatchMenu
+    postUrl={`${window.location.origin}/post/${dispatchPost.id}`}
+    onClose={() => setDispatchPost(null)}
+  />
+)}
 
     </main>
   )

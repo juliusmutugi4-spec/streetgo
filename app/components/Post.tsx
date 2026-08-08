@@ -54,6 +54,15 @@ interface PostProps {
   setActivePostId?: React.Dispatch<React.SetStateAction<string | null>>
 
   onOpenDiscussion?: (post: any, comments: any[]) => void
+onOpenDispatch: () => void
+onOpenImageViewer?: (
+  imageUrls: string[],
+  imageIndex: number,
+  username: string,
+  avatarUrl: string
+) => void
+
+
 }
 
 function Post({
@@ -63,6 +72,8 @@ function Post({
   isActive,
   setActivePostId,
   onOpenDiscussion,
+  onOpenImageViewer,
+  onOpenDispatch,
 }: PostProps) {
 
   const router = useRouter()
@@ -865,45 +876,17 @@ return (
   content={post.content}
   createdAt={post.created_at}
 /> */}
-
 <div
   ref={postRef}
-  className={`
-    group
-    relative
-    overflow-hidden
-    transition-all
-    duration-500
-
-    ${
-      portalOpening
-        ? "scale-110 opacity-0 blur-md"
-        : "scale-100 opacity-100"
-    }
-
-    rounded-xl
-    border
-    ${signalTheme.border}
-    ${signalTheme.glow}
-    bg-[#05070b]/80
-    backdrop-blur-xl
-  `}
+  className={`group relative overflow-visible backdrop-blur-xl transition-all duration-500 rounded-xl bg-[#05070b]/80 ${
+    portalOpening
+      ? "scale-110 opacity-0 blur-md"
+      : "scale-100 opacity-100"
+  }`}
 >
-  <div
-  className={`
-    absolute
-    top-0
-    left-0
-    right-0
-    h-[1px]
-    bg-gradient-to-r
-    from-transparent
-    ${signalTheme.line}
-    to-transparent
-  `}
-/>
-  <div className="absolute -top-20 -left-20 w-48 h-48 bg-cyan-500/10 blur-[80px]" />
-  <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-orange-500/10 blur-[80px]" />
+
+
+
 
   <div className="relative px-0 pb-4 pt-4">
       {/* Header */}
@@ -1208,12 +1191,20 @@ return (
 </div>
 
 {imageUrls.length > 0 && (
-  <SmartImageGallery
-    imageUrls={imageUrls}
-    currentImage={currentImage}
-    setCurrentImage={setCurrentImage}
-    setShowImageViewer={setShowImageViewer}
-  />
+<SmartImageGallery
+  imageUrls={imageUrls}
+  currentImage={currentImage}
+  setCurrentImage={setCurrentImage}
+  setShowImageViewer={setShowImageViewer}
+  onOpenImageViewer={(index) => {
+    onOpenImageViewer?.(
+      imageUrls,
+      index,
+      username,
+      avatarUrl
+    )
+  }}
+/>
 )}
 {post.video_url && (
   <PostVideo
@@ -1268,6 +1259,7 @@ return (
     onOpenDiscussion?.(post, comments)
   }}
   post={post}
+  onOpenDispatch={onOpenDispatch}
 />
 
 
@@ -1302,7 +1294,7 @@ return (
   imageCommentCounts={imageCommentCounts}
 
   toggleImageLike={toggleImageLike}
-
+isImageLiked={imageLiked[currentImage]}
   imageComments={imageComments}
   imageCommentText={imageCommentText}
   setImageCommentText={setImageCommentText}

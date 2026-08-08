@@ -19,7 +19,7 @@ export default function WalletBalance({ wallet }: Props) {
           <div className="space-y-0.5">
             <div className="flex items-center gap-1">
               <span className="font-mono text-[8px] font-bold uppercase tracking-wider text-[#737373]">
-                Available Liquidity
+                Available money
               </span>
               <span className="h-1 w-1 rounded-full bg-[#10b981] animate-pulse" />
             </div>
@@ -54,7 +54,7 @@ export default function WalletBalance({ wallet }: Props) {
       
       <div className="space-y-0.5">
         <span className="block font-mono text-[8px] font-bold uppercase tracking-widest text-[#525252] leading-none">
-          Protocol Yield
+          earnigs 
         </span>
         <span className="block text-[11px] font-medium tracking-tight text-[#d4d4d4] leading-none">
           REAX Balance

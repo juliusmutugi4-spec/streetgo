@@ -11,20 +11,28 @@ interface SmartImageGalleryProps {
   currentImage: number
   setCurrentImage: (index: number) => void
   setShowImageViewer: (show: boolean) => void
+  onOpenImageViewer?: (index: number) => void
 }
 
 export default function SmartImageGallery({
   imageUrls,
   setCurrentImage,
   setShowImageViewer,
+  onOpenImageViewer,
 }: SmartImageGalleryProps) {
 
   if (!imageUrls || imageUrls.length === 0) return null
 
-  const openImage = (index: number) => {
-    setCurrentImage(index)
-    setShowImageViewer(true)
+const openImage = (index: number) => {
+  setCurrentImage(index)
+
+  if (onOpenImageViewer) {
+    onOpenImageViewer(index)
+    return
   }
+
+  setShowImageViewer(true)
+}
 
   if (imageUrls.length === 1) {
     return (

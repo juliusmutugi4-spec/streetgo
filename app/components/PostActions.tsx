@@ -1,19 +1,20 @@
 'use client'
 
-import { Heart, MessageCircle, Share2 } from "lucide-react"
+
+import { Flame, MessageSquare, Send, Sparkles } from "lucide-react"
 import ReactionButton from "./ReactionButton"
+
 
 interface PostActionsProps {
   liked: boolean
   likes: number
   comments: any[]
   reaxCount: number
- 
   toggleLike: () => void
   handleSendReax: () => Promise<void>
- 
   setOpenRoom: React.Dispatch<React.SetStateAction<boolean>>
   post: { id: string; content: string }
+onOpenDispatch: () => void
 }
 
 export default function PostActions({
@@ -21,15 +22,57 @@ export default function PostActions({
   likes,
   comments,
   reaxCount,
-  
   toggleLike,
   handleSendReax,
-
-setOpenRoom,
-post,
+  setOpenRoom,
+  post,
+  onOpenDispatch,
 }: PostActionsProps) {
-  
+
+  // Pure Web Audio API synthesized interface sounds (No external files required)
+  const playSound = (type: 'click' | 'success' | 'pop') => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContext) return;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      if (type === 'click') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.05, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.05);
+      } else if (type === 'success') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.06); // E5
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      } else if (type === 'pop') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleShare = async () => {
+    playSound('success');
     const url = `${window.location.origin}/post/${post.id}`
     if (navigator.share) {
       try {
@@ -43,79 +86,131 @@ post,
       }
     } else {
       await navigator.clipboard.writeText(url)
-      // Custom minimal toast notification recommended instead of raw alert
-      alert("Link copied to clipboard!")
     }
   }
 
+  const handleLikeClick = () => {
+    playSound(liked ? 'click' : 'pop');
+    toggleLike();
+  };
+
+  const handleCommentClick = () => {
+    playSound('click');
+    setOpenRoom(true);
+  };
+
   return (
-    <div className="w-full bg-[#242526] px-4 select-none">
-      {/* METRICS ROW (Facebook-style counts above buttons) */}
+    <div className="w-full bg-[#09090b] px-4 select-none border border-black rounded-b-xl">
+      {/* METRICS ROW */}
       {(likes > 0 || reaxCount > 0 || comments.length > 0) && (
-        <div className="flex items-center justify-between py-2 text-[13px] text-[#b0b3b8] border-b border-[#3e4042]">
-          {/* Left: Interactions */}
-          <div className="flex items-center gap-1.5 cursor-pointer hover:underline">
-            <div className="flex items-center -space-x-1">
-              {likes > 0 && (
-                <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[#1877f2]">
-                  <Heart size={10} fill="white" className="text-white" />
-                </span>
-              )}
-            </div>
+        <div className="flex items-center justify-between py-2 text-[12px] text-zinc-400 font-medium tracking-wide">
+          {/* Left Side Metrics */}
+          <div className="flex items-center gap-1.5 cursor-pointer hover:text-zinc-200 transition-colors">
+            {likes > 0 && (
+              <span className="flex items-center justify-center w-4 h-4 rounded-md bg-rose-500/10 text-rose-400 shadow-sm shadow-rose-500/20">
+                <Flame size={10} className="fill-current" />
+              </span>
+            )}
             <span>{likes + reaxCount}</span>
           </div>
 
-          {/* Right: Comments & Shares */}
-          <div className="flex items-center gap-3 text-[#b0b3b8]">
+          {/* Right Side Metrics */}
+          <div className="flex items-center gap-3">
             {comments.length > 0 && (
-<button
-  onClick={() => setOpenRoom(true)}
-  className="hover:underline text-[13px]"
->
-  {comments.length} {comments.length === 1 ? 'comment' : 'comments'}
-</button>
+              <button
+                onClick={handleCommentClick}
+                className="hover:text-zinc-200 text-[12px] font-medium transition-colors"
+              >
+                {comments.length} {comments.length === 1 ? 'discussion' : 'discussions'}
+              </button>
             )}
           </div>
         </div>
       )}
 
-      {/* ACTION BUTTONS ROW */}
-      <div className="flex items-center justify-between py-1 my-0.5">
-        {/* LIKE BUTTON */}
+      {/* FUTURISTIC ACTION BUTTONS ROW */}
+      <div className="flex items-center justify-between py-1.5 gap-1">
+        {/* HYPER-MODERN LIKE (FLAME) */}
         <button
-          onClick={toggleLike}
-          className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-[#b0b3b8] font-semibold text-[14px] transition-colors duration-150 ease-in-out hover:bg-white/10 active:scale-95"
+          onClick={handleLikeClick}
+          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-zinc-400 font-semibold text-[13px] tracking-wide transition-all duration-200 hover:bg-zinc-900 hover:text-zinc-200 active:scale-95 group"
         >
-          <Heart
-            size={18}
-            fill={liked ? "#1877f2" : "none"}
-            className={`transition-transform duration-200 ${liked ? "text-[#1877f2] scale-110" : "text-[#b0b3b8]"}`}
+          <Flame
+            size={16}
+            className={`transition-all duration-300 ${
+              liked 
+                ? "text-rose-500 fill-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)] scale-110" 
+                : "text-zinc-400 group-hover:text-rose-400"
+            }`}
           />
-          <span className={liked ? "text-[#1877f2]" : ""}>Like</span>
+          <span className={liked ? "text-rose-400" : ""}>Ignite</span>
         </button>
 
-        {/* COMMENT BUTTON */}
+        {/* FUTURISTIC COMMENT */}
         <button
-         onClick={() => setOpenRoom(true)}
-className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-[#b0b3b8] font-semibold text-[14px] transition-colors duration-150 ease-in-out hover:bg-white/10 active:scale-95"
+          onClick={handleCommentClick}
+          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-zinc-400 font-semibold text-[13px] tracking-wide transition-all duration-200 hover:bg-zinc-900 hover:text-zinc-200 active:scale-95 group"
         >
-          <MessageCircle size={18} />
-          <span>Comment</span>
+          <MessageSquare size={16} className="transition-colors group-hover:text-cyan-400" />
+          <span>Discuss</span>
         </button>
 
-        {/* REACTION/TIP BUTTON */}
-        <div className="flex-1 flex items-center justify-center rounded-md transition-colors duration-150 ease-in-out hover:bg-white/10">
+        {/* REACTION BUTTON */}
+        <div 
+          onClick={() => playSound('pop')}
+          className="flex-1 flex items-center justify-center rounded-lg transition-all duration-200 hover:bg-zinc-900"
+        >
           <ReactionButton handleSendReax={handleSendReax} reaxCount={reaxCount} />
         </div>
 
-        {/* SHARE BUTTON */}
-        <button
-          onClick={handleShare}
-          className="flex-1 flex items-center justify-center gap-2 py-1.5 rounded-md text-[#b0b3b8] font-semibold text-[14px] transition-colors duration-150 ease-in-out hover:bg-white/10 active:scale-95"
-        >
-          <Share2 size={18} />
-          <span>Share</span>
-        </button>
+        {/* FUTURISTIC SHARE */}
+{/* DISPATCH */}
+<div className="relative flex-1">
+
+  <button
+onClick={() => {
+  playSound('success')
+  onOpenDispatch()
+}}
+    aria-label="Dispatch post"
+    className="
+      w-full
+      flex
+      items-center
+      justify-center
+      gap-2
+      py-2
+      rounded-lg
+      text-zinc-400
+      font-semibold
+      text-[13px]
+      tracking-wide
+      transition-all
+      duration-200
+      hover:bg-emerald-400/5
+      hover:text-zinc-200
+      active:scale-[0.97]
+      group
+    "
+  >
+    <Send
+      size={16}
+      strokeWidth={1.8}
+      className="
+        transition-all
+        duration-200
+        group-hover:text-emerald-400
+        group-hover:-translate-y-0.5
+        group-hover:translate-x-0.5
+      "
+    />
+
+    <span>Dispatch</span>
+  </button>
+
+ 
+
+</div>
       </div>
     </div>
   )

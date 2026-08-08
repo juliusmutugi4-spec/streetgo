@@ -16,6 +16,8 @@ interface ImageViewerProps {
   currentImage: number
   setCurrentImage: (index: number) => void
 
+  isImageLiked: boolean
+
   username: string
   avatarUrl: string
 
@@ -42,6 +44,7 @@ export default function ImageViewer({
   imageUrls,
   currentImage,
   setCurrentImage,
+  isImageLiked,
   username,
   avatarUrl,
   onClose,
