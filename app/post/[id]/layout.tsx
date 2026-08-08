@@ -1,15 +1,20 @@
 import type { Metadata, Viewport } from "next"
 
+// Centralized configuration for easier maintenance
+const APP_URL = "https://streetgo.app"
+const APP_NAME = "StreetGO"
+const DEFAULT_TITLE = "StreetGO — Discover & Share"
+const DEFAULT_DESC = "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network."
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://streetgo.app"),
+  metadataBase: new URL(APP_URL),
 
   title: {
-    default: "StreetGO — Discover & Share",
-    template: "%s | StreetGO",
+    default: DEFAULT_TITLE,
+    template: `%s | ${APP_NAME}`,
   },
 
-  description:
-    "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
+  description: DEFAULT_DESC,
 
   keywords: [
     "streetgo",
@@ -17,68 +22,62 @@ export const metadata: Metadata = {
     "dispatch posts",
     "community feeds",
     "real-time updates",
+    "hyperlocal tracking",
+    "community mapping",
   ],
 
-  authors: [{ name: "StreetGO Core Team" }],
-  creator: "StreetGO",
-  publisher: "StreetGO",
+  authors: [{ name: `${APP_NAME} Core Team` }],
+  creator: APP_NAME,
+  publisher: APP_NAME,
 
   robots: {
     index: true,
     follow: true,
     nocache: false,
-
     googleBot: {
       index: true,
       follow: true,
       noimageindex: false,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
 
   openGraph: {
-    title: "StreetGO — Discover & Share",
-
-    description:
-      "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
-
-    siteName: "StreetGO",
-
-    url: "https://streetgo.app",
-
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESC,
+    siteName: APP_NAME,
+    url: APP_URL,
     type: "website",
-
     locale: "en_US",
-
     images: [
       {
-        url: "/og-image.png",
+        url: `${APP_URL}/og-image.png`, // Absolute path required by many platforms
         width: 1200,
         height: 630,
-        alt: "StreetGO Network Interface Preview",
+        alt: `${APP_NAME} Network Interface Preview`,
       },
     ],
   },
 
   twitter: {
     card: "summary_large_image",
-
-    title: "StreetGO — Discover & Share",
-
-    description:
-      "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
-
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESC,
     creator: "@StreetGOApp",
-
-    images: ["/og-image.png"],
+    images: [`${APP_URL}/og-image.png`], // Absolute path required
   },
 
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon-16x16.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
+    ],
     apple: "/apple-touch-icon.png",
   },
 
-  manifest: "/site.webmanifest",
+  manifest: `${APP_URL}/site.webmanifest`,
 }
 
 export const viewport: Viewport = {
@@ -86,14 +85,15 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Note: Accessibility best practices recommend allowing user scaling.
+  // maximumScale: 1, userScalable: false are omitted unless explicitly required.
 }
 
 interface PostLayoutProps {
   children: React.ReactNode
 }
 
+// Wrapped in a semantic HTML tag to improve layout structure and SEO scrapers
 export default function PostLayout({ children }: PostLayoutProps) {
-  return <>{children}</>
+  return <section className="w-full min-h-screen">{children}</section>
 }
