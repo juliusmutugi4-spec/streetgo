@@ -51,12 +51,10 @@ export const metadata: Metadata = {
 
     images: [
       {
-        url: "https://streetgo.app/og-image.png",
-        secureUrl: "https://streetgo.app/og-image.png",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "StreetGO Network Interface Preview",
-        type: "image/png",
       },
     ],
   },
@@ -71,7 +69,7 @@ export const metadata: Metadata = {
 
     creator: "@StreetGOApp",
 
-    images: ["https://streetgo.app/og-image.png"],
+    images: ["/og-image.png"],
   },
 
   icons: {
@@ -88,8 +86,8 @@ export const viewport: Viewport = {
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 5,
-  userScalable: true,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 interface PostLayoutProps {
