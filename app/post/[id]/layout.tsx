@@ -1,78 +1,25 @@
-import type { Metadata, Viewport } from "next"
+import type { Metadata } from "next"
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://streetgo.app"),
-  title: {
-    default: "StreetGO — Discover & Share",
-    template: "%s | StreetGO"
-  },
-  description: "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
-  keywords: ["streetgo", "social network", "dispatch posts", "community feeds", "real-time updates"],
-  authors: [{ name: "StreetGO Core Team" }],
-  creator: "StreetGO",
-  publisher: "StreetGO",
-  robots: {
-    index: true,
-    follow: true,
-    nocache: false,
-    googleBot: {
-      index: true,
-      follow: true,
-      noimageindex: false,
-    },
-  },
+  title: "StreetGO",
+  description: "Discover and share posts on StreetGO.",
   openGraph: {
-    title: "StreetGO — Discover & Share",
-    description: "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
-    siteName: "StreetGO",
+    title: "StreetGO",
+    description: "Discover and share posts on StreetGO.",
     url: "https://streetgo.app",
+    siteName: "StreetGO",
     type: "website",
-    locale: "en_US",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1200,
-        height: 630,
-        alt: "StreetGO Network Interface Preview",
-      },
-    ],
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "StreetGO" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "StreetGO — Discover & Share",
-    description: "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
-    creator: "@StreetGOApp",
+    title: "StreetGO",
+    description: "Discover and share posts on StreetGO.",
     images: ["/og-image.png"],
   },
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon-16x16.png",
-    apple: "/apple-touch-icon.png",
-  },
-  manifest: "/site.webmanifest"
 }
 
-export const viewport: Viewport = {
-  themeColor: "#05070b",
-  colorScheme: "dark",
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
-}
-
-interface PostLayoutProps {
-  children: React.ReactNode
-}
-
-export default function PostLayout({ children }: PostLayoutProps) {
-  return (
-    <html lang="en" className="dark scroll-smooth antialiased">
-      <body className="min-h-screen bg-[#05070b] text-zinc-100 selection:bg-rose-500/20 selection:text-rose-400">
-        <main className="relative flex min-h-screen flex-col overflow-x-hidden">
-          {children}
-        </main>
-      </body>
-    </html>
-  )
+export default function PostLayout({ children }: { children: React.ReactNode }) {
+  return children
 }
