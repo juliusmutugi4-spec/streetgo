@@ -220,263 +220,198 @@ useEffect(() => {
   return () => clearInterval(timer)
 
 }, [progress, displayProgress])
+return (
+  <main className="min-h-screen bg-zinc-950 text-zinc-100 p-4 sm:p-8 font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+    
+    {/* =====================================================
+        CRITICAL CORE TELEMETRY UPLOAD OVERLAY
+    ====================================================== */}
+    {uploading && (
+      <div className="fixed inset-0 z-[9999] bg-zinc-950/80 backdrop-blur-xl flex items-center justify-center p-6 animate-in fade-in duration-200">
+        <div className="w-full max-w-md border border-zinc-800 bg-zinc-900/60 p-8 rounded-2xl shadow-[0_24px_50px_-12px_rgba(0,0,0,0.7)] backdrop-blur-2xl relative overflow-hidden">
+          
+          {/* Laser Scanning Indicator Line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_12px_#22d3ee] animate-pulse" />
 
-  return (
-    <main className="min-h-screen bg-[#060608] text-white p-6">
+          <div className="text-center">
+            <div className="flex justify-center mb-6">
+              <div className="relative flex h-16 w-16 items-center justify-center">
+                <div className="absolute h-full w-full rounded-full border-2 border-zinc-800 border-t-cyan-400 animate-spin" />
+                <span className="text-sm font-black text-cyan-400 animate-pulse">▲</span>
+              </div>
+            </div>
 
-{uploading && (
-  <div
-    className="
-      fixed
-      inset-0
-      z-[9999]
-      bg-black/80
-      backdrop-blur-md
-      flex
-      items-center
-      justify-center
-      p-6
-    "
-  >
-    <div
-      className="
-        w-full
-        max-w-md
-        bg-zinc-900
-        rounded-3xl
-        p-8
-        border
-        border-zinc-700
-        shadow-2xl
-      "
-    >
-      <div className="text-center">
+            <h2 className="text-lg font-black uppercase tracking-widest text-zinc-100">
+              Uploading Matrix
+            </h2>
+            <p className="text-xs text-zinc-500 font-medium tracking-wide uppercase mt-1.5">
+              Maintain Connection — Do Not Terminate
+            </p>
+          </div>
 
-<div className="flex justify-center mb-6">
-
-  <div
-    className="
-      w-20
-      h-20
-      rounded-full
-      border-4
-      border-zinc-700
-      border-t-cyan-400
-      animate-spin
-    "
-  />
-
-</div>
-
-        <h2 className="text-2xl font-black mt-5">
-          Uploading Driver Application
-        </h2>
-
-        <p className="text-zinc-400 mt-2">
-          Please don't close this page.
-        </p>
-
-      </div>
-
-      <div className="mt-8">
-
-        <div className="flex justify-between text-sm mb-3">
-
-          <span>{progressText}</span>
-
-          <span>{progress}%</span>
-
+          <div className="mt-8">
+            <div className="flex justify-between items-end text-[10px] font-bold uppercase tracking-wider text-zinc-400 mb-2 font-mono">
+              <span className="truncate max-w-[80%] text-zinc-500">{progressText}</span>
+              <span className="text-cyan-400">{progress}%</span>
+            </div>
+            
+            <div className="h-1 rounded-full bg-zinc-900 overflow-hidden border border-zinc-800/50">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-300 ease-out shadow-[0_0_8px_#06b6d4]"
+                style={{ width: `${displayProgress}%` }}
+              />
+            </div>
+          </div>
         </div>
-
-        <div className="h-3 rounded-full bg-zinc-800 overflow-hidden">
-
-          <div
-            className="
-              h-full
-              bg-cyan-400
-              transition-all
-              duration-500
-            "
-style={{
-  width: `${displayProgress}%`
-}}
-          />
-
-        </div>
-
       </div>
+    )}
 
-    </div>
-  </div>
-)}
-
-      <div className="max-w-xl mx-auto">
-
-        <h1 className="text-4xl font-black mb-8">
-          🚗 Become Driver
+    {/* =====================================================
+        CENTRAL INTERFACE CONTENT
+    ====================================================== */}
+    <div className="max-w-2xl mx-auto">
+      
+      {/* HEADER SECTION PANEL */}
+      <div className="mb-10 relative">
+        <div className="absolute -left-4 top-1/2 -translate-y-1/2 w-[2px] h-8 bg-gradient-to-b from-cyan-400 to-blue-500" />
+        <h1 className="text-2xl font-black uppercase tracking-widest text-zinc-100">
+          Operator Registry
         </h1>
+        <p className="text-xs text-zinc-400 tracking-wide font-medium mt-1 uppercase">
+          Initialize verification logs to authenticate driver status
+        </p>
+      </div>
 
-        <div className="space-y-4">
+      {/* CORE PROFILE MATRIX CARD */}
+      <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-5 sm:p-6 backdrop-blur-md mb-6 shadow-inner">
+        <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
+          <span className="text-cyan-400 text-xs">📋</span> Personal Telemetry Logs
+        </h2>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2 relative">
+            <input
+              type="text"
+              placeholder="Full Name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              className="w-full text-sm px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 focus:shadow-[0_0_15px_rgba(34,211,246,0.05)] transition-all"
+            />
+          </div>
 
           <input
-            placeholder="Full Name"
-            value={fullName}
-            onChange={(e)=>setFullName(e.target.value)}
-            className="w-full p-4 rounded-xl bg-zinc-900 border border-zinc-800"
-          />
-
-          <input
+            type="tel"
             placeholder="Phone Number"
             value={phone}
-            onChange={(e)=>setPhone(e.target.value)}
-            className="w-full p-4 rounded-xl bg-zinc-900 border border-zinc-800"
+            onChange={(e) => setPhone(e.target.value)}
+            className="w-full text-sm px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 transition-all"
           />
 
           <input
+            type="text"
             placeholder="National ID Number"
             value={idNumber}
-            onChange={(e)=>setIdNumber(e.target.value)}
-            className="w-full p-4 rounded-xl bg-zinc-900 border border-zinc-800"
+            onChange={(e) => setIdNumber(e.target.value)}
+            className="w-full text-sm px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 transition-all"
           />
-
-          <select
-            value={vehicleType}
-            onChange={(e)=>setVehicleType(e.target.value)}
-            className="w-full p-4 rounded-xl bg-zinc-900 border border-zinc-800"
-          >
-            <option value="boda">🏍️ Bodaboda</option>
-            <option value="taxi">🚗 Taxi</option>
-          </select>
-
-          <input
-            placeholder="Plate Number"
-            value={plateNumber}
-            onChange={(e)=>setPlateNumber(e.target.value)}
-            className="w-full p-4 rounded-xl bg-zinc-900 border border-zinc-800"
-          />
-
-          <input
-  placeholder="Vehicle Model"
-  value={vehicleModel}
-  onChange={(e)=>setVehicleModel(e.target.value)}
-  className="w-full p-4 rounded-xl bg-zinc-900 border border-zinc-800"
-/>
-
-<input
-  placeholder="Vehicle Color"
-  value={vehicleColor}
-  onChange={(e)=>setVehicleColor(e.target.value)}
-  className="w-full p-4 rounded-xl bg-zinc-900 border border-zinc-800"
-/>
-
-
-
-<h2 className="text-2xl font-bold mt-10 mb-5">
-  Upload Documents
-</h2>
-
-<div className="space-y-4">
-
-
-  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-    <p>🪪 Driving License</p>
-
-    <input
-      type="file"
-      accept="image/*"
-      onChange={(e) =>
-        setLicensePhoto(e.target.files?.[0] || null)
-      }
-    />
-  </div>
-
-  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-    <p>🆔 ID Front</p>
-
-    <input
-      type="file"
-      accept="image/*"
-      onChange={(e) =>
-        setIdFront(e.target.files?.[0] || null)
-      }
-    />
-  </div>
-
-  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-    <p>🆔 ID Back</p>
-
-    <input
-      type="file"
-      accept="image/*"
-      onChange={(e) =>
-        setIdBack(e.target.files?.[0] || null)
-      }
-    />
-  </div>
-
-  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-    <p>🏍️ Vehicle Photo</p>
-
-    <input
-      type="file"
-      accept="image/*"
-      onChange={(e) =>
-        setVehiclePhoto(e.target.files?.[0] || null)
-      }
-    />
-  </div>
-{uploading && (
-  <div className="mb-4">
-
-    <div className="flex justify-between text-sm text-zinc-400 mb-2">
-      <span>{progressText}</span>
-      <span>{displayProgress}%</span>
-    </div>
-
-    <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-
-      <div
-        className="
-          h-full
-          bg-cyan-400
-          transition-all
-          duration-500
-        "
-style={{
-  width: `${displayProgress}%`
-}}
-      />
-
-    </div>
-
-  </div>
-)}
-<button
-  onClick={submitApplication}
-  disabled={uploading}
-  className="
-    w-full
-    p-4
-    rounded-xl
-    bg-cyan-500
-    text-black
-    font-black
-    transition-all
-    duration-300
-    disabled:opacity-70
-    disabled:cursor-not-allowed
-  "
->
-  {uploading ? progressText : 'Submit Application'}
-</button>
-
-</div>
-
-
         </div>
-
       </div>
 
-    </main>
-  )
+      {/* HARDWARE MATRIX SPECIFICATION CARD */}
+      <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-5 sm:p-6 backdrop-blur-md mb-6 shadow-inner">
+        <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
+          <span className="text-emerald-400 text-xs">⚙️</span> Transport Hardware Specs
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="relative">
+            <select
+              value={vehicleType}
+              onChange={(e) => setVehicleType(e.target.value)}
+              className="w-full text-sm px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-300 focus:outline-none focus:border-cyan-500/50 transition-all appearance-none cursor-pointer"
+            >
+              <option value="boda">🏍️ Bodaboda Fleet</option>
+              <option value="taxi">🚗 Taxi Grid</option>
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-zinc-500 text-[10px]">▼</div>
+          </div>
+
+          <input
+            type="text"
+            placeholder="Plate Number"
+            value={plateNumber}
+            onChange={(e) => setPlateNumber(e.target.value)}
+            className="w-full text-sm px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 transition-all"
+          />
+
+          <input
+            type="text"
+            placeholder="Vehicle Model"
+            value={vehicleModel}
+            onChange={(e) => setVehicleModel(e.target.value)}
+            className="w-full text-sm px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 transition-all"
+          />
+
+          <input
+            type="text"
+            placeholder="Vehicle Color"
+            value={vehicleColor}
+            onChange={(e) => setVehicleColor(e.target.value)}
+            className="w-full text-sm px-4 py-3 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-cyan-500/50 transition-all"
+          />
+        </div>
+      </div>
+
+      {/* CORE IDENTITY MATRIX UPLOAD CARD */}
+      <div className="border border-zinc-800 bg-zinc-900/30 rounded-xl p-5 sm:p-6 backdrop-blur-md mb-8 shadow-inner">
+        <h2 className="text-[11px] font-black uppercase tracking-widest text-zinc-400 mb-4 flex items-center gap-2">
+          <span className="text-amber-400 text-xs">🪪</span> Document Authentication Nodes
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          
+          {/* Item File Module Array */}
+          {[
+            { label: 'Driving License Matrix', state: licensePhoto, setter: setLicensePhoto },
+            { label: 'ID Front Facade', state: idFront, setter: setIdFront },
+            { label: 'ID Back Facade', state: idBack, setter: setIdBack },
+            { label: 'Vehicle Configuration Photo', state: vehiclePhoto, setter: setVehiclePhoto }
+          ].map((item, index) => (
+            <div key={index} className="group relative bg-zinc-950/60 border border-zinc-800/80 rounded-lg p-3.5 flex flex-col justify-between transition-all duration-200 hover:border-zinc-700">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 group-hover:text-zinc-200 transition-colors mb-2">
+                {item.label}
+              </span>
+              
+              <label className="relative flex items-center justify-between w-full cursor-pointer overflow-hidden text-[11px] font-mono font-bold tracking-wide rounded border border-dashed py-2 px-3 border-zinc-800 bg-zinc-900/20 text-zinc-500 hover:bg-zinc-900/60 hover:text-zinc-300 transition-all">
+                <span className="truncate max-w-[80%]">
+                  {item.state ? `✓ ${item.state.name}` : 'CHOOSE FILE'}
+                </span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => item.setter(e.target.files?.[0] || null)}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          ))}
+
+        </div>
+      </div>
+
+      {/* SUBMISSION ACTIVATION LAYER */}
+      <div className="space-y-4">
+        <button
+          onClick={submitApplication}
+          disabled={uploading}
+          className="relative overflow-hidden w-full py-4 rounded-xl bg-gradient-to-b from-cyan-400 to-cyan-500 text-zinc-950 font-black uppercase text-xs tracking-widest shadow-[0_4px_20px_rgba(34,211,246,0.25)] transition-all duration-300 hover:from-cyan-300 hover:to-cyan-400 hover:shadow-[0_0_25px_rgba(34,211,246,0.45)] active:scale-[0.99] disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          <span className="relative z-10">{uploading ? 'Transmitting Module...' : 'Commit Registry Application'}</span>
+        </button>
+      </div>
+
+    </div>
+  </main>
+)
+
 }
