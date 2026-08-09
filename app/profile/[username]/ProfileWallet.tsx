@@ -7,7 +7,7 @@ import WalletBalance from "./WalletBalance"
 import WalletActions from "./WalletActions"
 import WalletSecurity from "./WalletSecurity"
 import WalletModals from "./WalletModals"
-
+import Withdrawal from "./withdrawal"
 interface Props {
   profile: any
   wallet: any
@@ -23,41 +23,28 @@ export default function ProfileWallet({
   onTopUp,
   onSend,
 }: Props) {
+  // REAX system
   const [showTopUpReax, setShowTopUpReax] = useState(false)
   const [showWithdrawReax, setShowWithdrawReax] = useState(false)
 
+  // Real money withdrawal system
+  const [showWithdraw, setShowWithdraw] = useState(false)
+
   return (
     <>
-{/* Container Frame: Rendered as a zero-weight invisible layer that only acts as a micro-structural layout grid */}
-<div className="md:col-span-5 flex flex-col gap-2 w-full max-w-sm bg-transparent border-none p-0 shadow-none backdrop-blur-none transition-none">
-  
-  {/* Segment Header */}
-  <div className="w-full opacity-90 transition-opacity duration-200 hover:opacity-100">
-    <WalletHeader />
-  </div>
+      <WalletHeader />
 
-  {/* Balance Matrix */}
-  <div className="w-full">
-    <WalletBalance wallet={wallet} />
-  </div>
+      <WalletBalance wallet={wallet} />
 
-  {/* Control System Matrix */}
-  <div className="w-full mt-0.5">
-    <WalletActions
-      onTopUp={onTopUp}
-      onSend={onSend}
-      onTopUpReax={() => setShowTopUpReax(true)}
-      onWithdrawReax={() => setShowWithdrawReax(true)}
-    />
-  </div>
+      <WalletActions
+        onTopUp={onTopUp}
+        onSend={onSend}
+        onWithdraw={() => setShowWithdraw(true)}
+        onTopUpReax={() => setShowTopUpReax(true)}
+        onWithdrawReax={() => setShowWithdrawReax(true)}
+      />
 
-  {/* Footer Security Baseline */}
-  <div className="w-full mt-1 border-t border-[#1a1a1a]/40 pt-2 opacity-60">
-    <WalletSecurity />
-  </div>
-
-</div>
-
+      <WalletSecurity />
 
       <WalletModals
         profile={profile}
@@ -67,6 +54,14 @@ export default function ProfileWallet({
         showWithdrawReax={showWithdrawReax}
         setShowWithdrawReax={setShowWithdrawReax}
       />
+
+<Withdrawal
+  open={showWithdraw}
+  onClose={() => setShowWithdraw(false)}
+  userId={profile.id}
+  wallet={wallet}
+  onSuccess={refreshWallet}
+/>
     </>
   )
 }

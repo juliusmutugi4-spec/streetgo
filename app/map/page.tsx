@@ -686,11 +686,7 @@ return (
 
 
 
-{!mapLoaded && (
-  <div className="absolute inset-0 bg-gradient-to-br from-green-600 via-emerald-500 to-green-700 z-40 flex items-center justify-center text-white text-3xl font-bold tracking-wider">
-    🟢 LOADING MAP...
-  </div>
-)}
+
 
 <button 
   onClick={() => router.back()} 

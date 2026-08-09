@@ -11,11 +11,11 @@ import FinanceCards from "./components/FinanceCards"
 import TransactionDrawer from "./components/TransactionDrawer"
 import WalletDrawer from "./components/WalletDrawer"
 import TransactionsTable from "./components/TransactionsTable"
-
+import WithdrawalTable from "./components/WithdrawalTable"
 import {
   copyReference,
   getWalletByTransaction,
-  freezeWallet
+  freezeWallet,
 } from "./actions/financeActions"
 
 export default function FinancePage() {
@@ -29,11 +29,32 @@ export default function FinancePage() {
   const [filter, setFilter] = useState("all")
   const [search, setSearch] = useState("")
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
-
+const [selectedWithdrawal, setSelectedWithdrawal] =
+  useState<{
+    id: string
+    user_id: string
+    wallet_id: string
+    amount: number
+    phone_number: string
+    status: string
+    admin_note?: string | null
+    rejection_reason?: string | null
+    processed_by?: string | null
+    created_at: string
+    processed_at?: string | null
+    username?: string | null
+  } | null>(null)
   const authChecked = useRef(false)
   
   // Custom Hook invocation
-  const { summary, transactions, chartData, extraFinance, loading } = useFinance(authorized)
+  const {
+  summary,
+  transactions,
+  withdrawals,
+  chartData,
+  extraFinance,
+  loading,
+} = useFinance(authorized)
 
   // 1. Secure Access Verification Flow
   useEffect(() => {
@@ -212,6 +233,15 @@ export default function FinancePage() {
           <section aria-label="High-level Metrics Summary">
             <FinanceCards summary={summary} extraFinance={extraFinance} />
           </section>
+
+{/* Pending Withdrawal Queue */}
+<section aria-label="Pending Withdrawals">
+  <WithdrawalTable
+    withdrawals={withdrawals}
+    onSelect={setSelectedWithdrawal}
+  />
+</section>
+
 
           {/* Primary Splitting Workspace */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
