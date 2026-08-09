@@ -353,26 +353,19 @@ async function handleWithdrawalLookup() {
         : "Track Withdrawal"}
     </button>
   </div>
-
-  {withdrawalLookupError && (
-    <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5 text-xs text-red-400">
-      {withdrawalLookupError}
-    </div>
-  )}
-
-  {withdrawalLookup && (
-    <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
+{withdrawalLookup && (
+    <div className="mt-4 rounded-xl border border-[#b8b5a0] bg-[#cdc9b3] p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-[#636154]">
             Withdrawal Reference
           </p>
 
-          <p className="mt-1 font-mono text-sm font-bold text-emerald-400">
+          <p className="mt-1 font-mono text-sm font-bold text-[#141411]">
             {withdrawalLookup.withdrawal_reference}
           </p>
 
-          <p className="mt-1 text-xs text-zinc-400">
+          <p className="mt-1 text-xs text-[#424037]">
             {withdrawalLookup.username ||
               "Unknown User"}
           </p>
@@ -381,10 +374,10 @@ async function handleWithdrawalLookup() {
         <span
           className={`inline-flex w-fit rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase ${
             withdrawalLookup.status === "paid"
-              ? "border-emerald-500/20 bg-emerald-500/5 text-emerald-400"
+              ? "border-[#9e9b86] bg-[#b3b098] text-[#141411]"
               : withdrawalLookup.status === "rejected"
-              ? "border-red-500/20 bg-red-500/5 text-red-400"
-              : "border-amber-500/20 bg-amber-500/5 text-amber-400"
+              ? "border-red-400 bg-red-200/50 text-red-950"
+              : "border-amber-400 bg-amber-200/50 text-amber-950"
           }`}
         >
           {withdrawalLookup.status}
@@ -393,10 +386,10 @@ async function handleWithdrawalLookup() {
 
       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div>
-          <p className="text-[9px] uppercase text-zinc-500">
+          <p className="text-[9px] uppercase text-[#636154]">
             Amount
           </p>
-          <p className="mt-1 text-sm font-semibold text-white">
+          <p className="mt-1 text-sm font-semibold text-[#141411]">
             KSh{" "}
             {Number(
               withdrawalLookup.amount || 0
@@ -408,30 +401,30 @@ async function handleWithdrawalLookup() {
         </div>
 
         <div>
-          <p className="text-[9px] uppercase text-zinc-500">
+          <p className="text-[9px] uppercase text-[#636154]">
             M-Pesa
           </p>
-          <p className="mt-1 font-mono text-xs text-zinc-300">
+          <p className="mt-1 font-mono text-xs text-[#141411]">
             {withdrawalLookup.phone_number}
           </p>
         </div>
 
         <div>
-          <p className="text-[9px] uppercase text-zinc-500">
+          <p className="text-[9px] uppercase text-[#636154]">
             Requested
           </p>
-          <p className="mt-1 text-xs text-zinc-300">
+          <p className="mt-1 text-xs text-[#141411]">
             {new Date(
               withdrawalLookup.created_at
             ).toLocaleString("en-KE")}
           </p>
         </div>
 <div>
-  <p className="text-[9px] uppercase text-zinc-500">
+  <p className="text-[9px] uppercase text-[#636154]">
     Processed
   </p>
 
-  <p className="mt-1 text-xs text-zinc-300">
+  <p className="mt-1 text-xs text-[#141411]">
     {withdrawalLookup.processed_at
       ? new Date(
           withdrawalLookup.processed_at
@@ -440,7 +433,7 @@ async function handleWithdrawalLookup() {
   </p>
 
   {withdrawalLookup.processed_by_username && (
-    <p className="mt-1 font-mono text-[10px] text-emerald-400">
+    <p className="mt-1 font-mono text-[10px] text-[#424037]">
       By: {withdrawalLookup.processed_by_username}
     </p>
   )}
@@ -448,44 +441,126 @@ async function handleWithdrawalLookup() {
       </div>
 
       {withdrawalLookup.mpesa_receipt && (
-        <div className="mt-4 border-t border-zinc-800 pt-4">
-          <p className="text-[9px] uppercase text-zinc-500">
+        <div className="mt-4 border-t border-[#b8b5a0] pt-4">
+          <p className="text-[9px] uppercase text-[#636154]">
             M-Pesa Receipt
           </p>
 
-          <p className="mt-1 font-mono text-xs font-bold text-emerald-400">
+          <p className="mt-1 font-mono text-xs font-bold text-[#141411]">
             {withdrawalLookup.mpesa_receipt}
           </p>
         </div>
       )}
 
       {withdrawalLookup.rejection_reason && (
-        <div className="mt-4 border-t border-zinc-800 pt-4">
-          <p className="text-[9px] uppercase text-red-400">
+        <div className="mt-4 border-t border-[#b8b5a0] pt-4">
+          <p className="text-[9px] uppercase text-red-800">
             Rejection Reason
           </p>
 
-          <p className="mt-1 text-xs text-zinc-300">
+          <p className="mt-1 text-xs text-red-950">
             {withdrawalLookup.rejection_reason}
           </p>
         </div>
       )}
 
       {withdrawalLookup.mpesa_message && (
-        <div className="mt-4 border-t border-zinc-800 pt-4">
-          <p className="text-[9px] uppercase text-zinc-500">
+        <div className="mt-4 border-t border-[#b8b5a0] pt-4">
+          <p className="text-[9px] uppercase text-[#636154]">
             M-Pesa Confirmation
           </p>
 
-          <p className="mt-1 rounded-lg border border-zinc-800 bg-black/30 p-3 font-mono text-xs leading-relaxed text-zinc-300">
+          <p className="mt-1 rounded-lg border border-[#b8b5a0] bg-[#e4e1ce]/40 p-3 font-mono text-xs leading-relaxed text-[#21201b]">
             {withdrawalLookup.mpesa_message}
           </p>
         </div>
       )}
+
+
+{/* Wallet Intelligence */}
+
+<div className="mt-4 border-t border-[#b8b5a0] pt-4">
+
+  <p className="text-[9px] uppercase tracking-wider text-[#636154]">
+    Wallet Intelligence
+  </p>
+
+  <div className="mt-3 grid grid-cols-2 gap-3">
+
+    <div>
+      <p className="text-[9px] uppercase text-[#545247]">
+        Wallet ID
+      </p>
+
+      <p className="mt-1 truncate font-mono text-xs text-[#141411]">
+        {withdrawalLookup.wallet_id || "—"}
+      </p>
+    </div>
+
+
+    <div>
+      <p className="text-[9px] uppercase text-[#545247]">
+        Balance
+      </p>
+
+      <p className="mt-1 text-sm font-semibold text-[#141411]">
+        KSh{" "}
+        {Number(
+          withdrawalLookup.wallet_balance || 0
+        ).toLocaleString("en-KE")}
+      </p>
+    </div>
+
+
+    <div>
+      <p className="text-[9px] uppercase text-[#545247]">
+        Verification
+      </p>
+
+      <p
+        className={`mt-1 text-xs font-semibold ${
+          withdrawalLookup.wallet_verified
+            ? "text-emerald-800"
+            : "text-amber-800"
+        }`}
+      >
+        {withdrawalLookup.wallet_verified
+          ? "Verified"
+          : "Not Verified"}
+      </p>
+    </div>
+
+
+    <div>
+      <p className="text-[9px] uppercase text-[#545247]">
+        Money Wallet
+      </p>
+
+      <p
+        className={`mt-1 text-xs font-semibold ${
+          withdrawalLookup.wallet_active
+            ? "text-emerald-800"
+            : "text-red-800"
+        }`}
+      >
+        {withdrawalLookup.wallet_active
+          ? "Active"
+          : "Inactive"}
+      </p>
+    </div>
+
+  </div>
+
+</div>
+
+
+
+
+
+
     </div>
   )}
 </section>
-
 
 {/* Pending Withdrawal Queue */}
 <section aria-label="Pending Withdrawals">

@@ -1,75 +1,38 @@
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 
-
-
 export async function logAdminAction({
+  adminId,
+  action,
+  targetType,
+  targetId,
+  description,
+}: {
+  adminId: string
+  action: string
+  targetType?: string
+  targetId?: string
+  description: string
+}) {
+  const supabase = getSupabaseBrowser()
 
-adminId,
+  const { error } = await supabase
+    .from("admin_logs")
+    .insert({
+      admin_id: adminId,
+      action,
+      target_type: targetType,
+      target_id: targetId,
+      description,
+    })
 
-action,
+  if (error) {
+    console.error(
+      "AUDIT LOG ERROR:",
+      error
+    )
 
-targetType,
+    return false
+  }
 
-targetId,
-
-description
-
-
-}:{
-
-adminId:string
-
-action:string
-
-targetType?:string
-
-targetId?:string
-
-description:string
-
-}){
-
-
-const supabase =
-getSupabaseBrowser()
-
-
-
-const {
-error
-}
-=
-await supabase
-.from("admin_logs")
-.insert({
-
-admin_id:adminId,
-
-action,
-
-target_type:targetType,
-
-target_id:targetId,
-
-description
-
-})
-
-
-
-if(error){
-
-console.log(
-"AUDIT LOG ERROR:",
-error
-)
-
-return false
-
-}
-
-
-return true
-
-
+  return true
 }

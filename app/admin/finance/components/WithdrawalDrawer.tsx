@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 
 import {
   markWithdrawalPaid,
@@ -30,6 +31,13 @@ interface Props {
   onSuccess: () => void
 }
 
+interface AuditLog {
+  id: string
+  action: string
+  description: string
+  created_at: string
+}
+
 export default function WithdrawalDrawer({
   withdrawal,
   adminId,
@@ -38,7 +46,8 @@ export default function WithdrawalDrawer({
 }: Props) {
   const [loading, setLoading] = useState(false)
   const [reason, setReason] = useState("")
-
+const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+const [auditLoading, setAuditLoading] = useState(false)
   const [mpesaReceipt, setMpesaReceipt] =
     useState("")
 
@@ -75,6 +84,12 @@ export default function WithdrawalDrawer({
       )
       return
     }
+
+
+
+    
+
+
 
     const confirmed = window.confirm(
       `Confirm payment of KSh ${Number(
@@ -215,6 +230,57 @@ export default function WithdrawalDrawer({
   UI
   =====================================================
   */
+
+useEffect(() => {
+  const withdrawalId = withdrawal?.id
+
+  if (!withdrawalId) {
+    setAuditLogs([])
+    return
+  }
+
+  let cancelled = false
+
+  async function loadAuditLogs() {
+    setAuditLoading(true)
+
+    const supabase = getSupabaseBrowser()
+
+    const { data, error } = await supabase
+      .from("admin_logs")
+      .select(
+        "id, action, description, created_at"
+      )
+      .eq("target_type", "withdrawal")
+      .eq("target_id", withdrawalId)
+      .order("created_at", {
+        ascending: true,
+      })
+
+    if (error) {
+      console.error(
+        "WITHDRAWAL AUDIT LOG ERROR:",
+        error
+      )
+
+      if (!cancelled) {
+        setAuditLogs([])
+      }
+    } else if (!cancelled) {
+      setAuditLogs(data || [])
+    }
+
+    if (!cancelled) {
+      setAuditLoading(false)
+    }
+  }
+
+  loadAuditLogs()
+
+  return () => {
+    cancelled = true
+  }
+}, [withdrawal?.id])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
@@ -367,6 +433,99 @@ export default function WithdrawalDrawer({
             </p>
 
           </div>
+
+
+
+{/* =================================================
+    ACTIVITY / AUDIT HISTORY
+================================================= */}
+
+<div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-4">
+
+  <div className="flex items-center justify-between">
+    <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+      Activity
+    </p>
+
+    {auditLoading && (
+      <span className="text-[9px] text-zinc-600">
+        Loading...
+      </span>
+    )}
+  </div>
+
+  <div className="mt-4 space-y-4">
+
+    {/* Withdrawal requested */}
+    <div className="flex gap-3">
+
+      <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-sky-400" />
+
+      <div className="min-w-0">
+        <p className="text-xs font-semibold text-zinc-200">
+          Withdrawal requested
+        </p>
+
+        <p className="mt-1 text-[10px] text-zinc-500">
+          {formattedDate}
+        </p>
+      </div>
+
+    </div>
+
+    {/* Admin actions */}
+    {auditLogs.map((log) => (
+
+      <div
+        key={log.id}
+        className="flex gap-3"
+      >
+
+        <div
+          className={`mt-1 h-2 w-2 shrink-0 rounded-full ${
+            log.action === "MARK_WITHDRAWAL_PAID"
+              ? "bg-emerald-400"
+              : log.action === "REJECT_WITHDRAWAL"
+              ? "bg-red-400"
+              : "bg-zinc-500"
+          }`}
+        />
+
+        <div className="min-w-0">
+
+          <p className="text-xs font-semibold text-zinc-200">
+            {log.action === "MARK_WITHDRAWAL_PAID"
+              ? "Withdrawal marked as paid"
+              : log.action === "REJECT_WITHDRAWAL"
+              ? "Withdrawal rejected"
+              : log.action.replaceAll("_", " ")}
+          </p>
+
+          <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">
+            {log.description}
+          </p>
+
+          <p className="mt-1 text-[9px] text-zinc-600">
+            {new Date(
+              log.created_at
+            ).toLocaleString("en-KE")}
+          </p>
+
+        </div>
+
+      </div>
+
+    ))}
+
+    {!auditLoading && auditLogs.length === 0 && (
+      <p className="text-[10px] text-zinc-600">
+        No administrative activity recorded yet.
+      </p>
+    )}
+
+  </div>
+</div>
+
 
           {/* =================================================
               M-PESA RECEIPT

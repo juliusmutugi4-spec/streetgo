@@ -76,6 +76,8 @@ export default function useFinance(
           "get_finance_summary"
         )
 
+console.log("🔥 FINANCE SUMMARY DATA:", summaryData)
+
         if (summaryError) {
           console.log(
             "FINANCE SUMMARY ERROR:",
@@ -141,7 +143,7 @@ export default function useFinance(
 
         const user =
           sessionData.session?.user
-
+console.log("🔥 FINANCE AUTH USER ID:", user?.id)
         if (sessionError || !user) {
           console.log(
             "NO AUTHENTICATED ADMIN",
