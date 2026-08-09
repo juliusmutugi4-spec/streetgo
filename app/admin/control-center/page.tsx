@@ -85,7 +85,7 @@ Access Denied
 
 
 <Link
-  href="/admin/wallet"
+  href="/admin/finance"
   className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 hover:bg-zinc-800"
 >
   <h2 className="font-semibold">

@@ -137,10 +137,10 @@ export default function AdminAccessButton({
     },
 
 
-    finance_admin:{
-      url:"/admin/wallet",
-      text:"Finance Center 💰"
-    }
+finance_admin:{
+  url:"/admin/finance",
+  text:"Finance Center 💰"
+}
 
   }
 
