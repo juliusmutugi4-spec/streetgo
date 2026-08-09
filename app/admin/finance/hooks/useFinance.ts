@@ -20,7 +20,22 @@ export default function useFinance(
   const [transactions, setTransactions] =
     useState<any[]>([])
 
+  /*
+  =====================================================
+  PENDING WITHDRAWALS
+  =====================================================
+  */
+
   const [withdrawals, setWithdrawals] =
+    useState<any[]>([])
+
+  /*
+  =====================================================
+  WITHDRAWAL HISTORY
+  =====================================================
+  */
+
+  const [withdrawalHistory, setWithdrawalHistory] =
     useState<any[]>([])
 
   const [chartData, setChartData] =
@@ -115,19 +130,22 @@ export default function useFinance(
 
         /*
         =====================================================
-        ADMIN PENDING WITHDRAWALS
+        ADMIN SESSION
         =====================================================
         */
 
         const {
-          data: {
-            user,
-          },
-        } = await supabase.auth.getUser()
+          data: sessionData,
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-        if (!user) {
+        const user =
+          sessionData.session?.user
+
+        if (sessionError || !user) {
           console.log(
-            "NO AUTHENTICATED ADMIN"
+            "NO AUTHENTICATED ADMIN",
+            sessionError
           )
 
           if (!cancelled) {
@@ -137,6 +155,12 @@ export default function useFinance(
           return
         }
 
+        /*
+        =====================================================
+        PENDING WITHDRAWALS
+        =====================================================
+        */
+
         const {
           data: withdrawalData,
           error: withdrawalError,
@@ -145,6 +169,16 @@ export default function useFinance(
           {
             p_admin_id: user.id,
           }
+        )
+
+        console.log(
+          "🔥 ADMIN PENDING WITHDRAWALS:",
+          withdrawalData
+        )
+
+        console.log(
+          "🔥 ADMIN WITHDRAWAL ERROR:",
+          withdrawalError
         )
 
         if (withdrawalError) {
@@ -159,6 +193,73 @@ export default function useFinance(
 
           return
         }
+
+        /*
+        =====================================================
+        WITHDRAWAL HISTORY
+        =====================================================
+        */
+
+        const {
+          data: withdrawalHistoryData,
+          error: withdrawalHistoryError,
+        } = await supabase.rpc(
+          "get_admin_withdrawal_history",
+          {
+            p_admin_id: user.id,
+          }
+        )
+
+        console.log(
+          "🔥 RAW WITHDRAWAL HISTORY:",
+          withdrawalHistoryData
+        )
+
+        console.log(
+          "🔥 WITHDRAWAL HISTORY ERROR:",
+          withdrawalHistoryError
+        )
+
+        if (withdrawalHistoryError) {
+          console.log(
+            "WITHDRAWAL HISTORY ERROR:",
+            withdrawalHistoryError
+          )
+
+          if (!cancelled) {
+            setLoading(false)
+          }
+
+          return
+        }
+
+        /*
+        =====================================================
+        IMPORTANT:
+        HISTORY MUST NEVER CONTAIN PENDING REQUESTS
+        =====================================================
+        */
+
+        const cleanWithdrawalHistory =
+          (withdrawalHistoryData || []).filter(
+            (item: any) => {
+              const status =
+                String(
+                  item?.status || ""
+                ).toLowerCase()
+
+              return (
+                status === "paid" ||
+                status === "rejected" ||
+                status === "failed"
+              )
+            }
+          )
+
+        console.log(
+          "🔥 CLEAN WITHDRAWAL HISTORY:",
+          cleanWithdrawalHistory
+        )
 
         /*
         =====================================================
@@ -204,6 +305,12 @@ export default function useFinance(
           ),
         ])
 
+        /*
+        =====================================================
+        CANCELLED CHECK
+        =====================================================
+        */
+
         if (cancelled) {
           return
         }
@@ -223,17 +330,45 @@ export default function useFinance(
           }
         )
 
+        /*
+        TRANSACTIONS
+        */
+
         setTransactions(
           transactionData || []
         )
+
+        /*
+        PENDING WITHDRAWALS
+        */
 
         setWithdrawals(
           withdrawalData || []
         )
 
+        /*
+        HISTORY
+        ONLY:
+        - paid
+        - rejected
+        - failed
+        */
+
+        setWithdrawalHistory(
+          cleanWithdrawalHistory
+        )
+
+        /*
+        REVENUE
+        */
+
         setChartData(
           revenueData || []
         )
+
+        /*
+        EXTRA FINANCE
+        */
 
         setExtraFinance({
           todayRevenue:
@@ -357,6 +492,12 @@ export default function useFinance(
           }
         )
 
+    /*
+    =======================================================
+    CLEANUP
+    =======================================================
+    */
+
     return () => {
       cancelled = true
 
@@ -373,12 +514,28 @@ export default function useFinance(
 
   return {
     summary,
+
     transactions,
     setTransactions,
+
+    /*
+    PENDING WITHDRAWALS
+    */
+
     withdrawals,
     setWithdrawals,
+
+    /*
+    COMPLETED / REJECTED HISTORY
+    */
+
+    withdrawalHistory,
+    setWithdrawalHistory,
+
     chartData,
+
     extraFinance,
+
     loading,
   }
 }

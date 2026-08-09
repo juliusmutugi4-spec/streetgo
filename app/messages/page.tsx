@@ -38,7 +38,7 @@ const [notificationCount, setNotificationCount] = useState(0)
   // Fetch unread messages
 const fetchUnread = async (userId: string) => {
   const { count } = await supabase
-    .from('chat_messages')
+    .from('messages')
     .select('*', {
       count: 'exact',
       head: true,
@@ -211,7 +211,7 @@ useEffect(() => {
 
   const fetchConversations = async (userId: string) => {
 const { data, error } = await supabase
-  .from('chat_messages')
+  .from('messages')
   .select('*')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .order('created_at', { ascending: false })
@@ -306,7 +306,7 @@ const fetchMessages = async (
   if (!uid) return
 
   const { data, error } = await supabase
-    .from('chat_messages')
+    .from('messages')
     .select('*')
     .or(
       `and(sender_id.eq.${uid},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${uid})`
@@ -335,7 +335,7 @@ const sendMessage = async () => {
   setMessageText('')
 
   const { data, error } = await supabase
-    .from('chat_messages')
+    .from('messages')
     .insert({
       sender_id: user.id,
       receiver_id: selectedChat.userId,
@@ -372,7 +372,7 @@ useEffect(() => {
       {
         event: '*',
         schema: 'public',
-        table: 'chat_messages',
+        table: 'messages',
       },
 (payload: any) => {
   console.log('REALTIME EVENT:', payload)
@@ -400,7 +400,7 @@ useEffect(() => {
   {
     event: '*',
         schema: 'public',
-        table: 'chat_messages',
+        table: 'messages',
       },
 (payload: any) => {
 
@@ -466,7 +466,7 @@ const deleteMessage = async (messageId: string) => {
   if (!confirmed) return
 
   const { error } = await supabase
-    .from('chat_messages')
+    .from('messages')
     .delete()
     .eq('id', messageId)
     .eq('sender_id', user.id)
@@ -611,7 +611,7 @@ onClick={async () => {
   setTargetUserId(conv.userId)
 
 await supabase
-  .from('chat_messages')
+  .from('messages')
   .update({ is_read: true })
   .eq('sender_id', conv.userId)
   .eq('receiver_id', user.id)

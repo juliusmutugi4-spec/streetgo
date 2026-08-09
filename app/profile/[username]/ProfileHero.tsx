@@ -90,6 +90,8 @@ const [showSendModal, setShowSendModal] = useState(false)
 
 
 const isOwner = currentUser?.id === profile?.id
+
+
   return (
     <div className="w-full overflow-hidden bg-[#02050a] rounded-none sm:rounded-[20px] border-x-0 sm:border-x border-y border-zinc-900/80 shadow-2xl">
       
