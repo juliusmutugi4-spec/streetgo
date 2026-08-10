@@ -1,6 +1,6 @@
 export default function MpesaGatewayBadge({ phone }: { phone: string }) {
-  // Gracefully handle unlinked devices or mask for standard user privacy
-  const formattedPhone = phone ? phone.trim() : "No device linked";
+  // Pass the raw string exactly as received from the parent context with no boundaries
+  const activeDevice = phone || "No device linked";
 
   return (
     <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-800/40 bg-slate-900/40 px-3 py-2.5 backdrop-blur-xs">
@@ -54,7 +54,7 @@ export default function MpesaGatewayBadge({ phone }: { phone: string }) {
       {/* Target MSISDN Return Block */}
       <div className="text-right">
         <span className="block font-mono text-xs font-bold tracking-wide text-slate-200">
-          {formattedPhone}
+          {activeDevice}
         </span>
         <span className="mt-0.5 block font-mono text-[7.5px] font-medium leading-none tracking-tight text-emerald-500/70">
           • Verified Gateway
