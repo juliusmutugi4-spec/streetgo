@@ -35,14 +35,7 @@ export default function ChatWindow({
   }
 
   return (
-    <div
-      className="
-        flex-1
-        flex
-        flex-col
-        bg-[#0b141a]
-      "
-    >
+    <div className="flex flex-col flex-1 min-w-0 min-h-0 bg-[#050b12]">
 
       <ChatHeader
         username={selectedChat.username}
@@ -53,14 +46,15 @@ export default function ChatWindow({
         onBack={onBack}
       />
 
-
       {/* Messages */}
       <div
         className="
           flex-1
+          min-w-0
           overflow-y-auto
-          p-8
-          space-y-4
+          px-4
+          py-4
+          space-y-3
           bg-[#050b12]
         "
       >
@@ -83,11 +77,9 @@ export default function ChatWindow({
           )
         })}
 
-
-        <div ref={messagesEndRef}></div>
+        <div ref={messagesEndRef} />
 
       </div>
-
 
       <MessageComposer
         messageText={messageText}

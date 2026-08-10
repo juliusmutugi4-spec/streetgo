@@ -26,7 +26,7 @@ export default function MessageBubble({
         flex
         items-end
         gap-2
-        mb-2
+        mb-3
         w-full
         group
         ${mine ? 'justify-end' : 'justify-start'}
@@ -50,7 +50,16 @@ export default function MessageBubble({
       )}
 
       {/* Message Core Container */}
-      <div className="relative max-w-[72%] flex items-center gap-2">
+      <div
+  className="
+    relative
+    max-w-[75%]
+    min-w-0
+    flex
+    items-end
+    gap-2
+  "
+>
         
         {/* Dynamic Contextual Action Trigger - Hidden until hover/focus */}
         {mine && (
@@ -66,11 +75,13 @@ export default function MessageBubble({
         )}
 
         {/* Message Bubble Base Frame */}
-        <div
-          className={`
-            px-3.5
-            py-2
-            shadow-sm
+    <div
+  className={`
+    px-4
+    py-3
+    shadow-sm
+    min-w-0
+    overflow-hidden
             ${
               mine
                 ? `
@@ -91,7 +102,16 @@ export default function MessageBubble({
           `}
         >
           {/* Main Content Layout Block */}
-          <p className="text-[13.5px] leading-[1.4] whitespace-pre-wrap break-words tracking-normal">
+          <p
+  className="
+    text-[14px]
+    leading-relaxed
+    whitespace-pre-wrap
+    break-all
+    max-w-full
+    overflow-hidden
+  "
+>
             {message.content}
           </p>
 

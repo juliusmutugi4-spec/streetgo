@@ -8,7 +8,8 @@ import TopNav from '../components/TopNav'
 import BottomNav from '../components/BottomNav'
 import MessageBubble from './components/MessageBubble'
 import ChatHeader from './components/ChatHeader'
-import ChatList from './components/ChatList'
+import DesktopChatList from './desktop/DesktopChatList'
+import MobileChatList from './mobile/MobileChatList'
 import MessageComposer from './components/MessageComposer'
 import EmptyChat from './components/EmptyChat'
 import MessagesSidebar from './components/MessagesSidebar'
@@ -484,30 +485,41 @@ return (
   username={profile?.username || 'Tunda User'}
 />
 
-<ChatList
-  conversations={conversations}
-  targetUserId={targetUserId}
-  userId={user?.id || ''}
-  onSelectChat={async (conv) => {
-    setSelectedChat(conv)
-    setTargetUserId(conv.userId)
+{/* PHONE */}
+{!mobileChatOpen && (
+  <div className="lg:hidden flex-1">
+    <MobileChatList
+      conversations={conversations}
+      selectedId={selectedChat?.userId || null}
+      onSelect={(conv) => {
+        setSelectedChat(conv)
+        setTargetUserId(conv.userId)
+        fetchMessages(conv.userId)
+        setMobileChatOpen(true)
+      }}
+    />
+  </div>
+)}
 
-    await supabase
-      .from('messages')
-      .update({ is_read: true })
-      .eq('sender_id', conv.userId)
-      .eq('receiver_id', user.id)
-      .eq('is_read', false)
 
-    await fetchMessages(conv.userId)
-    await fetchConversations(user.id)
+{/* PC */}
+<div className="hidden lg:flex">
+  <DesktopChatList
+    conversations={conversations}
+    targetUserId={targetUserId}
+    userId={user?.id || ''}
+    onSelectChat={async (conv) => {
+      setSelectedChat(conv)
+      setTargetUserId(conv.userId)
 
-    setMobileChatOpen(true)
-  }}
-  onStartChat={(userId) => {
-    setTargetUserId(userId)
-  }}
-/>
+      await fetchMessages(conv.userId)
+      await fetchConversations(user.id)
+    }}
+    onStartChat={(userId) => {
+      setTargetUserId(userId)
+    }}
+  />
+</div>
 
 
 

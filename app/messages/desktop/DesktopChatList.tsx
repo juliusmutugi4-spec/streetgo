@@ -11,7 +11,7 @@ type Conversation = {
   lastSeen: string | null
 }
 
-type ChatListProps = {
+type DesktopChatListProps = {
   conversations: Conversation[]
   targetUserId: string | null
   userId: string
@@ -19,13 +19,13 @@ type ChatListProps = {
   onStartChat: (userId: string) => void
 }
 
-export default function ChatList({
+export default function DesktopChatList({
   conversations,
   targetUserId,
   userId,
   onSelectChat,
   onStartChat,
-}: ChatListProps) {
+}: DesktopChatListProps) {
   return (
     <div
       className="
