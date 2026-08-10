@@ -1,17 +1,18 @@
 export default function MpesaGatewayBadge({ phone }: { phone: string }) {
+  // Gracefully handle unlinked devices or mask for standard user privacy
+  const formattedPhone = phone ? phone.trim() : "No device linked";
+
   return (
-    <div className="mt-4 flex items-center justify-between bg-slate-900/40 border border-slate-800/40 px-3 py-2.5 rounded-xl backdrop-blur-xs">
-      
+    <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-800/40 bg-slate-900/40 px-3 py-2.5 backdrop-blur-xs">
       {/* Official M-Pesa Brand Asset Pairing */}
       <div className="flex items-center gap-2.5">
-        
         {/* Exact Official M-Pesa Multi-Layer Corporate Emblem */}
         <div className="flex h-6 w-9 shrink-0 items-center justify-center rounded bg-[#4CAF50] px-1 py-0.5 shadow-sm shadow-emerald-950/20">
           <svg 
             viewBox="0 0 45 22" 
             fill="none" 
             xmlns="http://w3.org" 
-            className="w-full h-auto select-none"
+            className="h-auto w-full select-none"
           >
             {/* The lowercase "m-" path base */}
             <path 
@@ -38,13 +39,13 @@ export default function MpesaGatewayBadge({ phone }: { phone: string }) {
             />
           </svg>
         </div>
-        
+
         {/* Core Gateway Typography Mapping */}
         <div className="flex flex-col">
-          <span className="font-sans text-[10px] font-bold text-slate-200 tracking-wide leading-none">
+          <span className="font-sans text-[10px] font-bold leading-none tracking-wide text-slate-200">
             M-Pesa Express
           </span>
-          <span className="font-mono text-[7.5px] font-semibold text-slate-500 uppercase tracking-widest mt-0.5 leading-none">
+          <span className="mt-0.5 font-mono text-[7.5px] font-semibold uppercase leading-none tracking-widest text-slate-500">
             Direct STK Node
           </span>
         </div>
@@ -52,14 +53,13 @@ export default function MpesaGatewayBadge({ phone }: { phone: string }) {
 
       {/* Target MSISDN Return Block */}
       <div className="text-right">
-        <span className="block text-xs font-mono font-bold text-slate-200 tracking-wide">
-          {phone || "No device linked"}
+        <span className="block font-mono text-xs font-bold tracking-wide text-slate-200">
+          {formattedPhone}
         </span>
-        <span className="block text-[7.5px] font-mono font-medium text-emerald-500/70 tracking-tight leading-none mt-0.5">
+        <span className="mt-0.5 block font-mono text-[7.5px] font-medium leading-none tracking-tight text-emerald-500/70">
           • Verified Gateway
         </span>
       </div>
-
     </div>
-  )
+  );
 }

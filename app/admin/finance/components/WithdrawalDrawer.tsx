@@ -54,15 +54,70 @@ const [auditLoading, setAuditLoading] = useState(false)
   const [mpesaMessage, setMpesaMessage] =
     useState("")
 
+
+
+useEffect(() => {
+  const withdrawalId = withdrawal?.id
+
+  if (!withdrawalId) {
+    setAuditLogs([])
+    return
+  }
+
+  let cancelled = false
+
+  async function loadAuditLogs() {
+    setAuditLoading(true)
+
+    const supabase = getSupabaseBrowser()
+
+    const { data, error } = await supabase
+      .from("admin_logs")
+      .select(
+        "id, action, description, created_at"
+      )
+      .eq("target_type", "withdrawal")
+      .eq("target_id", withdrawalId)
+      .order("created_at", {
+        ascending: true,
+      })
+
+    if (error) {
+      console.error(
+        "WITHDRAWAL AUDIT LOG ERROR:",
+        error
+      )
+
+      if (!cancelled) {
+        setAuditLogs([])
+      }
+    } else if (!cancelled) {
+      setAuditLogs(data || [])
+    }
+
+    if (!cancelled) {
+      setAuditLoading(false)
+    }
+  }
+
+  loadAuditLogs()
+
+  return () => {
+    cancelled = true
+  }
+}, [withdrawal?.id])
+
+if (!withdrawal) {
+  return null
+}
+
+
   /*
   =====================================================
   NOTHING SELECTED
   =====================================================
   */
 
-  if (!withdrawal) {
-    return null
-  }
 
   /*
   =====================================================
@@ -231,56 +286,6 @@ const [auditLoading, setAuditLoading] = useState(false)
   =====================================================
   */
 
-useEffect(() => {
-  const withdrawalId = withdrawal?.id
-
-  if (!withdrawalId) {
-    setAuditLogs([])
-    return
-  }
-
-  let cancelled = false
-
-  async function loadAuditLogs() {
-    setAuditLoading(true)
-
-    const supabase = getSupabaseBrowser()
-
-    const { data, error } = await supabase
-      .from("admin_logs")
-      .select(
-        "id, action, description, created_at"
-      )
-      .eq("target_type", "withdrawal")
-      .eq("target_id", withdrawalId)
-      .order("created_at", {
-        ascending: true,
-      })
-
-    if (error) {
-      console.error(
-        "WITHDRAWAL AUDIT LOG ERROR:",
-        error
-      )
-
-      if (!cancelled) {
-        setAuditLogs([])
-      }
-    } else if (!cancelled) {
-      setAuditLogs(data || [])
-    }
-
-    if (!cancelled) {
-      setAuditLoading(false)
-    }
-  }
-
-  loadAuditLogs()
-
-  return () => {
-    cancelled = true
-  }
-}, [withdrawal?.id])
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
