@@ -19,8 +19,9 @@ export default function TopUpWalletModal({ open, onClose, phone }: Props) {
 
   if (!open) return null
 
-  // Highly professional enterprise real-time M-Pesa tariff estimator 
+  // Highly professional enterprise real-time M-Pesa tariff estimator
   const parsedAmount = Number(amount) || 0
+  
   const estimateMpesaFee = (amt: number): number => {
     if (amt <= 0) return 0
     if (amt <= 100) return 0 // Free for transactions up to KSh 100
@@ -41,19 +42,26 @@ export default function TopUpWalletModal({ open, onClose, phone }: Props) {
   const settlementTotal = parsedAmount
 
   async function topUp() {
-    if (!amount.trim() || Number(amount) < 10) {
-      setStatus({ type: 'error', msg: "Minimum institutional threshold is KSh 10.00." })
+    // Unrestricted configuration lowered to 1 Bob to enable micro-transactions
+    if (!amount.trim() || Number(amount) < 1) {
+      setStatus({ type: 'error', msg: "Minimum threshold constraint is KSh 1.00." })
       return
     }
-    
+
     setLoading(true)
     setStatus(null)
 
     try {
       const res = await fetch("/api/mpesa/stkpush", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, amount: Number(amount) }),
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ 
+          phone, 
+          // Enforces integers strictly required by Safaricom endpoints
+          amount: Math.floor(Number(amount)) 
+        }),
       })
 
       const data = await res.json()
@@ -62,14 +70,22 @@ export default function TopUpWalletModal({ open, onClose, phone }: Props) {
         throw new Error(data.error || "M-Pesa API remote node rejected connection authorization.")
       }
 
-      setStatus({ type: 'success', msg: "Secure STK push dispatch successful. Input your M-Pesa PIN on your mobile device instantly." })
+      setStatus({ 
+        type: 'success', 
+        msg: "Secure STK push dispatch successful. Input your M-Pesa PIN on your mobile device instantly." 
+      })
+      
       setAmount("")
       setTimeout(() => {
         setStatus(null)
         onClose()
       }, 5000)
+
     } catch (err: any) {
-      setStatus({ type: 'error', msg: err.message || "Gateway routing failed. Verify Safaricom network connectivity." })
+      setStatus({ 
+        type: 'error', 
+        msg: err.message || "Gateway routing failed. Verify Safaricom network connectivity." 
+      })
     } finally {
       setLoading(false)
     }
@@ -78,7 +94,6 @@ export default function TopUpWalletModal({ open, onClose, phone }: Props) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-md transition-all duration-300">
       <div className="w-[340px] rounded-2xl border border-slate-800/60 bg-slate-950 p-5 shadow-2xl shadow-slate-950/70 relative overflow-hidden">
-        
         {/* Top security vector status bar accent */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
 
@@ -114,19 +129,18 @@ export default function TopUpWalletModal({ open, onClose, phone }: Props) {
               Safaricom Daraja API v2
             </span>
           </div>
-          
           <div className="relative mt-2 flex items-center">
             <span className="absolute left-3.5 font-mono text-xs font-bold text-slate-500 select-none">
               KSh
             </span>
-            <input 
-              type="number" 
-              value={amount} 
+            <input
+              type="number"
+              value={amount}
               onChange={(e) => {
                 setAmount(e.target.value)
                 if (status) setStatus(null)
               }}
-              placeholder="0.00" 
+              placeholder="0.00"
               disabled={loading}
               className="w-full rounded-xl border border-slate-800 bg-slate-900/20 pl-12 pr-4 py-3 text-base font-bold text-slate-100 font-sans placeholder-slate-700 outline-hidden focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/10 transition-all shadow-inner"
               autoFocus
@@ -164,8 +178,7 @@ export default function TopUpWalletModal({ open, onClose, phone }: Props) {
           </div>
           <div className="flex items-center justify-between text-slate-500">
             <span className="flex items-center gap-1">
-              Estimated Tariff Fee 
-              <Info size={10} className="text-slate-600" />
+              Estimated Tariff Fee <Info size={10} className="text-slate-600" />
             </span>
             <span className="text-slate-400">
               {mpesaFee === 0 && parsedAmount > 0 ? "Free (Below 100)" : `~ KSh ${mpesaFee.toFixed(2)}`}
@@ -196,16 +209,18 @@ export default function TopUpWalletModal({ open, onClose, phone }: Props) {
 
         {/* Execution Actions Button Suite */}
         <div className="mt-4 flex gap-2.5">
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             disabled={loading}
             className="flex-1 rounded-xl border border-slate-800 py-2.5 text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-900 active:scale-[0.98] disabled:opacity-50 transition-all duration-200 cursor-pointer"
           >
             Abort
           </button>
-          <button 
-            onClick={topUp} 
-            disabled={loading || !amount || parsedAmount < 10}
+          
+          <button
+            onClick={topUp}
+            // FIXED: Lowered restriction floor boundary constraint check from 10 to 1
+            disabled={loading || !amount || parsedAmount < 1}
             className="flex-1 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 py-2.5 text-xs font-bold transition-all duration-200 disabled:opacity-30 shadow-lg shadow-emerald-950/20 flex items-center justify-center gap-1.5 cursor-pointer"
           >
             {loading ? (
@@ -218,7 +233,6 @@ export default function TopUpWalletModal({ open, onClose, phone }: Props) {
             )}
           </button>
         </div>
-
       </div>
     </div>
   )
