@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Green S -->
+    <path
+        android:fillColor="#00F59B"
+        android:strokeColor="#062017"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M76,22
+            L39,22
+            C28,22 22,28 22,36
+            C22,44 28,48 38,49
+            L61,52
+            C67,53 70,55 70,59
+            C70,63 66,66 60,66
+            L27,66
+            L21,76
+            L63,76
+            C75,76 82,69 82,59
+            C82,49 75,44 65,43
+            L42,40
+            C37,40 34,38 34,35
+            C34,32 38,30 43,30
+            L71,30
+            Z" />
+
+    <!-- S highlight -->
+    <path
+        android:fillColor="#66FFC8"
+        android:pathData="
+            M43,25
+            L72,25
+            L69,29
+            L43,29
+            Z" />
+
+    <!-- White G -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#151515"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M59,67
+            C59,76 65,82 74,82
+            C80,82 85,80 89,76
+            L89,85
+            C84,89 79,91 72,91
+            C58,91 49,82 49,69
+            C49,65 50,62 52,59
+            L63,59
+            C60,62 59,64 59,67
+            Z" />
+
+    <!-- G bar -->
+    <path
+        android:fillColor="#F4F4F4"
+        android:strokeColor="#151515"
+        android:strokeWidth="1.3"
+        android:strokeLineJoin="round"
+        android:pathData="
+            M73,68
+            L94,68
+            L94,78
+            L85,78
+            L85,75
+            L73,75
+            Z" />
+
+    <!-- Red accent -->
+    <path
+        android:fillColor="#FF2525"
+        android:pathData="
+            M86,91
+            L96,91
+            C97,91 98,92 98,93
+            C98,94 97,95 96,95
+            L86,95
+            C85,95 84,94 84,93
+            C84,92 85,91 86,91
+            Z" />
+
+</vector>
