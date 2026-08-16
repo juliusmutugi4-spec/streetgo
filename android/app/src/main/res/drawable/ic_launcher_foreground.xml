@@ -1,90 +1,78 @@
 <?xml version="1.0" encoding="utf-8"?>
-<vector
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Green S -->
+    <!-- StreetGO SG mark -->
     <path
         android:fillColor="#00F59B"
         android:strokeColor="#062017"
         android:strokeWidth="1.5"
         android:strokeLineJoin="round"
         android:pathData="
-            M76,22
-            L39,22
-            C28,22 22,28 22,36
-            C22,44 28,48 38,49
-            L61,52
-            C67,53 70,55 70,59
-            C70,63 66,66 60,66
-            L27,66
-            L21,76
-            L63,76
-            C75,76 82,69 82,59
-            C82,49 75,44 65,43
-            L42,40
-            C37,40 34,38 34,35
-            C34,32 38,30 43,30
-            L71,30
+            M72,27
+            L43,27
+            C34,27 29,31 29,38
+            C29,44 34,47 42,48
+            L62,51
+            C69,52 73,56 73,62
+            C73,70 67,75 58,75
+            L35,75
+            L30,82
+            L61,82
+            C73,82 81,75 81,63
+            C81,52 74,46 64,45
+            L44,42
+            C40,42 38,40 38,37
+            C38,34 41,32 46,32
+            L69,32
             Z" />
 
-    <!-- S highlight -->
-    <path
-        android:fillColor="#66FFC8"
-        android:pathData="
-            M43,25
-            L72,25
-            L69,29
-            L43,29
-            Z" />
-
-    <!-- White G -->
+    <!-- G -->
     <path
         android:fillColor="#FFFFFF"
         android:strokeColor="#151515"
-        android:strokeWidth="1.5"
+        android:strokeWidth="1.4"
         android:strokeLineJoin="round"
         android:pathData="
-            M59,67
-            C59,76 65,82 74,82
-            C80,82 85,80 89,76
-            L89,85
-            C84,89 79,91 72,91
-            C58,91 49,82 49,69
-            C49,65 50,62 52,59
-            L63,59
-            C60,62 59,64 59,67
+            M55,70
+            C55,79 62,85 71,85
+            C77,85 82,83 86,79
+            L86,86
+            C82,90 77,92 70,92
+            C57,92 49,84 49,71
+            C49,65 51,60 55,57
+            L65,57
+            C59,60 55,64 55,70
             Z" />
 
     <!-- G bar -->
     <path
-        android:fillColor="#F4F4F4"
+        android:fillColor="#FFFFFF"
         android:strokeColor="#151515"
-        android:strokeWidth="1.3"
-        android:strokeLineJoin="round"
+        android:strokeWidth="1.2"
         android:pathData="
-            M73,68
-            L94,68
-            L94,78
-            L85,78
-            L85,75
-            L73,75
+            M70,68
+            L88,68
+            L88,76
+            L81,76
+            L81,74
+            L70,74
             Z" />
 
-    <!-- Red accent -->
+    <!-- StreetGO accent -->
     <path
         android:fillColor="#FF2525"
         android:pathData="
-            M86,91
-            L96,91
-            C97,91 98,92 98,93
-            C98,94 97,95 96,95
-            L86,95
-            C85,95 84,94 84,93
-            C84,92 85,91 86,91
+            M78,91
+            L88,91
+            C90,91 91,92 91,94
+            C91,95 90,96 88,96
+            L78,96
+            C76,96 75,95 75,94
+            C75,92 76,91 78,91
             Z" />
 
 </vector>

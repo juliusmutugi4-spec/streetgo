@@ -6,7 +6,6 @@ import Image from 'next/image'
 import TopMenu from './TopMenu'
 import { Bell, Menu, X, Video } from 'lucide-react'
 
-// Strict UI Types
 interface UserProfile {
   id: string
   name: string
@@ -25,132 +24,123 @@ export default function TopNav({ user, onLogin, onLogout }: TopNavProps) {
   const [menuOpen, setMenuOpen] = useState<boolean>(false)
   const navMenuRef = useRef<HTMLDivElement | null>(null)
 
-  // Close context menu on outside interaction
+  // Close menu on outside click safely
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const handleClickOutside = (event: MouseEvent) => {
       if (navMenuRef.current && !navMenuRef.current.contains(event.target as Node)) {
         setMenuOpen(false)
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/70 backdrop-blur-xl transition-all duration-300">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3.5">
+    <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md transition-colors duration-200">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
         
-        {/* =====================================================
-            LEFT AXIS — BRANDING & CORE INFRASTRUCTURE
-        ====================================================== */}
-        <div className="flex items-center gap-5">
-          {/* LOGO MATRIX */}
-          <div 
-            onClick={() => router.push('/')}
-            className="group relative cursor-pointer select-none active:scale-[0.98] transition-transform"
+        {/* LEFT AXIS: BRANDING & NAVIGATION */}
+        <div className="flex items-center gap-6">
+          {/* LOGO */}
+          <button 
+            type="button"
+            onClick={() => router.push('/')} 
+            className="group flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700 rounded-md"
+            aria-label="Street Go Home"
           >
-            <h1 className="font-sans text-xl font-black uppercase tracking-widest text-zinc-100">
-              street
-              <span className="ml-0.5 bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-[0_0_12px_rgba(52,211,153,0.3)]">
-                go
-              </span>
+            <h1 className="font-sans text-lg font-black uppercase tracking-wider text-zinc-100 transition-colors group-hover:text-white">
+              street <span className="text-emerald-400">go</span>
             </h1>
-            {/* Ambient Sci-Fi Underline */}
-            <div className="absolute -bottom-1 left-0 h-[2px] w-0 bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300 group-hover:w-full" />
-          </div>
+          </button>
 
-          {/* TELEMETRY / MAP INTERFACE */}
-          <button
-            onClick={() => router.push('/map')}
-            className="group relative flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/50 shadow-inner backdrop-blur-md transition-all duration-200 hover:border-emerald-500/40 hover:shadow-[0_0_15px_rgba(52,211,153,0.15)] active:scale-95"
-            aria-label="Initialize Map Matrix"
+          {/* MAP SHORTCUT */}
+          <button 
+            type="button"
+            onClick={() => router.push('/map')} 
+            className="group flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/30 transition-all duration-200 hover:border-zinc-700 hover:bg-zinc-900/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700"
+            aria-label="View Navigation Map"
             title="Navigation Map"
           >
-            <div className="relative h-[22px] w-[22px] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
-              <Image
-                src="/map-icon.png" // Ensure your image asset is saved here in the /public directory
-                alt="Map Navigation"
-                fill
-                className="object-contain"
-                priority
+            <div className="relative h-5 w-5 transition-transform duration-200 group-hover:scale-105">
+              <Image 
+                src="/map-icon.png" 
+                alt="" 
+                fill 
+                className="object-contain" 
+                priority 
               />
             </div>
           </button>
         </div>
 
-        {/* =====================================================
-            RIGHT AXIS — SUBSYSTEM CONTROLS & AUTH
-        ====================================================== */}
+        {/* RIGHT AXIS: CONTROLS & AUTHENTICATION */}
         <div className="flex items-center gap-3 shrink-0">
-
-          {/* HOLOGRAPHIC STREAM SHORTCUT */}
-          <button
-            onClick={() => router.push('/videos')}
-            className="group relative flex items-center gap-2 overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900/40 px-3.5 py-1.5 text-xs font-medium tracking-wide text-zinc-300 backdrop-blur-md transition-all duration-200 hover:border-red-500/30 hover:text-zinc-100 active:scale-95"
+          {/* FEEDS STREAM */}
+          <button 
+            type="button"
+            onClick={() => router.push('/videos')} 
+            className="group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-1.5 text-xs font-medium tracking-wide text-zinc-300 transition-all duration-200 hover:border-zinc-700 hover:text-zinc-100 hover:bg-zinc-900/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700"
           >
-            {/* Tech background hover tint */}
-            <div className="absolute inset-0 -z-10 bg-gradient-to-r from-red-500/0 to-red-500/5 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-            
-            <Video size={14} className="text-zinc-500 transition-colors duration-200 group-hover:text-red-400" />
+            <Video size={14} className="text-zinc-400 group-hover:text-zinc-200 transition-colors" />
             <span>Feeds</span>
-
-            {/* RADAR BEACON INDICATOR */}
-            <span className="relative flex h-2 w-2 ml-1">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500/60 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_#ef4444]" />
+            
+            {/* LIVE INDICATOR */}
+            <span className="relative flex h-1.5 w-1.5 ml-0.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
             </span>
           </button>
 
-          {/* =====================================================
-              ALERTS PROTOCOL / USER IDENTITY
-          ====================================================== */}
+          {/* ALERTS / LOGIN */}
           {user ? (
-            <button
-              onClick={() => router.push('/notifications')}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/50 text-zinc-400 transition-all duration-200 hover:border-zinc-700 hover:text-zinc-100 active:scale-95"
-              aria-label="System Notifications"
+            <button 
+              type="button"
+              onClick={() => router.push('/notifications')} 
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/30 text-zinc-400 transition-all duration-200 hover:border-zinc-700 hover:text-zinc-100 hover:bg-zinc-900/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700"
+              aria-label="View System Notifications"
               title="System Notifications"
             >
-              <Bell size={16} />
+              <Bell size={15} />
             </button>
           ) : (
-            <button
-              onClick={onLogin}
-              className="relative overflow-hidden rounded-lg bg-gradient-to-b from-blue-500 to-blue-600 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white shadow-[0_4px_12px_rgba(59,130,246,0.3)] transition-all duration-200 hover:from-blue-400 hover:to-blue-500 hover:shadow-[0_0_15px_rgba(59,130,246,0.5)] active:scale-95"
+            <button 
+              type="button"
+              onClick={onLogin} 
+              className="rounded-lg bg-zinc-100 px-3.5 py-1.5 text-xs font-semibold text-zinc-950 transition-all duration-200 hover:bg-white active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 focus-visible:ring-zinc-100"
             >
-              Access System
+              Sign In
             </button>
           )}
 
-          {/* =====================================================
-              CORE UTILITY EXPANSION INTERFACE
-          ====================================================== */}
+          {/* MENU INTERFACE */}
           <div ref={navMenuRef} className="relative">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className={`flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-md transition-all duration-200 active:scale-95 ${
-                menuOpen
-                  ? 'border-blue-500/40 bg-blue-500/10 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
-                  : 'border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100'
+            <button 
+              type="button"
+              onClick={() => setMenuOpen(!menuOpen)} 
+              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700 ${
+                menuOpen 
+                  ? 'border-zinc-700 bg-zinc-900/80 text-zinc-100' 
+                  : 'border-zinc-800 bg-zinc-900/30 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100 hover:bg-zinc-900/60'
               }`}
               aria-expanded={menuOpen}
-              aria-label="Toggle main system array"
+              aria-label="Toggle main system menu"
               title="System Menu"
             >
-              {menuOpen ? <X size={16} className="animate-in fade-in zoom-in-75 duration-150" /> : <Menu size={16} />}
+              {menuOpen ? <X size={15} /> : <Menu size={15} />}
             </button>
 
-            {/* OVERLAY MODULE DOWNLINK */}
+            {/* OVERLAY DROPDOWN */}
             {menuOpen && (
-              <div className="absolute right-0 top-12 z-50 origin-top-right animate-in fade-in slide-in-from-top-2 duration-200 ease-out">
-                <div className="rounded-xl border border-zinc-800/80 bg-zinc-950/90 shadow-[0_10px_30px_rgba(0,0,0,0.8)] backdrop-blur-2xl ring-1 ring-white/5">
-                  <TopMenu onLogout={onLogout} onClose={() => setMenuOpen(false)} />
-                </div>
+              <div className="absolute right-0 top-[44px] z-50 w-56 origin-top-right rounded-xl border border-zinc-800 bg-zinc-950 p-1 shadow-xl ring-1 ring-black/5 animate-in fade-in slide-in-from-top-1 duration-150">
+                <TopMenu onLogout={onLogout} onClose={() => setMenuOpen(false)} />
               </div>
             )}
           </div>
-
         </div>
+
       </div>
     </header>
   )

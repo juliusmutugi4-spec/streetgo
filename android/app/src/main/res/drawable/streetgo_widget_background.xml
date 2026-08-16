@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Deep glass background -->
+    <item>
+        <shape android:shape="rectangle">
+
+            <solid android:color="#E8070D0B" />
+
+            <corners android:radius="28dp" />
+
+        </shape>
+    </item>
+
+    <!-- Subtle green border -->
+    <item>
+        <shape android:shape="rectangle">
+
+            <solid android:color="@android:color/transparent" />
+
+            <corners android:radius="28dp" />
+
+            <stroke
+                android:width="1dp"
+                android:color="#4200F5A0" />
+
+        </shape>
+    </item>
+
+    <!-- Inner highlight -->
+    <item
+        android:left="1dp"
+        android:top="1dp"
+        android:right="1dp"
+        android:bottom="1dp">
+
+        <shape android:shape="rectangle">
+
+            <solid android:color="@android:color/transparent" />
+
+            <corners android:radius="27dp" />
+
+            <stroke
+                android:width="1dp"
+                android:color="#12FFFFFF" />
+
+        </shape>
+
+    </item>
+
+</layer-list>
