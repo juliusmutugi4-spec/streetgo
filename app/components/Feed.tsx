@@ -103,33 +103,83 @@ export default function Feed({ user, onOpenDispatch }: FeedProps) {
 
     return () => observer.disconnect()
   }, [loading, hasMore, cursor])
+return (
+  <div className="flex flex-col gap-4">
 
-  return (
-    <div className="flex flex-col gap-4">
-      {posts.map((post) => (
-        <Post
-          key={post.id}
-          post={post}
-          user={user}
-          onOpenDispatch={onOpenDispatch}
+    {posts.map((post) => (
+      <Post
+        key={post.id}
+        post={post}
+        user={user}
+        onOpenDispatch={onOpenDispatch}
+      />
+    ))}
+
+
+    {loading && (
+      <div className="space-y-3">
+
+        <div
+          className="
+            h-24
+            rounded-xl
+            bg-[var(--surface)]
+            border
+            border-[var(--border)]
+            animate-pulse
+          "
         />
-      ))}
 
-      {loading && (
-        <div className="space-y-3">
-          <div className="h-24 rounded-xl bg-zinc-900/50 animate-pulse" />
-          <div className="h-24 rounded-xl bg-zinc-900/50 animate-pulse" />
-          <div className="h-24 rounded-xl bg-zinc-900/50 animate-pulse" />
-        </div>
-      )}
+        <div
+          className="
+            h-24
+            rounded-xl
+            bg-[var(--surface)]
+            border
+            border-[var(--border)]
+            animate-pulse
+          "
+        />
 
-      {!hasMore && (
-        <p className="py-4 text-center text-xs text-zinc-500">
-          No more posts
-        </p>
-      )}
+        <div
+          className="
+            h-24
+            rounded-xl
+            bg-[var(--surface)]
+            border
+            border-[var(--border)]
+            animate-pulse
+          "
+        />
 
-      <div ref={loaderRef} className="h-10" />
-    </div>
-  )
+      </div>
+    )}
+
+
+
+    {!hasMore && (
+
+      <p
+        className="
+          py-4
+          text-center
+          text-xs
+          text-[var(--muted)]
+        "
+      >
+        No more posts
+      </p>
+
+    )}
+
+
+
+    <div
+      ref={loaderRef}
+      className="h-10"
+    />
+
+
+  </div>
+)
 }

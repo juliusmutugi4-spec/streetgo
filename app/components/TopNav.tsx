@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import TopMenu from './TopMenu'
+import ThemeToggle from './ThemeToggle'
 import { Bell, Menu, X, Video } from 'lucide-react'
+
 
 interface UserProfile {
   id: string
@@ -13,135 +15,481 @@ interface UserProfile {
   avatarUrl?: string
 }
 
+
 interface TopNavProps {
   user: UserProfile | null
   onLogin: () => void
   onLogout: () => void
 }
 
-export default function TopNav({ user, onLogin, onLogout }: TopNavProps) {
+
+
+export default function TopNav({
+  user,
+  onLogin,
+  onLogout,
+}: TopNavProps) {
+
+
   const router = useRouter()
-  const [menuOpen, setMenuOpen] = useState<boolean>(false)
+
+  const [menuOpen, setMenuOpen] = useState(false)
+
   const navMenuRef = useRef<HTMLDivElement | null>(null)
 
-  // Close menu on outside click safely
+
+
   useEffect(() => {
-    if (typeof window === 'undefined') return
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (navMenuRef.current && !navMenuRef.current.contains(event.target as Node)) {
+
+      if (
+        navMenuRef.current &&
+        !navMenuRef.current.contains(event.target as Node)
+      ) {
         setMenuOpen(false)
       }
+
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+
+    document.addEventListener(
+      'mousedown',
+      handleClickOutside
+    )
+
+
+    return () => {
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      )
+    }
+
   }, [])
 
+
+
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md transition-colors duration-200">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 py-3">
-        
-        {/* LEFT AXIS: BRANDING & NAVIGATION */}
-        <div className="flex items-center gap-6">
+
+    <header
+      className="
+        sticky
+        top-0
+        z-40
+        w-full
+        border-b
+        border-[var(--border)]
+        bg-[var(--background)]/90
+        text-[var(--foreground)]
+        backdrop-blur-xl
+        transition-all
+        duration-300
+      "
+    >
+
+
+      <div
+        className="
+          mx-auto
+          flex
+          max-w-7xl
+          items-center
+          justify-between
+          px-3
+          py-2.5
+          sm:px-6
+          sm:py-3
+        "
+      >
+
+
+
+        {/* LEFT */}
+
+        <div
+          className="
+            flex
+            items-center
+            gap-3
+            sm:gap-6
+          "
+        >
+
+
+
           {/* LOGO */}
-          <button 
-            type="button"
-            onClick={() => router.push('/')} 
-            className="group flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700 rounded-md"
-            aria-label="Street Go Home"
+
+          <button
+            onClick={() => router.push('/')}
+            className="
+              group
+              flex
+              items-center
+              rounded-md
+            "
           >
-            <h1 className="font-sans text-lg font-black uppercase tracking-wider text-zinc-100 transition-colors group-hover:text-white">
-              street <span className="text-emerald-400">go</span>
+
+            <h1
+              className="
+                text-base
+                sm:text-lg
+                font-black
+                uppercase
+                tracking-wider
+                text-[var(--foreground)]
+                transition-colors
+                group-hover:text-[var(--accent)]
+              "
+            >
+
+              street
+              <span className="text-[var(--accent)]">
+                go
+              </span>
+
             </h1>
+
           </button>
 
-          {/* MAP SHORTCUT */}
-          <button 
-            type="button"
-            onClick={() => router.push('/map')} 
-            className="group flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/30 transition-all duration-200 hover:border-zinc-700 hover:bg-zinc-900/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700"
-            aria-label="View Navigation Map"
-            title="Navigation Map"
-          >
-            <div className="relative h-5 w-5 transition-transform duration-200 group-hover:scale-105">
-              <Image 
-                src="/map-icon.png" 
-                alt="" 
-                fill 
-                className="object-contain" 
-                priority 
-              />
-            </div>
-          </button>
-        </div>
 
-        {/* RIGHT AXIS: CONTROLS & AUTHENTICATION */}
-        <div className="flex items-center gap-3 shrink-0">
-          {/* FEEDS STREAM */}
-          <button 
-            type="button"
-            onClick={() => router.push('/videos')} 
-            className="group relative flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900/30 px-3 py-1.5 text-xs font-medium tracking-wide text-zinc-300 transition-all duration-200 hover:border-zinc-700 hover:text-zinc-100 hover:bg-zinc-900/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700"
-          >
-            <Video size={14} className="text-zinc-400 group-hover:text-zinc-200 transition-colors" />
-            <span>Feeds</span>
-            
-            {/* LIVE INDICATOR */}
-            <span className="relative flex h-1.5 w-1.5 ml-0.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            </span>
-          </button>
 
-          {/* ALERTS / LOGIN */}
-          {user ? (
-            <button 
-              type="button"
-              onClick={() => router.push('/notifications')} 
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900/30 text-zinc-400 transition-all duration-200 hover:border-zinc-700 hover:text-zinc-100 hover:bg-zinc-900/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700"
-              aria-label="View System Notifications"
-              title="System Notifications"
+
+
+
+
+          {/* MAP - DESKTOP ONLY */}
+
+          <div className="hidden sm:block">
+
+            <button
+              onClick={() => router.push('/map')}
+              className="
+                flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                rounded-lg
+                border
+                border-[var(--border)]
+                bg-[var(--surface)]
+                transition
+                hover:border-[var(--border-hover)]
+                hover:bg-[var(--surface-hover)]
+              "
             >
-              <Bell size={15} />
-            </button>
-          ) : (
-            <button 
-              type="button"
-              onClick={onLogin} 
-              className="rounded-lg bg-zinc-100 px-3.5 py-1.5 text-xs font-semibold text-zinc-950 transition-all duration-200 hover:bg-white active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 focus-visible:ring-zinc-100"
-            >
-              Sign In
-            </button>
-          )}
 
-          {/* MENU INTERFACE */}
-          <div ref={navMenuRef} className="relative">
-            <button 
-              type="button"
-              onClick={() => setMenuOpen(!menuOpen)} 
-              className={`flex h-9 w-9 items-center justify-center rounded-lg border transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-700 ${
-                menuOpen 
-                  ? 'border-zinc-700 bg-zinc-900/80 text-zinc-100' 
-                  : 'border-zinc-800 bg-zinc-900/30 text-zinc-400 hover:border-zinc-700 hover:text-zinc-100 hover:bg-zinc-900/60'
-              }`}
-              aria-expanded={menuOpen}
-              aria-label="Toggle main system menu"
-              title="System Menu"
-            >
-              {menuOpen ? <X size={15} /> : <Menu size={15} />}
-            </button>
+              <div className="relative h-5 w-5">
 
-            {/* OVERLAY DROPDOWN */}
-            {menuOpen && (
-              <div className="absolute right-0 top-[44px] z-50 w-56 origin-top-right rounded-xl border border-zinc-800 bg-zinc-950 p-1 shadow-xl ring-1 ring-black/5 animate-in fade-in slide-in-from-top-1 duration-150">
-                <TopMenu onLogout={onLogout} onClose={() => setMenuOpen(false)} />
+                <Image
+                  src="/map-icon.png"
+                  alt="map"
+                  fill
+                  className="object-contain"
+                  priority
+                />
+
               </div>
-            )}
+
+            </button>
+
           </div>
+
+
         </div>
+
+
+
+
+
+
+
+
+        {/* RIGHT */}
+
+        <div
+          className="
+            flex
+            items-center
+            gap-1.5
+            sm:gap-3
+          "
+        >
+
+
+
+
+
+
+          {/* FEEDS DESKTOP ONLY */}
+
+          <button
+            onClick={() => router.push('/videos')}
+            className="
+              hidden
+              sm:flex
+              group
+              items-center
+              gap-2
+              rounded-lg
+              border
+              border-[var(--border)]
+              bg-[var(--surface)]
+              px-3
+              py-1.5
+              text-xs
+              font-medium
+              text-[var(--muted)]
+              transition
+              hover:border-[var(--border-hover)]
+              hover:bg-[var(--surface-hover)]
+              hover:text-[var(--foreground)]
+            "
+          >
+
+            <Video size={14}/>
+
+            <span>
+              Feeds
+            </span>
+
+
+            <span
+              className="
+                relative
+                flex
+                h-1.5
+                w-1.5
+              "
+            >
+
+              <span
+                className="
+                  absolute
+                  h-full
+                  w-full
+                  animate-ping
+                  rounded-full
+                  bg-[var(--accent)]
+                  opacity-75
+                "
+              />
+
+              <span
+                className="
+                  relative
+                  h-1.5
+                  w-1.5
+                  rounded-full
+                  bg-[var(--accent)]
+                "
+              />
+
+            </span>
+
+
+          </button>
+
+
+
+
+
+
+
+          {/* NOTIFICATION */}
+
+          {
+            user && (
+
+              <button
+                onClick={() => router.push('/notifications')}
+                className="
+                  flex
+                  h-8
+                  w-8
+                  sm:h-9
+                  sm:w-9
+                  items-center
+                  justify-center
+                  rounded-lg
+                  border
+                  border-[var(--border)]
+                  bg-[var(--surface)]
+                  text-[var(--muted)]
+                  transition
+                  hover:bg-[var(--surface-hover)]
+                  hover:text-[var(--foreground)]
+                "
+              >
+
+                <Bell size={15}/>
+
+              </button>
+
+            )
+          }
+
+
+
+
+
+
+
+
+          {/* LOGIN MOBILE/DESKTOP */}
+
+          {
+            !user && (
+
+              <button
+                onClick={onLogin}
+                className="
+                  rounded-lg
+                  bg-[var(--primary)]
+                  px-3
+                  py-1.5
+                  text-xs
+                  font-semibold
+                  text-[var(--primary-foreground)]
+                  transition
+                  hover:opacity-90
+                "
+              >
+
+                Sign In
+
+              </button>
+
+            )
+          }
+
+
+
+
+
+
+
+
+
+          {/* THEME */}
+
+          <ThemeToggle />
+
+
+
+
+
+
+
+
+
+
+          {/* MENU */}
+
+          <div
+            ref={navMenuRef}
+            className="relative"
+          >
+
+
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className={`
+                flex
+                h-8
+                w-8
+                sm:h-9
+                sm:w-9
+                items-center
+                justify-center
+                rounded-lg
+                border
+                transition
+
+                ${
+                  menuOpen
+
+                  ?
+
+                  `
+                  border-[var(--border-hover)]
+                  bg-[var(--surface-hover)]
+                  text-[var(--foreground)]
+                  `
+
+                  :
+
+                  `
+                  border-[var(--border)]
+                  bg-[var(--surface)]
+                  text-[var(--muted)]
+                  hover:bg-[var(--surface-hover)]
+                  hover:text-[var(--foreground)]
+                  `
+                }
+              `}
+            >
+
+              {
+                menuOpen
+                ?
+                <X size={15}/>
+                :
+                <Menu size={15}/>
+              }
+
+
+            </button>
+
+
+
+
+
+            {
+              menuOpen && (
+
+                <div
+                  className="
+                    absolute
+                    right-0
+                    top-10
+                    z-50
+                    w-56
+                    rounded-xl
+                    border
+                    border-[var(--border)]
+                    bg-[var(--background)]
+                    p-1
+                    shadow-xl
+                  "
+                >
+
+                  <TopMenu
+                    onLogout={onLogout}
+                    onClose={() => setMenuOpen(false)}
+                  />
+
+                </div>
+
+              )
+            }
+
+
+          </div>
+
+
+
+        </div>
+
+
 
       </div>
+
+
     </header>
+
   )
+
 }

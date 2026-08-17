@@ -82,18 +82,56 @@ export default function ReactionButton({ handleSendReax, reaxCount }: Props) {
       disabled={sending && !sent}
       type="button"
       aria-label={`Reax: ${displayCount}`}
-      className={`
-        group relative flex items-center gap-1.5 rounded-md
-        px-2 py-1 text-[10px] font-mono font-medium select-none
-        transition-all duration-200 active:scale-[0.95] overflow-hidden border
-        ${
-          error
-            ? "text-rose-600 bg-rose-500/5 border-rose-500/20 animate-[shake_0.3s_ease-in-out]"
-            : sent
-            ? "text-emerald-600 bg-emerald-500/5 border-emerald-500/20" 
-            : "text-zinc-700 bg-zinc-50 border-zinc-200 dark:text-zinc-300 dark:bg-zinc-900 dark:border-zinc-800 hover:bg-white hover:border-zinc-300 dark:hover:bg-zinc-850 dark:hover:border-zinc-700"
-        }
-      `}
+className={`
+  group
+  relative
+  flex
+  items-center
+  gap-1.5
+  rounded-md
+  px-2
+  py-1
+  text-[10px]
+  font-mono
+  font-medium
+  select-none
+  transition-all
+  duration-200
+  active:scale-[0.95]
+  overflow-hidden
+  border
+
+  ${
+    error
+      ?
+      `
+      text-rose-600
+      bg-rose-500/5
+      border-rose-500/20
+      animate-[shake_0.3s_ease-in-out]
+      `
+
+      :
+
+    sent
+      ?
+      `
+      text-emerald-600
+      bg-emerald-500/5
+      border-emerald-500/20
+      `
+
+      :
+
+      `
+      text-[var(--muted)]
+      bg-[var(--surface)]
+      border-[var(--border)]
+      hover:bg-[var(--surface-hover)]
+      hover:text-[var(--foreground)]
+      `
+  }
+`}
     >
       {/* Mini Micro Icon Block */}
       <div className="flex items-center justify-center w-3.5 h-3.5">

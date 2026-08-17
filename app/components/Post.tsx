@@ -878,7 +878,7 @@ return (
 /> */}
 <div
   ref={postRef}
-  className={`group relative overflow-visible backdrop-blur-xl transition-all duration-500 rounded-xl bg-[#05070b]/80 ${
+  className={`group relative overflow-visible backdrop-blur-xl transition-all duration-500 rounded-xl bg-[var(--surface)] border border-[var(--border)] ${
     portalOpening
       ? "scale-110 opacity-0 blur-md"
       : "scale-100 opacity-100"
@@ -968,7 +968,7 @@ return (
           relative h-full w-full
           overflow-hidden
        rounded-full
-          bg-zinc-950/90
+          bg-[var(--background)]
           backdrop-blur-xl
           border border-white/5
         ">
@@ -1068,21 +1068,21 @@ return (
     gap-2
     text-sm font-bold
     font-semibold
-    text-white
-    hover:text-cyan-400
+text-[var(--foreground)]
+hover:text-[var(--accent)]
     transition
   "
 >
   {username}
 </button>
       <div className="flex items-center gap-2">
-        <span className="text-[11px] text-zinc-500">
+        <span className="text-[11px] text-[var(--muted)]">
           @{username.toLowerCase()}
         </span>
 
         <span className="text-zinc-700">•</span>
 
-        <span className="text-[11px] text-zinc-600">
+        <span className="text-[11px] text-[var(--muted-foreground)]">
          {formatRelativeTime(post.created_at)}
         </span>
       </div>
@@ -1098,11 +1098,11 @@ return (
     w-9
     rounded-lg
     border
-    border-white/5
-    bg-white/[0.03]
-    text-zinc-400
-    hover:text-white
-    hover:bg-white/[0.06]
+border-[var(--border)]
+bg-[var(--surface)]
+text-[var(--muted)]
+hover:text-[var(--foreground)]
+hover:bg-[var(--surface-hover)]
     transition
   "
 >
@@ -1120,14 +1120,14 @@ return (
       overflow-hidden
       rounded-2xl
       border
-      border-cyan-500/20
-      bg-[#090b10]/95
+   border-[var(--border)]
+bg-[var(--background)]/95
       backdrop-blur-2xl
       shadow-[0_20px_60px_rgba(0,0,0,0.45)]
     "
   >
     <button
-      className="w-full px-5 py-3 text-left text-sm text-white hover:bg-white/5 transition"
+      className="w-full px-5 py-3 text-left text-sm text-[var(--foreground)] hover:bg-[var(--surface-hover)] transition"
       onClick={async () => {
         await navigator.clipboard.writeText(
           `${window.location.origin}/post/${post.id}`
@@ -1178,9 +1178,9 @@ return (
       {/* Content */}
       {/* Content */}
 <div className="px-4">
-  <p
-    className="
-      text-zinc-200
+<p
+ className="
+   text-[var(--foreground)]
       text-[14px]
       leading-6
       mb-3
