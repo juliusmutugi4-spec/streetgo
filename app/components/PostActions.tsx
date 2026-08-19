@@ -3,6 +3,7 @@
 
 import { Flame, MessageSquare, Send, Sparkles } from "lucide-react"
 import ReactionButton from "./ReactionButton"
+import PostCardMeta from "./PostCardMeta"
 
 
 interface PostActionsProps {
@@ -113,109 +114,13 @@ return (
     "
   >
 
-    {/* METRICS ROW */}
-
-    {(likes > 0 || reaxCount > 0 || comments.length > 0) && (
-
-      <div
-        className="
-          flex
-          items-center
-          justify-between
-          py-2
-          text-[12px]
-          text-[var(--muted)]
-          font-medium
-          tracking-wide
-        "
-      >
-
-        <div
-          className="
-            flex
-            items-center
-            gap-1.5
-            cursor-pointer
-            hover:text-[var(--foreground)]
-            transition-colors
-          "
-        >
-
-          {likes > 0 && (
-
-            <span
-              className="
-                flex
-                h-4
-                w-4
-                items-center
-                justify-center
-                rounded-md
-                bg-rose-500/10
-                text-rose-400
-              "
-            >
-
-              <Flame
-                size={10}
-                className="fill-current"
-              />
-
-            </span>
-
-          )}
-
-          <span>
-            {likes + reaxCount}
-          </span>
 
 
-        </div>
-
-
-
-        <div
-          className="
-            flex
-            items-center
-            gap-3
-          "
-        >
-
-          {comments.length > 0 && (
-
-            <button
-
-              onClick={handleCommentClick}
-
-              className="
-                text-[12px]
-                font-medium
-                text-[var(--muted)]
-                transition-colors
-                hover:text-[var(--foreground)]
-              "
-
-            >
-
-              {comments.length}{' '}
-              {comments.length === 1
-                ? 'discussion'
-                : 'discussions'}
-
-            </button>
-
-          )}
-
-        </div>
-
-
-      </div>
-
-    )}
-
-
-
+<PostCardMeta
+  likes={likes}
+  reaxCount={reaxCount}
+  commentsCount={comments.length}
+/>
 
 
     {/* ACTION BUTTONS */}

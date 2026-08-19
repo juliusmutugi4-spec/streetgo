@@ -14,7 +14,7 @@ import StreetAI from "./StreetAI"
 import SmartImageGallery from "./SmartImageGallery"
 import PostActions from "./PostActions"
 import SimilarVideosMenu from "./SimilarVideosMenu"
-
+import PostTextVisual from "./PostTextVisual"
 import VideoPortalButton from "./VideoPortalButton"
 import PostVideo from "./PostVideo"
 import ImageViewer from "./ImageViewer"
@@ -1175,20 +1175,29 @@ bg-[var(--background)]/95
 
 
 
-      {/* Content */}
-      {/* Content */}
-<div className="px-4">
-<p
- className="
-   text-[var(--foreground)]
-      text-[14px]
-      leading-6
-      mb-3
-    "
-  >
-    {post.content}
-  </p>
-</div>
+{/* CONTENT */}
+{post.content?.trim() && (
+  post.content.trim().split(/\s+/).filter(Boolean).length < 20 &&
+  !post.video_url &&
+  imageUrls.length === 0 ? (
+    <PostTextVisual
+      content={post.content}
+    />
+  ) : (
+    <div className="px-4">
+      <p
+        className="
+          mb-3
+          text-[14px]
+          leading-6
+          text-[var(--foreground)]
+        "
+      >
+        {post.content}
+      </p>
+    </div>
+  )
+)}
 
 {imageUrls.length > 0 && (
 <SmartImageGallery
