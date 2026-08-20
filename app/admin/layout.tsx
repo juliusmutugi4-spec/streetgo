@@ -92,12 +92,12 @@ export default function AdminLayout({
       </aside>
 
       {/* Main Page Layout */}
-      <div className="pl-64 flex flex-1 flex-col">
-        <main className="flex-1 p-8 lg:p-12 max-w-7xl w-full mx-auto">
-          {children}
-        </main>
-      </div>
-
+{/* Main Page Layout */}
+<div className="pl-64 flex min-w-0 flex-1 flex-col">
+  <main className="relative min-w-0 w-full max-w-[1500px]">
+    {children}
+  </main>
+</div>
     </div>
   )
 }

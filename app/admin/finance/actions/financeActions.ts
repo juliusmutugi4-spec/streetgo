@@ -190,6 +190,59 @@ if (error) {
   return data === true
 }
 
+// ======================================================
+// REASSIGN WITHDRAWAL
+// SUPER ADMIN ONLY
+// ======================================================
+
+export async function reassignWithdrawal(
+  withdrawalId: string,
+  superAdminId: string,
+  newAdminId: string
+) {
+  if (
+    !withdrawalId ||
+    !superAdminId ||
+    !newAdminId
+  ) {
+    console.log(
+      "MISSING REASSIGNMENT INFORMATION"
+    )
+
+    return false
+  }
+
+  const supabase = getSupabaseBrowser()
+
+  const {
+    data,
+    error,
+  } = await supabase.rpc(
+    "admin_reassign_withdrawal",
+    {
+      p_withdrawal_id: withdrawalId,
+      p_super_admin_id: superAdminId,
+      p_new_admin_id: newAdminId,
+    }
+  )
+
+  if (error) {
+    console.error(
+      "REASSIGN WITHDRAWAL ERROR:",
+      JSON.stringify(error, null, 2)
+    )
+
+    return false
+  }
+
+  return data === true
+}
+
+
+
+
+
+
 export async function lookupWithdrawal(
   adminId: string,
   withdrawalReference: string
@@ -220,3 +273,4 @@ export async function lookupWithdrawal(
 
   return data?.[0] ?? null
 }
+

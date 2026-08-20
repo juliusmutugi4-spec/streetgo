@@ -33,6 +33,13 @@ console.log(
   // State Management
   const [authorized, setAuthorized] = useState(false)
   const [adminId, setAdminId] = useState("")
+  const [adminRole, setAdminRole] = useState("")
+const [withdrawalsUnlocked, setWithdrawalsUnlocked] =
+  useState(false)
+
+const [updatingQueueLock, setUpdatingQueueLock] =
+  useState(false)
+
   const [financeAdmins, setFinanceAdmins] = useState<
   {
     user_id: string
@@ -145,12 +152,16 @@ if (adminsError) {
           return
         }
 
-        if (admin.role !== "super_admin" && admin.role !== "finance_admin") {
-          router.push("/admin")
-          return
-        }
+  if (
+  admin.role !== "super_admin" &&
+  admin.role !== "finance_admin"
+) {
+  router.push("/admin")
+  return
+}
 
-        setAuthorized(true)
+setAdminRole(admin.role)
+setAuthorized(true)
       } catch (err) {
         console.error("Critical authentication pipeline failure:", err)
         router.push("/")
@@ -159,6 +170,41 @@ if (adminsError) {
 
     verifyFinanceAccess()
   }, [router])
+
+
+// ======================================================
+// GLOBAL WITHDRAWAL QUEUE CONTROL
+// ======================================================
+
+useEffect(() => {
+  if (!authorized) return
+
+  async function loadQueueControl() {
+    const { data, error } = await supabase
+      .from("finance_controls")
+      .select("withdrawals_unlocked")
+      .eq("id", 1)
+      .single()
+
+    if (error) {
+      console.error(
+        "QUEUE CONTROL LOAD ERROR:",
+        error
+      )
+      return
+    }
+
+    setWithdrawalsUnlocked(
+      data?.withdrawals_unlocked === true
+    )
+  }
+
+  loadQueueControl()
+}, [authorized])
+
+
+
+
 
   // 2. High-Performance Client-Side Filters
   const filteredTransactions = transactions.filter((tx) => {
@@ -617,10 +663,75 @@ async function handleWithdrawalLookup() {
 
 {/* Pending Withdrawal Queue */}
 <section aria-label="Pending Withdrawals">
-  <WithdrawalTable
-    withdrawals={withdrawals}
-    onSelect={setSelectedWithdrawal}
-  />
+
+  <div className="mb-4 flex items-center justify-between">
+
+    <div>
+      <h2 className="text-sm font-semibold text-zinc-200">
+        Pending Withdrawals
+      </h2>
+
+      <p className="mt-1 text-[10px] uppercase tracking-wider text-zinc-500">
+        Active withdrawal processing queue
+      </p>
+    </div>
+
+    {adminRole === "super_admin" && (
+      <button
+        type="button"
+onClick={async () => {
+  if (adminRole !== "super_admin") return
+
+  const nextState = !withdrawalsUnlocked
+
+  setUpdatingQueueLock(true)
+
+  try {
+    const { error } = await supabase
+      .from("finance_controls")
+      .update({
+        withdrawals_unlocked: nextState,
+        updated_by: adminId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1)
+
+    if (error) {
+      console.error(
+        "QUEUE CONTROL UPDATE ERROR:",
+        error
+      )
+
+      alert("Unable to change queue control.")
+      return
+    }
+
+    setWithdrawalsUnlocked(nextState)
+
+  } finally {
+    setUpdatingQueueLock(false)
+  }
+}}
+        className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-amber-400 transition hover:bg-amber-500/20"
+      >
+        {updatingQueueLock
+  ? "Updating..."
+  : withdrawalsUnlocked
+    ? "🔓 Unlocked"
+    : "🔒 Locked"}
+      </button>
+    )}
+
+  </div>
+
+<WithdrawalTable
+  withdrawals={withdrawals}
+  onSelect={setSelectedWithdrawal}
+  withdrawalsUnlocked={withdrawalsUnlocked}
+  adminId={adminId}
+  adminRole={adminRole}
+/>
+
 </section>
 {/* Withdrawal History */}
 <section
@@ -793,8 +904,25 @@ async function handleWithdrawalLookup() {
 <WithdrawalDrawer
   withdrawal={selectedWithdrawal}
   adminId={adminId}
+  adminRole={adminRole}
   onClose={() => setSelectedWithdrawal(null)}
-  onSuccess={() => {
+  onSuccess={(updatedWithdrawal) => {
+    if (updatedWithdrawal) {
+      setWithdrawals((current) =>
+        current.map((item) =>
+          item.id === updatedWithdrawal.id
+            ? {
+                ...item,
+                assigned_to:
+                  updatedWithdrawal.assigned_to,
+                assigned_at:
+                  updatedWithdrawal.assigned_at,
+              }
+            : item
+        )
+      )
+    }
+
     setSelectedWithdrawal(null)
   }}
 />
@@ -810,7 +938,7 @@ async function handleWithdrawalLookup() {
   adminId={adminId}
   withdrawals={withdrawals}
   setWithdrawals={setWithdrawals}
-  
+  onSelectWithdrawal={setSelectedWithdrawal}
 />
     </div>
 

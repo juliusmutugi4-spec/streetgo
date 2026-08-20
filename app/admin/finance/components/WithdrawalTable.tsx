@@ -10,6 +10,8 @@ interface Withdrawal {
   phone_number: string
   status: string
   admin_note?: string | null
+  assigned_to?: string | null
+assigned_at?: string | null
   rejection_reason?: string | null
   processed_by?: string | null
   created_at: string
@@ -20,12 +22,39 @@ interface Withdrawal {
 interface Props {
   withdrawals: Withdrawal[]
   onSelect: (withdrawal: Withdrawal) => void
+  withdrawalsUnlocked: boolean
+  adminId: string
+  adminRole: string
 }
-
 export default function WithdrawalTable({
   withdrawals,
   onSelect,
+  withdrawalsUnlocked,
+  adminId,
+  adminRole,
 }: Props) {
+
+
+const canOpenWithdrawal = (
+  withdrawal: Withdrawal
+) => {
+  // Super Admin always has full control
+  if (adminRole === "super_admin") {
+    return true
+  }
+
+  // Queue unlocked = admins can work any pending withdrawal
+  if (withdrawalsUnlocked) {
+    return true
+  }
+
+  // Queue locked = admin can only work their own assignment
+  return withdrawal.assigned_to === adminId
+}
+
+
+
+
   return (
     <section className="rounded-xl border border-zinc-800/60 bg-zinc-900/10 p-5 shadow-2xl shadow-black/20">
 
@@ -101,12 +130,20 @@ export default function WithdrawalTable({
 
             {withdrawals.map((withdrawal) => (
 
-              <button
-                key={withdrawal.id}
-                type="button"
-                onClick={() => onSelect(withdrawal)}
-                className="group w-full text-left transition-colors hover:bg-zinc-900/80"
-              >
+<button
+  key={withdrawal.id}
+  type="button"
+  disabled={!canOpenWithdrawal(withdrawal)}
+  onClick={() => {
+    if (!canOpenWithdrawal(withdrawal)) return
+    onSelect(withdrawal)
+  }}
+  className={`group w-full text-left transition-colors ${
+    canOpenWithdrawal(withdrawal)
+      ? "hover:bg-zinc-900/80"
+      : "cursor-not-allowed opacity-50"
+  }`}
+>
 
                 <div className="grid grid-cols-1 gap-3 px-3 py-3 md:grid-cols-[1.4fr_1fr_1fr_90px_28px] md:items-center">
 

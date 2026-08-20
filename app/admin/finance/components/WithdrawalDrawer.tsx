@@ -6,6 +6,7 @@ import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import {
   markWithdrawalPaid,
   rejectWithdrawal,
+  reassignWithdrawal,
 } from "../actions/financeActions"
 
 interface Withdrawal {
@@ -16,6 +17,8 @@ interface Withdrawal {
   amount: number
   phone_number: string
   status: string
+  assigned_to?: string | null
+  assigned_at?: string | null
   admin_note?: string | null
   rejection_reason?: string | null
   processed_by?: string | null
@@ -25,12 +28,12 @@ interface Withdrawal {
 }
 
 interface Props {
-  withdrawal: Withdrawal | null
+  withdrawal: any
   adminId: string
+  adminRole: string
   onClose: () => void
-  onSuccess: () => void
+  onSuccess: (updatedWithdrawal?: any) => void
 }
-
 interface AuditLog {
   id: string
   action: string
@@ -41,6 +44,7 @@ interface AuditLog {
 export default function WithdrawalDrawer({
   withdrawal,
   adminId,
+  adminRole,
   onClose,
   onSuccess,
 }: Props) {
@@ -54,7 +58,16 @@ const [auditLoading, setAuditLoading] = useState(false)
   const [mpesaMessage, setMpesaMessage] =
     useState("")
 
+const [admins, setAdmins] = useState<
+  {
+    user_id: string
+    username: string
+    role: string
+  }[]
+>([])
 
+const [selectedAdminId, setSelectedAdminId] =
+  useState("")
 
 useEffect(() => {
   const withdrawalId = withdrawal?.id
@@ -101,11 +114,61 @@ useEffect(() => {
   }
 
   loadAuditLogs()
+async function loadAdmins() {
+  if (adminRole !== "super_admin") {
+    setAdmins([])
+    return
+  }
+
+  const supabase = getSupabaseBrowser()
+
+  const { data, error } = await supabase
+    .from("admins")
+    .select(`
+      user_id,
+      role,
+      profiles (
+        username
+      )
+    `)
+    .eq("status", "active")
+    .in("role", ["super_admin", "finance_admin"])
+
+  if (error) {
+    console.error(
+      "ADMIN LIST LOAD ERROR:",
+      error
+    )
+    return
+  }
+
+  if (cancelled) return
+
+  setAdmins(
+    (data || []).map((admin: any) => ({
+      user_id: admin.user_id,
+      role: admin.role,
+      username:
+        admin.profiles?.username ||
+        "Unknown Admin",
+    }))
+  )
+}
+
+loadAdmins()
+
+if (withdrawal?.assigned_to) {
+  setSelectedAdminId(
+    withdrawal.assigned_to
+  )
+} else {
+  setSelectedAdminId("")
+}
 
   return () => {
     cancelled = true
   }
-}, [withdrawal?.id])
+}, [withdrawal?.id, adminRole])
 
 if (!withdrawal) {
   return null
@@ -422,6 +485,137 @@ if (!withdrawal) {
             </p>
 
           </div>
+
+
+{/* =================================================
+    SUPER ADMIN ASSIGNMENT
+================================================= */}
+
+{adminRole === "super_admin" &&
+  withdrawal.status === "pending" && (
+    <div className="rounded-lg border border-violet-500/20 bg-violet-500/5 p-4">
+
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-violet-400">
+        Withdrawal Assignment
+      </p>
+
+      <p className="mt-1 text-[10px] text-zinc-500">
+        Super Admin control — move this withdrawal to another admin.
+      </p>
+
+
+<div className="mb-3 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2.5">
+  <p className="text-[9px] font-semibold uppercase tracking-wider text-zinc-600">
+    Currently Assigned To
+  </p>
+
+  <p className="mt-1 text-xs font-semibold text-zinc-300">
+    {admins.find(
+      (admin) =>
+        admin.user_id === withdrawal.assigned_to
+    )?.username || "Unassigned"}
+  </p>
+</div>
+
+
+      <div className="mt-3">
+
+        <label className="mb-1.5 block text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+          Assign To
+        </label>
+
+        <select
+          value={selectedAdminId}
+          onChange={(e) =>
+            setSelectedAdminId(e.target.value)
+          }
+          disabled={loading}
+          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500 disabled:opacity-50"
+        >
+
+          <option value="">
+            Select admin
+          </option>
+
+          {admins.map((admin) => (
+            <option
+              key={admin.user_id}
+              value={admin.user_id}
+            >
+              {admin.username} — {admin.role}
+            </option>
+          ))}
+
+        </select>
+
+      </div>
+
+      <button
+        type="button"
+        disabled={
+          loading ||
+          !selectedAdminId
+        }
+onClick={async () => {
+  if (!selectedAdminId) {
+    alert("Select an admin first.")
+    return
+  }
+
+  const confirmed = window.confirm(
+    "Reassign this withdrawal to the selected admin?"
+  )
+
+  if (!confirmed) return
+
+  setLoading(true)
+
+  try {
+    const success = await reassignWithdrawal(
+      withdrawal.id,
+      adminId,
+      selectedAdminId
+    )
+
+    if (!success) {
+      alert("Unable to reassign this withdrawal.")
+      return
+    }
+
+alert("Withdrawal reassigned successfully.")
+
+const updatedWithdrawal = {
+  ...withdrawal,
+  assigned_to: selectedAdminId,
+  assigned_at: new Date().toISOString(),
+}
+
+setSelectedAdminId("")
+
+onClose()
+onSuccess(updatedWithdrawal)
+  } catch (error) {
+    console.error(
+      "REASSIGN WITHDRAWAL ERROR:",
+      error
+    )
+
+    alert("Failed to reassign withdrawal.")
+  } finally {
+    setLoading(false)
+  }
+}}
+        className="mt-3 w-full rounded-lg border border-violet-500/20 bg-violet-500/10 py-2.5 text-xs font-semibold text-violet-300 hover:bg-violet-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        Reassign Withdrawal
+      </button>
+
+    </div>
+  )}
+
+
+
+
 
           {/* =================================================
               REQUEST DATE

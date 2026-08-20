@@ -13,9 +13,8 @@ interface FinanceOperationsPanelProps {
   pendingCount: number
   adminId: string
   withdrawals: any[]
-  setWithdrawals: React.Dispatch<
-    React.SetStateAction<any[]>
-  >
+  setWithdrawals: React.Dispatch<React.SetStateAction<any[]>>
+  onSelectWithdrawal: (withdrawal: any) => void
 }
 
 export default function FinanceOperationsPanel({
@@ -23,8 +22,8 @@ export default function FinanceOperationsPanel({
   adminId,
   withdrawals,
   setWithdrawals,
+  onSelectWithdrawal,
 }: FinanceOperationsPanelProps) {
-
 
   const supabase = getSupabaseBrowser()
 
@@ -395,10 +394,12 @@ setWithdrawals((current) =>
             ) : (
               myWithdrawals.map(
                 (withdrawal) => (
-                  <div
-                    key={withdrawal.id}
-                    className="rounded-lg border border-emerald-500/10 bg-emerald-500/5 p-3"
-                  >
+<button
+  key={withdrawal.id}
+  type="button"
+onClick={() => onSelectWithdrawal(withdrawal)}
+  className="w-full rounded-lg border border-emerald-500/10 bg-emerald-500/5 p-3 text-left transition hover:border-emerald-500/30 hover:bg-emerald-500/10"
+>
 
                     <div className="flex items-center justify-between gap-3">
 
@@ -436,7 +437,7 @@ setWithdrawals((current) =>
 
                     </div>
 
-                  </div>
+                  </button>
                 )
               )
             )}
@@ -444,7 +445,6 @@ setWithdrawals((current) =>
           </div>
 
         </div>
-
 {/* TEAM QUEUE */}
 <div className="border-b border-zinc-800 p-5">
 
@@ -548,6 +548,10 @@ setWithdrawals((current) =>
   </div>
 
 </div>
+
+
+
+
 
         {/* SYSTEM STATUS */}
         <div className="p-5">
