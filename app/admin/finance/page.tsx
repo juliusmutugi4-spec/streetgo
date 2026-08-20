@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "../../lib/supabase-browser"
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js"
 import { checkAdmin } from "../../lib/isAdmin"
 import useFinance from "./hooks/useFinance"
 import WithdrawalHistoryDrawer from "./components/WithdrawalHistoryDrawer"
@@ -180,30 +181,70 @@ useEffect(() => {
   if (!authorized) return
 
   async function loadQueueControl() {
-    const { data, error } = await supabase
-      .from("finance_controls")
-      .select("withdrawals_unlocked")
-      .eq("id", 1)
-      .single()
+const { data, error } = await supabase.rpc(
+  "get_finance_queue_control"
+)
 
-    if (error) {
-      console.error(
-        "QUEUE CONTROL LOAD ERROR:",
-        error
-      )
-      return
-    }
+if (error) {
+  console.error(
+    "QUEUE CONTROL LOAD ERROR:",
+    error
+  )
+  return
+}
 
-    setWithdrawalsUnlocked(
-      data?.withdrawals_unlocked === true
-    )
+setWithdrawalsUnlocked(data === true)
   }
 
   loadQueueControl()
 }, [authorized])
 
 
+useEffect(() => {
+  if (!authorized) return
 
+  const channel = supabase
+    .channel("finance-queue-control")
+    .on(
+      "postgres_changes",
+      {
+        event: "UPDATE",
+        schema: "public",
+        table: "finance_controls",
+        filter: "id=eq.1",
+      },
+      (payload: RealtimePostgresChangesPayload<{
+  id: number
+  withdrawals_unlocked: boolean
+  updated_by: string | null
+  updated_at: string
+}>) => {
+        console.log(
+          "🔥 FINANCE QUEUE REALTIME EVENT:",
+          payload
+        )
+
+        const updated =
+          payload.new as {
+            withdrawals_unlocked?: boolean
+          }
+
+        setWithdrawalsUnlocked(
+          updated.withdrawals_unlocked === true
+        )
+      }
+    )
+  .subscribe((status: string) => {
+      console.log(
+        "🔥 FINANCE QUEUE REALTIME STATUS:",
+        status
+      )
+    })
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [authorized])
 
 
   // 2. High-Performance Client-Side Filters
