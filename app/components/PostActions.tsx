@@ -1,10 +1,12 @@
 'use client'
 
+import {
+  Flame,
+  MessageSquare,
+  Send,
+} from 'lucide-react'
 
-import { Flame, MessageSquare, Send, Sparkles } from "lucide-react"
-import ReactionButton from "./ReactionButton"
-import PostCardMeta from "./PostCardMeta"
-
+import ReactionButton from './ReactionButton'
 
 interface PostActionsProps {
   liked: boolean
@@ -14,8 +16,11 @@ interface PostActionsProps {
   toggleLike: () => void
   handleSendReax: () => Promise<void>
   setOpenRoom: React.Dispatch<React.SetStateAction<boolean>>
-  post: { id: string; content: string }
-onOpenDispatch: (post: any) => void
+  post: {
+    id: string
+    content: string
+  }
+  onOpenDispatch: (post: any) => void
 }
 
 export default function PostActions({
@@ -30,327 +35,392 @@ export default function PostActions({
   onOpenDispatch,
 }: PostActionsProps) {
 
-  // Pure Web Audio API synthesized interface sounds (No external files required)
-  const playSound = (type: 'click' | 'success' | 'pop') => {
+  // --------------------------------------------------
+  // SOUND ENGINE
+  // --------------------------------------------------
+
+  const playSound = (
+    type: 'click' | 'success' | 'pop'
+  ) => {
     try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContext) return;
-      const ctx = new AudioContext();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
+      const AudioContext =
+        window.AudioContext ||
+        (window as any).webkitAudioContext
+
+      if (!AudioContext) return
+
+      const ctx = new AudioContext()
+
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
 
       if (type === 'click') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(400, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.05);
-        gain.gain.setValueAtTime(0.05, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.05);
-      } else if (type === 'success') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.06); // E5
-        gain.gain.setValueAtTime(0.08, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.15);
-      } else if (type === 'pop') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(150, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.06, ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.08);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.08);
+        osc.type = 'sine'
+
+        osc.frequency.setValueAtTime(
+          400,
+          ctx.currentTime
+        )
+
+        osc.frequency.exponentialRampToValueAtTime(
+          100,
+          ctx.currentTime + 0.05
+        )
+
+        gain.gain.setValueAtTime(
+          0.05,
+          ctx.currentTime
+        )
+
+        gain.gain.linearRampToValueAtTime(
+          0.01,
+          ctx.currentTime + 0.05
+        )
+
+        osc.start()
+        osc.stop(ctx.currentTime + 0.05)
       }
-    } catch (e) {
-      console.error(e);
+
+      if (type === 'success') {
+        osc.type = 'triangle'
+
+        osc.frequency.setValueAtTime(
+          523.25,
+          ctx.currentTime
+        )
+
+        osc.frequency.setValueAtTime(
+          659.25,
+          ctx.currentTime + 0.06
+        )
+
+        gain.gain.setValueAtTime(
+          0.08,
+          ctx.currentTime
+        )
+
+        gain.gain.linearRampToValueAtTime(
+          0.01,
+          ctx.currentTime + 0.15
+        )
+
+        osc.start()
+        osc.stop(ctx.currentTime + 0.15)
+      }
+
+      if (type === 'pop') {
+        osc.type = 'sine'
+
+        osc.frequency.setValueAtTime(
+          150,
+          ctx.currentTime
+        )
+
+        osc.frequency.exponentialRampToValueAtTime(
+          600,
+          ctx.currentTime + 0.08
+        )
+
+        gain.gain.setValueAtTime(
+          0.06,
+          ctx.currentTime
+        )
+
+        gain.gain.linearRampToValueAtTime(
+          0.01,
+          ctx.currentTime + 0.08
+        )
+
+        osc.start()
+        osc.stop(ctx.currentTime + 0.08)
+      }
+
+    } catch (error) {
+      console.error(error)
     }
-  };
+  }
+
+  // --------------------------------------------------
+  // SHARE
+  // --------------------------------------------------
 
   const handleShare = async () => {
-    playSound('success');
-    const url = `${window.location.origin}/post/${post.id}`
+    playSound('success')
+
+    const url =
+      `${window.location.origin}/post/${post.id}`
+
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "StreetGO",
+          title: 'StreetGO',
           text: post.content,
           url,
         })
-      } catch (err) {
-        console.error("Error sharing:", err)
+      } catch (error) {
+        console.error(
+          'Error sharing:',
+          error
+        )
       }
     } else {
       await navigator.clipboard.writeText(url)
     }
   }
 
+  // --------------------------------------------------
+  // LIKE
+  // --------------------------------------------------
+
   const handleLikeClick = () => {
-    playSound(liked ? 'click' : 'pop');
-    toggleLike();
-  };
+    playSound(
+      liked
+        ? 'click'
+        : 'pop'
+    )
+
+    toggleLike()
+  }
+
+  // --------------------------------------------------
+  // COMMENTS
+  // --------------------------------------------------
 
   const handleCommentClick = () => {
-    playSound('click');
-    setOpenRoom(true);
-  };
-return (
-  <div
-    className="
-      w-full
-      bg-[var(--surface)]
-      px-4
-      select-none
-      border-t
-      border-[var(--border)]
-      rounded-b-xl
-      transition-colors
-      duration-300
-    "
-  >
+    playSound('click')
+    setOpenRoom(true)
+  }
 
-
-
-<PostCardMeta
-  likes={likes}
-  reaxCount={reaxCount}
-  commentsCount={comments.length}
-/>
-
-
-    {/* ACTION BUTTONS */}
-
+  return (
     <div
       className="
-        flex
-        items-center
-        justify-between
-        gap-1
-        py-1.5
+        w-full
+        bg-[var(--surface)]
+        px-0.5
+        select-none
+        border-t
+        border-[var(--border)]
+        rounded-b-xl
       "
     >
 
-
-
-      {/* IGNITE */}
-
-
-      <button
-
-        onClick={handleLikeClick}
-
-        className="
-          flex-1
-          flex
-          items-center
-          justify-center
-          gap-2
-          rounded-lg
-          py-2
-          text-[13px]
-          font-semibold
-          tracking-wide
-          text-[var(--muted)]
-          transition-all
-          duration-200
-          hover:bg-[var(--surface-hover)]
-          hover:text-[var(--foreground)]
-          active:scale-95
-          group
-        "
-
-      >
-
-        <Flame
-
-          size={16}
-
-          className={`transition-all duration-300 ${
-            liked
-
-            ?
-
-            "text-rose-500 fill-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.6)] scale-110"
-
-            :
-
-            "text-[var(--muted)] group-hover:text-rose-400"
-          }`}
-
-        />
-
-
-        <span
-          className={
-            liked
-            ? "text-rose-400"
-            : ""
-          }
-        >
-          Ignite
-        </span>
-
-
-      </button>
-
-
-
-
-
-
-      {/* DISCUSS */}
-
-
-      <button
-
-        onClick={handleCommentClick}
-
-        className="
-          flex-1
-          flex
-          items-center
-          justify-center
-          gap-2
-          rounded-lg
-          py-2
-          text-[13px]
-          font-semibold
-          tracking-wide
-          text-[var(--muted)]
-          transition-all
-          duration-200
-          hover:bg-[var(--surface-hover)]
-          hover:text-[var(--foreground)]
-          active:scale-95
-          group
-        "
-
-      >
-
-        <MessageSquare
-          size={16}
-          className="
-            transition-colors
-            group-hover:text-cyan-400
-          "
-        />
-
-        <span>
-          Discuss
-        </span>
-
-
-      </button>
-
-
-
-
-
-
-
-      {/* REAX */}
-
+      {/* SUPER SLIM ACTION BAR */}
       <div
-        onClick={() => playSound('pop')}
-
         className="
-          flex-1
           flex
+          h-8
+          w-full
           items-center
-          justify-center
-          rounded-lg
-          transition-all
-          duration-200
-          hover:bg-[var(--surface-hover)]
+          justify-between
+          gap-0
         "
       >
 
-        <ReactionButton
-          handleSendReax={handleSendReax}
-          reaxCount={reaxCount}
-        />
-
-      </div>
-
-
-
-
-
-
-
-
-      {/* DISPATCH */}
-
-
-      <div className="relative flex-1">
-
+        {/* =========================================
+            IGNITE
+        ========================================= */}
 
         <button
-
-          onClick={() => {
-            playSound('success')
-            onOpenDispatch(post)
-          }}
-
+          type="button"
+          onClick={handleLikeClick}
           className="
-            w-full
             flex
+            h-7
+            flex-1
             items-center
             justify-center
-            gap-2
-            rounded-lg
-            py-2
-            text-[13px]
+            gap-1
+            rounded-md
+            px-0.5
+            text-[10px]
             font-semibold
-            tracking-wide
+            leading-none
             text-[var(--muted)]
             transition-all
-            duration-200
-            hover:bg-emerald-400/5
+            duration-150
+            hover:bg-[var(--surface-hover)]
             hover:text-[var(--foreground)]
-            active:scale-[0.97]
+            active:scale-95
             group
           "
-
         >
 
-          <Send
-
-            size={16}
-
-            strokeWidth={1.8}
-
-            className="
+          <Flame
+            size={12}
+            strokeWidth={2}
+            className={`
+              shrink-0
               transition-all
               duration-200
-              group-hover:text-emerald-400
-              group-hover:-translate-y-0.5
-              group-hover:translate-x-0.5
-            "
-
+              ${
+                liked
+                  ? `
+                    text-rose-500
+                    fill-rose-500
+                    drop-shadow-[0_0_5px_rgba(244,63,94,0.5)]
+                    scale-105
+                  `
+                  : `
+                    text-[var(--muted)]
+                    group-hover:text-rose-400
+                  `
+              }
+            `}
           />
 
-
-          <span>
-            Dispatch
+          <span
+            className={
+              liked
+                ? 'text-rose-400'
+                : ''
+            }
+          >
+            Ignite
           </span>
-
 
         </button>
 
 
+        {/* =========================================
+            DISCUSS
+        ========================================= */}
+
+        <button
+          type="button"
+          onClick={handleCommentClick}
+          className="
+            flex
+            h-7
+            flex-1
+            items-center
+            justify-center
+            gap-1
+            rounded-md
+            px-0.5
+            text-[10px]
+            font-semibold
+            leading-none
+            text-[var(--muted)]
+            transition-all
+            duration-150
+            hover:bg-[var(--surface-hover)]
+            hover:text-[var(--foreground)]
+            active:scale-95
+            group
+          "
+        >
+
+          <MessageSquare
+            size={12}
+            strokeWidth={1.8}
+            className="
+              shrink-0
+              transition-colors
+              group-hover:text-cyan-400
+            "
+          />
+
+          <span>
+            Discuss
+          </span>
+
+        </button>
+
+
+        {/* =========================================
+            REAX
+        ========================================= */}
+
+        <div
+          onClick={() =>
+            playSound('pop')
+          }
+          className="
+            flex
+            h-7
+            flex-1
+            items-center
+            justify-center
+            rounded-md
+            px-0.5
+            transition-all
+            duration-150
+            hover:bg-[var(--surface-hover)]
+          "
+        >
+
+          <ReactionButton
+            handleSendReax={
+              handleSendReax
+            }
+            reaxCount={
+              reaxCount
+            }
+          />
+
+        </div>
+
+
+        {/* =========================================
+            DISPATCH
+        ========================================= */}
+
+        <div className="relative flex h-7 flex-1">
+
+          <button
+            type="button"
+            onClick={() => {
+              playSound('success')
+              onOpenDispatch(post)
+            }}
+            className="
+              flex
+              h-7
+              w-full
+              items-center
+              justify-center
+              gap-1
+              rounded-md
+              px-0.5
+              text-[10px]
+              font-semibold
+              leading-none
+              text-[var(--muted)]
+              transition-all
+              duration-150
+              hover:bg-emerald-400/5
+              hover:text-[var(--foreground)]
+              active:scale-95
+              group
+            "
+          >
+
+            <Send
+              size={12}
+              strokeWidth={1.8}
+              className="
+                shrink-0
+                transition-all
+                duration-150
+                group-hover:text-emerald-400
+                group-hover:-translate-y-0.5
+                group-hover:translate-x-0.5
+              "
+            />
+
+            <span>
+              Dispatch
+            </span>
+
+          </button>
+
+        </div>
+
       </div>
 
-
-
     </div>
-
-
-  </div>
-)
+  )
 }

@@ -1,12 +1,29 @@
 'use client'
 
 import { Flame, MessageCircle, Sparkles } from 'lucide-react'
+import PostCardValley from './PostCardValley'
 
 interface PostCardMetaProps {
   likes: number
   reaxCount: number
   commentsCount: number
   onCommentsClick?: () => void
+}
+
+function formatCount(value: number): string {
+  if (value < 1000) {
+    return value.toLocaleString()
+  }
+
+  if (value < 10000) {
+    return `${(value / 1000).toFixed(1)}k`
+  }
+
+  if (value < 1000000) {
+    return `${Math.round(value / 1000)}k`
+  }
+
+  return `${(value / 1000000).toFixed(1)}M`
 }
 
 export default function PostCardMeta({
@@ -17,133 +34,166 @@ export default function PostCardMeta({
 }: PostCardMetaProps) {
   const totalReactions = likes + reaxCount
 
+  const hasContent =
+    totalReactions > 0 ||
+    reaxCount > 0 ||
+    commentsCount > 0
+
+  if (!hasContent) return null
+
   return (
-    <div className="relative w-full select-none">
-      {/* 
-        PREMIUM VALLEY / RECESSED CHANNEL 
-        Uses layered shadows for realistic physical depth and high-end aesthetics.
-      */}
+    <PostCardValley>
+
       <div
         className="
-          relative
-          mx-4
-          -mt-[1px]
-          overflow-hidden
-          rounded-b-2xl
-          border-x
-          border-b
-          border-[var(--border)]
-          bg-[var(--background)]
-          shadow-[inset_0_4px_12px_rgba(0,0,0,0.08),_inset_0_1px_2px_rgba(0,0,0,0.1)]
+          flex
+          min-h-[28px]
+          w-full
+          items-center
+          justify-between
+          gap-2
+          px-2.5
+          py-1
+          text-[10px]
+          font-medium
+          leading-none
+          tracking-tight
+          text-[var(--muted)]
+          antialiased
         "
       >
-        {/* Top edge crisp ambient reflection mask */}
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-x-0
-            top-0
-            h-px
-            bg-gradient-to-r
-            from-transparent
-            via-[var(--border)]
-            to-transparent
-            opacity-40
-          "
-        />
 
-        {/* Meta content layout */}
-        <div
-          className="
-            relative
-            flex
-            min-h-[36px]
-            items-center
-            justify-between
-            gap-6
-            px-4
-            py-1.5
-            text-[12px]
-            font-medium
-            text-[var(--muted)]
-          "
-        >
-          {/* LEFT: TOTAL ENGAGEMENT */}
-          <div className="flex items-center gap-2">
-            {totalReactions > 0 && (
-              <div className="flex items-center gap-1.5 dynamic-fade-in">
-                <span
-                  className="
-                    flex
-                    h-5
-                    w-5
-                    items-center
-                    justify-center
-                    rounded-full
-                    bg-rose-500/10
-                    text-rose-500
-                    dark:text-rose-400
-                  "
-                >
-                  <Flame size={11} strokeWidth={2.5} className="fill-current" />
-                </span>
-                <span className="font-semibold text-[var(--foreground)]">
-                  {totalReactions.toLocaleString()}
-                </span>
-              </div>
-            )}
-          </div>
+        {/* LEFT — REACTIONS */}
+        <div className="flex min-w-0 items-center">
 
-          {/* RIGHT: INTERACTIONS */}
-          <div className="flex items-center gap-4">
-            {/* SPECIAL REACTION COUNTER */}
-            {reaxCount > 0 && (
-              <div className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-                <Sparkles size={12} strokeWidth={2} className="text-amber-500 dark:text-amber-400" />
-                <span>
-                  {reaxCount} <span className="opacity-80">Reax</span>
-                </span>
-              </div>
-            )}
+          {totalReactions > 0 && (
+            <div className="flex items-center gap-1.5">
 
-            {/* DISCUSSION INTERACTIVE BUTTON */}
-            {commentsCount > 0 && (
-              <button
-                type="button"
-                onClick={onCommentsClick}
+              <span
                 className="
-                  group
                   flex
+                  h-4
+                  w-4
+                  shrink-0
                   items-center
-                  gap-1.5
-                  rounded-md
-                  px-2
-                  py-1
-                  text-[12px]
-                  transition-all
-                  duration-200
-                  hover:bg-[var(--surface-hover)]
-                  hover:text-[var(--foreground)]
-                  active:scale-95
+                  justify-center
+                  rounded-full
+                  bg-rose-500/10
+                  text-rose-500
+                  dark:text-rose-400
                 "
               >
-                <MessageCircle 
-                  size={12} 
-                  strokeWidth={2} 
-                  className="text-[var(--muted)] transition-colors group-hover:text-blue-500" 
+                <Flame
+                  size={10}
+                  strokeWidth={2.5}
+                  className="fill-current"
                 />
-                <span>
-                  {commentsCount}{' '}
-                  <span className="opacity-80">
-                    {commentsCount === 1 ? 'discussion' : 'discussions'}
+              </span>
+
+              <span className="font-semibold text-[var(--foreground)]">
+                {formatCount(totalReactions)}
+              </span>
+
+            </div>
+          )}
+
+        </div>
+
+        {/* RIGHT */}
+        <div className="flex min-w-0 items-center gap-2.5">
+
+          {/* REAX */}
+          {reaxCount > 0 && (
+            <div className="flex shrink-0 items-center gap-1">
+
+              <Sparkles
+                size={10}
+                strokeWidth={2}
+                className="
+                  text-amber-500
+                  dark:text-amber-400
+                "
+              />
+
+              <span>
+                {formatCount(reaxCount)}
+
+                <span
+                  className="
+                    ml-0.5
+                    hidden
+                    min-[360px]:inline
+                    opacity-60
+                  "
+                >
+                  Reax
+                </span>
+              </span>
+
+            </div>
+          )}
+
+          {/* DISCUSSIONS */}
+          {commentsCount > 0 && (
+            <button
+              type="button"
+              onClick={onCommentsClick}
+              aria-label={`Open ${commentsCount} ${
+                commentsCount === 1
+                  ? 'discussion'
+                  : 'discussions'
+              }`}
+              className="
+                group
+                relative
+                flex
+                shrink-0
+                items-center
+                gap-1
+                rounded-md
+                px-1.5
+                py-1
+                text-[10px]
+                transition-all
+                duration-150
+                touch-manipulation
+                hover:bg-[var(--surface-hover)]
+                hover:text-[var(--foreground)]
+                active:scale-95
+              "
+            >
+
+              <MessageCircle
+                size={10}
+                strokeWidth={2}
+                className="
+                  shrink-0
+                  text-[var(--muted)]
+                  transition-colors
+                  group-hover:text-cyan-400
+                  group-active:text-cyan-400
+                "
+              />
+
+              <span className="whitespace-nowrap">
+                {formatCount(commentsCount)}
+
+                <span className="ml-0.5 opacity-60">
+                  <span className="hidden min-[340px]:inline">
+                    {commentsCount === 1
+                      ? 'discussion'
+                      : 'discussions'}
                   </span>
                 </span>
-              </button>
-            )}
-          </div>
+              </span>
+
+            </button>
+          )}
+
         </div>
+
       </div>
-    </div>
+
+    </PostCardValley>
   )
 }

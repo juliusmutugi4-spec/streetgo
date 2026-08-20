@@ -18,6 +18,11 @@ import PostTextVisual from "./PostTextVisual"
 import VideoPortalButton from "./VideoPortalButton"
 import PostVideo from "./PostVideo"
 import ImageViewer from "./ImageViewer"
+import PostCardHeader from './PostCardHeader'
+import PostCardContent from './PostCardContent'
+import PostCardMedia from './PostCardMedia'
+import PostCardMeta from './PostCardMeta'
+import PostCardViewer from './PostCardViewer'
 import {
   Heart,
   MessageCircle,
@@ -892,315 +897,22 @@ return (
       {/* Header */}
       
 
-        
-{/* PRO HEADER */}
-<div className="relative mb-3 flex items-center justify-between px-3">
-
-  <div className="flex items-center gap-3">
-
-    <div className="relative">
-
-{(() => {
-  const colorThemes = [
-    {
-      text: "text-cyan-300",
-      border: "from-cyan-500/80 via-cyan-300/20 to-cyan-500/80",
-      glow: "shadow-[0_0_18px_rgba(34,211,238,0.25)]",
-      accent: "bg-cyan-400",
-      bg: "from-cyan-500/10 to-cyan-900/20"
-    },
-    {
-      text: "text-violet-300",
-      border: "from-violet-500/80 via-violet-300/20 to-violet-500/80",
-      glow: "shadow-[0_0_18px_rgba(168,85,247,0.25)]",
-      accent: "bg-violet-400",
-      bg: "from-violet-500/10 to-violet-900/20"
-    },
-    {
-      text: "text-emerald-300",
-      border: "from-emerald-500/80 via-emerald-300/20 to-emerald-500/80",
-      glow: "shadow-[0_0_18px_rgba(16,185,129,0.25)]",
-      accent: "bg-emerald-400",
-      bg: "from-emerald-500/10 to-emerald-900/20"
-    },
-    {
-      text: "text-rose-300",
-      border: "from-rose-500/80 via-rose-300/20 to-rose-500/80",
-      glow: "shadow-[0_0_18px_rgba(244,63,94,0.25)]",
-      accent: "bg-rose-400",
-      bg: "from-rose-500/10 to-rose-900/20"
-    },
-    {
-      text: "text-amber-300",
-      border: "from-amber-500/80 via-amber-300/20 to-amber-500/80",
-      glow: "shadow-[0_0_18px_rgba(251,191,36,0.25)]",
-      accent: "bg-amber-400",
-      bg: "from-amber-500/10 to-amber-900/20"
-    }
-  ];
-
-  const nameString = username || "StreetGO";
-
-  let hash = 0;
-  for (let i = 0; i < nameString.length; i++) {
-    hash = nameString.charCodeAt(i) + ((hash << 5) - hash);
-  }
-
-  const theme = colorThemes[Math.abs(hash) % colorThemes.length];
-
-  const initial = nameString.charAt(0).toUpperCase();
-
-  return (
-    <div className="relative group shrink-0">
-
-      {/* Neon animated border */}
-      <div
-        className={`
-          relative h-10 w-10 rounded-full p-[1px]
-          bg-gradient-to-br ${theme.border}
-          ${theme.glow}
-          transition-all duration-500
-          group-hover:scale-105
-        `}
-      >
-        {/* Glass body */}
-        <div className="
-          relative h-full w-full
-          overflow-hidden
-       rounded-full
-          bg-[var(--background)]
-          backdrop-blur-xl
-          border border-white/5
-        ">
-
-          {/* Scanner animation */}
-          <div className="
-            absolute inset-y-0
-            -left-8
-            w-6
-            rotate-12
-            bg-white/10
-            blur-md
-            group-hover:translate-x-20
-            transition-transform
-            duration-1000
-          " />
-
-          {post.avatar_url ? (
-            <img
-              src={post.avatar_url}
-              alt={nameString}
-              loading="lazy"
-              decoding="async"
-              className="
-                h-full
-                w-full
-                object-cover
-                transition-all
-                duration-500
-                group-hover:scale-110
-                group-hover:brightness-110
-              "
-              onError={(e) => {
-                e.currentTarget.style.display = "none";
-                e.currentTarget.nextElementSibling?.classList.remove("hidden");
-              }}
-            />
-          ) : null}
-
-          {/* Initial */}
-          <div
-            className={`
-              absolute inset-0
-              ${post.avatar_url ? "hidden" : ""}
-              flex items-center justify-center
-              bg-gradient-to-br ${theme.bg}
-              ${theme.text}
-              font-black
-              text-sm
-              tracking-tight
-              font-mono
-            `}
-          >
-            {initial}
-
-            {/* Corner accents */}
-            <div className={`absolute top-1 right-1 h-[2px] w-2 ${theme.accent}`} />
-            <div className={`absolute bottom-1 left-1 w-[2px] h-2 ${theme.accent}`} />
-          </div>
-
-          {/* Inner glow */}
-          <div className="
-            absolute
-            inset-0
-            rounded-[11px]
-            ring-1
-            ring-white/5
-            pointer-events-none
-          " />
-        </div>
-      </div>
-
-
-    </div>
-  );
-})()}
-
-<StreetAI
-  visible={showAIBubble}
+        <PostCardHeader
+  post={post}
   username={username}
+  user={user}
+  showAIBubble={showAIBubble}
   viewerCount={viewerCount}
+  goToProfile={goToProfile}
 />
 
 
+<PostCardContent
+  content={post.content || ''}
+  hasMedia={imageUrls.length > 0 || !!post.video_url}
+/>
 
-    </div>
-
-    <div>
-
-<button
-  onMouseEnter={() => router.prefetch(`/profile/${username}`)}
-  onTouchStart={() => router.prefetch(`/profile/${username}`)}
-  onClick={goToProfile}
-  className="
-    flex
-    items-center
-    gap-2
-    text-sm font-bold
-    font-semibold
-text-[var(--foreground)]
-hover:text-[var(--accent)]
-    transition
-  "
->
-  {username}
-</button>
-      <div className="flex items-center gap-2">
-        <span className="text-[11px] text-[var(--muted)]">
-          @{username.toLowerCase()}
-        </span>
-
-        <span className="text-zinc-700">•</span>
-
-        <span className="text-[11px] text-[var(--muted-foreground)]">
-         {formatRelativeTime(post.created_at)}
-        </span>
-      </div>
-
-    </div>
-
-  </div>
-
-<button
-  onClick={() => setShowMenu(!showMenu)}
-  className="
-    h-9
-    w-9
-    rounded-lg
-    border
-border-[var(--border)]
-bg-[var(--surface)]
-text-[var(--muted)]
-hover:text-[var(--foreground)]
-hover:bg-[var(--surface-hover)]
-    transition
-  "
->
-  ⋯
-</button>
-
-{showMenu && (
-  <div
-    className="
-      absolute
-      right-4
-      top-16
-      z-50
-      w-56
-      overflow-hidden
-      rounded-2xl
-      border
-   border-[var(--border)]
-bg-[var(--background)]/95
-      backdrop-blur-2xl
-      shadow-[0_20px_60px_rgba(0,0,0,0.45)]
-    "
-  >
-    <button
-      className="w-full px-5 py-3 text-left text-sm text-[var(--foreground)] hover:bg-[var(--surface-hover)] transition"
-      onClick={async () => {
-        await navigator.clipboard.writeText(
-          `${window.location.origin}/post/${post.id}`
-        )
-        alert("✅ Link copied")
-        setShowMenu(false)
-      }}
-    >
-      📋 Copy Link
-    </button>
-
-    <button
-      className="w-full px-5 py-3 text-left text-sm text-white hover:bg-white/5 transition"
-      onClick={() => {
-        setShowMenu(false)
-      }}
-    >
-      🔖 Save Post
-    </button>
-
-    <button
-      className="w-full px-5 py-3 text-left text-sm text-white hover:bg-white/5 transition"
-      onClick={() => {
-        setShowMenu(false)
-      }}
-    >
-      🚩 Report
-    </button>
-
-    {user?.id === post.user_id && (
-      <button
-        className="w-full px-5 py-3 text-left text-sm text-red-400 hover:bg-red-500/10 transition"
-        onClick={() => {
-          setShowMenu(false)
-        }}
-      >
-        🗑 Delete Post
-      </button>
-    )}
-  </div>
-)}
-
-
-</div>
-
-
-
-{/* CONTENT */}
-{post.content?.trim() && (
-  post.content.trim().split(/\s+/).filter(Boolean).length < 20 &&
-  !post.video_url &&
-  imageUrls.length === 0 ? (
-    <PostTextVisual
-      content={post.content}
-    />
-  ) : (
-    <div className="px-4">
-      <p
-        className="
-          mb-3
-          text-[14px]
-          leading-6
-          text-[var(--foreground)]
-        "
-      >
-        {post.content}
-      </p>
-    </div>
-  )
-)}
-
-{imageUrls.length > 0 && (
-<SmartImageGallery
+<PostCardMedia
   imageUrls={imageUrls}
   currentImage={currentImage}
   setCurrentImage={setCurrentImage}
@@ -1213,13 +925,8 @@ bg-[var(--background)]/95
       avatarUrl
     )
   }}
+  post={post}
 />
-)}
-{post.video_url && (
-  <PostVideo
-    post={post}
-  />
-)}
 
 
 {/*
@@ -1253,8 +960,11 @@ bg-[var(--background)]/95
 */}
 
 
-
-
+<PostCardMeta
+  likes={likes}
+  reaxCount={reaxCount}
+  commentsCount={comments.length}
+/>
  
 
 <PostActions
@@ -1281,36 +991,25 @@ bg-[var(--background)]/95
   />
 )}
 */}
-
-<ImageViewer
-  show={showImageViewer}
+<PostCardViewer
+  showImageViewer={showImageViewer}
   imageUrls={imageUrls}
   currentImage={currentImage}
   setCurrentImage={setCurrentImage}
-
   username={username}
   avatarUrl={avatarUrl}
-
-  onClose={() => {
-    setShowImageComments(false)
-    setShowImageViewer(false)
-  }}
-
+  onClose={() => setShowImageViewer(false)}
   showImageComments={showImageComments}
   setShowImageComments={setShowImageComments}
-
   imageLikes={imageLikes}
   imageCommentCounts={imageCommentCounts}
-
   toggleImageLike={toggleImageLike}
-isImageLiked={imageLiked[currentImage]}
+  isImageLiked={imageLiked[currentImage]}
   imageComments={imageComments}
   imageCommentText={imageCommentText}
   setImageCommentText={setImageCommentText}
-
   addImageComment={addImageComment}
 />
-
 
 {showLogin ? (
   <LoginModal
