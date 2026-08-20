@@ -687,14 +687,28 @@ onClick={async () => {
   setUpdatingQueueLock(true)
 
   try {
-    const { error } = await supabase
-      .from("finance_controls")
-      .update({
-        withdrawals_unlocked: nextState,
-        updated_by: adminId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", 1)
+const { data, error } = await supabase.rpc(
+  "set_finance_queue_control",
+  {
+    p_unlocked: nextState,
+  }
+)
+
+if (error || data !== true) {
+  console.error(
+    "QUEUE CONTROL UPDATE ERROR:",
+    error
+  )
+
+  alert(
+    error?.message ||
+      "Unable to change queue control."
+  )
+
+  return
+}
+
+setWithdrawalsUnlocked(nextState)
 
     if (error) {
       console.error(
