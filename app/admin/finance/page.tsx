@@ -13,6 +13,7 @@ import WalletDrawer from "./components/WalletDrawer"
 import TransactionsTable from "./components/TransactionsTable"
 import WithdrawalTable from "./components/WithdrawalTable"
 import WithdrawalDrawer from "./components/WithdrawalDrawer"
+import FinanceOperationsPanel from "./components/FinanceOperationsPanel"
 import {
   copyReference,
   getWalletByTransaction,
@@ -32,6 +33,14 @@ console.log(
   // State Management
   const [authorized, setAuthorized] = useState(false)
   const [adminId, setAdminId] = useState("")
+  const [financeAdmins, setFinanceAdmins] = useState<
+  {
+    user_id: string
+    role: string
+    status: string
+    username: string
+  }[]
+>([])
   const [selectedWallet, setSelectedWallet] = useState<any>(null)
   const [filter, setFilter] = useState("all")
   const [search, setSearch] = useState("")
@@ -73,6 +82,7 @@ const {
   summary,
   transactions,
   withdrawals,
+  setWithdrawals,
   withdrawalHistory,
   chartData,
   extraFinance,
@@ -98,6 +108,36 @@ console.log(
         }
 
         setAdminId(data.user.id)
+        const { data: admins, error: adminsError } = await supabase
+  .from("admins")
+  .select(`
+    user_id,
+    role,
+    status,
+    profiles (
+      username
+    )
+  `)
+  .eq("status", "active")
+  .in("role", ["super_admin", "finance_admin"])
+
+if (adminsError) {
+  console.error(
+    "FINANCE ADMINS LOAD ERROR:",
+    adminsError
+  )
+} else {
+  const formattedAdmins = (admins || []).map((admin: any) => ({
+    user_id: admin.user_id,
+    role: admin.role,
+    status: admin.status,
+    username:
+      admin.profiles?.username ||
+      "Unknown Admin",
+  }))
+
+  setFinanceAdmins(formattedAdmins)
+}
         const admin = await checkAdmin(data.user.id)
 
         if (!admin) {
@@ -256,41 +296,54 @@ async function handleWithdrawalLookup() {
   return (
 
 
-    <main className="min-h-screen bg-[#09090b] text-zinc-50 antialiased selection:bg-zinc-800 selection:text-white">
-      <div className="max-w-[1600px] mx-auto px-4 py-10 sm:px-6 lg:px-8">
-        {/* Core Administrative Header */}
-<header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/75 backdrop-blur-lg">
-  <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-    
+<main className="relative min-h-screen bg-[#09090b] text-zinc-50 antialiased selection:bg-zinc-800 selection:text-white">
+{/* RIGHT EDGE LINE */}
+<div className="absolute top-0 right-0 h-full w-px bg-zinc-800" />
+  {/* Core Administrative Header */}
+  <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/75 backdrop-blur-lg">
+  <div className="flex w-full flex-col gap-4 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+
     {/* Left Side: Brand & Context */}
     <div className="flex flex-col gap-1.5">
       <div className="flex flex-wrap items-center gap-3">
+
         {/* Terminal/Security Icon Container */}
         <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-700/60 bg-gradient-to-b from-zinc-800 to-zinc-900 shadow-sm">
-          <svg className="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          <svg
+            className="h-4 w-4 text-zinc-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+            />
           </svg>
         </div>
-        
+
         {/* Brand Title */}
         <h1 className="bg-gradient-to-r from-zinc-50 to-zinc-300 bg-clip-text text-xl font-semibold tracking-tight text-transparent">
           StreetGO <span className="font-light text-zinc-400">Finance</span>
         </h1>
-        
+
         {/* Status Badge */}
         <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 font-mono text-[10px] font-medium tracking-wider text-emerald-400 uppercase">
           <span className="h-1 w-1 rounded-full bg-emerald-400 animate-pulse" />
           Authorized
         </span>
       </div>
-      
-      {/* Subtitle description */}
-      <p className="max-w-xl text-xs text-zinc-400/80 leading-relaxed hidden sm:block">
-        Supervise commercial payment allocations, configure account restrictions, and run immediate fraud security parameters.
+
+      {/* Subtitle */}
+      <p className="hidden max-w-xl text-xs leading-relaxed text-zinc-400/80 sm:block">
+        Supervise commercial payment allocations, configure account restrictions,
+        and run immediate fraud security parameters.
       </p>
     </div>
 
-    {/* Right Side: Proactive Action/Status Area Placeholder */}
+    {/* Right Side */}
     <div className="flex items-center gap-3 self-end sm:self-auto">
       <div className="text-right font-mono text-[11px] text-zinc-500">
         SECURE NODE // <span className="text-zinc-400">01</span>
@@ -299,11 +352,11 @@ async function handleWithdrawalLookup() {
 
   </div>
 </header>
+<div className="flex w-full">
 
-
-
-        {/* Dashboard Operational Grid */}
-        <div className="space-y-6">
+  {/* MAIN FINANCE WORKSPACE */}
+  <div className="min-w-0 flex-1 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="space-y-6">
           {/* Top Metric Cards Strip */}
           <section aria-label="High-level Metrics Summary">
             <FinanceCards summary={summary} extraFinance={extraFinance} />
@@ -745,12 +798,24 @@ async function handleWithdrawalLookup() {
     setSelectedWithdrawal(null)
   }}
 />
-<WithdrawalHistoryDrawer
-  withdrawal={selectedWithdrawalHistory}
-  onClose={() => setSelectedWithdrawalHistory(null)}
-/>
+        <WithdrawalHistoryDrawer
+          withdrawal={selectedWithdrawalHistory}
+          onClose={() => setSelectedWithdrawalHistory(null)}
+        />
 
       </div>
+
+<FinanceOperationsPanel
+  pendingCount={withdrawals.length}
+  adminId={adminId}
+  withdrawals={withdrawals}
+  setWithdrawals={setWithdrawals}
+  
+/>
+    </div>
+
+
+      
     </main>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { getSupabaseBrowser } from "../../../lib/supabase-browser"
 import type {
   RealtimePostgresChangesPayload,
@@ -9,7 +9,7 @@ export default function useFinance(
   authorized: boolean
 ) {
   const supabase = getSupabaseBrowser()
-
+const loadSequence = useRef(0)
   const [summary, setSummary] = useState({
     total_deposits: 0,
     total_withdrawals: 0,
@@ -61,8 +61,10 @@ export default function useFinance(
 
     let cancelled = false
 
-    async function loadFinance() {
-      try {
+async function loadFinance() {
+  const currentLoad = ++loadSequence.current
+
+  try {
         /*
         =====================================================
         FINANCE SUMMARY
@@ -313,9 +315,12 @@ console.log("🔥 FINANCE AUTH USER ID:", user?.id)
         =====================================================
         */
 
-        if (cancelled) {
-          return
-        }
+if (
+  cancelled ||
+  currentLoad !== loadSequence.current
+) {
+  return
+}
 
         /*
         =====================================================
