@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-// Strict UI Telemetry Subsystem Definitions
 interface DriverOperationsHubProps {
   driverOnline: boolean
   pendingRideCount: number
@@ -42,7 +41,7 @@ export default function DriverOperationsHub({
     }
   }, [])
 
-  // System Uptime Tracking simulation for immersive telemetry
+  // System Uptime Tracking simulation
   useEffect(() => {
     if (!driverOnline) {
       setTelemetryUptime('00:00')
@@ -76,82 +75,94 @@ export default function DriverOperationsHub({
   }, [onOpenDriver, triggerAudioPing])
 
   return (
-    <div className="fixed bottom-14 left-0 right-0 z-40 border-t border-zinc-800/80 bg-zinc-950/80 shadow-[0_-12px_32px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-500 ease-in-out select-none">
-      
-      {/* 📡 Telemetry Status Ribbon Matrix */}
-      <div
-        className={`absolute top-0 left-0 right-0 h-[2px] transition-all duration-700 ${
-          driverOnline
+    <div className="fixed bottom-20 right-6 z-50 select-none">
+      {/* 🔮 THE ROUND CYBER BADGE CONTAINER */}
+      <div 
+        onClick={handleNavigation}
+        className={`relative flex h-40 w-40 flex-col items-center justify-center rounded-full border text-center transition-all duration-500 ease-in-out cursor-pointer backdrop-blur-xl group
+          ${driverOnline
             ? pendingRideCount > 0
-              ? 'bg-gradient-to-r from-amber-500 via-orange-400 to-amber-500 shadow-[0_1px_12px_#f59e0b]'
-              : 'bg-gradient-to-r from-emerald-500 via-cyan-400 to-emerald-500 shadow-[0_1px_12px_#10b981]'
-            : 'bg-gradient-to-r from-zinc-800 via-zinc-700 to-zinc-800'
-        }`}
-      />
-
-      <div className="mx-auto max-w-xl px-5 py-3.5 flex items-center justify-between gap-4">
-        
-        {/* INTERACTIVE COMPONENT AXIS */}
-        <div
-          role="button"
-          tabIndex={0}
-          onClick={handleNavigation}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') handleNavigation()
-          }}
-          className="group flex-1 cursor-pointer outline-none"
-        >
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[12px] font-black uppercase tracking-widest text-zinc-100 flex items-center gap-1.5 transition-colors duration-300 group-hover:text-emerald-400">
-                <span className="text-xs opacity-80 group-hover:animate-pulse">⚡</span>
-                Operator System
-              </h2>
-              {driverOnline && (
-                <div className="font-mono text-[9px] font-bold text-zinc-500 bg-zinc-900 border border-zinc-800/60 rounded px-1.5 py-0.5 tracking-wider">
-                  UPTIME {telemetryUptime}
-                </div>
-              )}
-            </div>
-
-            {/* DYNAMIC TELEMETRY INTERFACE LOGIC */}
-            <p className="text-[10px] font-bold tracking-wider uppercase transition-all duration-300">
-              {driverOnline ? (
-                pendingRideCount > 0 ? (
-                  <span className="bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300 bg-clip-text text-transparent font-black animate-pulse flex items-center gap-1.5">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-orange-500 shadow-[0_0_8px_#f97316]" />
-                    {pendingRideCount} Network Link Request{pendingRideCount === 1 ? '' : 's'} Routing
-                  </span>
-                ) : (
-                  <span className="text-emerald-400/90 tracking-wide font-medium flex items-center gap-1.5">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-ping" />
-                    Scanning Coordinate Matrix...
-                  </span>
-                )
-              ) : (
-                <span className="text-zinc-500 font-medium tracking-wide flex items-center gap-1.5">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-zinc-700" />
-                  Core Suspended — Initialize Node
-                </span>
-              )}
-            </p>
-          </div>
-        </div>
-
-        {/* CONTROLS EXPANSION DOWNLINK */}
-        <button
-          onClick={handleToggle}
-          className={`relative overflow-hidden rounded-md px-4 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all duration-300 active:scale-95 ${
-            driverOnline
-              ? 'border border-emerald-500/30 bg-gradient-to-b from-emerald-500/10 to-emerald-500/5 text-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.15)] hover:border-emerald-400/50 hover:bg-emerald-500/20'
-              : 'border border-zinc-800 bg-gradient-to-b from-zinc-900 to-zinc-950 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300'
+              ? 'border-amber-500/40 bg-zinc-950/90 shadow-[0_0_30px_rgba(245,158,11,0.25),inset_0_0_20px_rgba(245,158,11,0.15)]'
+              : 'border-emerald-500/40 bg-zinc-950/90 shadow-[0_0_30px_rgba(16,185,129,0.25),inset_0_0_20px_rgba(16,185,129,0.15)]'
+            : 'border-zinc-800 bg-zinc-950/80 shadow-[0_12px_32px_rgba(0,0,0,0.6)]'
           }`}
-        >
-          {/* Internal Glow Layer */}
-          <span className={`absolute inset-0 bg-white/5 opacity-0 transition-opacity duration-300 ${driverOnline ? 'group-hover:opacity-100' : ''}`} />
-          <span className="relative z-10">{driverOnline ? 'Active' : 'Standby'}</span>
-        </button>
+      >
+        
+        {/* Outer Tech Ring Matrix */}
+        <div className={`absolute inset-[-4px] rounded-full border border-dashed transition-all duration-1000 
+          ${driverOnline 
+            ? pendingRideCount > 0 
+              ? 'border-amber-500/30 animate-[spin_20s_linear_infinite]' 
+              : 'border-emerald-500/30 animate-[spin_30s_linear_infinite]' 
+            : 'border-zinc-800/40'
+          }`} 
+        />
 
+        {/* Top Arc Status Indicator Line */}
+        <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 100 100">
+          <circle
+            cx="50"
+            cy="50"
+            r="47"
+            fill="transparent"
+            stroke={driverOnline ? (pendingRideCount > 0 ? '#f59e0b' : '#10b981') : '#27272a'}
+            strokeWidth="2"
+            strokeDasharray="295"
+            strokeDashoffset={driverOnline ? "75" : "220"}
+            className="transition-all duration-700 ease-in-out"
+          />
+        </svg>
+
+        {/* INNER CONTENT CORE */}
+        <div className="z-10 flex flex-col items-center justify-center p-4 w-full h-full">
+          
+          {/* System Title */}
+          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 transition-colors duration-300 group-hover:text-zinc-300">
+            HUD Node
+          </span>
+
+          {/* Core Status / Action Button */}
+          <button
+            onClick={handleToggle}
+            className={`mt-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider transition-all duration-300 active:scale-90
+              ${driverOnline
+                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-[0_0_10px_rgba(52,211,153,0.2)]'
+                : 'bg-zinc-900 text-zinc-500 border border-zinc-800'
+              }`}
+          >
+            {driverOnline ? 'Active' : 'Standby'}
+          </button>
+
+          {/* Dynamic Metrics Display */}
+          <div className="mt-2 min-h-[32px] flex flex-col items-center justify-center w-full px-2">
+            {driverOnline ? (
+              pendingRideCount > 0 ? (
+                <div className="animate-pulse flex flex-col items-center">
+                  <span className="text-[16px] font-black text-amber-400 leading-tight">
+                    {pendingRideCount}R
+                  </span>
+                  <span className="text-[7px] font-bold text-orange-400 uppercase tracking-widest">
+                    Routing
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-mono font-bold text-emerald-400 tracking-wider">
+                    {telemetryUptime}
+                  </span>
+                  <span className="text-[6px] font-black text-zinc-400 uppercase tracking-tight mt-0.5 animate-pulse">
+                    Scanning Map
+                  </span>
+                </div>
+              )
+            ) : (
+              <span className="text-[7px] font-bold text-zinc-600 uppercase tracking-widest text-center leading-normal">
+                System<br />Suspended
+              </span>
+            )}
+          </div>
+
+        </div>
       </div>
     </div>
   )
