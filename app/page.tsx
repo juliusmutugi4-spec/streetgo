@@ -8,7 +8,7 @@ import ImageViewer from './components/ImageViewer'
 
 import LoginModal from './components/LoginModal'
 import TopNav from './components/TopNav'
-import StreetGOUpdateBar from './components/StreetGOUpdateBar'
+
 import BottomNav from './components/BottomNav'
 import CreatePrediction from './components/CreatePrediction'
 import DiscussionRoom from "@/app/components/DiscussionRoom"
@@ -579,7 +579,7 @@ const addImageComment = async () => {
   </div>
 
   {/* STREETGO TOP UPDATES */}
-  <StreetGOUpdateBar maxItems={3} />
+
 
   {/* Feeleo ni kunyambad scrollable */}
   <div
