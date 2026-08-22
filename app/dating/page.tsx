@@ -7,7 +7,7 @@ import MatchCard from "./components/MatchCard"
 import type { MatchCardPerson } from "./components/MatchCard"
 import DatingProfileModal from "./components/DatingProfileModal"
 import DatingLoading from "./components/DatingLoading"
-
+import DatingBackButton from "./components/DatingBackButton"
 type FilterType = "All" | "High Match" | "New"
 
 type Match = MatchCardPerson & {
@@ -427,6 +427,10 @@ return (
           sm:px-8
         "
       >
+
+
+<DatingBackButton />
+
         <div
           className="
             flex
