@@ -3,11 +3,9 @@ import { NextResponse } from "next/server";
 import { createServerSupabase } from "../../../lib/serverSupabase";
 
 
-
 export async function POST(
   req: Request
 ) {
-
 
   try {
 
@@ -19,25 +17,24 @@ export async function POST(
     // Get logged-in user
 
     const {
-      data:{
+      data: {
         user
       }
     } = await supabase.auth.getUser();
 
 
 
-    if(!user){
-
+    if (!user) {
 
       return NextResponse.json(
 
         {
-          success:false,
-          error:"Not authenticated"
+          success: false,
+          error: "Not authenticated"
         },
 
         {
-          status:401
+          status: 401
         }
 
       );
@@ -56,18 +53,18 @@ export async function POST(
 
 
 
-    if(!connectionId){
+    if (!connectionId) {
 
 
       return NextResponse.json(
 
         {
-          success:false,
-          error:"Missing connectionId"
+          success: false,
+          error: "Missing connectionId"
         },
 
         {
-          status:400
+          status: 400
         }
 
       );
@@ -76,6 +73,8 @@ export async function POST(
 
 
 
+
+    // Accept connection
 
     const {
       data,
@@ -88,7 +87,7 @@ export async function POST(
 
       .update({
 
-        status:"accepted"
+        status: "accepted"
 
       })
 
@@ -132,7 +131,7 @@ export async function POST(
 
 
 
-    if(error){
+    if (error) {
 
 
       console.log(
@@ -160,22 +159,73 @@ export async function POST(
 
 
 
-    // Decide who to chat with
+    if (!data) {
+
+
+      return NextResponse.json(
+
+        {
+          success:false,
+          error:"Connection not found"
+        },
+
+        {
+          status:404
+        }
+
+      );
+
+    }
+
+
+
+
+
+const connectionData: any = data;
+
 
 const senderId =
-  data.sender[0].id;
+  Array.isArray(connectionData.sender)
+    ? connectionData.sender[0]?.id
+    : connectionData.sender?.id;
 
 
 
 const receiverId =
-  data.receiver[0].id;
+  Array.isArray(connectionData.receiver)
+    ? connectionData.receiver[0]?.id
+    : connectionData.receiver?.id;
 
 
+    if (!senderId || !receiverId) {
+
+
+      return NextResponse.json(
+
+        {
+          success:false,
+          error:"Profile relationship missing"
+        },
+
+        {
+          status:500
+        }
+
+      );
+
+    }
+
+
+
+
+
+    // Find the other user for chat
 
     const chatUserId =
       user.id === senderId
         ? receiverId
         : senderId;
+
 
 
 
@@ -196,7 +246,8 @@ const receiverId =
 
 
 
-  } catch(error){
+
+  } catch(error) {
 
 
     console.log(
@@ -220,6 +271,5 @@ const receiverId =
 
 
   }
-
 
 }
