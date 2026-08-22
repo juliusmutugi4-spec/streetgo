@@ -1,0 +1,47 @@
+{
+    "project": "StreetGO Satellite Lab",
+    "country": "Kenya",
+    "date_checked": "2026-08-21T18:07:43.137005+00:00",
+    "operator_checks": {
+        "Safaricom Kenya": {
+            "status": "UNKNOWN",
+            "partnership": "NOT VERIFIED",
+            "notes": "Requires official confirmation of Direct-to-Cell partnership."
+        },
+        "Airtel Kenya": {
+            "status": "UNKNOWN",
+            "partnership": "NOT VERIFIED",
+            "notes": "Requires official confirmation of Direct-to-Cell partnership."
+        }
+    },
+    "satellite_service": {
+        "Starlink Direct-to-Cell": {
+            "status": "NOT AVAILABLE FOR TEST",
+            "commercial_status": "UNKNOWN",
+            "notes": "Requires Starlink operator approval, mobile network partnership and regulation."
+        }
+    },
+    "phone_test": {
+        "status": "PASSED",
+        "device": {
+            "model": "Infinix X626B",
+            "android": "Android 9",
+            "network": "LTE",
+            "country": "Kenya"
+        }
+    },
+    "readiness_score": {
+        "phone": 100,
+        "operator": 0,
+        "satellite": 0,
+        "regulation": 0,
+        "overall": 25
+    },
+    "next_steps": [
+        "Verify Airtel Kenya Direct-to-Cell partnership",
+        "Verify Safaricom Kenya Direct-to-Cell partnership",
+        "Track Starlink commercial rollout",
+        "Monitor Kenya regulatory approval",
+        "Prepare StreetGO connectivity platform"
+    ]
+}

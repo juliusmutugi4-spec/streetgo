@@ -1,0 +1,22 @@
+[
+    {
+        "timestamp": "2026-08-21T18:10:32.138263+00:00",
+        "summary": {
+            "Starlink Direct-to-Cell": true,
+            "Kenya Mention": true,
+            "Airtel Africa Mention": true,
+            "Safaricom Mention": false,
+            "Commercial Signal": true
+        }
+    },
+    {
+        "timestamp": "2026-08-21T18:10:39.865705+00:00",
+        "summary": {
+            "Starlink Direct-to-Cell": true,
+            "Kenya Mention": true,
+            "Airtel Africa Mention": true,
+            "Safaricom Mention": false,
+            "Commercial Signal": true
+        }
+    }
+]

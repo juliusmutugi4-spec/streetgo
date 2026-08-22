@@ -1,0 +1,48 @@
+{
+    "project": "StreetGO Satellite Lab",
+    "checked_at": "2026-08-21T18:08:58.575809+00:00",
+    "source": "local direct_to_cell research files",
+    "scan": {
+        "checked_files": 1,
+        "matches": {
+            "starlink_mobile": {
+                "found": true,
+                "keywords": [
+                    "starlink mobile",
+                    "starlink direct to cell",
+                    "direct-to-cell"
+                ]
+            },
+            "kenya": {
+                "found": true,
+                "keywords": [
+                    "kenya"
+                ]
+            },
+            "airtel_africa": {
+                "found": true,
+                "keywords": [
+                    "airtel",
+                    "airtel africa"
+                ]
+            },
+            "safaricom": {
+                "found": false,
+                "keywords": []
+            },
+            "commercial": {
+                "found": true,
+                "keywords": [
+                    "launch"
+                ]
+            }
+        }
+    },
+    "summary": {
+        "Starlink Direct-to-Cell": true,
+        "Kenya Mention": true,
+        "Airtel Africa Mention": true,
+        "Safaricom Mention": false,
+        "Commercial Signal": true
+    }
+}

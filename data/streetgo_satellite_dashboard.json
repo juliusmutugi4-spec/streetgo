@@ -1,0 +1,32 @@
+{
+    "project": "StreetGO Satellite Intelligence",
+    "updated": "2026-08-21T18:16:01.090194+00:00",
+    "satellite_opportunity": {
+        "score": 85,
+        "maximum": 100,
+        "status": "HIGH OPPORTUNITY"
+    },
+    "signals": {
+        "Starlink Direct-to-Cell": true,
+        "Kenya Mention": true,
+        "Airtel Africa Mention": true,
+        "Safaricom Mention": false,
+        "Commercial Signal": true
+    },
+    "phone_readiness": {
+        "status": "PASSED",
+        "device": {
+            "model": "Infinix X626B",
+            "android": "Android 9",
+            "network": "LTE",
+            "country": "Kenya"
+        }
+    },
+    "alerts": {
+        "changes_found": 0,
+        "items": []
+    },
+    "history": {
+        "snapshots": 2
+    }
+}

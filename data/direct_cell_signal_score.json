@@ -1,0 +1,34 @@
+{
+    "project": "StreetGO Satellite Lab",
+    "checked_at": "2026-08-21T18:14:05.532440+00:00",
+    "opportunity_score": 85,
+    "maximum_score": 100,
+    "signals": [
+        {
+            "signal": "Starlink Direct-to-Cell",
+            "points": 30,
+            "status": "FOUND"
+        },
+        {
+            "signal": "Kenya Mention",
+            "points": 20,
+            "status": "FOUND"
+        },
+        {
+            "signal": "Airtel Africa Mention",
+            "points": 20,
+            "status": "FOUND"
+        },
+        {
+            "signal": "Safaricom Mention",
+            "points": 0,
+            "status": "NOT FOUND"
+        },
+        {
+            "signal": "Commercial Signal",
+            "points": 15,
+            "status": "FOUND"
+        }
+    ],
+    "interpretation": "HIGH OPPORTUNITY"
+}

@@ -21,6 +21,7 @@ import PredictionDrawer from './components/PredictionDrawer'
 import SplashScreen from './components/SplashScreen'
 import DriverOperationsHub from './components/DriverOperationsHub'
 import { useRouter } from 'next/navigation'
+import DatingCircle from './components/DatingCircle'
 type PostType = {
   id: string
   content: string
@@ -598,6 +599,8 @@ const addImageComment = async () => {
 
 {/* MAIN FEED */}
 <div className="w-full min-w-0 lg:col-span-6">
+<DatingCircle />
+
         {user && (
           <div className="group relative rounded-xl bg-zinc-900/20 border border-zinc-900 overflow-hidden shadow-2xl backdrop-blur-md transition-all duration-500 hover:border-zinc-800/80">
             <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/30 to-transparent" />
