@@ -413,17 +413,16 @@ console.log(
 onClick={()=>{
 
 
-  if(person.connectionStatus === "accepted"){
+if(person.connectionStatus === "accepted"){
 
 
-    window.location.href =
-      `/chat/${person.id}`
+window.location.href =
+`/messages?user=${person.id}`
 
 
-    return;
+return;
 
-
-  }
+}
 
 
 
