@@ -5,110 +5,193 @@ import { supabase } from "../../lib/supabase"
 import { useRouter } from "next/navigation"
 
 
+
 export default function DatingSetupPage(){
 
-  const router = useRouter()
+const router = useRouter()
 
 
-  const [age,setAge] = useState("")
-  const [gender,setGender] = useState("")
-  const [interests,setInterests] = useState<string[]>([])
-  const [personality,setPersonality] = useState("")
-  const [lookingFor,setLookingFor] = useState("")
-
-  const [loading,setLoading] = useState(false)
+const [profileMode,setProfileMode] =
+useState<
+"dating" | "business" | "job"
+>("dating")
 
 
 
-  const interestOptions = [
-    "football",
-    "music",
-    "movies",
-    "technology",
-    "travel",
-    "business"
-  ]
+const [age,setAge] = useState("")
+const [gender,setGender] = useState("")
+
+const [interests,setInterests] =
+useState<string[]>([])
+
+const [personality,setPersonality] =
+useState("")
+
+const [lookingFor,setLookingFor] =
+useState("")
+
+
+// New StreetGO fields
+
+const [headline,setHeadline] =
+useState("")
+
+const [profession,setProfession] =
+useState("")
+
+const [skills,setSkills] =
+useState<string[]>([])
+
+const [experience,setExperience] =
+useState("")
+
+const [education,setEducation] =
+useState("")
+
+const [availability,setAvailability] =
+useState("")
+
+
+const [loading,setLoading] =
+useState(false)
+
+
+
+
+const interestOptions = [
+
+"football",
+"music",
+"movies",
+"technology",
+"travel",
+"business"
+
+]
+
+
+
+const skillOptions = [
+
+"React",
+"Next.js",
+"Python",
+"AI",
+"Marketing",
+"Design",
+"Finance"
+
+]
+
+
 
 
 
 useEffect(()=>{
 
-  async function loadProfile(){
 
-    const {
-      data:{
-        user
-      }
-    } = await supabase.auth.getUser()
+async function loadProfile(){
 
 
-    if(!user) return
+const {
+data:{
+user
+}
+}=await supabase.auth.getUser()
 
 
-    const {data,error}=await supabase
-
-      .from("profiles")
-
-      .select(`
-        age,
-        gender,
-        interests,
-        personality,
-        looking_for
-      `)
-
-      .eq(
-        "id",
-        user.id
-      )
-
-      .single()
+if(!user)return
 
 
 
-    if(error){
+const {data}=await supabase
 
-      console.log(error)
+.from("profiles")
 
-      return
+.select("*")
 
-    }
+.eq(
+"id",
+user.id
+)
 
-
-
-    if(data){
-
-      setAge(
-        data.age?.toString() || ""
-      )
+.single()
 
 
-      setGender(
-        data.gender || ""
-      )
+
+if(data){
 
 
-      setInterests(
-        data.interests || []
-      )
+setProfileMode(
+data.profile_mode || "dating"
+)
 
 
-      setPersonality(
-        data.personality || ""
-      )
+setAge(
+data.age?.toString() || ""
+)
 
 
-      setLookingFor(
-        data.looking_for || ""
-      )
-
-    }
+setGender(
+data.gender || ""
+)
 
 
-  }
+setInterests(
+data.interests || []
+)
 
 
-  loadProfile()
+setPersonality(
+data.personality || ""
+)
+
+
+setLookingFor(
+data.looking_for || ""
+)
+
+
+
+setHeadline(
+data.headline || ""
+)
+
+
+setProfession(
+data.profession || ""
+)
+
+
+setSkills(
+data.skills || []
+)
+
+
+setExperience(
+data.experience || ""
+)
+
+
+setEducation(
+data.education || ""
+)
+
+
+setAvailability(
+data.availability || ""
+)
+
+
+}
+
+
+
+}
+
+
+
+loadProfile()
 
 
 },[])
@@ -116,408 +199,720 @@ useEffect(()=>{
 
 
 
-  function toggleInterest(item:string){
 
-    if(interests.includes(item)){
 
-      setInterests(
-        interests.filter(
-          i => i !== item
-        )
-      )
 
-    }else{
 
-      setInterests([
-        ...interests,
-        item
-      ])
+function toggleArray(
+item:string,
+value:string[],
+setValue:any
+){
 
-    }
+if(value.includes(item)){
 
-  }
+setValue(
+value.filter(
+x=>x!==item
+)
+)
 
+}else{
 
 
-  async function saveProfile(){
+setValue([
+...value,
+item
+])
 
 
-    setLoading(true)
+}
 
 
-    const {
-      data:{
-        user
-      }
-    } = await supabase.auth.getUser()
+}
 
 
 
-    if(!user){
 
-      alert(
-        "Please login first"
-      )
 
-      setLoading(false)
 
-      return
 
-    }
 
+async function saveProfile(){
 
 
-    const {error} = await supabase
+setLoading(true)
 
-      .from("profiles")
 
-      .update({
 
-        age:Number(age),
+const {
+data:{
+user
+}
+}=await supabase.auth.getUser()
 
-        gender,
 
-        interests,
 
-        personality,
+if(!user){
 
-        looking_for:lookingFor,
+alert(
+"Please login"
+)
 
-        dating_active:true
+setLoading(false)
 
-      })
+return
 
-      .eq(
-        "id",
-        user.id
-      )
+}
 
 
 
-    setLoading(false)
 
 
 
-    if(error){
+const {error}=await supabase
 
-      console.log(error)
+.from("profiles")
 
-      alert(
-        error.message
-      )
+.update({
 
-      return
 
-    }
+profile_mode:profileMode,
 
 
+age:
+age ? Number(age):null,
 
-    alert(
-      "Dating profile activated ❤️"
-    )
 
+gender,
 
-    router.push(
-      "/dating"
-    )
 
+interests,
 
-  }
 
+personality,
 
 
-  return (
+looking_for:lookingFor,
 
-    <main className="
-      min-h-screen
-      bg-black
-      text-white
-      p-8
-    ">
 
 
-      <div className="
-        max-w-xl
-        mx-auto
-        bg-zinc-900
-        rounded-3xl
-        p-8
-        border
-        border-zinc-800
-      ">
+headline,
 
 
-        <h1 className="
-          text-3xl
-          font-bold
-          mb-8
-        ">
-          ❤️ Create Dating Profile
-        </h1>
+profession,
 
 
+skills,
 
-        <label>
-          Age
-        </label>
 
-        <input
+experience,
 
-          type="number"
 
-          value={age}
+education,
 
-          onChange={
-            e=>setAge(e.target.value)
-          }
 
-          className="
-          w-full
-          mt-2
-          mb-6
-          bg-black
-          border
-          border-zinc-700
-          rounded-xl
-          p-3
-          "
+availability,
 
-          placeholder="25"
 
-        />
 
+dating_active:true
 
 
-        <label>
-          Gender
-        </label>
 
+})
 
-        <select
+.eq(
+"id",
+user.id
+)
 
-          value={gender}
 
-          onChange={
-            e=>setGender(e.target.value)
-          }
 
-          className="
-          w-full
-          mt-2
-          mb-6
-          bg-black
-          border
-          border-zinc-700
-          rounded-xl
-          p-3
-          "
 
-        >
 
-          <option value="">
-            Select
-          </option>
+setLoading(false)
 
-          <option value="male">
-            Male
-          </option>
 
-          <option value="female">
-            Female
-          </option>
 
+if(error){
 
-        </select>
+alert(
+error.message
+)
 
+return
 
+}
 
 
 
-        <label>
-          Interests
-        </label>
+alert(
+"StreetGO profile activated 🚀"
+)
 
 
-        <div className="
-          flex
-          flex-wrap
-          gap-3
-          mt-3
-          mb-6
-        ">
 
+router.push(
+"/dating"
+)
 
-          {interestOptions.map(item=>(
 
-            <button
+}
 
-              key={item}
 
-              onClick={()=>toggleInterest(item)}
 
-              className={
 
-                interests.includes(item)
 
-                ?
 
-                "px-4 py-2 rounded-full bg-emerald-500 text-black"
 
-                :
 
-                "px-4 py-2 rounded-full bg-zinc-800"
 
-              }
+return (
 
-            >
+<main className="
+min-h-screen
+bg-black
+text-white
+p-8
+">
 
-              {item}
 
-            </button>
+<div className="
+max-w-xl
+mx-auto
+bg-zinc-900
+rounded-3xl
+p-8
+border
+border-zinc-800
+">
 
-          ))}
 
+<h1 className="
+text-3xl
+font-black
+mb-8
+">
 
-        </div>
+Create StreetGO Profile
 
+</h1>
 
 
 
 
-        <label>
-          Personality
-        </label>
 
+<div className="
+grid
+grid-cols-3
+gap-3
+mb-8
+">
 
-        <select
 
-          value={personality}
+{
+[
+["dating","❤️ Dating"],
+["business","💼 Business"],
+["job","🎯 Jobs"]
 
-          onChange={
-            e=>setPersonality(e.target.value)
-          }
+].map(item=>(
 
-          className="
-          w-full
-          mt-2
-          mb-6
-          bg-black
-          border
-          border-zinc-700
-          rounded-xl
-          p-3
-          "
 
-        >
+<button
 
-          <option value="">
-            Select
-          </option>
+key={item[0]}
 
-          <option value="social">
-            Social
-          </option>
+onClick={()=>
+setProfileMode(
+item[0] as any
+)
+}
 
-          <option value="quiet">
-            Quiet
-          </option>
+className={`
+rounded-xl
+py-3
+font-bold
 
-          <option value="adventurous">
-            Adventurous
-          </option>
+${
+profileMode===item[0]
 
+?
 
-        </select>
+"bg-white text-black"
 
+:
 
+"bg-zinc-800"
 
+}
 
+`}
 
-        <label>
-          Looking for
-        </label>
+>
 
+{item[1]}
 
-        <select
+</button>
 
-          value={lookingFor}
 
-          onChange={
-            e=>setLookingFor(e.target.value)
-          }
+))
 
-          className="
-          w-full
-          mt-2
-          mb-8
-          bg-black
-          border
-          border-zinc-700
-          rounded-xl
-          p-3
-          "
+}
 
-        >
 
-          <option value="">
-            Select
-          </option>
+</div>
 
-          <option value="relationship">
-            Relationship
-          </option>
 
 
-          <option value="friendship">
-            Friendship
-          </option>
 
 
-          <option value="networking">
-            Networking
-          </option>
 
 
-        </select>
 
 
+<input
 
+value={headline}
 
+onChange={
+e=>setHeadline(
+e.target.value
+)
+}
 
-        <button
+placeholder="
+Profile headline
+"
 
-          onClick={saveProfile}
+className="
+w-full
+mb-4
+bg-black
+border
+border-zinc-700
+rounded-xl
+p-3
+"
 
-          disabled={loading}
+/>
 
-          className="
-          w-full
-          bg-white
-          text-black
-          rounded-xl
-          py-4
-          font-bold
-          "
 
-        >
 
-          {
-            loading
-            ?
-            "Saving..."
-            :
-            "❤️ Start Dating"
-          }
 
 
-        </button>
+<input
 
+value={profession}
 
-      </div>
+onChange={
+e=>setProfession(
+e.target.value
+)
+}
 
+placeholder="
+Profession
+"
 
-    </main>
+className="
+w-full
+mb-6
+bg-black
+border
+border-zinc-700
+rounded-xl
+p-3
+"
 
-  )
+/>
+
+
+
+
+
+
+
+
+
+
+{
+profileMode==="dating" &&
+
+<>
+
+
+<input
+
+type="number"
+
+value={age}
+
+onChange={
+e=>setAge(
+e.target.value
+)
+}
+
+placeholder="Age"
+
+className="
+w-full
+mb-4
+bg-black
+border
+border-zinc-700
+rounded-xl
+p-3
+"
+
+/>
+
+
+
+
+<select
+
+value={gender}
+
+onChange={
+e=>setGender(
+e.target.value
+)
+}
+
+className="
+w-full
+mb-5
+bg-black
+border
+border-zinc-700
+rounded-xl
+p-3
+"
+
+>
+
+<option value="">
+Gender
+</option>
+
+<option value="male">
+Male
+</option>
+
+<option value="female">
+Female
+</option>
+
+
+</select>
+
+
+
+
+
+<div className="
+flex
+flex-wrap
+gap-2
+">
+
+
+{
+interestOptions.map(item=>(
+
+
+<button
+
+key={item}
+
+onClick={()=>
+toggleArray(
+item,
+interests,
+setInterests
+)
+}
+
+className={
+
+interests.includes(item)
+
+?
+
+"bg-pink-500 text-black px-4 py-2 rounded-full"
+
+:
+
+"bg-zinc-800 px-4 py-2 rounded-full"
+
+}
+
+>
+
+{item}
+
+</button>
+
+
+))
+
+}
+
+
+</div>
+
+
+</>
+
+
+}
+
+
+
+
+
+
+
+
+
+{
+(profileMode==="business" ||
+profileMode==="job") &&
+
+
+<>
+
+
+<textarea
+
+value={headline}
+
+onChange={
+e=>setHeadline(
+e.target.value
+)
+}
+
+placeholder="
+Tell people what you do
+"
+
+className="
+w-full
+mb-5
+bg-black
+border
+border-zinc-700
+rounded-xl
+p-3
+"
+
+/>
+
+
+
+
+
+<div className="
+flex
+flex-wrap
+gap-2
+mb-5
+">
+
+{
+skillOptions.map(skill=>(
+
+
+<button
+
+key={skill}
+
+onClick={()=>
+toggleArray(
+skill,
+skills,
+setSkills
+)
+}
+
+className={
+
+skills.includes(skill)
+
+?
+
+"bg-green-500 text-black px-4 py-2 rounded-full"
+
+:
+
+"bg-zinc-800 px-4 py-2 rounded-full"
+
+}
+
+>
+
+{skill}
+
+</button>
+
+
+))
+
+}
+
+</div>
+
+
+
+
+
+
+<input
+
+value={experience}
+
+onChange={
+e=>setExperience(
+e.target.value
+)
+}
+
+placeholder="
+Experience
+"
+
+className="
+w-full
+mb-4
+bg-black
+border
+border-zinc-700
+rounded-xl
+p-3
+"
+
+/>
+
+
+
+
+<input
+
+value={education}
+
+onChange={
+e=>setEducation(
+e.target.value
+)
+}
+
+placeholder="
+Education
+"
+
+className="
+w-full
+mb-4
+bg-black
+border
+border-zinc-700
+rounded-xl
+p-3
+"
+
+/>
+
+
+
+
+<input
+
+value={availability}
+
+onChange={
+e=>setAvailability(
+e.target.value
+)
+}
+
+placeholder="
+Availability
+"
+
+className="
+w-full
+mb-6
+bg-black
+border
+border-zinc-700
+rounded-xl
+p-3
+"
+
+/>
+
+
+
+</>
+
+
+}
+
+
+
+
+
+
+
+
+
+
+<button
+
+onClick={saveProfile}
+
+disabled={loading}
+
+className="
+w-full
+bg-white
+text-black
+rounded-xl
+py-4
+font-bold
+"
+
+>
+
+{
+
+loading
+
+?
+
+"Saving..."
+
+:
+
+"Activate StreetGO 🚀"
+
+}
+
+
+</button>
+
+
+
+</div>
+
+
+</main>
+
+)
+
 
 }
