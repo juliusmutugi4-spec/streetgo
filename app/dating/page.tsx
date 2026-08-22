@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-
+import DatingRequests from "../components/DatingRequests"
 
 interface Match {
 
@@ -288,7 +288,7 @@ console.log(
       text-white
       p-10
     ">
-
+<DatingRequests />
 
       <h1 className="
         text-3xl
