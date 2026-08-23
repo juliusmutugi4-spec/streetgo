@@ -10,6 +10,8 @@ import DatingProfileModal from "./components/DatingProfileModal"
 import DatingLoading from "./components/DatingLoading"
 import DatingBackButton from "./components/DatingBackButton"
 import MatchGrid from "./components/MatchGrid"
+import { useRouter } from "next/navigation"
+
 type FilterType = "All" | "High Match" | "New"
 
 type Match = MatchCardPerson & {
@@ -18,6 +20,8 @@ type Match = MatchCardPerson & {
 }
 
 export default function DatingPage() {
+const router = useRouter()
+
   const [matches, setMatches] = useState<Match[]>([])
   const [activeFilter, setActiveFilter] =
     useState<FilterType>("All")
@@ -25,9 +29,8 @@ export default function DatingPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [search, setSearch] = useState("")
-  const [currentUserName, setCurrentUserName] =
-    useState("")
-
+  const [currentUserName, setCurrentUserName] =useState("")
+const [datingActive, setDatingActive] = useState(false)
   const [sendingId, setSendingId] =
     useState<string | null>(null)
 
@@ -118,19 +121,16 @@ const {
         )
       }
 
-      setCurrentUserName(
-        profile?.username || "there"
-      )
+setCurrentUserName(
+  profile?.username || "there"
+)
 
-      if (!profile?.dating_active) {
-        window.location.href =
-          "/dating/setup"
-        return
-      }
+setDatingActive(
+  Boolean(profile?.dating_active)
+)
 
-      const engineUrl =
-        process.env
-          .NEXT_PUBLIC_MATCH_ENGINE_URL
+const engineUrl =
+  process.env.NEXT_PUBLIC_MATCH_ENGINE_URL
 
       if (!engineUrl) {
         throw new Error(
@@ -282,6 +282,13 @@ const {
   async function sendConnection(
     receiverId: string
   ) {
+
+
+    if (!datingActive) {
+  router.push("/dating/setup")
+  return
+}
+
     try {
       setSendingId(receiverId)
 
@@ -780,33 +787,35 @@ return (
 {!loading &&
   !error &&
   filteredMatches.length > 0 && (
-    <MatchGrid
-      matches={filteredMatches}
-      sendingId={sendingId}
-      onConnect={sendConnection}
-      onViewProfile={setSelectedProfile}
-    />
+<MatchGrid
+  matches={filteredMatches}
+  sendingId={sendingId}
+  datingActive={datingActive}
+  onConnect={sendConnection}
+  onViewProfile={setSelectedProfile}
+/>
   )}
 
       </section>
 
       {/* PROFILE */}
 
-      {selectedProfile && (
-        <DatingProfileModal
-          person={selectedProfile}
-          sending={
-            sendingId ===
-            selectedProfile.id
-          }
-          onClose={() =>
-            setSelectedProfile(null)
-          }
-          onConnect={
-            sendConnection
-          }
-        />
-      )}
+{selectedProfile && (
+  <DatingProfileModal
+    person={selectedProfile}
+    sending={
+      sendingId ===
+      selectedProfile.id
+    }
+    datingActive={datingActive}
+    onClose={() =>
+      setSelectedProfile(null)
+    }
+    onConnect={
+      sendConnection
+    }
+  />
+)}
 
     </main>
   )

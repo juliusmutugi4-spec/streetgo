@@ -191,11 +191,14 @@ const {
   data,
   error
 } = await supabaseBrowser.auth.signUp({
-  email,
+  email: email.trim().toLowerCase(),
   password,
   options: {
-    emailRedirectTo: `${window.location.origin}/auth/callback`
-  }
+    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    data: {
+      username: cleanUsername,
+    },
+  },
 })
 console.log("=== SIGNUP DEBUG ===")
 console.log("USER ID:", data.user?.id)
@@ -216,73 +219,12 @@ console.log("AUTH ERROR:", error)
       }
 
 
-
-      if(data.user){
-
-
-        const {
-          error: profileError
-        } = await supabaseBrowser
-          .from('profiles')
-          .insert({
-
-            id:data.user.id,
-            username:cleanUsername,
-            avatar_url:null,
-            created_at:new Date().toISOString()
-
-          })
-
-
-
-        if(profileError){
-
-          console.error(
-            "PROFILE INSERT ERROR:",
-            profileError
-          )
-
-          setLoading(false)
-
-          return setErrorMsg(
-            profileError.message
-          )
-
-        }
-
-
-
-
-
-
-const {
-  error: walletError
-} = await supabaseBrowser
-  .from("wallets")
-  .insert({
-    user_id: data.user.id,
-    balance: 0,
-    reax_balance: 0
-  })
-
-if (walletError) {
-
-  console.error("=== WALLET INSERT ERROR ===")
-  console.error("MESSAGE:", walletError.message)
-  console.error("CODE:", walletError.code)
-  console.error("DETAILS:", walletError.details)
-  console.error("HINT:", walletError.hint)
-
-  setLoading(false)
-
-  return setErrorMsg(
-    `Wallet creation failed: ${walletError.message}`
-  )
+if (data.user) {
+  console.log("=== ACCOUNT CREATED ===")
+  console.log("USER ID:", data.user.id)
+  console.log("USERNAME:", cleanUsername)
+  console.log("PROFILE + WALLET CREATED BY DATABASE TRIGGER")
 }
-
-console.log("=== WALLET CREATED SUCCESSFULLY ===")
-console.log("USER ID:", data.user.id)
-      }
 
 
 

@@ -36,6 +36,8 @@ export interface MatchCardPerson {
 interface MatchCardProps {
   person: MatchCardPerson
 
+  datingActive: boolean
+
   onConnect: (id: string) => void
 
   onViewProfile: (
@@ -47,6 +49,7 @@ interface MatchCardProps {
 
 export default function MatchCard({
   person,
+  datingActive,
   onConnect,
   onViewProfile,
   sending = false,

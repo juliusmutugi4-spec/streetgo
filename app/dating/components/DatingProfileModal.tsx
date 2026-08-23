@@ -8,6 +8,8 @@ import {
   X,
 } from "lucide-react"
 
+import { useRouter } from "next/navigation"
+
 import type { MatchCardPerson } from "../components/MatchCard"
 
 interface DatingProfileModalProps {
@@ -15,8 +17,13 @@ interface DatingProfileModalProps {
     personality?: string | null
     lookingFor?: string | null
   }
+
   sending?: boolean
+
+  datingActive: boolean
+
   onClose: () => void
+
   onConnect: (id: string) => void
 }
 
@@ -25,7 +32,7 @@ function getInitials(name: string) {
     .split(" ")
     .filter(Boolean)
     .slice(0, 2)
-    .map(word =>
+    .map((word) =>
       word.charAt(0).toUpperCase()
     )
     .join("")
@@ -34,16 +41,17 @@ function getInitials(name: string) {
 export default function DatingProfileModal({
   person,
   sending = false,
+  datingActive,
   onClose,
   onConnect,
 }: DatingProfileModalProps) {
+  const router = useRouter()
+
   const connected =
-    person.connectionStatus ===
-    "accepted"
+    person.connectionStatus === "accepted"
 
   const pending =
-    person.connectionStatus ===
-    "pending"
+    person.connectionStatus === "pending"
 
   const trusted =
     (person.reputation ?? 0) >= 20
@@ -55,6 +63,11 @@ export default function DatingProfileModal({
       person.score
     )
   )
+
+  function handleCompleteDatingProfile() {
+    onClose()
+    router.push("/dating/setup")
+  }
 
   return (
     <div
@@ -71,9 +84,8 @@ export default function DatingProfileModal({
       "
       onClick={onClose}
     >
-
       <div
-        onClick={event =>
+        onClick={(event) =>
           event.stopPropagation()
         }
         className="
@@ -88,16 +100,18 @@ export default function DatingProfileModal({
           shadow-2xl
         "
       >
+        {/* =====================================================
+            PHOTO
+        ===================================================== */}
 
-        {/* PHOTO */}
-
-        <div className="
-          relative
-          h-[380px]
-          overflow-hidden
-          bg-slate-900
-        ">
-
+        <div
+          className="
+            relative
+            h-[380px]
+            overflow-hidden
+            bg-slate-900
+          "
+        >
           {person.avatar ? (
             <img
               src={person.avatar}
@@ -109,40 +123,44 @@ export default function DatingProfileModal({
               "
             />
           ) : (
-            <div className="
-              flex
-              h-full
-              w-full
-              items-center
-              justify-center
-              bg-gradient-to-br
-              from-rose-950
-              via-purple-950
-              to-slate-950
-            ">
-              <span className="
-                text-6xl
-                font-black
-                text-white/80
-              ">
-                {getInitials(
-                  person.name
-                )}
+            <div
+              className="
+                flex
+                h-full
+                w-full
+                items-center
+                justify-center
+                bg-gradient-to-br
+                from-rose-950
+                via-purple-950
+                to-slate-950
+              "
+            >
+              <span
+                className="
+                  text-6xl
+                  font-black
+                  text-white/80
+                "
+              >
+                {getInitials(person.name)}
               </span>
             </div>
           )}
 
-          <div className="
-            pointer-events-none
-            absolute
-            inset-x-0
-            bottom-0
-            h-52
-            bg-gradient-to-t
-            from-black
-            via-black/40
-            to-transparent
-          " />
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-x-0
+              bottom-0
+              h-52
+              bg-gradient-to-t
+              from-black
+              via-black/40
+              to-transparent
+            "
+          />
 
           <button
             type="button"
@@ -168,36 +186,43 @@ export default function DatingProfileModal({
             <X className="h-5 w-5" />
           </button>
 
-          <div className="
-            absolute
-            bottom-6
-            left-6
-            right-6
-          ">
-
-            <div className="
-              flex
-              items-center
-              gap-2
-            ">
-              <h2 className="
-                text-3xl
-                font-black
-                text-white
-              ">
+          <div
+            className="
+              absolute
+              bottom-6
+              left-6
+              right-6
+            "
+          >
+            <div
+              className="
+                flex
+                items-center
+                gap-2
+              "
+            >
+              <h2
+                className="
+                  text-3xl
+                  font-black
+                  text-white
+                "
+              >
                 {person.name}
               </h2>
 
               {trusted && (
-                <span className="
-                  flex
-                  h-6
-                  w-6
-                  items-center
-                  justify-center
-                  rounded-full
-                  bg-emerald-400
-                ">
+                <span
+                  className="
+                    flex
+                    h-6
+                    w-6
+                    items-center
+                    justify-center
+                    rounded-full
+                    bg-emerald-400
+                  "
+                >
                   <ShieldCheck
                     className="
                       h-4
@@ -209,15 +234,16 @@ export default function DatingProfileModal({
               )}
             </div>
 
-            <div className="
-              mt-2
-              flex
-              flex-wrap
-              gap-3
-              text-sm
-              text-white/80
-            ">
-
+            <div
+              className="
+                mt-2
+                flex
+                flex-wrap
+                gap-3
+                text-sm
+                text-white/80
+              "
+            >
               {person.age && (
                 <span>
                   {person.age} years
@@ -225,85 +251,99 @@ export default function DatingProfileModal({
               )}
 
               {person.location && (
-                <span className="
-                  flex
-                  items-center
-                  gap-1
-                ">
-                  <MapPin className="
-                    h-3.5
-                    w-3.5
-                  " />
+                <span
+                  className="
+                    flex
+                    items-center
+                    gap-1
+                  "
+                >
+                  <MapPin
+                    className="
+                      h-3.5
+                      w-3.5
+                    "
+                  />
 
                   {person.location}
                 </span>
               )}
-
             </div>
-
           </div>
-
         </div>
 
-        {/* BODY */}
+        {/* =====================================================
+            BODY
+        ===================================================== */}
 
         <div className="p-6">
-
           {/* HEADLINE */}
 
           {person.headline && (
-            <p className="
-              text-sm
-              leading-6
-              text-slate-300
-            ">
+            <p
+              className="
+                text-sm
+                leading-6
+                text-slate-300
+              "
+            >
               {person.headline}
             </p>
           )}
 
-          {/* COMPATIBILITY */}
+          {/* =================================================
+              COMPATIBILITY
+          ================================================= */}
 
-          <div className="
-            mt-6
-            rounded-2xl
-            border
-            border-emerald-400/10
-            bg-emerald-400/[0.04]
-            p-5
-          ">
-
-            <div className="
-              flex
-              items-end
-              justify-between
-            ">
-
+          <div
+            className="
+              mt-6
+              rounded-2xl
+              border
+              border-emerald-400/10
+              bg-emerald-400/[0.04]
+              p-5
+            "
+          >
+            <div
+              className="
+                flex
+                items-end
+                justify-between
+              "
+            >
               <div>
-                <p className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.18em]
-                  text-slate-500
-                ">
+                <p
+                  className="
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-[0.18em]
+                    text-slate-500
+                  "
+                >
                   Compatibility
                 </p>
 
-                <p className="
-                  mt-1
-                  text-3xl
-                  font-black
-                  text-emerald-400
-                ">
+                <p
+                  className="
+                    mt-1
+                    text-3xl
+                    font-black
+                    text-emerald-400
+                  "
+                >
                   {score}%
                 </p>
               </div>
 
-              <span className="
-                text-xs
-                font-bold
-                text-emerald-400
-              ">
+              <span
+                className="
+                  text-xs
+                  font-bold
+                  text-emerald-400
+                "
+              >
                 {score >= 90
                   ? "Exceptional"
                   : score >= 80
@@ -312,16 +352,17 @@ export default function DatingProfileModal({
                       ? "Good"
                       : "Potential"}
               </span>
-
             </div>
 
-            <div className="
-              mt-4
-              h-2
-              overflow-hidden
-              rounded-full
-              bg-slate-800
-            ">
+            <div
+              className="
+                mt-4
+                h-2
+                overflow-hidden
+                rounded-full
+                bg-slate-800
+              "
+            >
               <div
                 className="
                   h-full
@@ -333,28 +374,32 @@ export default function DatingProfileModal({
                 }}
               />
             </div>
-
           </div>
 
-          {/* REASONS */}
+          {/* =================================================
+              REASONS
+          ================================================= */}
 
           {person.reasons.length > 0 && (
             <section className="mt-7">
-
-              <p className="
-                text-[10px]
-                font-bold
-                uppercase
-                tracking-[0.18em]
-                text-slate-500
-              ">
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.18em]
+                  text-slate-500
+                "
+              >
                 Why you matched
               </p>
 
-              <div className="
-                mt-3
-                space-y-2
-              ">
+              <div
+                className="
+                  mt-3
+                  space-y-2
+                "
+              >
                 {person.reasons.map(
                   (reason, index) => (
                     <div
@@ -369,16 +414,16 @@ export default function DatingProfileModal({
                         p-3
                       "
                     >
-                      <span className="
-                        text-emerald-400
-                      ">
+                      <span className="text-emerald-400">
                         ✓
                       </span>
 
-                      <span className="
-                        text-sm
-                        text-slate-400
-                      ">
+                      <span
+                        className="
+                          text-sm
+                          text-slate-400
+                        "
+                      >
                         {reason.replace(
                           "❤️ ",
                           ""
@@ -388,34 +433,38 @@ export default function DatingProfileModal({
                   )
                 )}
               </div>
-
             </section>
           )}
 
-          {/* INTERESTS */}
+          {/* =================================================
+              INTERESTS
+          ================================================= */}
 
           {person.interests &&
             person.interests.length > 0 && (
               <section className="mt-7">
-
-                <p className="
-                  text-[10px]
-                  font-bold
-                  uppercase
-                  tracking-[0.18em]
-                  text-slate-500
-                ">
+                <p
+                  className="
+                    text-[10px]
+                    font-bold
+                    uppercase
+                    tracking-[0.18em]
+                    text-slate-500
+                  "
+                >
                   Interests
                 </p>
 
-                <div className="
-                  mt-3
-                  flex
-                  flex-wrap
-                  gap-2
-                ">
+                <div
+                  className="
+                    mt-3
+                    flex
+                    flex-wrap
+                    gap-2
+                  "
+                >
                   {person.interests.map(
-                    interest => (
+                    (interest) => (
                       <span
                         key={interest}
                         className="
@@ -434,75 +483,84 @@ export default function DatingProfileModal({
                     )
                   )}
                 </div>
-
               </section>
             )}
 
-          {/* PERSONALITY */}
+          {/* =================================================
+              PERSONALITY
+          ================================================= */}
 
           {person.personality && (
             <section className="mt-7">
-
-              <p className="
-                text-[10px]
-                font-bold
-                uppercase
-                tracking-[0.18em]
-                text-slate-500
-              ">
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.18em]
+                  text-slate-500
+                "
+              >
                 Personality
               </p>
 
-              <p className="
-                mt-3
-                rounded-2xl
-                border
-                border-white/5
-                bg-white/[0.025]
-                p-4
-                text-sm
-                leading-6
-                text-slate-400
-              ">
+              <p
+                className="
+                  mt-3
+                  rounded-2xl
+                  border
+                  border-white/5
+                  bg-white/[0.025]
+                  p-4
+                  text-sm
+                  leading-6
+                  text-slate-400
+                "
+              >
                 {person.personality}
               </p>
-
             </section>
           )}
 
-          {/* LOOKING FOR */}
+          {/* =================================================
+              LOOKING FOR
+          ================================================= */}
 
           {person.lookingFor && (
             <section className="mt-7">
-
-              <p className="
-                text-[10px]
-                font-bold
-                uppercase
-                tracking-[0.18em]
-                text-slate-500
-              ">
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.18em]
+                  text-slate-500
+                "
+              >
                 Looking for
               </p>
 
-              <p className="
-                mt-3
-                rounded-2xl
-                border
-                border-white/5
-                bg-white/[0.025]
-                p-4
-                text-sm
-                leading-6
-                text-slate-400
-              ">
+              <p
+                className="
+                  mt-3
+                  rounded-2xl
+                  border
+                  border-white/5
+                  bg-white/[0.025]
+                  p-4
+                  text-sm
+                  leading-6
+                  text-slate-400
+                "
+              >
                 {person.lookingFor}
               </p>
-
             </section>
           )}
 
-          {/* ACTION */}
+          {/* =================================================
+              ACTION
+          ================================================= */}
 
           {connected ? (
             <button
@@ -527,6 +585,7 @@ export default function DatingProfileModal({
               "
             >
               <MessageCircle className="h-4 w-4" />
+
               Continue conversation
             </button>
           ) : pending ? (
@@ -549,6 +608,33 @@ export default function DatingProfileModal({
               "
             >
               Connection requested
+            </button>
+          ) : !datingActive ? (
+            <button
+              type="button"
+              onClick={handleCompleteDatingProfile}
+              className="
+                mt-8
+                flex
+                w-full
+                items-center
+                justify-center
+                gap-2
+                rounded-xl
+                border
+                border-rose-400/20
+                bg-rose-500/10
+                py-4
+                text-sm
+                font-black
+                text-rose-300
+                transition
+                hover:bg-rose-500/15
+              "
+            >
+              <Heart className="h-4 w-4" />
+
+              Complete dating profile
             </button>
           ) : (
             <button
@@ -576,24 +662,45 @@ export default function DatingProfileModal({
               "
             >
               <Heart className="h-4 w-4" />
+
               {sending
                 ? "Sending..."
                 : "Request connection"}
             </button>
           )}
 
-          <p className="
-            mt-4
-            text-center
-            text-[10px]
-            leading-5
-            text-slate-600
-          ">
-            Connection is mutual.
-            You remain in control of
-            who you communicate with.
-          </p>
+          {!datingActive &&
+            !connected &&
+            !pending && (
+              <p
+                className="
+                  mt-4
+                  text-center
+                  text-[10px]
+                  leading-5
+                  text-slate-600
+                "
+              >
+                Complete your Dating profile
+                to start connecting with people.
+              </p>
+            )}
 
+          {datingActive && (
+            <p
+              className="
+                mt-4
+                text-center
+                text-[10px]
+                leading-5
+                text-slate-600
+              "
+            >
+              Connection is mutual.
+              You remain in control of
+              who you communicate with.
+            </p>
+          )}
         </div>
       </div>
     </div>

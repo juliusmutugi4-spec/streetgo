@@ -1,11 +1,13 @@
 "use client"
 
-import MatchCard from "./MatchCard"
-import type { MatchCardPerson } from "./MatchCard"
+import MatchCard, {
+  type MatchCardPerson,
+} from "./MatchCard"
 
 interface MatchGridProps {
   matches: MatchCardPerson[]
   sendingId: string | null
+  datingActive: boolean
   onConnect: (id: string) => void
   onViewProfile: (person: MatchCardPerson) => void
 }
@@ -13,19 +15,18 @@ interface MatchGridProps {
 export default function MatchGrid({
   matches,
   sendingId,
+  datingActive,
   onConnect,
   onViewProfile,
 }: MatchGridProps) {
   return (
-    <div
+    <section
       className="
-        mt-7
         grid
-        grid-cols-3
-        gap-3
+        grid-cols-1
+        gap-5
         sm:grid-cols-2
         lg:grid-cols-3
-        xl:grid-cols-4
       "
     >
       {matches.map((person) => (
@@ -33,10 +34,11 @@ export default function MatchGrid({
           key={person.id}
           person={person}
           sending={sendingId === person.id}
+          datingActive={datingActive}
           onConnect={onConnect}
           onViewProfile={onViewProfile}
         />
       ))}
-    </div>
+    </section>
   )
 }
