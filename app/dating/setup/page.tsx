@@ -35,13 +35,12 @@ export default function SetupChoicePage() {
           sm:px-8
         "
       >
-       <SetupHeader
-  onBack={() => router.back()}
+ <SetupHeader
+  onBack={() => router.push("/")}
   onSkip={() => {
     router.push("/dating")
   }}
 />
-
         <SetupIntro />
 
         <SetupModeGrid onChoose={chooseMode} />
