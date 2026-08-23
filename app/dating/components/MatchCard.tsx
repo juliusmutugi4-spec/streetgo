@@ -1,11 +1,7 @@
 "use client"
 
 import MatchAvatar from "./match/MatchAvatar"
-import MatchIdentity from "./match/MatchIdentity"
-import MatchCompatibility from "./match/MatchCompatibility"
-import MatchReasons from "./match/MatchReasons"
-import MatchInterests from "./match/MatchInterests"
-import MatchActions from "./match/MatchActions"
+import MatchCardOverlay from "./match/MatchCardOverlay"
 
 export interface MatchCardPerson {
   id: string
@@ -59,179 +55,93 @@ export default function MatchCard({
     <article
       className="
         group
+        relative
+        aspect-[3/4]
+        w-full
         overflow-hidden
-        rounded-[28px]
+        rounded-2xl
         border
-        border-slate-800
-        bg-slate-950
-        shadow-xl
-        shadow-black/20
-        transition
+        border-white/10
+        bg-slate-900
+        shadow-lg
+        shadow-black/30
+        transition-all
         duration-300
         hover:-translate-y-1
-        hover:border-slate-700
+        hover:border-white/20
+        hover:shadow-2xl
       "
     >
-
       {/* =====================================================
-          PROFILE PHOTO
+          PHOTO CARD
       ===================================================== */}
 
-      <div
+      <button
+        type="button"
+        onClick={() =>
+          onViewProfile(person)
+        }
         className="
-          relative
-          h-[430px]
+          absolute
+          inset-0
+          h-full
           w-full
-          overflow-hidden
-          bg-slate-900
+          cursor-pointer
+          text-left
         "
+        aria-label={`View ${person.name}'s profile`}
       >
-        <MatchAvatar
-          name={person.name}
-          avatar={person.avatar}
-        />
-
-        {/* PROFILE TYPE */}
+        {/* PHOTO */}
 
         <div
           className="
             absolute
-            left-4
-            top-4
-            rounded-full
-            border
-            border-white/15
-            bg-black/45
-            px-3
-            py-1.5
-            text-xs
-            font-semibold
-            text-white
-            backdrop-blur-xl
+            inset-0
+            h-full
+            w-full
           "
         >
-          ❤️ {person.profileType || "Dating"}
+          <MatchAvatar
+            name={person.name}
+            avatar={person.avatar}
+          />
         </div>
 
-        {/* ONLINE */}
+        {/* ALL INFORMATION OVER PHOTO */}
 
-        {person.isOnline && (
-          <div
-            className="
-              absolute
-              right-4
-              top-4
-              flex
-              items-center
-              gap-1.5
-              rounded-full
-              border
-              border-emerald-400/20
-              bg-black/45
-              px-3
-              py-1.5
-              text-xs
-              font-semibold
-              text-emerald-300
-              backdrop-blur-xl
-            "
-          >
-            <span
-              className="
-                h-1.5
-                w-1.5
-                rounded-full
-                bg-emerald-400
-              "
-            />
+        <MatchCardOverlay
+          person={person}
+        />
+      </button>
 
-            Online
-          </div>
-        )}
+      {/* =====================================================
+          CONNECTION STATE
+      ===================================================== */}
 
-        {/* IMAGE GRADIENT */}
-
+      {person.connectionStatus ===
+        "pending" && (
         <div
           className="
             pointer-events-none
             absolute
-            inset-x-0
-            bottom-0
-            h-48
-            bg-gradient-to-t
-            from-black
-            via-black/50
-            to-transparent
+            bottom-2.5
+            right-2.5
+            rounded-full
+            border
+            border-white/10
+            bg-black/60
+            px-2
+            py-1
+            text-[8px]
+            font-bold
+            text-white/70
+            backdrop-blur-md
+            sm:text-[9px]
           "
-        />
-      </div>
-
-      {/* =====================================================
-          CARD INFORMATION
-      ===================================================== */}
-
-      <div className="p-5">
-
-        {/* IDENTITY */}
-
-<MatchIdentity
-  name={person.name}
-  age={person.age ?? undefined}
-  location={person.location ?? undefined}
-  reputation={person.reputation ?? undefined}
-/>
-
-        {/* HEADLINE */}
-
-        {person.headline && (
-          <p
-            className="
-              mt-2
-              line-clamp-2
-              text-sm
-              leading-5
-              text-slate-500
-            "
-          >
-            {person.headline}
-          </p>
-        )}
-
-        {/* COMPATIBILITY */}
-
-        <MatchCompatibility
-          score={person.score}
-        />
-
-        {/* REASONS */}
-
-        <MatchReasons
-          reasons={person.reasons}
-        />
-
-        {/* INTERESTS */}
-
-        <MatchInterests
-          interests={
-            person.interests || []
-          }
-        />
-
-        {/* ACTIONS */}
-
-        <MatchActions
-          userId={person.id}
-          connectionStatus={
-            person.connectionStatus
-          }
-          sending={sending}
-          onConnect={onConnect}
-          onViewProfile={() =>
-            onViewProfile(person)
-          }
-        />
-
-      </div>
+        >
+          Request sent
+        </div>
+      )}
     </article>
   )
 }

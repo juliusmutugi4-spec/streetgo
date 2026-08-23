@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../lib/supabase"
+import { getCurrentUser } from "../lib/auth"
 import DatingRequests from "../components/DatingRequests"
 import MatchCard from "./components/MatchCard"
 import type { MatchCardPerson } from "./components/MatchCard"
 import DatingProfileModal from "./components/DatingProfileModal"
 import DatingLoading from "./components/DatingLoading"
 import DatingBackButton from "./components/DatingBackButton"
+import MatchGrid from "./components/MatchGrid"
 type FilterType = "All" | "High Match" | "New"
 
 type Match = MatchCardPerson & {
@@ -86,9 +88,9 @@ export default function DatingPage() {
       setLoading(true)
       setError("")
 
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+const {
+  data: { user },
+} = await getCurrentUser()
 
       if (!user) {
         setError(
@@ -438,24 +440,7 @@ return (
             gap-3
           "
         >
-          <div
-            className="
-              flex
-              h-11
-              w-11
-              items-center
-              justify-center
-              rounded-2xl
-              bg-gradient-to-br
-              from-rose-500
-              to-pink-700
-              text-xl
-              shadow-lg
-              shadow-rose-500/20
-            "
-          >
-            ❤️
-          </div>
+
 
           <div>
             <h1
@@ -790,39 +775,18 @@ return (
             </div>
           )}
 
-        {/* MATCH GRID */}
+{/* MATCH GRID */}
 
-        {!loading &&
-          !error &&
-          filteredMatches.length >
-            0 && (
-            <div className="
-              mt-7
-              grid
-              gap-5
-              sm:grid-cols-2
-              lg:grid-cols-3
-            ">
-              {filteredMatches.map(
-                person => (
-                  <MatchCard
-                    key={person.id}
-                    person={person}
-                    sending={
-                      sendingId ===
-                      person.id
-                    }
-                    onConnect={
-                      sendConnection
-                    }
-                    onViewProfile={
-                      setSelectedProfile
-                    }
-                  />
-                )
-              )}
-            </div>
-          )}
+{!loading &&
+  !error &&
+  filteredMatches.length > 0 && (
+    <MatchGrid
+      matches={filteredMatches}
+      sendingId={sendingId}
+      onConnect={sendConnection}
+      onViewProfile={setSelectedProfile}
+    />
+  )}
 
       </section>
 
