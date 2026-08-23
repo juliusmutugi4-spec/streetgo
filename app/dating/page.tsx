@@ -202,9 +202,8 @@ const engineUrl =
                   person.headline ||
                   "Looking for a meaningful connection",
 
-                location:
-                  person.location ||
-                  "Kenya",
+location:
+  person.location || null,
 
                 age:
                   typeof person.age ===
