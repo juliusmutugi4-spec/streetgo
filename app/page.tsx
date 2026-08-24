@@ -626,13 +626,14 @@ const addImageComment = async () => {
 ) : (
   <div className="space-y-2">
     {posts.map((post) => (
-      <PostCard
-        key={post.id}
-        post={post}
-        user={user}
-        profile={profile}
-        isActive={activePostId === post.id}
-        setActivePostId={setActivePostId}
+<PostCard
+  key={post.id}
+  post={post}
+  user={user}
+  profile={profile}
+  isActive={activePostId === post.id}
+  setActivePostId={setActivePostId}
+  onRequireAuth={() => setShowLogin(true)}
         onOpenDiscussion={(currentPost, comments) => {
           setSelectedPost(currentPost);
           setDiscussionComments(comments);

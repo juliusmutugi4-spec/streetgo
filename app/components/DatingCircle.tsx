@@ -69,16 +69,46 @@ export default function DatingCircle() {
         .eq("id", user.id)
         .maybeSingle()
 
-      if (profileError) {
-        console.error(
-          "Dating profile error:",
-          profileError
-        )
+if (profileError) {
+  console.error(
+    "========== DATING PROFILE ERROR =========="
+  )
 
-        setLoading(false)
-        return
-      }
+  console.error(
+    "message:",
+    profileError.message
+  )
 
+  console.error(
+    "details:",
+    profileError.details
+  )
+
+  console.error(
+    "hint:",
+    profileError.hint
+  )
+
+  console.error(
+    "code:",
+    profileError.code
+  )
+
+  console.error(
+    "full:",
+    JSON.stringify(
+      profileError,
+      null,
+      2
+    )
+  )
+
+  console.error(
+    "=========================================="
+  )
+
+  return
+}
       if (!profile?.dating_active) {
         router.push("/dating/setup")
         return

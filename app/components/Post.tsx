@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 import VideoSchema from './VideoSchema'
 import PostSchema from './PostSchema'
-import LoginModal from './LoginModal'
+
 import { setCachedProfile } from "../lib/profileCache"
 import VideoPortal from "./VideoPortal"
 import ReactionButton from "./ReactionButton"
@@ -60,6 +60,8 @@ interface PostProps {
 
   onOpenDiscussion?: (post: any, comments: any[]) => void
 onOpenDispatch: (post: any) => void
+
+onRequireAuth?: () => void
 onOpenImageViewer?: (
   imageUrls: string[],
   imageIndex: number,
@@ -79,6 +81,7 @@ function Post({
   onOpenDiscussion,
   onOpenImageViewer,
   onOpenDispatch,
+  onRequireAuth,
 }: PostProps) {
 
   const router = useRouter()
@@ -262,7 +265,7 @@ console.log(
 console.log("POST AVATAR:", post.avatar_url)
 console.log("POST USERNAME:", post.username)
 
-const [showLogin, setShowLogin] = useState(false)
+
 const [showMenu, setShowMenu] = useState(false)
 const menuRef = useRef<HTMLDivElement>(null)
 const [currentImage, setCurrentImage] = useState(0)
@@ -287,10 +290,10 @@ useEffect(() => {
   // Load likes & comments
 
 const toggleImageLike = async () => {
-  if (!user) {
-    setShowLogin(true)
-    return
-  }
+if (!user) {
+  onRequireAuth?.()
+  return
+}
 
 
 
@@ -412,10 +415,10 @@ if (error) {
   }
 
 const addImageComment = async () => {
-  if (!user) {
-    setShowLogin(true)
-    return
-  }
+if (!user) {
+  onRequireAuth?.()
+  return
+}
 
   if (!imageCommentText.trim()) return
 
@@ -582,10 +585,10 @@ const loadPortalVideos = async () => {
 }
 
 const handleSendReax = async () => {
-  if (!user) {
-    setShowLogin(true)
-    return
-  }
+if (!user) {
+  onRequireAuth?.()
+  return
+}
 console.log("CURRENT USER ID:", user.id)
 console.log("POST OWNER ID:", post.user_id)
   await sendPostReax({
@@ -745,13 +748,10 @@ useEffect(() => {
 }, [])
 
 const toggleLike = async () => {
-  if (!user) {
-    if (!showLogin) {
-      setShowLogin(true)
-    }
-    return
-  }
-
+if (!user) {
+  onRequireAuth?.()
+  return
+}
   // USER ALREADY LIKED -> REMOVE LIKE
   if (liked) {
     const { error } = await supabase
@@ -796,10 +796,10 @@ const toggleLike = async () => {
 
   // Add comment
 const addComment = async (message: string) => {
-  if (!user) {
-    if (!showLogin) {setShowLogin(true)}
-    return
-  }
+if (!user) {
+  onRequireAuth?.()
+  return
+}
 
   if (!message.trim()) return
 
@@ -881,13 +881,11 @@ return (
   content={post.content}
   createdAt={post.created_at}
 /> */}
-<div
-  ref={postRef}
+<div 
+  ref={postRef} 
   className={`group relative overflow-visible backdrop-blur-xl transition-all duration-500 rounded-xl bg-[var(--surface)] border border-[var(--border)] ${
-    portalOpening
-      ? "scale-110 opacity-0 blur-md"
-      : "scale-100 opacity-100"
-  }`}
+    portalOpening ? "scale-110 opacity-0 blur-md" : "scale-100 opacity-100"
+  }`} 
 >
 
 
@@ -979,6 +977,7 @@ return (
   }}
   post={post}
   onOpenDispatch={onOpenDispatch}
+  onRequireAuth={onRequireAuth}
 />
 
 
@@ -1011,15 +1010,7 @@ return (
   addImageComment={addImageComment}
 />
 
-{showLogin ? (
-  <LoginModal
-    onClose={() => setShowLogin(false)}
-    onLogin={() => {
-      setShowLogin(false)
-      loadPostData()
-    }}
-  />
-) : null}
+
 
       </div>
     </div>

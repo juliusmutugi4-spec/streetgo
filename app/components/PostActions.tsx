@@ -21,6 +21,7 @@ interface PostActionsProps {
     content: string
   }
   onOpenDispatch: (post: any) => void
+  onRequireAuth?: () => void
 }
 
 export default function PostActions({
@@ -33,6 +34,7 @@ export default function PostActions({
   setOpenRoom,
   post,
   onOpenDispatch,
+  onRequireAuth,
 }: PostActionsProps) {
 
   // --------------------------------------------------
@@ -81,7 +83,9 @@ export default function PostActions({
         )
 
         osc.start()
-        osc.stop(ctx.currentTime + 0.05)
+        osc.stop(
+          ctx.currentTime + 0.05
+        )
       }
 
       if (type === 'success') {
@@ -108,7 +112,9 @@ export default function PostActions({
         )
 
         osc.start()
-        osc.stop(ctx.currentTime + 0.15)
+        osc.stop(
+          ctx.currentTime + 0.15
+        )
       }
 
       if (type === 'pop') {
@@ -135,7 +141,9 @@ export default function PostActions({
         )
 
         osc.start()
-        osc.stop(ctx.currentTime + 0.08)
+        osc.stop(
+          ctx.currentTime + 0.08
+        )
       }
 
     } catch (error) {
@@ -199,7 +207,8 @@ export default function PostActions({
       className="
         w-full
         bg-[var(--surface)]
-        px-0.5
+        p-0
+        m-0
         select-none
         border-t
         border-[var(--border)]
@@ -211,11 +220,13 @@ export default function PostActions({
       <div
         className="
           flex
-          h-8
+          h-5
           w-full
           items-center
           justify-between
           gap-0
+          p-0
+          m-0
         "
       >
 
@@ -228,14 +239,16 @@ export default function PostActions({
           onClick={handleLikeClick}
           className="
             flex
-            h-7
+            h-5
+            min-h-0
             flex-1
             items-center
             justify-center
-            gap-1
+            gap-0.5
             rounded-md
-            px-0.5
-            text-[10px]
+            p-0
+            m-0
+            text-[9px]
             font-semibold
             leading-none
             text-[var(--muted)]
@@ -249,7 +262,7 @@ export default function PostActions({
         >
 
           <Flame
-            size={12}
+            size={10}
             strokeWidth={2}
             className={`
               shrink-0
@@ -293,14 +306,16 @@ export default function PostActions({
           onClick={handleCommentClick}
           className="
             flex
-            h-7
+            h-5
+            min-h-0
             flex-1
             items-center
             justify-center
-            gap-1
+            gap-0.5
             rounded-md
-            px-0.5
-            text-[10px]
+            p-0
+            m-0
+            text-[9px]
             font-semibold
             leading-none
             text-[var(--muted)]
@@ -314,7 +329,7 @@ export default function PostActions({
         >
 
           <MessageSquare
-            size={12}
+            size={10}
             strokeWidth={1.8}
             className="
               shrink-0
@@ -340,12 +355,15 @@ export default function PostActions({
           }
           className="
             flex
-            h-7
+            h-5
+            min-h-0
             flex-1
             items-center
             justify-center
+            gap-0
             rounded-md
-            px-0.5
+            p-0
+            m-0
             transition-all
             duration-150
             hover:bg-[var(--surface-hover)]
@@ -368,7 +386,17 @@ export default function PostActions({
             DISPATCH
         ========================================= */}
 
-        <div className="relative flex h-7 flex-1">
+        <div
+          className="
+            relative
+            flex
+            h-5
+            min-h-0
+            flex-1
+            p-0
+            m-0
+          "
+        >
 
           <button
             type="button"
@@ -378,14 +406,16 @@ export default function PostActions({
             }}
             className="
               flex
-              h-7
+              h-5
+              min-h-0
               w-full
               items-center
               justify-center
-              gap-1
+              gap-0.5
               rounded-md
-              px-0.5
-              text-[10px]
+              p-0
+              m-0
+              text-[9px]
               font-semibold
               leading-none
               text-[var(--muted)]
@@ -399,7 +429,7 @@ export default function PostActions({
           >
 
             <Send
-              size={12}
+              size={10}
               strokeWidth={1.8}
               className="
                 shrink-0
