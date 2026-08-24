@@ -62,7 +62,15 @@ const [datingActive, setDatingActive] = useState(false)
         return "none"
       }
 
-      const data = await response.json()
+const data = await response.json()
+
+if (
+  data.status === "pending" ||
+  data.status === "accepted"
+) {
+  return data.status
+}
+
 
       if (
         data.status === "pending" ||
@@ -151,17 +159,29 @@ const engineUrl =
         )
       }
 
-      const data = await response.json()
+const data = await response.json()
 
-      if (data.error) {
-        throw new Error(data.error)
-      }
 
-      const rawMatches = Array.isArray(
-        data.matches
-      )
-        ? data.matches
-        : []
+
+
+if (data.error) {
+  throw new Error(data.error)
+}
+
+const rawMatches = Array.isArray(
+  data.matches
+)
+  ? data.matches
+  : []
+
+
+  console.table(
+  rawMatches.map((person: any) => ({
+    username: person.username,
+    location: person.location,
+  }))
+)
+
 
       const updatedMatches: Match[] =
         await Promise.all(
