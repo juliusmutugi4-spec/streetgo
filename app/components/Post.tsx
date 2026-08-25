@@ -43,6 +43,13 @@ interface PostProps {
     created_at: string
     username?: string
     avatar_url?: string | null
+
+    // LIVE
+    is_live?: boolean
+    live_id?: string | null
+    viewer_count?: number
+
+
   }
 
   user: any
@@ -368,6 +375,11 @@ console.log("IMAGE LIKE SAVED")
 
 
 const loadViewerCount = async () => {
+
+if (post.is_live === true) {
+  return
+}
+
   const activeSince = new Date(Date.now() - 60000).toISOString()
 
   const { count, error } = await supabase
@@ -389,6 +401,15 @@ if (error) {
 }
 
   const loadPostData = async () => {
+  // LIVE SESSIONS DO NOT USE THE NORMAL POST TABLES
+  if (post.is_live === true) {
+    setLikes(0)
+    setLiked(false)
+    setComments([])
+    return
+  }
+
+  // Likes count
   // Likes count
     const { count } = await supabase
       .from('likes')
@@ -748,6 +769,11 @@ useEffect(() => {
 }, [])
 
 const toggleLike = async () => {
+
+if (post.is_live === true) {
+  return
+}
+
 if (!user) {
   onRequireAuth?.()
   return
@@ -907,7 +933,16 @@ return (
 
 <PostCardContent
   content={post.content || ''}
-  hasMedia={imageUrls.length > 0 || !!post.video_url}
+  hasMedia={
+    imageUrls.length > 0 ||
+    !!post.video_url
+  }
+  isLive={
+    post?.is_live === true
+  }
+  liveId={
+    post?.live_id ?? null
+  }
 />
 
 <PostCardMedia

@@ -44,11 +44,20 @@ export default function useWalletRealtime({
   walletSetter.current = setWallet
 
   useEffect(() => {
-    if (!userId) return
+    if (!userId) {
+      return
+    }
 
-    console.log("🟢 Wallet Realtime Started:", userId)
+    console.log(
+      "🟢 Wallet Realtime Started:",
+      userId
+    )
 
     let channel: RealtimeChannel
+
+    // ========================================================
+    // CREATE WALLET REALTIME CHANNEL
+    // ========================================================
 
     channel = supabase
       .channel(`wallet:${userId}`)
@@ -62,46 +71,134 @@ export default function useWalletRealtime({
           filter: `user_id=eq.${userId}`,
         },
 
-        (payload: RealtimePostgresChangesPayload<Wallet>) => {
-          console.log("💰 Wallet Event:", payload.eventType)
-          console.log(payload)
+        (
+          payload: RealtimePostgresChangesPayload<Wallet>
+        ) => {
+          console.log(
+            "💰 Wallet Event:",
+            payload.eventType
+          )
 
-          if (payload.eventType === "DELETE") {
+          console.log(
+            "💰 Wallet Payload:",
+            payload
+          )
+
+          // --------------------------------------------------
+          // DELETE
+          // --------------------------------------------------
+
+          if (
+            payload.eventType === "DELETE"
+          ) {
             walletSetter.current(null)
             return
           }
 
+          // --------------------------------------------------
+          // INSERT / UPDATE
+          // --------------------------------------------------
+
           if (payload.new) {
-            walletSetter.current(payload.new)
+            walletSetter.current(
+              payload.new as Wallet
+            )
           }
         }
       )
 
-      .subscribe((status: REALTIME_SUBSCRIBE_STATES) => {
-        console.log("💳 Wallet Channel:", status)
+      // ======================================================
+      // SUBSCRIBE
+      // ======================================================
 
-        if (status === "SUBSCRIBED") {
-          console.log("✅ Wallet realtime connected")
+      .subscribe(
+        (
+          status: REALTIME_SUBSCRIBE_STATES,
+          error?: unknown
+        ) => {
+          console.log(
+            "💳 Wallet Channel:",
+            status
+          )
+
+          // --------------------------------------------------
+          // CONNECTED
+          // --------------------------------------------------
+
+          if (
+            status === "SUBSCRIBED"
+          ) {
+            console.log(
+              "✅ Wallet realtime connected"
+            )
+
+            return
+          }
+
+          // --------------------------------------------------
+          // CHANNEL ERROR
+          // --------------------------------------------------
+
+          if (
+            status === "CHANNEL_ERROR"
+          ) {
+            console.error(
+              "❌ WALLET REALTIME CHANNEL ERROR:",
+              error
+            )
+
+            console.error(
+              "❌ WALLET REALTIME CHANNEL:",
+              channel
+            )
+
+            return
+          }
+
+          // --------------------------------------------------
+          // TIMEOUT
+          // --------------------------------------------------
+
+          if (
+            status === "TIMED_OUT"
+          ) {
+            console.warn(
+              "⌛ Wallet realtime timeout:",
+              error
+            )
+
+            return
+          }
+
+          // --------------------------------------------------
+          // CLOSED
+          // --------------------------------------------------
+
+          if (
+            status === "CLOSED"
+          ) {
+            console.warn(
+              "🔒 Wallet realtime closed"
+            )
+
+            return
+          }
         }
+      )
 
-if (status === "CHANNEL_ERROR") {
-  console.error("❌ Wallet realtime channel error")
-  console.log(channel)
-}
-
-        if (status === "TIMED_OUT") {
-          console.warn("⌛ Wallet realtime timeout")
-        }
-
-        if (status === "CLOSED") {
-          console.warn("🔒 Wallet realtime closed")
-        }
-      })
+    // ========================================================
+    // CLEANUP
+    // ========================================================
 
     return () => {
-      console.log("🛑 Wallet Realtime Stopped")
+      console.log(
+        "🛑 Wallet Realtime Stopped:",
+        userId
+      )
 
-      supabase.removeChannel(channel)
+      supabase.removeChannel(
+        channel
+      )
     }
   }, [userId])
 }

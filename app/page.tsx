@@ -22,6 +22,7 @@ import SplashScreen from './components/SplashScreen'
 import DriverOperationsHub from './components/DriverOperationsHub'
 import { useRouter } from 'next/navigation'
 import DatingCircle from './components/DatingCircle'
+
 type PostType = {
   id: string
   content: string
@@ -30,6 +31,14 @@ type PostType = {
   created_at: string
   username?: string
   avatar_url?: string | null
+
+  // LIVE SESSION
+  is_live?: boolean
+  live_id?: string
+  live_title?: string
+  live_description?: string | null
+  viewer_count?: number
+  location?: string | null
 }
 
 type ImageLikeRow = {
@@ -188,6 +197,114 @@ const onCreateSelect = (
 }
 
 
+
+
+
+const loadLiveSessions = async () => {
+  try {
+    const API_URL =
+      process.env.NEXT_PUBLIC_API_URL ||
+      "http://127.0.0.1:8000"
+
+    const response = await fetch(
+      `${API_URL}/live`,
+      {
+        cache: "no-store",
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(
+        `Live API returned ${response.status}`
+      )
+    }
+
+    const result = await response.json()
+
+    const activeLives = (
+      result.live ?? []
+    ).filter(
+      (live: any) =>
+        live.status === "live"
+    )
+
+    const livePosts: PostType[] =
+      activeLives.map((live: any) => ({
+        id: `live-${live.live_id}`,
+
+        content:
+          live.description ||
+          live.title ||
+          "StreetGO Live",
+
+        user_id:
+          live.host_id,
+
+        username:
+          live.host_name ||
+          "StreetGO User",
+
+        avatar_url:
+          live.avatar_url ||
+          null,
+
+        created_at:
+          live.created_at,
+
+        // IMPORTANT
+        is_live: true,
+
+        live_id:
+          live.live_id,
+
+        live_title:
+          live.title,
+
+        live_description:
+          live.description,
+
+        viewer_count:
+          live.viewer_count || 0,
+
+        location:
+          live.location || null,
+      }))
+
+    setPosts((currentPosts) => {
+      const normalPosts =
+        currentPosts.filter(
+          (post: any) =>
+            !post.is_live
+        )
+
+      return [
+        ...livePosts,
+        ...normalPosts,
+      ]
+    })
+  } catch (error) {
+    console.error(
+      "STREETGO LIVE FEED ERROR:",
+      error
+    )
+  }
+}
+
+
+
+useEffect(() => {
+  loadLiveSessions()
+
+  const interval =
+    setInterval(
+      loadLiveSessions,
+      10000
+    )
+
+  return () => {
+    clearInterval(interval)
+  }
+}, [])
 
   // Fetch unread messages count
 
@@ -410,11 +527,38 @@ const handleSendComment = async (message: string) => {
     .select()
     .single()
 
-  if (error) {
-    console.error("COMMENT ERROR:", error)
-    return
+if (error) {
+  const commentError = {
+    message:
+      error?.message ?? null,
+
+    details:
+      error?.details ?? null,
+
+    hint:
+      error?.hint ?? null,
+
+    code:
+      error?.code ?? null,
+
+    status:
+      error?.status ?? null,
+
+    name:
+      error?.name ?? null,
   }
 
+  console.error(
+    "STREETGO COMMENT ERROR:",
+    JSON.stringify(
+      commentError,
+      null,
+      2
+    )
+  )
+
+  return
+}
   setDiscussionComments(prev => [...prev, data])
 }
 

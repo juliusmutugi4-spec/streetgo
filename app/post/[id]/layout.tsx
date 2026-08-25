@@ -2,32 +2,50 @@ import type { Metadata, Viewport } from "next"
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://streetgo.app"),
+
   title: {
     default: "StreetGO — Discover & Share",
-    template: "%s | StreetGO"
+    template: "%s | StreetGO",
   },
-  description: "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
-  keywords: ["streetgo", "social network", "dispatch posts", "community feeds", "real-time updates"],
+
+  description:
+    "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
+
+  keywords: [
+    "streetgo",
+    "social network",
+    "dispatch posts",
+    "community feeds",
+    "real-time updates",
+  ],
+
   authors: [{ name: "StreetGO Core Team" }],
   creator: "StreetGO",
   publisher: "StreetGO",
+
   robots: {
     index: true,
     follow: true,
     nocache: false,
+
     googleBot: {
       index: true,
       follow: true,
       noimageindex: false,
     },
   },
+
   openGraph: {
     title: "StreetGO — Discover & Share",
-    description: "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
+
+    description:
+      "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
+
     siteName: "StreetGO",
     url: "https://streetgo.app",
     type: "website",
     locale: "en_US",
+
     images: [
       {
         url: "/og-image.png",
@@ -37,19 +55,25 @@ export const metadata: Metadata = {
       },
     ],
   },
+
   twitter: {
     card: "summary_large_image",
     title: "StreetGO — Discover & Share",
-    description: "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
+
+    description:
+      "Immersive community tracking. Discover, document, and dispatch authentic posts instantly on the StreetGO network.",
+
     creator: "@StreetGOApp",
     images: ["/og-image.png"],
   },
+
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon-16x16.png",
     apple: "/apple-touch-icon.png",
   },
-  manifest: "/site.webmanifest"
+
+  manifest: "/site.webmanifest",
 }
 
 export const viewport: Viewport = {
@@ -65,11 +89,34 @@ interface PostLayoutProps {
   children: React.ReactNode
 }
 
-export default function PostLayout({ children }: PostLayoutProps) {
+export default function PostLayout({
+  children,
+}: PostLayoutProps) {
   return (
-    <html lang="en" className="dark scroll-smooth antialiased">
-      <body className="min-h-screen bg-[#05070b] text-zinc-100 selection:bg-rose-500/20 selection:text-rose-400">
-        <main className="relative flex min-h-screen flex-col overflow-x-hidden">
+    <html
+      lang="en"
+      className="dark scroll-smooth antialiased"
+      suppressHydrationWarning
+    >
+      <body
+        className="
+          min-h-screen
+          bg-[#05070b]
+          text-zinc-100
+          selection:bg-rose-500/20
+          selection:text-rose-400
+        "
+        suppressHydrationWarning
+      >
+        <main
+          className="
+            relative
+            flex
+            min-h-screen
+            flex-col
+            overflow-x-hidden
+          "
+        >
           {children}
         </main>
       </body>

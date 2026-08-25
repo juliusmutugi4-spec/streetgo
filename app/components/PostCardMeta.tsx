@@ -32,7 +32,7 @@ export default function PostCardMeta({
   commentsCount,
   onCommentsClick,
 }: PostCardMetaProps) {
-  const totalReactions = likes + reaxCount
+  const totalReactions = likes
 
   const hasContent =
     totalReactions > 0 ||
