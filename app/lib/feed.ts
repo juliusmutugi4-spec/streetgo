@@ -1,6 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { getSupabaseBrowser } from "../lib/supabase-browser"
 
+import type {
+  RealtimePostgresChangesPayload,
+  REALTIME_SUBSCRIBE_STATES,
+} from "@supabase/supabase-js"
+
+
 const LIMIT = 10
 
 // ============================================================
@@ -213,12 +219,13 @@ async function fetchPostsFromSupabase(
   // GET USER IDS
   // ----------------------------------------------------------
 
-  const postUserIds = postsData
-    .map(
-      (post: any) =>
-        post.user_id
-    )
-    .filter(Boolean)
+  const postUserIds =
+    postsData
+      .map(
+        (post: any) =>
+          post.user_id
+      )
+      .filter(Boolean)
 
   // ----------------------------------------------------------
   // GET LIVE HOST IDS
@@ -231,14 +238,15 @@ async function fetchPostsFromSupabase(
   // liveSession.host_id.
   // ----------------------------------------------------------
 
-  const liveHostIds = Array.from(
-    activeLiveSessions.values()
-  )
-    .map(
-      (session) =>
-        session.host_id
+  const liveHostIds =
+    Array.from(
+      activeLiveSessions.values()
     )
-    .filter(Boolean) as string[]
+      .map(
+        (session) =>
+          session.host_id
+      )
+      .filter(Boolean) as string[]
 
   const userIds = [
     ...new Set([
@@ -299,7 +307,10 @@ async function fetchPostsFromSupabase(
 
   const finalPosts: PostType[] = []
 
-  for (const post of postsData as any[]) {
+  for (
+    const post of postsData as any[]
+  ) {
+
     // ========================================================
     // NORMAL POST
     // ========================================================
@@ -365,8 +376,6 @@ async function fetchPostsFromSupabase(
     // REAL BROADCASTER
     // --------------------------------------------------------
     //
-    // THIS IS THE IMPORTANT FIX.
-    //
     // Never use post.user_id for the broadcaster
     // when the post represents a live session.
     //
@@ -375,7 +384,6 @@ async function fetchPostsFromSupabase(
     // liveSession.host_id
     //        ↓
     // profiles
-    //
     // --------------------------------------------------------
 
     const broadcasterProfile =
@@ -464,6 +472,265 @@ async function fetchPostsFromSupabase(
   )
 
   return finalPosts
+}
+
+// ============================================================
+// GET POSTS
+//
+// Compatibility API for Feed.tsx
+// ============================================================
+
+export async function getPosts(
+  cursor: string | null = null
+): Promise<{
+  data: PostType[]
+  error: any
+}> {
+  try {
+    const data =
+      await fetchPostsFromSupabase(
+        cursor
+      )
+
+    return {
+      data,
+      error: null,
+    }
+  } catch (error) {
+    console.error(
+      "STREETGO GET POSTS ERROR:",
+      error
+    )
+
+    return {
+      data: [],
+      error,
+    }
+  }
+}
+
+// ============================================================
+// REALTIME POST INSERTS
+//
+// Compatibility API for Feed.tsx
+// ============================================================
+
+export function subscribeToPosts(
+  onInsert: (post: PostType) => void
+) {
+  const supabase =
+    getSupabaseBrowser()
+
+  const channel =
+    supabase
+      .channel(
+        "streetgo-posts-feed"
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "posts",
+        },
+        async (
+  payload: RealtimePostgresChangesPayload<Record<string, any>>
+) => {
+          try {
+            const insertedPost =
+              payload.new as any
+
+            // =================================================
+            // LIVE POST
+            // =================================================
+
+            if (
+              insertedPost?.live_id
+            ) {
+              const activeLives =
+                await fetchActiveLiveSessions()
+
+              const liveSession =
+                activeLives.get(
+                  insertedPost.live_id
+                )
+
+              // Never inject a dead LIVE.
+              if (!liveSession) {
+                console.log(
+                  "STREETGO REALTIME: ignoring dead LIVE",
+                  insertedPost.live_id
+                )
+
+                return
+              }
+
+              // ------------------------------------------------
+              // REAL BROADCASTER PROFILE
+              // ------------------------------------------------
+
+              let profile:
+                | Profile
+                | undefined
+
+              if (
+                liveSession.host_id
+              ) {
+                const {
+                  data: profileData,
+                  error:
+                    profileError,
+                } =
+                  await supabase
+                    .from(
+                      "profiles"
+                    )
+                    .select(`
+                      id,
+                      username,
+                      avatar_url
+                    `)
+                    .eq(
+                      "id",
+                      liveSession.host_id
+                    )
+                    .maybeSingle()
+
+                if (
+                  profileError
+                ) {
+                  console.error(
+                    "STREETGO REALTIME LIVE PROFILE ERROR:",
+                    profileError
+                  )
+                }
+
+                profile =
+                  profileData ||
+                  undefined
+              }
+
+              const livePost:
+                PostType = {
+                ...insertedPost,
+
+                // REAL BROADCASTER
+                user_id:
+                  liveSession.host_id ??
+                  insertedPost.user_id,
+
+                username:
+                  profile?.username ??
+                  liveSession.host_name ??
+                  "Unknown",
+
+                avatar_url:
+                  profile?.avatar_url ??
+                  null,
+
+                is_live: true,
+
+                viewer_count:
+                  liveSession.viewer_count ??
+                  0,
+              }
+
+              onInsert(
+                livePost
+              )
+
+              return
+            }
+
+            // =================================================
+            // NORMAL POST
+            // =================================================
+
+            let profile:
+              | Profile
+              | undefined
+
+            if (
+              insertedPost?.user_id
+            ) {
+              const {
+                data: profileData,
+                error:
+                  profileError,
+              } =
+                await supabase
+                  .from(
+                    "profiles"
+                  )
+                  .select(`
+                    id,
+                    username,
+                    avatar_url
+                  `)
+                  .eq(
+                    "id",
+                    insertedPost.user_id
+                  )
+                  .maybeSingle()
+
+              if (
+                profileError
+              ) {
+                console.error(
+                  "STREETGO REALTIME PROFILE ERROR:",
+                  profileError
+                )
+              }
+
+              profile =
+                profileData ||
+                undefined
+            }
+
+            const normalPost:
+              PostType = {
+              ...insertedPost,
+
+              username:
+                profile?.username ??
+                "Unknown",
+
+              avatar_url:
+                profile?.avatar_url ??
+                null,
+
+              is_live: false,
+
+              viewer_count: 0,
+            }
+
+            onInsert(
+              normalPost
+            )
+          } catch (error) {
+            console.error(
+              "STREETGO REALTIME POST ERROR:",
+              error
+            )
+          }
+        }
+      )
+      .subscribe(
+        (
+  status: REALTIME_SUBSCRIBE_STATES
+) => {
+          console.log(
+            "STREETGO POSTS REALTIME:",
+            status
+          )
+        }
+      )
+
+  return () => {
+    supabase.removeChannel(
+      channel
+    )
+  }
 }
 
 // ============================================================

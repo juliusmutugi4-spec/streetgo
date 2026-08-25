@@ -2,6 +2,7 @@
 
 import { getSupabaseBrowser } from "../lib/supabase-browser";
 import {
+  Suspense,
   useEffect,
   useState,
 } from "react";
@@ -13,7 +14,9 @@ import {
 import Broadcaster from "./Broadcaster";
 import Viewer from "./Viewer";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL =
+  process.env.NEXT_PUBLIC_ENGINE_URL ||
+  "http://127.0.0.1:8000";
 
 type LiveSession = {
   live_id: string;
@@ -35,7 +38,7 @@ type Profile = {
   avatar_url?: string | null;
 };
 
-export default function LivePage() {
+function LivePageContent() {
   const searchParams = useSearchParams();
 
   const isBroadcaster =
@@ -506,11 +509,21 @@ export default function LivePage() {
       return;
     }
 
-    const ws =
-      new WebSocket(
-        `ws://127.0.0.1:8000/live/${live.live_id}/ws`
-      );
+const wsProtocol =
+  window.location.protocol === "https:"
+    ? "wss:"
+    : "ws:";
 
+const apiUrl =
+  new URL(API_URL);
+
+const wsHost =
+  apiUrl.host;
+
+const ws =
+  new WebSocket(
+    `${wsProtocol}//${wsHost}/live/${live.live_id}/ws`
+  );
     ws.onopen = () => {
       console.log(
         "STREETGO LIVE WEBSOCKET CONNECTED"
@@ -796,4 +809,32 @@ export default function LivePage() {
 
     </main>
   );
+}
+
+export default function LivePage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-black text-white">
+          <div className="mx-auto max-w-5xl px-4 py-8">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
+              <div className="mb-4 text-4xl">
+                📡
+              </div>
+
+              <h1 className="text-2xl font-bold">
+                StreetGo Live
+              </h1>
+
+              <p className="mt-3 text-sm text-zinc-400">
+                Loading StreetGo Live...
+              </p>
+            </div>
+          </div>
+        </main>
+      }
+    >
+      <LivePageContent />
+    </Suspense>
+  )
 }
