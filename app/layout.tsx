@@ -1,12 +1,14 @@
 import './globals.css'
 import 'mapbox-gl/dist/mapbox-gl.css'
+
+import type { Metadata, Viewport } from 'next'
+
 import BreadcrumbSchema from './breadcrumb-schema'
 import Providers from './providers'
 import Schema from './schema'
 import WebsiteSchema from './website-schema'
-import OrganizationSchema from "./organization-schema"
-import WebApplicationSchema from "./webapplication-schema"
-import type { Metadata, Viewport } from 'next'
+import OrganizationSchema from './organization-schema'
+import WebApplicationSchema from './webapplication-schema'
 import KnowledgeGraph from './knowledge-graph'
 import SearchAction from './search-action'
 
@@ -91,8 +93,7 @@ export const metadata: Metadata = {
   },
 
   icons: {
-    icon: '/favicon.ico',
-    apple: '/icon-192.png',
+    icon: '/icon.svg',
   },
 }
 
@@ -103,19 +104,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-<body className="bg-[#060608] text-white transition-colors duration-300">
-{/* <Schema /> */}
-{/* <WebsiteSchema /> */}
-{/* <BreadcrumbSchema /> */}
-{/* <OrganizationSchema /> */}
-{/* <WebApplicationSchema /> */}
-{/* <KnowledgeGraph /> */}
-{/* <SearchAction /> */}
+      <body className="bg-[#060608] text-white transition-colors duration-300">
+        {/* <Schema /> */}
+        {/* <WebsiteSchema /> */}
+        {/* <BreadcrumbSchema /> */}
+        {/* <OrganizationSchema /> */}
+        {/* <WebApplicationSchema /> */}
+        {/* <KnowledgeGraph /> */}
+        {/* <SearchAction /> */}
 
-<Providers>
-  {children}
-</Providers>
-</body>
+        <Providers>
+          {children}
+        </Providers>
+      </body>
     </html>
   )
 }
