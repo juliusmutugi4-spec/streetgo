@@ -145,7 +145,13 @@ if (entry.isIntersecting) {
   return () => observer.disconnect()
 }, [post.id, setActivePostId])
 
+
+
 useEffect(() => {
+  if (post.is_live === true) {
+    return
+  }
+
   loadViewerCount()
 
   const channel = supabase
@@ -167,7 +173,9 @@ useEffect(() => {
   return () => {
     supabase.removeChannel(channel)
   }
-}, [post.id])
+}, [post.id, post.is_live])
+
+
 
 
 useEffect(() => {
@@ -176,47 +184,48 @@ useEffect(() => {
     return
   }
 
-  const registerViewer = async () => {
-if (!user) {
-  console.error("❌ No authenticated user found.")
-  return
-}
-const { data, error } = await supabase
-  .from("post_viewers")
-  .upsert(
-    {
-      post_id: post.id,
-    user_id: user.id,
-      last_seen: new Date().toISOString(),
-    },
-    {
-      onConflict: "post_id,user_id",
-      ignoreDuplicates: true,
-    }
-  )
-  .select()
+  // LIVE sessions do NOT use post_viewers.
+  // Their viewers are handled by the live engine.
+  if (post.is_live === true) {
+    return
+  }
 
-console.log("UPSERT DATA:", data)
-console.log("UPSERT ERROR:", error)
+  const registerViewer = async () => {
+    const { data, error } = await supabase
+      .from("post_viewers")
+      .upsert(
+        {
+          post_id: post.id,
+          user_id: user.id,
+          last_seen: new Date().toISOString(),
+        },
+        {
+          onConflict: "post_id,user_id",
+          ignoreDuplicates: true,
+        }
+      )
+      .select()
+
+    console.log("UPSERT DATA:", data)
+    console.log("UPSERT ERROR:", error)
   }
 
   registerViewer()
 
-
-
   return () => {
-    if (user) {
-      supabase
-        .from("post_viewers")
-        .delete()
-        .eq("post_id", post.id)
-        .eq("user_id", user.id)
-    }
+    supabase
+      .from("post_viewers")
+      .delete()
+      .eq("post_id", post.id)
+      .eq("user_id", user.id)
   }
-}, [isActive, user, post.id])
+}, [isActive, user, post.id, post.is_live])
+
 
 useEffect(() => {
-  if (!isActive || !user) return
+  if (!isActive || !user || post.is_live === true) {
+    return
+  }
 
   const heartbeat = setInterval(async () => {
     await supabase
@@ -229,7 +238,7 @@ useEffect(() => {
   }, 30000)
 
   return () => clearInterval(heartbeat)
-}, [isActive, user, post.id])
+}, [isActive, user, post.id, post.is_live])
 
 
 useEffect(() => {
@@ -648,6 +657,8 @@ useEffect(() => {
 }, [post.username, post.avatar_url])
 
   // Live comments subscription
+
+  
   useEffect(() => {
     const channel = supabase
       .channel(`comments-${post.id}`)
