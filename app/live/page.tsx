@@ -16,7 +16,7 @@ import Viewer from "./Viewer";
 
 const API_URL =
   process.env.NEXT_PUBLIC_ENGINE_URL ||
-  "http://127.0.0.1:8000";
+  process.env.NEXT_PUBLIC_ENGINE_URL!;
 
 type LiveSession = {
   live_id: string;
@@ -840,3 +840,4 @@ export default function LivePage() {
     </Suspense>
   )
 }
+

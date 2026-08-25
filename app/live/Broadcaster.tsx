@@ -10,7 +10,7 @@ import {
 
 import { useAuth } from "../hooks/useAuth";
 
-const API_URL = "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_ENGINE_URL!;
 
 interface BroadcasterProps {
   liveId?: string;

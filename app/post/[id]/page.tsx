@@ -8,7 +8,7 @@ import Viewer from '../../live/Viewer'
 
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL ||
-  'http://127.0.0.1:8000'
+  'https://streetgo-dating-engine.onrender.com'
 
 interface LiveSession {
   live_id: string
