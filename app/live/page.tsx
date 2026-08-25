@@ -107,13 +107,15 @@ function LivePageContent() {
           "STREETGO: GETTING CURRENT USER"
         );
 
-        const {
-          data: {
-            user,
-          },
-          error: authError,
-        } =
-          await supabase.auth.getUser();
+const {
+  data: {
+    session,
+  },
+  error: authError,
+} =
+  await supabase.auth.getSession();
+
+const user = session?.user ?? null;
 
         if (authError) {
           throw new Error(

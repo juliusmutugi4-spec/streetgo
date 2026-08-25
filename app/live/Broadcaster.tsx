@@ -1,10 +1,14 @@
 "use client";
 
+"use client";
+
 import {
   useEffect,
   useRef,
   useState,
 } from "react";
+
+import { useAuth } from "../hooks/useAuth";
 
 const API_URL = "http://localhost:8000";
 
@@ -34,6 +38,9 @@ interface LiveResponse {
 export default function Broadcaster({
   liveId: initialLiveId,
 }: BroadcasterProps) {
+
+    const { user, profile } = useAuth();
+
   const videoRef =
     useRef<HTMLVideoElement | null>(null);
 
@@ -129,6 +136,22 @@ export default function Broadcaster({
    */
 
   async function createLiveSession(): Promise<string> {
+
+    if (!user?.id) {
+      throw new Error(
+        "You must be logged in to start a live broadcast."
+      );
+    }
+
+    if (!profile?.username) {
+      throw new Error(
+        "Your StreetGO username could not be loaded."
+      );
+    }
+
+
+
+
     console.log(
       "STREETGO: CREATING LIVE SESSION..."
     );
@@ -143,23 +166,22 @@ export default function Broadcaster({
             "Content-Type":
               "application/json",
           },
+body: JSON.stringify({
+  title:
+    "StreetGo Live Camera",
 
-          body: JSON.stringify({
-            title:
-              "StreetGo Live Camera",
+  description:
+    "",
 
-            description:
-              "",
+  host_id:
+    user.id,
 
-            host_id:
-              "test-host-001",
+  host_name:
+    profile.username,
 
-            host_name:
-              "StreetGo Reporter",
-
-            location:
-              "Nairobi, Kenya",
-          }),
+location:
+  null,
+}),
         }
       );
 
