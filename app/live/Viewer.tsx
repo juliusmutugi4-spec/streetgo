@@ -733,81 +733,73 @@ export default function Viewer({
          * CONNECTION STATE
          * =====================================================
          */
+peer.onconnectionstatechange =
+  () => {
+    console.log(
+      "STREETGO VIEWER WEBRTC STATE:",
+      peer.connectionState
+    );
 
-        peer.onconnectionstatechange =
-          () => {
-            console.log(
-              "STREETGO VIEWER WEBRTC STATE:",
-              peer.connectionState
-            );
+    if (
+      cancelled ||
+      cancelledRef.current
+    ) {
+      return;
+    }
 
-            if (
-              cancelled ||
-              cancelledRef.current
-            ) {
-              return;
-            }
+    if (
+      peer.connectionState ===
+      "connected"
+    ) {
+      setConnected(true);
+      setConnecting(false);
 
-            if (
-              peer.connectionState ===
-              "connected"
-            ) {
-              setConnected(true);
-              setConnecting(false);
+      console.log(
+        "STREETGO VIEWER CONNECTION ESTABLISHED"
+      );
 
-              console.log(
-                "STREETGO VIEWER CONNECTION ESTABLISHED"
-              );
+      syncReceiverTracks(peer);
 
-              /*
-               * Sync tracks after connection.
-               */
-              syncReceiverTracks(
-                peer
-              );
+      void playRemoteVideo();
+    }
 
-              /*
-               * Try playback once tracks
-               * are available.
-               */
-              void playRemoteVideo();
-            }
+    /*
+     * IMPORTANT:
+     * WebRTC disconnected/failed does NOT automatically
+     * mean the StreetGO live session has ended.
+     */
 
-            if (
-              peer.connectionState ===
-                "failed" ||
-              peer.connectionState ===
-                "closed" ||
-              peer.connectionState ===
-                "disconnected"
-            ) {
-              setConnected(false);
-              setConnecting(false);
+    if (
+      peer.connectionState ===
+      "failed" ||
+      peer.connectionState ===
+      "disconnected"
+    ) {
+      setConnected(false);
+      setConnecting(false);
 
-              console.log(
-                "STREETGO LIVE STREAM ENDED OR DISCONNECTED"
-              );
+      console.warn(
+        "STREETGO VIEWER WEBRTC CONNECTION LOST:",
+        peer.connectionState
+      );
 
-              if (
-                videoRef.current
-              ) {
-                videoRef.current.pause();
+      setError(
+        "Live connection interrupted. The broadcaster may still be live."
+      );
+    }
 
-                videoRef.current.srcObject =
-                  null;
-              }
+    if (
+      peer.connectionState ===
+      "closed"
+    ) {
+      setConnected(false);
+      setConnecting(false);
 
-              remoteStreamRef.current =
-                null;
-
-              setHasVideo(false);
-
-              setError(
-                "The StreetGo Live stream has ended."
-              );
-            }
-          };
-
+      console.log(
+        "STREETGO VIEWER WEBRTC PEER CLOSED"
+      );
+    }
+  };
         /*
          * =====================================================
          * ICE STATE
