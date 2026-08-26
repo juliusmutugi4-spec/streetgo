@@ -52,8 +52,8 @@ const loadSequence = useRef(0)
     useState(true)
 
   useEffect(() => {
-    console.log("🔥 useFinance effect started")
-    console.log("AUTHORIZED =", authorized)
+    
+    
 
     if (!authorized) {
       return
@@ -78,13 +78,10 @@ async function loadFinance() {
           "get_finance_summary"
         )
 
-console.log("🔥 FINANCE SUMMARY DATA:", summaryData)
+
 
         if (summaryError) {
-          console.log(
-            "FINANCE SUMMARY ERROR:",
-            summaryError
-          )
+          
 
           if (!cancelled) {
             setLoading(false)
@@ -120,10 +117,7 @@ console.log("🔥 FINANCE SUMMARY DATA:", summaryData)
           .limit(20)
 
         if (transactionError) {
-          console.log(
-            "TRANSACTION ERROR:",
-            transactionError
-          )
+          
 
           if (!cancelled) {
             setLoading(false)
@@ -145,12 +139,9 @@ console.log("🔥 FINANCE SUMMARY DATA:", summaryData)
 
         const user =
           sessionData.session?.user
-console.log("🔥 FINANCE AUTH USER ID:", user?.id)
+
         if (sessionError || !user) {
-          console.log(
-            "NO AUTHENTICATED ADMIN",
-            sessionError
-          )
+          
 
           if (!cancelled) {
             setLoading(false)
@@ -175,21 +166,12 @@ console.log("🔥 FINANCE AUTH USER ID:", user?.id)
           }
         )
 
-        console.log(
-          "🔥 ADMIN PENDING WITHDRAWALS:",
-          withdrawalData
-        )
+        
 
-        console.log(
-          "🔥 ADMIN WITHDRAWAL ERROR:",
-          withdrawalError
-        )
+        
 
         if (withdrawalError) {
-          console.log(
-            "WITHDRAWAL ERROR:",
-            withdrawalError
-          )
+          
 
           if (!cancelled) {
             setLoading(false)
@@ -214,21 +196,12 @@ console.log("🔥 FINANCE AUTH USER ID:", user?.id)
           }
         )
 
-        console.log(
-          "🔥 RAW WITHDRAWAL HISTORY:",
-          withdrawalHistoryData
-        )
+        
 
-        console.log(
-          "🔥 WITHDRAWAL HISTORY ERROR:",
-          withdrawalHistoryError
-        )
+        
 
         if (withdrawalHistoryError) {
-          console.log(
-            "WITHDRAWAL HISTORY ERROR:",
-            withdrawalHistoryError
-          )
+          
 
           if (!cancelled) {
             setLoading(false)
@@ -260,10 +233,7 @@ console.log("🔥 FINANCE AUTH USER ID:", user?.id)
             }
           )
 
-        console.log(
-          "🔥 CLEAN WITHDRAWAL HISTORY:",
-          cleanWithdrawalHistory
-        )
+        
 
         /*
         =====================================================
@@ -279,10 +249,7 @@ console.log("🔥 FINANCE AUTH USER ID:", user?.id)
         )
 
         if (revenueError) {
-          console.log(
-            "REVENUE CHART ERROR:",
-            revenueError
-          )
+          
         }
 
         /*
@@ -427,10 +394,7 @@ if (
               Record<string, unknown>
             >
           ) => {
-            console.log(
-              "SYSTEM EVENT:",
-              payload
-            )
+            
           }
         )
         .on(
@@ -445,10 +409,7 @@ if (
               Record<string, unknown>
             >
           ) => {
-            console.log(
-              "📢 TRANSACTION CHANGED:",
-              payload
-            )
+            
 
             loadFinance()
           }
@@ -457,10 +418,7 @@ if (
           (
             status: RealtimeChannel["state"]
           ) => {
-            console.log(
-              "REALTIME STATUS:",
-              status
-            )
+            
           }
         )
 
@@ -481,9 +439,7 @@ if (
             table: "withdrawal_requests",
           },
           () => {
-            console.log(
-              "📢 WITHDRAWAL CHANGED"
-            )
+            
 
             loadFinance()
           }
@@ -492,10 +448,7 @@ if (
           (
             status: RealtimeChannel["state"]
           ) => {
-            console.log(
-              "WITHDRAWAL REALTIME:",
-              status
-            )
+            
           }
         )
 

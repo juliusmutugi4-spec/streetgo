@@ -13,25 +13,25 @@ export default function VideoPortal({
   startTime,
   onClose,
 }: VideoPortalProps) {
-console.log("VideoPortal videos:", videos)
+
 const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
 
 useEffect(() => {
-  console.log("Refs:", videoRefs.current)
+  
 
   const video = videoRefs.current[0]
 
   if (!video) {
-    console.log("FIRST VIDEO REF IS NULL")
+    
     return
   }
 
-  console.log("FOUND VIDEO:", video)
+  
 
   video.currentTime = startTime
 
   video.play().catch((err) => {
-    console.log("PLAY ERROR:", err)
+    
   })
 }, [startTime, videos])
 

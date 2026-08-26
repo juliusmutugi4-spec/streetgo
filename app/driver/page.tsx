@@ -86,7 +86,7 @@ setRequests(prev =>
 
 if (error) {
   alert(JSON.stringify(error))
-  console.log(error)
+  
   return
 }
 
@@ -148,8 +148,8 @@ async function loadDriver() {
     .eq('user_id', user.id)
     .maybeSingle()
 
-  console.log('USER ID:', user.id)
-  console.log('DRIVER DATA:', data)
+  
+  
 
   if (!data) return
 
@@ -167,7 +167,7 @@ setVehicleType(data.vehicle_type)
 
 if (!existing) {
 
-  console.log("Creating driver_locations row...")
+  
 
   const { error: insertError } = await supabase
     .from('driver_locations')
@@ -178,7 +178,7 @@ if (!existing) {
       online: false
     })
 
-  console.log("INSERT ERROR:", insertError)
+  
 
   setOnline(false)
 }
@@ -213,7 +213,7 @@ await supabase
 
 
   if (error) {
-    console.log(error)
+    
     alert(error.message)
   }
 }
@@ -257,7 +257,7 @@ await supabase
   })
   .eq('driver_id', driverId)
     },
-    (error) => console.log(error),
+    (error) => {},
     {
       enableHighAccuracy: true
     }

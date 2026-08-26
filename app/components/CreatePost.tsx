@@ -112,14 +112,9 @@ export default function CreatePost({
       try {
         setGeneratingThumbnail(true)
 
-        console.log(
-          '🎬 StreetGO: generating thumbnail...'
-        )
+        
 
-        console.log(
-          'Video:',
-          video.name
-        )
+        
 
         const thumbnail =
           await generateVideoThumbnail(video)
@@ -135,9 +130,7 @@ export default function CreatePost({
 
         setThumbnailPreview(previewUrl)
 
-        console.log(
-          '✅ StreetGO: thumbnail generated'
-        )
+        
       } catch (error) {
         if (cancelled) {
           return
@@ -201,47 +194,21 @@ export default function CreatePost({
       const { data } =
         await supabase.auth.getSession()
 
-      console.log(
-        'SESSION:',
-        data.session
-          ? 'YES'
-          : 'NO'
-      )
+      
 
-      console.log(
-        'USER:',
-        data.session?.user?.id ??
-          'NONE'
-      )
+      
 
       // =================================================
       // DEBUG
       // =================================================
 
-      console.log(
-        'Images:',
-        images.length
-      )
+      
 
-      console.log(
-        'Video:',
-        video
-          ? video.name
-          : 'NONE'
-      )
+      
 
-      console.log(
-        'Thumbnail:',
-        videoThumbnail
-          ? 'GENERATED'
-          : 'NONE'
-      )
+      
 
-      console.log(
-        'Total files:',
-        images.length +
-          (video ? 1 : 0)
-      )
+      
 
       // =================================================
       // UPLOAD
@@ -344,10 +311,7 @@ Hint: ${error?.hint ?? 'none'}
           },
         } as any)
 
-      console.log(
-        'UPLOAD COMPLETE',
-        post
-      )
+      
     } finally {
       setUploading(false)
 

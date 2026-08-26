@@ -113,7 +113,7 @@ const loadProfile = async () => {
 // Load logged in account
 const loggedUser = await getCurrentUser()
 
-console.log("CURRENT ACCOUNT:", loggedUser)
+
 
 setCurrentUser(loggedUser)
 
@@ -141,13 +141,10 @@ setCurrentUser(loggedUser)
   // Set profile data in state
 setProfile(profileData)
 
-console.log("PROFILE OWNER CHECK")
-console.log("Logged user:", loggedUser?.id)
-console.log("Profile id:", profileData.id)
-console.log(
-  "IS OWNER:",
-  loggedUser?.id === profileData.id
-)
+
+
+
+
 
 const { data: walletData, error: walletError } = await supabase
   .from("wallets")
@@ -156,7 +153,7 @@ const { data: walletData, error: walletError } = await supabase
   .maybeSingle()
 
 if (walletError) {
-  console.log("No wallet yet:", walletError.message)
+  
 }
 
 setWallet(walletData || null)
@@ -390,7 +387,7 @@ const toggleFollow = async () => {
 
 
   if(currentUser.id === profile.id){
-    console.log("Cannot follow yourself")
+    
     return
   }
   if (!currentUser || !profile) return
@@ -427,7 +424,7 @@ if (!error) {
       message: `${currentUser.email || 'Someone'} followed you`,
     })
 
-  console.log('NOTIFICATION ERROR:', notificationError)
+  
 }
 
 

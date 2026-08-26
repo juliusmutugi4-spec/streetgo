@@ -88,10 +88,7 @@ export async function GET() {
     if(error){
 
 
-      console.log(
-        "SUPABASE ERROR:",
-        error
-      );
+      
 
 
       return NextResponse.json(
@@ -127,10 +124,7 @@ export async function GET() {
   } catch(error){
 
 
-    console.log(
-      "SERVER ERROR:",
-      error
-    );
+    
 
 
     return NextResponse.json(

@@ -23,7 +23,7 @@ export function useAuth() {
 
 
     if(error){
-      console.log("Unread messages error:", error)
+      
     }
 
     setUnreadCount(count || 0)
@@ -32,7 +32,7 @@ export function useAuth() {
 
 
   const loadProfile = async (userId: string) => {
-console.log("LOADING PROFILE FOR:", userId)
+
     const { data, error } = await supabase
       .from("profiles")
       .select(`
@@ -47,12 +47,12 @@ console.log("LOADING PROFILE FOR:", userId)
 
 
     if(error){
-      console.log("Profile load error:", error)
+      
     }
 
 
     setProfile(data)
-console.log("PROFILE FROM DATABASE:", data)
+
     await fetchUnreadMessages(userId)
 
   }
@@ -94,7 +94,7 @@ console.log("PROFILE FROM DATABASE:", data)
 
 
     if(error){
-      console.log("Logout error:", error)
+      
     }
 
 

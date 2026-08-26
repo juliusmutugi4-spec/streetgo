@@ -11,8 +11,8 @@ if (!getApps().length) {
     }),
   });
 }
-console.log("URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log("SERVICE KEY EXISTS:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL) {
   throw new Error("NEXT_PUBLIC_SUPABASE_URL is missing");
@@ -47,9 +47,9 @@ const { data, error } = await supabase
   .select("*")
   .eq("user_id", user_id);
 
-console.log("USER_ID:", user_id);
-console.log("DATA:", data);
-console.log("ERROR:", error);
+
+
+
 
 if (error || !data) {
   return NextResponse.json(
@@ -61,7 +61,7 @@ if (error || !data) {
   );
 }
 
-console.log('Sending notification...')
+
 
 
 
@@ -75,7 +75,7 @@ data: {
   ride_id: ride_id || "",
 },
 })
-console.log('MESSAGE ID:', messageId)
+
     return NextResponse.json({
       success: true,
       messageId,

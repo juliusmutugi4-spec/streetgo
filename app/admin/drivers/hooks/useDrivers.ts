@@ -35,7 +35,7 @@ const typedDrivers = (data ?? []) as Driver[]
 
     if(error){
 
-      console.log(error)
+      
 
       setLoading(false)
 

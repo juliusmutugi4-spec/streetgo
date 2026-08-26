@@ -15,7 +15,7 @@ export async function getWalletByTransaction(
   walletId: string
 ) {
   if (!walletId) {
-    console.log("NO WALLET ID")
+    
     return null
   }
 
@@ -31,7 +31,7 @@ export async function getWalletByTransaction(
     .single()
 
   if (error) {
-    console.log("WALLET ERROR:", error)
+    
     return null
   }
 
@@ -43,7 +43,7 @@ export async function freezeWallet(
   adminId: string
 ) {
   if (!walletId) {
-    console.log("NO WALLET ID")
+    
     return false
   }
 
@@ -59,7 +59,7 @@ export async function freezeWallet(
     .eq("id", walletId)
 
   if (error) {
-    console.log("FREEZE WALLET ERROR:", error)
+    
     return false
   }
 
@@ -85,17 +85,17 @@ export async function markWithdrawalPaid(
   mpesaMessage: string
 ) {
   if (!withdrawalId || !adminId) {
-    console.log("MISSING WITHDRAWAL OR ADMIN ID")
+    
     return false
   }
 
   if (!mpesaReceipt.trim()) {
-    console.log("M-PESA RECEIPT REQUIRED")
+    
     return false
   }
 
   if (!mpesaMessage.trim()) {
-    console.log("M-PESA CONFIRMATION MESSAGE REQUIRED")
+    
     return false
   }
 
@@ -135,12 +135,12 @@ export async function rejectWithdrawal(
   reason: string
 ) {
   if (!withdrawalId || !adminId) {
-    console.log("MISSING WITHDRAWAL OR ADMIN ID")
+    
     return false
   }
 
   if (!reason.trim()) {
-    console.log("REJECTION REASON REQUIRED")
+    
     return false
   }
 
@@ -205,9 +205,7 @@ export async function reassignWithdrawal(
     !superAdminId ||
     !newAdminId
   ) {
-    console.log(
-      "MISSING REASSIGNMENT INFORMATION"
-    )
+    
 
     return false
   }

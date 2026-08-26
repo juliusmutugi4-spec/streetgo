@@ -103,9 +103,7 @@ function LivePageContent() {
         const supabase =
           getSupabaseBrowser();
 
-        console.log(
-          "STREETGO: GETTING CURRENT USER"
-        );
+        
 
 const {
   data: {
@@ -129,13 +127,7 @@ const user = session?.user ?? null;
           );
         }
 
-        console.log(
-          "STREETGO AUTH USER:",
-          {
-            id: user.id,
-            email: user.email,
-          }
-        );
+        
 
         /*
          * ====================================================
@@ -143,9 +135,7 @@ const user = session?.user ?? null;
          * ====================================================
          */
 
-        console.log(
-          "STREETGO: LOADING BROADCASTER PROFILE"
-        );
+        
 
         const {
           data: profile,
@@ -188,19 +178,7 @@ const user = session?.user ?? null;
         const broadcasterProfile =
           profile as Profile;
 
-        console.log(
-          "STREETGO BROADCASTER PROFILE:",
-          {
-            id:
-              broadcasterProfile.id,
-
-            username:
-              broadcasterProfile.username,
-
-            avatar:
-              broadcasterProfile.avatar_url,
-          }
-        );
+        
 
         /*
          * ====================================================
@@ -208,9 +186,7 @@ const user = session?.user ?? null;
          * ====================================================
          */
 
-        console.log(
-          "STREETGO: CREATING LIVE SESSION"
-        );
+        
 
         const createResponse =
           await fetch(
@@ -260,10 +236,7 @@ const user = session?.user ?? null;
         const createResult =
           await createResponse.json();
 
-        console.log(
-          "STREETGO LIVE CREATED:",
-          createResult
-        );
+        
 
         const createdLive =
           createResult.live as LiveSession;
@@ -280,10 +253,7 @@ const user = session?.user ?? null;
          * ====================================================
          */
 
-        console.log(
-          "STREETGO: STARTING LIVE SESSION:",
-          createdLive.live_id
-        );
+        
 
         const startResponse =
           await fetch(
@@ -305,10 +275,7 @@ const user = session?.user ?? null;
         const startResult =
           await startResponse.json();
 
-        console.log(
-          "STREETGO LIVE STARTED:",
-          startResult
-        );
+        
 
         const startedLive =
           startResult.live as LiveSession;
@@ -349,19 +316,7 @@ const user = session?.user ?? null;
           finalLive.viewer_count ?? 0
         );
 
-        console.log(
-          "STREETGO BROADCASTER READY:",
-          {
-            liveId:
-              finalLive.live_id,
-
-            userId:
-              user.id,
-
-            username:
-              broadcasterProfile.username,
-          }
-        );
+        
 
       } catch (err) {
         console.error(
@@ -458,19 +413,7 @@ const user = session?.user ?? null;
           activeSession.viewer_count ?? 0
         );
 
-        console.log(
-          "STREETGO ACTIVE LIVE:",
-          {
-            liveId:
-              activeSession.live_id,
-
-            hostId:
-              activeSession.host_id,
-
-            hostName:
-              activeSession.host_name,
-          }
-        );
+        
 
       } catch (err) {
         console.error(
@@ -527,9 +470,7 @@ const ws =
     `${wsProtocol}//${wsHost}/live/${live.live_id}/ws`
   );
     ws.onopen = () => {
-      console.log(
-        "STREETGO LIVE WEBSOCKET CONNECTED"
-      );
+      
 
       setConnected(true);
     };
@@ -539,10 +480,7 @@ const ws =
         const message =
           JSON.parse(event.data);
 
-        console.log(
-          "STREETGO LIVE EVENT:",
-          message
-        );
+        
 
         if (
           message.type ===
@@ -573,9 +511,7 @@ const ws =
     };
 
     ws.onclose = () => {
-      console.log(
-        "STREETGO LIVE WEBSOCKET DISCONNECTED"
-      );
+      
 
       setConnected(false);
     };

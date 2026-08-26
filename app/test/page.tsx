@@ -37,7 +37,7 @@ export default function TestPage() {
       }),
     })
 
-    console.log(await res.json())
+    
   }
 
   return (

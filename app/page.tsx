@@ -74,7 +74,7 @@ const {
   handleLogout,
 } = useAuth()
 
-console.log("PROFILE:", profile)
+
   const [showLogin, setShowLogin] = useState(false)
 
   
@@ -353,7 +353,7 @@ useEffect(() => {
       try {
   await registerPushNotifications();
 } catch(err) {
-  console.log("Push skipped", err)
+  
 }
       if (!isMounted) return;
 

@@ -86,10 +86,7 @@ export default function Broadcaster({
   async function getLiveSession(
     id: string
   ): Promise<LiveSession> {
-    console.log(
-      "STREETGO: CHECKING LIVE SESSION:",
-      id
-    );
+    
 
     const response =
       await fetch(
@@ -121,10 +118,7 @@ export default function Broadcaster({
       );
     }
 
-    console.log(
-      "STREETGO: LIVE SESSION STATUS:",
-      result.live.status
-    );
+    
 
     return result.live;
   }
@@ -152,9 +146,7 @@ export default function Broadcaster({
 
 
 
-    console.log(
-      "STREETGO: CREATING LIVE SESSION..."
-    );
+    
 
     const response =
       await fetch(
@@ -197,10 +189,7 @@ location:
     const result =
       await response.json();
 
-    console.log(
-      "STREETGO LIVE SESSION CREATED:",
-      result
-    );
+    
 
     const newLiveId =
       result?.live?.live_id;
@@ -226,10 +215,7 @@ location:
   async function startLiveSession(
     id: string
   ) {
-    console.log(
-      "STREETGO: STARTING LIVE SESSION:",
-      id
-    );
+    
 
     const response =
       await fetch(
@@ -251,10 +237,7 @@ location:
     const result =
       await response.json();
 
-    console.log(
-      "STREETGO LIVE SESSION STARTED:",
-      result
-    );
+    
   }
 
   /*
@@ -280,9 +263,7 @@ location:
      */
 
     if (!liveId) {
-      console.log(
-        "STREETGO: NO LIVE ID."
-      );
+      
 
       liveId =
         await createLiveSession();
@@ -334,9 +315,7 @@ location:
       session.status ===
       "live"
     ) {
-      console.log(
-        "STREETGO: SESSION IS ALREADY LIVE."
-      );
+      
 
       return liveId;
     }
@@ -349,9 +328,7 @@ location:
       session.status ===
       "created"
     ) {
-      console.log(
-        "STREETGO: SESSION EXISTS BUT IS NOT LIVE."
-      );
+      
 
       await startLiveSession(
         liveId
@@ -368,9 +345,7 @@ location:
       session.status ===
       "ended"
     ) {
-      console.log(
-        "STREETGO: SESSION HAS ENDED."
-      );
+      
 
       liveId =
         await createLiveSession();
@@ -399,17 +374,13 @@ location:
 
   async function startCamera() {
     if (startingRef.current) {
-      console.log(
-        "STREETGO: START ALREADY IN PROGRESS."
-      );
+      
 
       return;
     }
 
     if (cameraOn) {
-      console.log(
-        "STREETGO: CAMERA IS ALREADY ON."
-      );
+      
 
       return;
     }
@@ -425,17 +396,11 @@ location:
       setConnecting(true);
       setConnected(false);
 
-      console.log(
-        "======================================"
-      );
+      
 
-      console.log(
-        "STREETGO START LIVE"
-      );
+      
 
-      console.log(
-        "======================================"
-      );
+      
 
       /*
        * ========================================================
@@ -449,10 +414,7 @@ location:
       liveIdRef.current =
         liveId;
 
-      console.log(
-        "STREETGO ACTIVE LIVE ID:",
-        liveId
-      );
+      
 
       /*
        * ========================================================
@@ -460,9 +422,7 @@ location:
        * ========================================================
        */
 
-      console.log(
-        "STREETGO: REQUESTING CAMERA + MICROPHONE..."
-      );
+      
 
       const stream =
         await navigator.mediaDevices.getUserMedia(
@@ -513,19 +473,11 @@ location:
 
       setCameraOn(true);
 
-      console.log(
-        "STREETGO CAMERA STARTED"
-      );
+      
 
-      console.log(
-        "Video tracks:",
-        stream.getVideoTracks()
-      );
+      
 
-      console.log(
-        "Audio tracks:",
-        stream.getAudioTracks()
-      );
+      
 
       /*
        * ========================================================
@@ -533,8 +485,17 @@ location:
        * ========================================================
        */
 
-      const peer =
-        new RTCPeerConnection();
+const peer =
+  new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: "stun:stun.l.google.com:19302",
+      },
+      {
+        urls: "stun:stun1.l.google.com:19302",
+      },
+    ],
+  });
 
       peerRef.current =
         peer;
@@ -549,11 +510,7 @@ location:
         .getTracks()
         .forEach(
           (track) => {
-            console.log(
-              "STREETGO: ADDING TRACK:",
-              track.kind,
-              track.id
-            );
+            
 
             peer.addTrack(
               track,
@@ -570,10 +527,7 @@ location:
 
       peer.onconnectionstatechange =
         () => {
-          console.log(
-            "STREETGO WEBRTC STATE:",
-            peer.connectionState
-          );
+          
 
           if (
             peer.connectionState ===
@@ -582,9 +536,7 @@ location:
             setConnected(true);
             setConnecting(false);
 
-            console.log(
-              "STREETGO BROADCAST IS CONNECTED"
-            );
+            
           }
 
           if (
@@ -595,18 +547,14 @@ location:
           ) {
             setConnected(false);
 
-            console.log(
-              "STREETGO BROADCAST WEBRTC FAILED/CLOSED"
-            );
+            
           }
 
           if (
             peer.connectionState ===
             "disconnected"
           ) {
-            console.log(
-              "STREETGO BROADCAST WEBRTC DISCONNECTED"
-            );
+            
           }
         };
 
@@ -618,10 +566,7 @@ location:
 
       peer.oniceconnectionstatechange =
         () => {
-          console.log(
-            "STREETGO BROADCAST ICE STATE:",
-            peer.iceConnectionState
-          );
+          
         };
 
       /*
@@ -632,10 +577,7 @@ location:
 
       peer.onicegatheringstatechange =
         () => {
-          console.log(
-            "STREETGO BROADCAST ICE GATHERING:",
-            peer.iceGatheringState
-          );
+          
         };
 
       /*
@@ -646,10 +588,7 @@ location:
 
       peer.onsignalingstatechange =
         () => {
-          console.log(
-            "STREETGO BROADCAST SIGNALING:",
-            peer.signalingState
-          );
+          
         };
 
       /*
@@ -658,9 +597,7 @@ location:
        * ========================================================
        */
 
-      console.log(
-        "STREETGO: CREATING WEBRTC OFFER..."
-      );
+      
 
       const offer =
         await peer.createOffer();
@@ -675,9 +612,7 @@ location:
        * ========================================================
        */
 
-      console.log(
-        "STREETGO: WAITING FOR ICE..."
-      );
+      
 
       await waitForIceGatheringComplete(
         peer
@@ -692,9 +627,7 @@ location:
         );
       }
 
-      console.log(
-        "STREETGO WEBRTC OFFER CREATED"
-      );
+      
 
       /*
        * ========================================================
@@ -705,10 +638,7 @@ location:
       const webrtcUrl =
         `${API_URL}/live/webrtc/offer`;
 
-      console.log(
-        "STREETGO WEBRTC API:",
-        webrtcUrl
-      );
+      
 
       const response =
         await fetch(
@@ -749,10 +679,7 @@ location:
       const answer =
         await response.json();
 
-      console.log(
-        "STREETGO WEBRTC ANSWER:",
-        answer
-      );
+      
 
       /*
        * ========================================================
@@ -785,9 +712,7 @@ location:
         }
       );
 
-      console.log(
-        "STREETGO WEBRTC ANSWER APPLIED"
-      );
+      
 
       /*
        * ========================================================
@@ -860,9 +785,7 @@ location:
       streamRef.current;
 
     if (stream) {
-      console.log(
-        "STREETGO: STOPPING MEDIA TRACKS..."
-      );
+      
 
       stream
         .getTracks()
@@ -905,9 +828,7 @@ location:
     try {
       setError("");
 
-      console.log(
-        "STREETGO: STOPPING LIVE..."
-      );
+      
 
       /*
        * ========================================================
@@ -974,10 +895,7 @@ location:
             const result =
               await response.json();
 
-            console.log(
-              "STREETGO LIVE SESSION STOPPED:",
-              result
-            );
+            
           }
         } catch (err) {
           console.error(
@@ -1000,9 +918,7 @@ location:
       setConnected(false);
       setConnecting(false);
 
-      console.log(
-        "STREETGO CAMERA STOPPED"
-      );
+      
 
     } catch (err) {
       console.error(
@@ -1034,9 +950,7 @@ location:
 
   useEffect(() => {
     return () => {
-      console.log(
-        "STREETGO BROADCASTER UNMOUNTING"
-      );
+      
 
       const peer =
         peerRef.current;

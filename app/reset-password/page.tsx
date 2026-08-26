@@ -40,10 +40,7 @@ useEffect(() => {
 
     if(error){
 
-      console.log(
-        "RECOVERY ERROR",
-        error
-      )
+      
 
       setErrorMsg(
         "Reset link expired. Request a new one."
@@ -55,10 +52,7 @@ useEffect(() => {
 
     if(data.session){
 
-      console.log(
-        "RECOVERY READY",
-        data.session.user.email
-      )
+      
 
       setRecoveryReady(true)
 

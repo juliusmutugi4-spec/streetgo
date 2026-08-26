@@ -143,10 +143,7 @@ avatar_url
 if(error){
 
 
-console.log(
-"ACCEPT ERROR:",
-error
-)
+
 
 
 
@@ -303,10 +300,7 @@ connection:data
 catch(error){
 
 
-console.log(
-"SERVER ERROR:",
-error
-)
+
 
 
 return NextResponse.json(

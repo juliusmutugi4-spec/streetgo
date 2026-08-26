@@ -25,10 +25,7 @@ import {
 export default function FinancePage() {
   const supabase = getSupabaseBrowser()
 
-console.log(
-  "🔥 FINANCE SUPABASE URL:",
-  process.env.NEXT_PUBLIC_SUPABASE_URL
-)
+
   const router = useRouter()
 
   // State Management
@@ -96,10 +93,7 @@ const {
   extraFinance,
   loading,
 } = useFinance(authorized)
-console.log(
-  "🔥 FINANCE WITHDRAWAL HISTORY:",
-  withdrawalHistory
-)
+
   // 1. Secure Access Verification Flow
   useEffect(() => {
     if (authChecked.current) return
@@ -219,10 +213,7 @@ useEffect(() => {
   updated_by: string | null
   updated_at: string
 }>) => {
-        console.log(
-          "🔥 FINANCE QUEUE REALTIME EVENT:",
-          payload
-        )
+        
 
         const updated =
           payload.new as {
@@ -235,10 +226,7 @@ useEffect(() => {
       }
     )
   .subscribe((status: string) => {
-      console.log(
-        "🔥 FINANCE QUEUE REALTIME STATUS:",
-        status
-      )
+      
     })
 
   return () => {

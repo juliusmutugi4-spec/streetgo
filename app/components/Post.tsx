@@ -206,8 +206,8 @@ useEffect(() => {
       )
       .select()
 
-    console.log("UPSERT DATA:", data)
-    console.log("UPSERT ERROR:", error)
+    
+    
   }
 
   registerViewer()
@@ -269,17 +269,12 @@ useEffect(() => {
     imageUrls.map(() => 0)
   )
 }, [post.id])
-console.log(
-  "POST",
-  post.id,
-  "USERNAME:",
-  post.username
-)
+
 
   const avatarUrl = post.avatar_url || '/avatar-placeholder.png'
 
-console.log("POST AVATAR:", post.avatar_url)
-console.log("POST USERNAME:", post.username)
+
+
 
 
 const [showMenu, setShowMenu] = useState(false)
@@ -315,7 +310,7 @@ if (!user) {
 
 
   const liked = imageLiked[currentImage]
-console.log("LIKED:", liked)
+
   if (liked) {
     const { error } = await supabase
       .from("image_likes")
@@ -323,15 +318,15 @@ console.log("LIKED:", liked)
       .eq("post_id", post.id)
       .eq("image_index", currentImage)
       .eq("user_id", user.id)
-console.log("ABOUT TO INSERT")
-console.log("INSERT ERROR:", error)
+
+
 
 if (error) {
   alert(error.message)
   return
 }
 
-console.log("IMAGE LIKE SAVED")
+
 
     setImageLiked((prev) => {
       const copy = [...prev]
@@ -348,7 +343,7 @@ console.log("IMAGE LIKE SAVED")
     return
   }
 
-console.log("ABOUT TO INSERT")
+
 
 const { data, error } = await supabase
   .from("image_likes")
@@ -359,15 +354,15 @@ const { data, error } = await supabase
   })
   .select()
 
-console.log("INSERT DATA:", data)
-console.log("INSERT ERROR:", error)
+
+
 
 if (error) {
   alert(error.message)
   return
 }
 
-console.log("IMAGE LIKE SAVED")
+
 
   setImageLiked((prev) => {
     const copy = [...prev]
@@ -401,8 +396,8 @@ if (post.is_live === true) {
     .gte("last_seen", activeSince)
 
 if (error) {
-  console.log("VIEWER ERROR:", JSON.stringify(error, null, 2))
-  console.log(error)
+  
+  
   return
 }
 
@@ -463,16 +458,9 @@ if (!user) {
       avatar_url: profile?.avatar_url || null,
     })
 
-  console.log("IMAGE COMMENT DATA:", {
-  post_id: post.id,
-  image_index: currentImage,
-  user_id: user.id,
-  content: imageCommentText,
-  username: profile?.username,
-  avatar_url: profile?.avatar_url,
-})
+  
 
-console.log("IMAGE COMMENT ERROR:", error)
+
 
   if (error) {
     alert(error.message)
@@ -495,8 +483,8 @@ const loadImageComments = async () => {
     })
 
   if (error) {
-    console.log("IMAGE COMMENTS ERROR:", JSON.stringify(error, null, 2))
-console.log(error)
+    
+
     return
   }
 
@@ -619,8 +607,8 @@ if (!user) {
   onRequireAuth?.()
   return
 }
-console.log("CURRENT USER ID:", user.id)
-console.log("POST OWNER ID:", post.user_id)
+
+
   await sendPostReax({
     senderId: user.id,
     receiverId: post.user_id,
@@ -797,7 +785,7 @@ if (!user) {
       .eq("post_id", post.id)
       .eq("user_id", user.id)
 
-    console.log("DELETE ERROR:", error)
+    
 
     if (error) {
       alert(error.message)
@@ -805,7 +793,7 @@ if (!user) {
     }
 
     setLiked(false)
-    console.log("LIKED STATE -> FALSE")
+    
     setLikes((p) => Math.max(0, p - 1))
     return
   }
@@ -818,8 +806,8 @@ if (!user) {
       user_id: user.id,
     })
 
-  console.log("LIKE DATA:", data)
-  console.log("LIKE ERROR:", error)
+  
+  
 
   if (error) {
     alert(error.message)
@@ -827,7 +815,7 @@ if (!user) {
   }
 
   setLiked(true)
-  console.log("LIKED STATE -> TRUE")
+  
   setLikes((p) => p + 1)
 }
 
@@ -850,7 +838,7 @@ const { error } = await supabase
     avatar_url: profile?.avatar_url || null,
   })
 
-console.log('COMMENT ERROR:', error)
+
 
 if (error) {
   alert(error.message)

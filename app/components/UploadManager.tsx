@@ -104,10 +104,7 @@ async function uploadVideoFile(userId: string, video: File): Promise<string> {
   }
 
 
-console.log(
-  "R2 URL:",
-  process.env.NEXT_PUBLIC_R2_PUBLIC_URL
-)
+
 
   return `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${fileName}`
 
@@ -153,12 +150,10 @@ const { data, error: fetchError } = await supabase
 
 if (fetchError) throw fetchError
 
-  console.log(
-    `Database took ${(performance.now() - start).toFixed(0)} ms`
-  )
+  
 
-  console.log("DATA:", data)
-  console.log("ERROR:", error)
+  
+  
 
   if (error) throw error
 
@@ -209,7 +204,7 @@ const animateProgress = () => {
 
 animationId = requestAnimationFrame(animateProgress)
 
-console.log("🔥 Starting upload")
+
 console.time("MEDIA_UPLOAD")
 
 const [imageUrls, videoUrl] = await Promise.all([
@@ -218,10 +213,10 @@ const [imageUrls, videoUrl] = await Promise.all([
 ])
 
 console.timeEnd("MEDIA_UPLOAD")
-console.log("🔥 Upload finished")
+
 cancelAnimationFrame(animationId)
 
- console.log("✅ Media upload complete")
+ 
 
 onProgress?.(90, 'Finalizing publication...', totalFiles, totalFiles)
 

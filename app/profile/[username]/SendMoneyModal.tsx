@@ -32,9 +32,9 @@ async function searchUser() {
     .select("id, username, avatar_url")
     .eq("username", clean)
     .maybeSingle()
-console.log("Searching for:", clean)
-console.log("Profile found:", data)
-console.log("Search error:", error)
+
+
+
   setLoading(false)
 
   if (error || !data) {
@@ -48,9 +48,9 @@ const { data: wallet, error: walletError } = await supabase
   .eq("user_id", data.id)
   .maybeSingle()
 
-console.log("Profile ID:", data.id)
-console.log("Wallet:", wallet)
-console.log("Wallet Error:", walletError)
+
+
+
 
 if (!wallet) {
   setError("This user has not activated a StreetGO Wallet yet.")
@@ -99,7 +99,7 @@ headers: {
 
     alert("Connection successful!")
 
-    console.log(data)
+    
 
   } catch (err) {
     setError("Network error")

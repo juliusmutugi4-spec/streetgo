@@ -114,8 +114,8 @@ const [
         setDrivers(latestDriversRes.data || [])
         setUserGrowth(growthRes.data || [])
         setVideoUploads(uploadsRes.data || [])
-        console.log(videoUploads)
-        console.log('User Growth:', growthRes.data)
+        
+        
       } catch (error) {
         console.error('Dashboard telemetry data synchronization failure:', error)
       } finally {

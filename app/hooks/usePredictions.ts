@@ -22,11 +22,11 @@ const fetchPredictions = async () => {
     .order("created_at", { ascending: false })
 
   if (error) {
-    console.log("Prediction Error:", error)
-    console.log("Message:", error.message)
-    console.log("Details:", error.details)
-    console.log("Hint:", error.hint)
-    console.log("Code:", error.code)
+    
+    
+    
+    
+    
     return
   }
 

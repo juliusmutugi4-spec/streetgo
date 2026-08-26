@@ -28,8 +28,8 @@ async function submitApplication() {
   const {
     data: { user }
   } = await supabase.auth.getUser()
-console.log("AUTH USER:", user)
-console.log("AUTH UID:", user?.id)
+
+
 
 
 if (!user) {
@@ -37,7 +37,7 @@ if (!user) {
   alert("Not logged in")
   return
 }
-console.log('Logged in user:', user)
+
   if (!user) {
     alert('Please login first')
     return

@@ -1,0 +1,124 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Deep Space Void Background -->
+    <linearGradient id="cyber-void" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#050C0A"/>
+      <stop offset="40%" stop-color="#020504"/>
+      <stop offset="100%" stop-color="#000101"/>
+    </linearGradient>
+
+    <!-- Matrix Hyper-Neon Green -->
+    <linearGradient id="neon-kinetic" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E5FFFA"/>
+      <stop offset="15%" stop-color="#56FFA7"/>
+      <stop offset="50%" stop-color="#00F59B"/>
+      <stop offset="85%" stop-color="#00A365"/>
+      <stop offset="100%" stop-color="#005C36"/>
+    </linearGradient>
+
+    <!-- Titanium Liquid Glass White -->
+    <linearGradient id="liquid-titanium" x1="30%" y1="20%" x2="90%" y2="90%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="45%" stop-color="#E1EDE8"/>
+      <stop offset="80%" stop-color="#8FA39B"/>
+      <stop offset="100%" stop-color="#46544F"/>
+    </linearGradient>
+
+    <!-- Tachyon Flare Red -->
+    <linearGradient id="tachyon-red" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#FF6B8B"/>
+      <stop offset="50%" stop-color="#FF1A43"/>
+      <stop offset="100%" stop-color="#99001C"/>
+    </linearGradient>
+
+    <!-- Quantum Core Burn Glow -->
+    <radialGradient id="core-plasma" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="25%" stop-color="#3DFFBA"/>
+      <stop offset="60%" stop-color="#00C475" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#002414" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Advanced Multi-Stage Bloom Filters -->
+    <filter id="laser-bloom" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9" result="blur1"/>
+      <feGaussianBlur stdDeviation="4" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="signal-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feComponentTransfer in="blur" result="boost">
+        <feFuncA type="linear" slope="1.8"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode in="boost"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- BASE CANVAS -->
+  <rect width="512" height="512" rx="120" fill="url(#cyber-void)"/>
+
+  <!-- BACKPLATE AMBIENT INFRA-GLOW -->
+  <circle cx="256" cy="256" r="210" fill="url(#core-plasma)" opacity="0.12"/>
+
+  <!-- CHASSIS OUTER FRAMES -->
+  <rect x="16" y="16" width="480" height="480" rx="104" fill="none" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1.5"/>
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#00F59B" stroke-opacity="0.12" stroke-width="2"/>
+
+  <!-- SYSTEM ORBITAL RING SYSTEMS -->
+  <g transform="rotate(-28 256 256)">
+    <ellipse cx="256" cy="256" rx="200" ry="110" fill="none" stroke="#00F59B" stroke-opacity="0.15" stroke-width="2.5" stroke-dasharray="360 8 40 8"/>
+    <ellipse cx="256" cy="256" rx="170" ry="85" fill="none" stroke="#FFFFFF" stroke-opacity="0.04" stroke-width="1.5"/>
+  </g>
+
+  <!-- VECTOR COMPONENT: KINETIC MOTION SIGNALS -->
+  <g opacity="0.75">
+    <line x1="50" y1="180" x2="110" y2="180" stroke="#00F59B" stroke-width="6" stroke-linecap="round" filter="url(#signal-glow)"/>
+    <line x1="40" y1="206" x2="95" y2="206" stroke="#00F59B" stroke-width="4.5" stroke-linecap="round" opacity="0.6"/>
+    <line x1="55" y1="228" x2="85" y2="228" stroke="#00F59B" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+  </g>
+
+  <!-- VECTOR COMPONENT: THE "STREETGO S" SYSTEM -->
+  <!-- Ambient Plasma Underlay -->
+  <path d="M370 124H204 C152 124 126 150 126 182 C126 214 150 228 194 234 L296 248 C340 254 362 272 362 302 C362 338 328 360 282 360 H136" 
+        fill="none" stroke="#00F59B" stroke-opacity="0.25" stroke-width="38" stroke-linecap="round" stroke-linejoin="round" filter="url(#laser-bloom)"/>
+  
+  <!-- Core Hyper-Neon Engine -->
+  <path d="M370 124H204 C152 124 126 150 126 182 C126 214 150 228 194 234 L296 248 C340 254 362 272 362 302 C362 338 328 360 282 360 H136" 
+        fill="none" stroke="url(#neon-kinetic)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Optical Light Blade Highlight -->
+  <path d="M204 129H350" fill="none" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="3.5" stroke-linecap="round"/>
+
+  <!-- VECTOR COMPONENT: FOREGROUND GLASSMOPHIC "G" -->
+  <!-- Back Shading Shield for Separation -->
+  <path d="M272 311 C272 348 299 374 336 374 C363 374 386 364 404 348 V382 C385 398 362 407 332 407 C276 407 241 371 241 323 C241 306 245 291 253 278 H296 C281 287 272 298 272 311Z M333 326H420V361H379V348H333Z" 
+        fill="#020604" opacity="0.65"/>
+  
+  <!-- Liquid Titanium Main Body -->
+  <path d="M272 311 C272 348 299 374 336 374 C363 374 386 364 404 348 V382 C385 398 362 407 332 407 C276 407 241 371 241 323 C241 306 245 291 253 278 H296 C281 287 272 298 272 311Z" 
+        fill="url(#liquid-titanium)" stroke="#060F0C" stroke-width="5" stroke-linejoin="round"/>
+  
+  <!-- Titanium G-Bar Element -->
+  <path d="M333 326H420V361H379V348H333Z" 
+        fill="url(#liquid-titanium)" stroke="#060F0C" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- CENTRAL SINGULARITY ENGINE CORE -->
+  <circle cx="256" cy="256" r="33" fill="#010403" stroke="#00F59B" stroke-opacity="0.6" stroke-width="2.5"/>
+  <circle cx="256" cy="256" r="20" fill="url(#core-plasma)" opacity="0.8"/>
+  <circle cx="256" cy="256" r="14" fill="#00F59B" filter="url(#signal-glow)"/>
+  <circle cx="256" cy="256" r="4.5" fill="#FFFFFF"/>
+
+  <!-- VECTOR COMPONENT: TACHYON RED SIGNAL FLARE -->
+  <path d="M386 424H440" fill="none" stroke="#FF1A43" stroke-opacity="0.3" stroke-width="16" stroke-linecap="round" filter="url(#laser-bloom)"/>
+  <path d="M386 424H440" fill="none" stroke="url(#tachyon-red)" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="448" cy="424" r="7" fill="#FFFFFF" filter="url(#signal-glow)"/>
+  <circle cx="448" cy="424" r="4" fill="#FF1A43"/>
+</svg>

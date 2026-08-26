@@ -153,10 +153,7 @@ export default function ConnectionRequests({
               payload:
                 RealtimePostgresChangesPayload<any>
             ) => {
-              console.log(
-                "NEW CONNECTION REQUEST:",
-                payload
-              )
+              
 
               loadRequests()
             }
@@ -168,10 +165,7 @@ export default function ConnectionRequests({
 
 await channel.subscribe(
   (status: string) => {
-    console.log(
-      "CONNECTION REALTIME:",
-      status
-    )
+    
   }
 )
       } catch (error) {

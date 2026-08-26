@@ -129,7 +129,7 @@ async function loadDrivers() {
     .eq('online', true)
     .eq('drivers.status', 'approved')
     .eq('drivers.available', true)
-console.log("Driver locations:", data)
+
 if (data) {
   const nearby = data
     .map((driver: any) => ({
@@ -143,8 +143,8 @@ if (data) {
     }))
     .filter((driver: any) => driver.distance <= 5)
    .sort((a: any, b: any) => a.distance - b.distance)
-console.log("Nearby drivers:", nearby)
-console.log("Count:", nearby.length)
+
+
 
 
 
@@ -177,8 +177,8 @@ useEffect(() => {
 
 const { data, error } = await supabase.auth.getSession()
 
-console.log("SESSION:", data)
-console.log("ERROR:", error)
+
+
 
 setUser(data.session?.user ?? null)
   }
@@ -204,7 +204,7 @@ setViewState((prev) => ({
   pitch: 60
 }))
     },
-    (error) => console.log(error),
+    (error) => {}
     {
       enableHighAccuracy: true,
       maximumAge: 0,
@@ -366,7 +366,7 @@ if (!user) return
         async (payload: any) => {
 
           const ride = payload.new as any
-console.log("Realtime event:", ride)
+
 if (
   ride.passenger_id === user.id &&
   ride.status === 'accepted'
@@ -392,7 +392,7 @@ navigator.vibrate?.(300)
   setRideAccepted(true)
 
   // 3. UPDATE DATABASE TRIP STATUS (IMPORTANT)
-console.log('✅ DRIVER ACCEPTED:', ride)
+
 
 setSearching(false)
 setRideAccepted(true)
@@ -806,9 +806,9 @@ onLoad={(e) => {
     height: '100%'
   }}
 >
-    console.log("mapLoaded:", mapLoaded)
-console.log("longitude:", longitude)
-console.log("latitude:", latitude)
+    
+
+
 {mapLoaded && (
   <Marker longitude={longitude} latitude={latitude}>
 

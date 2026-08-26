@@ -109,10 +109,7 @@ async function fetchActiveLiveSessions(): Promise<
           session?.status === "live"
       )
 
-    console.log(
-      "STREETGO ACTIVE LIVE SESSIONS:",
-      activeSessions
-    )
+    
 
     return new Map(
       activeSessions.map(
@@ -361,13 +358,7 @@ async function fetchPostsFromSupabase(
     // --------------------------------------------------------
 
     if (!liveSession) {
-      console.log(
-        "STREETGO HIDING ENDED LIVE:",
-        {
-          postId: post.id,
-          liveId: post.live_id,
-        }
-      )
+      
 
       continue
     }
@@ -431,45 +422,14 @@ async function fetchPostsFromSupabase(
         0,
     })
 
-    console.log(
-      "STREETGO CURRENT LIVE:",
-      {
-        liveId:
-          liveSession.live_id,
-
-        hostId:
-          liveSession.host_id,
-
-        username:
-          broadcasterUsername,
-
-        viewerCount:
-          liveSession.viewer_count ??
-          0,
-      }
-    )
+    
   }
 
   // ----------------------------------------------------------
   // DEBUG
   // ----------------------------------------------------------
 
-  console.log(
-    "STREETGO FEED:",
-    {
-      fetched:
-        postsData.length,
-
-      returned:
-        finalPosts.length,
-
-      live:
-        finalPosts.filter(
-          (post) =>
-            post.is_live === true
-        ).length,
-    }
-  )
+  
 
   return finalPosts
 }
@@ -557,10 +517,7 @@ export function subscribeToPosts(
 
               // Never inject a dead LIVE.
               if (!liveSession) {
-                console.log(
-                  "STREETGO REALTIME: ignoring dead LIVE",
-                  insertedPost.live_id
-                )
+                
 
                 return
               }
@@ -719,10 +676,7 @@ export function subscribeToPosts(
         (
   status: REALTIME_SUBSCRIBE_STATES
 ) => {
-          console.log(
-            "STREETGO POSTS REALTIME:",
-            status
-          )
+          
         }
       )
 

@@ -23,13 +23,13 @@ async function topUpReax() {
     data: { user },
   } = await supabase.auth.getUser()
 
-console.log("AUTH USER:", user?.id)
+
 
 const {
   data: { session },
 } = await supabase.auth.getSession()
 
-console.log("SESSION:", session?.access_token ? "TOKEN EXISTS" : "NO TOKEN")
+
 
 
 

@@ -17,7 +17,7 @@ export default function NotificationsPage() {
 
     if (!session?.user) return
     
-    console.log('SESSION USER:', session?.user?.id)
+    
     
     const { data, error } = await supabase
       .from('notifications')
@@ -25,8 +25,8 @@ export default function NotificationsPage() {
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
 
-    console.log('NOTIFICATIONS ERROR:', error)
-    console.log('NOTIFICATIONS DATA:', data)
+    
+    
 
     setNotifications(data || [])
   }

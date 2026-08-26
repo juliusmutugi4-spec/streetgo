@@ -49,7 +49,7 @@ async function savePhone() {
 
     if (error) throw error
 
-    console.log("PHONE UPDATED:", data)
+    
 
     // Refresh wallet from database
     await refreshWallet()

@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
-console.log(
-  "SERVICE ROLE EXISTS:",
-  !!process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
-console.log(
-  "SUPABASE URL:",
-  process.env.NEXT_PUBLIC_SUPABASE_URL
-);
+
+
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,8 +14,8 @@ export async function POST(req: Request) {
   try {
     const text = await req.text();
 
-    console.log("========== CALLBACK RECEIVED ==========");
-    console.log(text);
+    
+    
 
     const body = text ? JSON.parse(text) : {};
 
@@ -37,7 +31,7 @@ export async function POST(req: Request) {
 
     // Payment failed
     if (callback.ResultCode !== 0) {
-      console.log("Payment failed.");
+      
 
       return NextResponse.json({
         ResultCode: 0,
@@ -62,13 +56,8 @@ export async function POST(req: Request) {
       ? "0" + rawPhone.slice(3)
       : rawPhone;
 
-    console.log("============== PAYMENT ==============");
-    console.log({
-      amount,
-      receipt,
-      rawPhone,
-      phone,
-    });
+    
+    
 
     // ====================================================
     // Process Deposit (Atomic PostgreSQL Transaction)
@@ -86,7 +75,7 @@ export async function POST(req: Request) {
     if (error) {
       console.error("RPC ERROR:", error);
     } else {
-      console.log("Deposit processed successfully.");
+      
     }
 
     return NextResponse.json({
@@ -105,7 +94,7 @@ export async function POST(req: Request) {
 }
 
 export async function GET() {
-  console.log("GET callback route reached");
+  
 
   return NextResponse.json({
     success: true,

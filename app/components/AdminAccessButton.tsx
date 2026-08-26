@@ -39,7 +39,7 @@ export default function AdminAccessButton({
 
       if(sessionError){
 
-        console.log("SESSION ERROR:", sessionError)
+        
         return
 
       }
@@ -48,13 +48,13 @@ export default function AdminAccessButton({
       const user = sessionData.session?.user
 
 
-      console.log("ADMIN CURRENT USER:", user)
+      
 
 
 
       if(!user){
 
-        console.log("NO LOGIN SESSION")
+        
         return
 
       }
@@ -76,8 +76,8 @@ export default function AdminAccessButton({
 
 
 
-      console.log("ADMIN RESULT:", adminData)
-      console.log("ADMIN ERROR:", adminError)
+      
+      
 
 
 

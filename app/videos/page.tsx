@@ -26,7 +26,7 @@ const fetchVideos = async () => {
     })
 
 if (error) {
-  console.log('SUPABASE ERROR:', error)
+  
   alert(JSON.stringify(error))
   return
 }

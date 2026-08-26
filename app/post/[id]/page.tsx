@@ -484,10 +484,7 @@ export default function PostPage() {
 
   async function toggleLike() {
     if (isLiveRoute) {
-      console.log(
-        '🔥 Ignite disabled on LIVE:',
-        liveId
-      )
+      
 
       return
     }
@@ -578,10 +575,7 @@ export default function PostPage() {
     // Normal post comments only for now.
     // LIVE comments need a live-specific table/API.
     if (isLiveRoute) {
-      console.log(
-        'LIVE DISCUSSION:',
-        'use live-specific discussion endpoint'
-      )
+      
 
       return
     }
@@ -1029,10 +1023,7 @@ export default function PostPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    console.log(
-                      '✨ LIVE REAX:',
-                      live?.host_id
-                    )
+                    
 
                     // Reax should use the existing
                     // broadcaster UUID.
@@ -1085,10 +1076,7 @@ export default function PostPage() {
                       }
                     : post
 
-                console.log(
-                  '📤 DISPATCH:',
-                  dispatchTarget
-                )
+                
 
                 // Keep your existing dispatch
                 // integration here.

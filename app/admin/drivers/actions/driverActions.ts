@@ -12,7 +12,7 @@ export async function approveDriver(driver: Driver) {
     .eq("id", driver.id)
 
   if (error) {
-    console.log("APPROVE ERROR:", error)
+    
     return false
   }
 
@@ -42,7 +42,7 @@ export async function rejectDriver(
     .eq("id", driverId)
 
   if (error) {
-    console.log("REJECT ERROR:", error)
+    
     return false
   }
 

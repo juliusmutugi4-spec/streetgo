@@ -72,7 +72,7 @@ export default function ProfileEdit() {
 
       alert('Profile updated!')
     }catch (err: any) {
-  console.log('PROFILE ERROR:', err)
+  
   alert(JSON.stringify(err))
 }
     setLoading(false)

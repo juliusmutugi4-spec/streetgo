@@ -1,9 +1,10 @@
 'use client'
 
-import {
-  useState,
+import React, {
+  useCallback,
   useEffect,
   useRef,
+  useState,
 } from 'react'
 
 import VideoPortalButton from './VideoPortalButton'
@@ -13,14 +14,57 @@ interface PostVideoProps {
   post: any
 }
 
+/* ========================================================================== */
+/* CONSTANTS                                                                  */
+/* ========================================================================== */
+
+const CONTROL_TIMEOUT = 40_000
+
+const TAP_DELAY = 350
+
+const MOBILE_BREAKPOINT = 768
+
+/* ========================================================================== */
+/* COMPONENT                                                                  */
+/* ========================================================================== */
+
 export default function PostVideo({
   post,
 }: PostVideoProps) {
+  /* ------------------------------------------------------------------------ */
+  /* REFS                                                                     */
+  /* ------------------------------------------------------------------------ */
+
   const videoRef =
     useRef<HTMLVideoElement>(null)
 
   const containerRef =
     useRef<HTMLDivElement>(null)
+
+  const controlsTimerRef =
+    useRef<ReturnType<
+      typeof setTimeout
+    > | null>(null)
+
+  const tapTimerRef =
+    useRef<ReturnType<
+      typeof setTimeout
+    > | null>(null)
+
+  const tapCountRef =
+    useRef(0)
+
+  const pendingPlayToggleRef =
+    useRef<ReturnType<
+      typeof setTimeout
+    > | null>(null)
+
+  const mountedRef =
+    useRef(true)
+
+  /* ------------------------------------------------------------------------ */
+  /* STATE                                                                    */
+  /* ------------------------------------------------------------------------ */
 
   const [isPlaying, setIsPlaying] =
     useState(false)
@@ -32,6 +76,9 @@ export default function PostVideo({
     useState(0)
 
   const [duration, setDuration] =
+    useState(0)
+
+  const [bufferedProgress, setBufferedProgress] =
     useState(0)
 
   const [isMuted, setIsMuted] =
@@ -52,59 +99,228 @@ export default function PostVideo({
   const [isMobile, setIsMobile] =
     useState(false)
 
-  // ==================================================
-  // MOBILE DETECTION
-  // ==================================================
+  /* ======================================================================== */
+  /* CLEANUP                                                                  */
+  /* ======================================================================== */
+
+  useEffect(() => {
+    mountedRef.current = true
+
+    return () => {
+      mountedRef.current = false
+
+      if (
+        controlsTimerRef.current
+      ) {
+        clearTimeout(
+          controlsTimerRef.current,
+        )
+
+        controlsTimerRef.current =
+          null
+      }
+
+      if (
+        tapTimerRef.current
+      ) {
+        clearTimeout(
+          tapTimerRef.current,
+        )
+
+        tapTimerRef.current =
+          null
+      }
+
+      if (
+        pendingPlayToggleRef.current
+      ) {
+        clearTimeout(
+          pendingPlayToggleRef.current,
+        )
+
+        pendingPlayToggleRef.current =
+          null
+      }
+    }
+  }, [])
+
+  /* ======================================================================== */
+  /* MOBILE DETECTION                                                         */
+  /* ======================================================================== */
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      setIsMobile(
+        window.innerWidth <
+          MOBILE_BREAKPOINT,
+      )
     }
 
     checkMobile()
 
     window.addEventListener(
       'resize',
-      checkMobile
+      checkMobile,
     )
 
     return () => {
       window.removeEventListener(
         'resize',
-        checkMobile
+        checkMobile,
       )
     }
   }, [])
 
-  // ==================================================
-  // AUTO PLAY WHEN VIDEO IS VISIBLE
-  // ==================================================
+  /* ======================================================================== */
+  /* CONTROL TIMER                                                            */
+  /* ======================================================================== */
+
+  const clearControlTimer =
+    useCallback(() => {
+      if (
+        controlsTimerRef.current
+      ) {
+        clearTimeout(
+          controlsTimerRef.current,
+        )
+
+        controlsTimerRef.current =
+          null
+      }
+    }, [])
+
+  const hideControls =
+    useCallback(() => {
+      clearControlTimer()
+
+      if (!mountedRef.current) {
+        return
+      }
+
+      setShowControls(false)
+    }, [
+      clearControlTimer,
+    ])
+
+  const showControlsFor40Seconds =
+    useCallback(() => {
+      if (!mountedRef.current) {
+        return
+      }
+
+      setShowControls(true)
+
+      clearControlTimer()
+
+      controlsTimerRef.current =
+        setTimeout(() => {
+          if (!mountedRef.current) {
+            return
+          }
+
+          setShowControls(false)
+
+          controlsTimerRef.current =
+            null
+        }, CONTROL_TIMEOUT)
+    }, [
+      clearControlTimer,
+    ])
+
+  /* ======================================================================== */
+  /* VIDEO AUDIO STATE                                                        */
+  /* ======================================================================== */
 
   useEffect(() => {
-    const video = videoRef.current
+    const video =
+      videoRef.current
 
-    if (!video) return
+    if (!video) {
+      return
+    }
+
+    video.muted = true
+
+    setIsMuted(true)
+
+    const handleVolumeChange =
+      () => {
+        if (!mountedRef.current) {
+          return
+        }
+
+        setIsMuted(
+          video.muted ||
+            video.volume === 0,
+        )
+      }
+
+    video.addEventListener(
+      'volumechange',
+      handleVolumeChange,
+    )
+
+    return () => {
+      video.removeEventListener(
+        'volumechange',
+        handleVolumeChange,
+      )
+    }
+  }, [])
+
+  /* ======================================================================== */
+  /* AUTO PLAY WHEN VIDEO IS VISIBLE                                          */
+  /* ======================================================================== */
+
+  useEffect(() => {
+    const video =
+      videoRef.current
+
+    if (!video) {
+      return
+    }
 
     const observer =
       new IntersectionObserver(
         ([entry]) => {
-          if (entry.isIntersecting) {
+          if (!mountedRef.current) {
+            return
+          }
+
+          if (
+            entry.isIntersecting
+          ) {
             video
               .play()
               .then(() => {
-                setIsPlaying(true)
+                if (
+                  mountedRef.current
+                ) {
+                  setIsPlaying(
+                    true,
+                  )
+                }
               })
               .catch(() => {
-                setIsPlaying(false)
+                if (
+                  mountedRef.current
+                ) {
+                  setIsPlaying(
+                    false,
+                  )
+                }
               })
           } else {
             video.pause()
-            setIsPlaying(false)
+
+            setIsPlaying(
+              false,
+            )
           }
         },
         {
           threshold: 0.6,
-        }
+        },
       )
 
     observer.observe(video)
@@ -114,89 +330,310 @@ export default function PostVideo({
     }
   }, [])
 
-  // ==================================================
-  // VIDEO TIME / PROGRESS
-  // ==================================================
+  /* ======================================================================== */
+  /* VIDEO TIME / PROGRESS                                                     */
+  /* ======================================================================== */
 
   useEffect(() => {
-    const video = videoRef.current
+    const video =
+      videoRef.current
 
-    if (!video) return
+    if (!video) {
+      return
+    }
 
-    const handleTimeUpdate = () => {
-      const percentage =
-        video.duration > 0
-          ? (video.currentTime /
-              video.duration) *
-            100
-          : 0
+    const updatePlaybackState =
+      () => {
+        if (!mountedRef.current) {
+          return
+        }
 
-      setProgress(percentage)
+        const videoDuration =
+          Number.isFinite(
+            video.duration,
+          ) &&
+          video.duration > 0
+            ? video.duration
+            : 0
 
-      setCurrentTime(
-        video.currentTime
-      )
+        const current =
+          Number.isFinite(
+            video.currentTime,
+          ) &&
+          video.currentTime >= 0
+            ? video.currentTime
+            : 0
 
-      setDuration(
-        video.duration || 0
-      )
+        const percentage =
+          videoDuration > 0
+            ? Math.min(
+                100,
+                Math.max(
+                  0,
+                  (current /
+                    videoDuration) *
+                    100,
+                ),
+              )
+            : 0
 
-      // Open portal after 70% playback
-      if (
-        percentage > 70 &&
-        !showPortal
-      ) {
-        setShowPortal(true)
+        setProgress(
+          percentage,
+        )
+
+        setCurrentTime(
+          current,
+        )
+
+        setDuration(
+          videoDuration,
+        )
+
+        /*
+         * Open portal after 70% playback.
+         */
+        if (
+          percentage > 70 &&
+          !showPortal
+        ) {
+          setShowPortal(
+            true,
+          )
+        }
       }
-    }
 
-    const handleLoadedMetadata = () => {
-      setDuration(
-        video.duration || 0
-      )
-    }
+    const updateBuffered =
+      () => {
+        if (!mountedRef.current) {
+          return
+        }
+
+        const videoDuration =
+          Number.isFinite(
+            video.duration,
+          ) &&
+          video.duration > 0
+            ? video.duration
+            : 0
+
+        if (
+          videoDuration <= 0 ||
+          video.buffered.length === 0
+        ) {
+          setBufferedProgress(
+            0,
+          )
+
+          return
+        }
+
+        let bufferedEnd = 0
+
+        try {
+          for (
+            let index = 0;
+            index <
+            video.buffered.length;
+            index++
+          ) {
+            const end =
+              video.buffered.end(
+                index,
+              )
+
+            if (
+              end >
+              bufferedEnd
+            ) {
+              bufferedEnd = end
+            }
+          }
+        } catch {
+          bufferedEnd = 0
+        }
+
+        const percentage =
+          Math.min(
+            100,
+            Math.max(
+              0,
+              (bufferedEnd /
+                videoDuration) *
+                100,
+            ),
+          )
+
+        setBufferedProgress(
+          percentage,
+        )
+      }
+
+    const handleLoadedMetadata =
+      () => {
+        if (!mountedRef.current) {
+          return
+        }
+
+        const videoDuration =
+          Number.isFinite(
+            video.duration,
+          )
+            ? video.duration
+            : 0
+
+        setDuration(
+          videoDuration,
+        )
+
+        updateBuffered()
+      }
+
+    const handleProgress =
+      () => {
+        updateBuffered()
+      }
+
+    const handlePlay =
+      () => {
+        if (
+          mountedRef.current
+        ) {
+          setIsPlaying(true)
+        }
+      }
+
+    const handlePause =
+      () => {
+        if (
+          mountedRef.current
+        ) {
+          setIsPlaying(false)
+        }
+      }
+
+    const handleEnded =
+      () => {
+        if (
+          mountedRef.current
+        ) {
+          setIsPlaying(false)
+          setProgress(100)
+        }
+      }
 
     video.addEventListener(
       'timeupdate',
-      handleTimeUpdate
+      updatePlaybackState,
     )
 
     video.addEventListener(
       'loadedmetadata',
-      handleLoadedMetadata
+      handleLoadedMetadata,
     )
+
+    video.addEventListener(
+      'progress',
+      handleProgress,
+    )
+
+    video.addEventListener(
+      'loadeddata',
+      updateBuffered,
+    )
+
+    video.addEventListener(
+      'canplay',
+      updateBuffered,
+    )
+
+    video.addEventListener(
+      'play',
+      handlePlay,
+    )
+
+    video.addEventListener(
+      'pause',
+      handlePause,
+    )
+
+    video.addEventListener(
+      'ended',
+      handleEnded,
+    )
+
+    updatePlaybackState()
+    updateBuffered()
 
     return () => {
       video.removeEventListener(
         'timeupdate',
-        handleTimeUpdate
+        updatePlaybackState,
       )
 
       video.removeEventListener(
         'loadedmetadata',
-        handleLoadedMetadata
+        handleLoadedMetadata,
+      )
+
+      video.removeEventListener(
+        'progress',
+        handleProgress,
+      )
+
+      video.removeEventListener(
+        'loadeddata',
+        updateBuffered,
+      )
+
+      video.removeEventListener(
+        'canplay',
+        updateBuffered,
+      )
+
+      video.removeEventListener(
+        'play',
+        handlePlay,
+      )
+
+      video.removeEventListener(
+        'pause',
+        handlePause,
+      )
+
+      video.removeEventListener(
+        'ended',
+        handleEnded,
       )
     }
-  }, [showPortal])
+  }, [
+    showPortal,
+  ])
 
-  // ==================================================
-  // STOP IF NO VIDEO
-  // ==================================================
+  /* ======================================================================== */
+  /* STOP IF NO VIDEO                                                         */
+  /* ======================================================================== */
 
   if (!post?.video_url) {
     return null
   }
 
-  // ==================================================
-  // PORTAL VIDEOS
-  // ==================================================
+  /* ======================================================================== */
+  /* PORTAL VIDEOS                                                             */
+  /* ======================================================================== */
 
   const handleLoadPortalVideos =
     async () => {
       await new Promise(
         (resolve) =>
-          setTimeout(resolve, 800)
+          setTimeout(
+            resolve,
+            800,
+          ),
       )
+
+      if (!mountedRef.current) {
+        return
+      }
 
       setPortalVideos([
         {
@@ -216,54 +653,227 @@ export default function PostVideo({
       ])
     }
 
-  // ==================================================
-  // PLAY / PAUSE
-  // ==================================================
+  /* ======================================================================== */
+  /* PLAY / PAUSE                                                             */
+  /* ======================================================================== */
 
-  const handleTogglePlay = () => {
-    const video =
-      videoRef.current
+  const handleTogglePlay =
+    useCallback(() => {
+      const video =
+        videoRef.current
 
-    if (!video) return
+      if (!video) {
+        return
+      }
 
-    if (video.paused) {
-      video
-        .play()
-        .then(() => {
-          setIsPlaying(true)
-        })
-        .catch(() => null)
-    } else {
-      video.pause()
-      setIsPlaying(false)
+      if (video.paused) {
+        video
+          .play()
+          .then(() => {
+            if (
+              mountedRef.current
+            ) {
+              setIsPlaying(
+                true,
+              )
+            }
+          })
+          .catch(() => {
+            if (
+              mountedRef.current
+            ) {
+              setIsPlaying(
+                false,
+              )
+            }
+          })
+      } else {
+        video.pause()
+
+        setIsPlaying(
+          false,
+        )
+      }
+
+      showControlsFor40Seconds()
+    }, [
+      showControlsFor40Seconds,
+    ])
+
+  /* ======================================================================== */
+  /* CANCEL PENDING TAP ACTION                                                */
+  /* ======================================================================== */
+
+  const cancelPendingPlayToggle =
+    useCallback(() => {
+      if (
+        pendingPlayToggleRef.current
+      ) {
+        clearTimeout(
+          pendingPlayToggleRef.current,
+        )
+
+        pendingPlayToggleRef.current =
+          null
+      }
+    }, [])
+
+  /* ======================================================================== */
+  /* VIDEO TAP / CLICK                                                         */
+  /* ======================================================================== */
+
+  const handleVideoClick =
+    useCallback(() => {
+      /*
+       * Count clicks/taps ourselves.
+       *
+       * 1 tap:
+       *   show controls
+       *   play/pause
+       *
+       * 2+ taps:
+       *   immediately hide controls
+       *
+       * This works with both mouse clicks and
+       * touch-generated click events.
+       */
+
+      tapCountRef.current += 1
+
+      const currentTapCount =
+        tapCountRef.current
+
+      if (
+        tapTimerRef.current
+      ) {
+        clearTimeout(
+          tapTimerRef.current,
+        )
+
+        tapTimerRef.current =
+          null
+      }
+
+      /*
+       * DOUBLE / TRIPLE TAP
+       *
+       * Intentional hide gesture.
+       */
+      if (
+        currentTapCount >= 2
+      ) {
+        tapCountRef.current = 0
+
+        cancelPendingPlayToggle()
+
+        hideControls()
+
+        return
+      }
+
+      /*
+       * SINGLE TAP
+       *
+       * Give the user a 350ms
+       * window to turn it into a
+       * double/triple tap.
+       */
+      showControlsFor40Seconds()
+
+      tapTimerRef.current =
+        setTimeout(() => {
+          tapCountRef.current = 0
+
+          /*
+           * Only perform play/pause if
+           * the user did not double tap.
+           */
+          if (
+            mountedRef.current
+          ) {
+            handleTogglePlay()
+          }
+
+          pendingPlayToggleRef.current =
+            null
+
+          tapTimerRef.current =
+            null
+        }, TAP_DELAY)
+
+      pendingPlayToggleRef.current =
+        tapTimerRef.current
+    }, [
+      cancelPendingPlayToggle,
+      handleTogglePlay,
+      hideControls,
+      showControlsFor40Seconds,
+    ])
+
+  /* ======================================================================== */
+  /* CONTROL CLICK                                                             */
+  /* ======================================================================== */
+
+  const handleControlInteraction =
+    useCallback(
+      (
+        event:
+          | React.MouseEvent
+          | React.PointerEvent,
+      ) => {
+        event.stopPropagation()
+
+        showControlsFor40Seconds()
+      },
+      [
+        showControlsFor40Seconds,
+      ],
+    )
+
+  /* ======================================================================== */
+  /* VIDEO POINTER INTERACTION                                                */
+  /* ======================================================================== */
+
+  const handleVideoPointerDown =
+    (
+      event: React.PointerEvent<HTMLDivElement>,
+    ) => {
+      /*
+       * Don't interfere with control elements.
+       */
+      const target =
+        event.target as HTMLElement
+
+      if (
+        target.closest(
+          'button, input, [role="slider"], [data-video-control="true"]',
+        )
+      ) {
+        return
+      }
+
+      /*
+       * We intentionally let the click
+       * event perform the tap counting.
+       */
     }
-  }
 
-  // ==================================================
-  // VIDEO CLICK
-  // ==================================================
+  /* ======================================================================== */
+  /* CONTROL VISIBILITY                                                        */
+  /* ======================================================================== */
 
-  const handleVideoClick = () => {
-    handleTogglePlay()
+  const controlVisibility =
+    isMobile
+      ? showControls
+        ? 'opacity-100 visible'
+        : 'opacity-0 invisible'
+      : showControls
+        ? 'opacity-100 visible'
+        : 'opacity-0 invisible group-hover/player:opacity-100 group-hover/player:visible'
 
-    if (isMobile) {
-      setShowControls(true)
-
-      setTimeout(() => {
-        setShowControls(false)
-      }, 3000)
-    }
-  }
-
-  // ==================================================
-  // CONTROL VISIBILITY
-  // ==================================================
-
-  const controlVisibility = isMobile
-    ? showControls
-      ? 'opacity-100'
-      : 'opacity-0'
-    : 'opacity-0 group-hover/player:opacity-100'
+  /* ======================================================================== */
+  /* RENDER                                                                   */
+  /* ======================================================================== */
 
   return (
     <div
@@ -274,23 +884,27 @@ export default function PostVideo({
         mt-4
         w-full
         aspect-video
-        md:max-w-[854px]
         overflow-hidden
         bg-black
         rounded-none
+        md:max-w-[854px]
         md:rounded-xl
         select-none
         touch-manipulation
         font-sans
       "
     >
-
-      {/* ==================================================
-          VIDEO SURFACE
-      ================================================== */}
+      {/* ================================================================== */}
+      {/* VIDEO SURFACE                                                       */}
+      {/* ================================================================== */}
 
       <div
-        onClick={handleVideoClick}
+        onClick={
+          handleVideoClick
+        }
+        onPointerDown={
+          handleVideoPointerDown
+        }
         className="
           relative
           flex
@@ -299,8 +913,12 @@ export default function PostVideo({
           items-center
           justify-center
           cursor-pointer
+          touch-manipulation
         "
       >
+        {/* ================================================================ */}
+        {/* VIDEO                                                             */}
+        {/* ================================================================ */}
 
         <video
           ref={videoRef}
@@ -311,8 +929,8 @@ export default function PostVideo({
           loop
           controlsList="nodownload noremoteplayback"
           disablePictureInPicture
-          onContextMenu={(e) =>
-            e.preventDefault()
+          onContextMenu={(event) =>
+            event.preventDefault()
           }
           style={{
             WebkitTouchCallout:
@@ -325,12 +943,13 @@ export default function PostVideo({
             w-full
             object-cover
             select-none
+            touch-manipulation
           "
         />
 
-        {/* ==================================================
-            VIGNETTE
-        ================================================== */}
+        {/* ================================================================ */}
+        {/* VIGNETTE                                                         */}
+        {/* ================================================================ */}
 
         <div
           className={`
@@ -339,34 +958,38 @@ export default function PostVideo({
             inset-0
             z-10
             bg-gradient-to-t
-            from-black/60
+            from-black/70
             via-transparent
-            to-black/30
+            to-black/35
             transition-opacity
             duration-200
             ${controlVisibility}
           `}
         />
 
-        {/* ==================================================
-            TOP PORTAL
-        ================================================== */}
+        {/* ================================================================ */}
+        {/* TOP PORTAL                                                        */}
+        {/* ================================================================ */}
 
         <div
+          data-video-control="true"
           className={`
             absolute
             inset-x-0
             top-0
-            z-20
+            z-30
             flex
             justify-end
-            p-2
+            p-3
             transition-opacity
             duration-200
             ${controlVisibility}
           `}
-          onClick={(e) =>
-            e.stopPropagation()
+          onClick={
+            handleControlInteraction
+          }
+          onPointerDown={
+            handleControlInteraction
           }
         >
           <VideoPortalButton
@@ -390,15 +1013,15 @@ export default function PostVideo({
             onSelect={(video) =>
               console.log(
                 'Routing Target:',
-                video
+                video,
               )
             }
           />
         </div>
 
-        {/* ==================================================
-            CENTER PLAY / PAUSE
-        ================================================== */}
+        {/* ================================================================ */}
+        {/* CENTER PLAY / PAUSE                                               */}
+        {/* ================================================================ */}
 
         <div
           className="
@@ -416,57 +1039,42 @@ export default function PostVideo({
               rounded-full
               border
               border-white/20
-              bg-neutral-900/60
-              p-2.5
+              bg-black/55
+              p-4
               text-white
+              shadow-2xl
               backdrop-blur-md
               transition-all
-              duration-300
+              duration-200
               ease-out
-
               ${
-                isMobile
-                  ? showControls
-                    ? `
-                      visible
-                      scale-100
-                      opacity-100
-                    `
-                    : `
-                      invisible
-                      scale-95
-                      opacity-0
-                    `
-                  : `
-                    invisible
-                    scale-95
-                    opacity-0
-                    group-hover/player:visible
-                    group-hover/player:scale-100
-                    group-hover/player:opacity-100
-                  `
+                showControls
+                  ? 'scale-100 opacity-100'
+                  : 'scale-90 opacity-0'
               }
             `}
           >
             {isPlaying ? (
               <svg
                 className="
-                  h-4
-                  w-4
+                  h-6
+                  w-6
                   fill-current
                 "
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
               </svg>
             ) : (
               <svg
                 className="
-                  h-4
-                  w-4
+                  h-6
+                  w-6
                   fill-current
                 "
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <path d="M8 5v14l11-7z" />
               </svg>
@@ -474,56 +1082,74 @@ export default function PostVideo({
           </div>
         </div>
 
-        {/* ==================================================
-            BOTTOM CONTROL DECK
-        ================================================== */}
+        {/* ================================================================ */}
+        {/* BOTTOM CONTROL DECK                                               */}
+        {/* ================================================================ */}
 
         <div
+          data-video-control="true"
           className={`
             pointer-events-auto
             absolute
             inset-x-0
             bottom-0
-            z-20
+            z-30
             flex
             flex-col
-            gap-1.5
-            px-3
+            gap-1
+            px-2
             pb-2
-            pt-6
+            pt-16
+            sm:px-3
+            sm:pb-3
             transition-opacity
             duration-200
             ${controlVisibility}
           `}
-          onClick={(e) =>
-            e.stopPropagation()
+          onClick={
+            handleControlInteraction
+          }
+          onPointerDown={
+            handleControlInteraction
           }
         >
-
-          {/* TIMELINE */}
+          {/* ============================================================ */}
+          {/* PROFESSIONAL TIMELINE                                          */}
+          {/* ============================================================ */}
 
           <VideoTimeline
             videoRef={videoRef}
             progress={progress}
-            currentTime={currentTime}
+            bufferedProgress={
+              bufferedProgress
+            }
+            currentTime={
+              currentTime
+            }
             duration={duration}
+            onUserInteraction={
+              showControlsFor40Seconds
+            }
           />
 
-          {/* ==================================================
-              CONTROL ROW
-          ================================================== */}
+          {/* ============================================================ */}
+          {/* CONTROL ROW                                                    */}
+          {/* ============================================================ */}
 
           <div
             className="
               flex
+              min-h-10
               items-center
               justify-between
-              font-medium
+              gap-3
+              px-1
               text-white
             "
           >
-
-            {/* LEFT CONTROLS */}
+            {/* ========================================================== */}
+            {/* PLAY BUTTON                                                  */}
+            {/* ========================================================== */}
 
             <div
               className="
@@ -532,119 +1158,123 @@ export default function PostVideo({
                 gap-3
               "
             >
-
-              {/* PLAY */}
-
               <button
                 type="button"
-                onClick={handleTogglePlay}
-                className="
-                  text-white
-                  transition-transform
-                  duration-150
-                  hover:scale-105
-                "
+                data-video-control="true"
+                onClick={(event) => {
+                  event.stopPropagation()
+
+                  handleTogglePlay()
+                }}
+                onPointerDown={(
+                  event,
+                ) => {
+                  event.stopPropagation()
+
+                  showControlsFor40Seconds()
+                }}
+                aria-label={
+                  isPlaying
+                    ? 'Pause video'
+                    : 'Play video'
+                }
                 title={
                   isPlaying
                     ? 'Pause'
                     : 'Play'
                 }
+                className="
+                  flex
+                  h-10
+                  w-10
+                  touch-manipulation
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-black/35
+                  text-white
+                  backdrop-blur-sm
+                  transition-all
+                  duration-150
+                  hover:bg-white/10
+                  active:scale-95
+                  focus:outline-none
+                  focus-visible:ring-2
+                  focus-visible:ring-white/80
+                "
               >
                 {isPlaying ? (
                   <svg
                     className="
-                      h-4
-                      w-4
+                      h-5
+                      w-5
                       fill-current
                     "
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                   </svg>
                 ) : (
                   <svg
                     className="
-                      h-4
-                      w-4
+                      h-5
+                      w-5
                       fill-current
                     "
                     viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 )}
               </button>
-
-              {/* MUTE */}
-
-              <button
-                type="button"
-                onClick={() =>
-                  setIsMuted(
-                    (prev) => !prev
-                  )
-                }
-                className="
-                  text-white
-                  transition-transform
-                  duration-150
-                  hover:scale-105
-                "
-                title={
-                  isMuted
-                    ? 'Unmute'
-                    : 'Mute'
-                }
-              >
-                {isMuted ? (
-                  <svg
-                    className="
-                      h-4
-                      w-4
-                      fill-current
-                    "
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M4.34 2.93L2.93 4.34 7.29 8.7 7 9H3v6h4l5 5v-6.59l4.18 4.18c-.65.49-1.38.88-2.18 1.11v2.06c1.35-.33 2.58-.99 3.61-1.89l2.05 2.05 1.41-1.41L4.34 2.93zM10 15.17L7.83 13H5v-2h2.83l.17-.17V15.17zM19 12c0-1.88-1.02-3.51-2.55-4.38v2.84l2.43 2.43c.07-.28.12-.58.12-.89zM16.45 4.72v2.06c2.51.93 4.3 3.32 4.3 6.14 0 1.02-.23 1.99-.64 2.86l1.5 1.5c.73-1.3 1.14-2.79 1.14-4.36 0-4.9-3.6-8.96-8.3-10.2zM12 4L9.91 6.09 12 8.18V4z" />
-                  </svg>
-                ) : (
-                  <svg
-                    className="
-                      h-4
-                      w-4
-                      fill-current
-                    "
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-3.54-7-8.77s2.99-7.86 7-8.77z" />
-                  </svg>
-                )}
-              </button>
-
             </div>
 
-            {/* RIGHT CONTROL */}
+            {/* ========================================================== */}
+            {/* RIGHT CONTROL                                                */}
+            {/* ========================================================== */}
 
             <div
               className="
                 flex
                 items-center
-                text-[10px]
-                tracking-wide
-                text-gray-400
               "
             >
               <button
                 type="button"
-                onClick={() =>
+                data-video-control="true"
+                onClick={(event) => {
+                  event.stopPropagation()
+
                   setShowSimilar(
-                    (prev) => !prev
+                    (previous) =>
+                      !previous,
                   )
-                }
+
+                  showControlsFor40Seconds()
+                }}
+                onPointerDown={(
+                  event,
+                ) => {
+                  event.stopPropagation()
+
+                  showControlsFor40Seconds()
+                }}
                 className="
+                  min-h-10
+                  rounded-lg
+                  px-2
+                  text-[11px]
+                  font-medium
+                  tracking-wide
+                  text-white/60
                   transition-colors
-                  duration-150
                   hover:text-white
+                  active:bg-white/10
+                  focus:outline-none
+                  focus-visible:ring-2
+                  focus-visible:ring-white/70
                 "
               >
                 {showSimilar
@@ -652,10 +1282,8 @@ export default function PostVideo({
                   : 'Autoplay Off'}
               </button>
             </div>
-
           </div>
         </div>
-
       </div>
     </div>
   )

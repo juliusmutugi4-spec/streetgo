@@ -12,9 +12,9 @@ export async function sendPostReax({
   onSuccess: () => void
   onRollback: () => void
 }) {
-  console.log("========== SEND REAX ==========")
-  console.log("SENDER ID:", senderId)
-  console.log("RECEIVER ID:", receiverId)
+  
+  
+  
 
   // 1. Check sender REAX balance
   const { data: senderWallet, error: senderError } = await supabase
@@ -23,8 +23,8 @@ export async function sendPostReax({
     .eq("user_id", senderId)
     .maybeSingle()
 
-  console.log("SENDER WALLET:", senderWallet)
-  console.log("SENDER ERROR:", senderError)
+  
+  
 
   if (senderError || !senderWallet) {
     throw new Error("Your REAX wallet was not found")
@@ -38,12 +38,8 @@ export async function sendPostReax({
   onSuccess()
 
   try {
-    console.log("Calling sendReax() with:")
-    console.log({
-      senderId,
-      receiverId,
-      amount: 1,
-    })
+    
+    
 
     await sendReax(
       senderId,
@@ -51,7 +47,7 @@ export async function sendPostReax({
       1
     )
 
-    console.log("REAX sent successfully")
+    
   } catch (error) {
     console.error("SEND REAX FAILED:", error)
 

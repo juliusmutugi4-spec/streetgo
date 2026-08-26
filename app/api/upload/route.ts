@@ -22,12 +22,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    console.log("Uploading:", {
-      bucket,
-      fileName,
-      size: file.size,
-      type: file.type,
-    })
+    
 
     await r2.send(
       new PutObjectCommand({

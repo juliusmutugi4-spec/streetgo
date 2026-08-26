@@ -15,7 +15,7 @@ export default function PushNotificationSetup() {
       const permission = await PushNotifications.requestPermissions()
 
       if (permission.receive !== 'granted') {
-        console.log('Notification permission denied')
+        
         return
       }
 
@@ -24,7 +24,7 @@ export default function PushNotificationSetup() {
       PushNotifications.addListener(
         'registration',
         (token: Token) => {
-          console.log('FCM TOKEN:', token.value)
+          
         }
       )
 

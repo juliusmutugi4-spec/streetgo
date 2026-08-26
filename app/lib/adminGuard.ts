@@ -34,7 +34,7 @@ export async function getAdminRole(){
 
 
   if(!user){
-    console.log("NO AUTH USER")
+    
     return null
   }
 
@@ -48,12 +48,12 @@ export async function getAdminRole(){
 
 
   if(error){
-    console.log("ADMIN CHECK ERROR:", error)
+    
     return null
   }
 
 
-  console.log("ADMIN FOUND:", data)
+  
 
   return data
 

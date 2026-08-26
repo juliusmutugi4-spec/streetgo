@@ -19,7 +19,7 @@ export async function checkAdmin(userId: string) {
 
   if(error){
 
-    console.log("CHECK ADMIN ERROR:", error)
+    
     return null
 
   }

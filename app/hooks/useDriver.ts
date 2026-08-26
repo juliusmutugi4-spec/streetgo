@@ -8,10 +8,10 @@ export function useDriver(user: any) {
 
 
 const loadDriver = async () => {
-  console.log("Loading driver for:", user)
+  
 
   if (!user) {
-    console.log("No user yet")
+    
     return
   }
 
@@ -21,8 +21,8 @@ const loadDriver = async () => {
     .eq("user_id", user.id)
     .maybeSingle()
 
-  console.log("Driver:", driver)
-  console.log("Driver Error:", error)
+  
+  
 
   if (!driver) {
     setIsApprovedDriver(false)
@@ -39,7 +39,7 @@ const loadDriver = async () => {
       .eq("driver_id", driver.id)
       .maybeSingle()
 
-    console.log("Location:", location)
+    
 
     setDriverOnline(location?.online ?? false)
   }

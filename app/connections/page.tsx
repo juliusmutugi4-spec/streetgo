@@ -84,7 +84,7 @@ export default function ConnectionsPage(){
 
 
 
-    console.log(data)
+    
 
 
 

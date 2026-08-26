@@ -48,10 +48,7 @@ export default function useWalletRealtime({
       return
     }
 
-    console.log(
-      "🟢 Wallet Realtime Started:",
-      userId
-    )
+    
 
     let channel: RealtimeChannel
 
@@ -74,15 +71,9 @@ export default function useWalletRealtime({
         (
           payload: RealtimePostgresChangesPayload<Wallet>
         ) => {
-          console.log(
-            "💰 Wallet Event:",
-            payload.eventType
-          )
+          
 
-          console.log(
-            "💰 Wallet Payload:",
-            payload
-          )
+          
 
           // --------------------------------------------------
           // DELETE
@@ -116,10 +107,7 @@ export default function useWalletRealtime({
           status: REALTIME_SUBSCRIBE_STATES,
           error?: unknown
         ) => {
-          console.log(
-            "💳 Wallet Channel:",
-            status
-          )
+          
 
           // --------------------------------------------------
           // CONNECTED
@@ -128,9 +116,7 @@ export default function useWalletRealtime({
           if (
             status === "SUBSCRIBED"
           ) {
-            console.log(
-              "✅ Wallet realtime connected"
-            )
+            
 
             return
           }
@@ -191,10 +177,7 @@ export default function useWalletRealtime({
     // ========================================================
 
     return () => {
-      console.log(
-        "🛑 Wallet Realtime Stopped:",
-        userId
-      )
+      
 
       supabase.removeChannel(
         channel

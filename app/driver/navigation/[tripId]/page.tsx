@@ -61,14 +61,14 @@ if (!response.ok) {
 
 const data = await response.json()
 
-console.log("Directions Response:", data)
+
 
 if (!data.routes || data.routes.length === 0) {
-  console.log("No route returned")
+  
   return
 }
 
-console.log(data.routes[0].geometry)
+
 
 setRoute({
   type: 'Feature',
@@ -76,7 +76,7 @@ setRoute({
 })
 setDistance(data.routes[0].distance)
 setDuration(data.routes[0].duration)
-console.log("Route saved")
+
 
 }
 const [viewState, setViewState] = useState({
@@ -120,8 +120,8 @@ useEffect(() => {
         .single()
 
       if (error) {
-        console.log('SUPABASE ERROR:', JSON.stringify(error, null, 2))
-console.log('TRIP ID:', tripId)
+        
+
       } else {
         setTrip(data)
 
@@ -158,7 +158,7 @@ useEffect(() => {
   const lat = position.coords.latitude
   const lng = position.coords.longitude
 
-console.log("GPS UPDATED", lat, lng)
+
 
 setDriverLat(lat)
 setDriverLng(lng)
@@ -173,7 +173,7 @@ setViewState(prev => ({
 }))
 },
 
-    (error) => console.log(error),
+    (error) => {},
 
     {
       enableHighAccuracy: true,

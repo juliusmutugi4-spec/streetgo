@@ -164,10 +164,7 @@ if (error) {
 
   return
 }
-      console.log(
-        "WITHDRAWAL CLAIMED:",
-        data
-      )
+      
 
 
 setWithdrawals((current) =>

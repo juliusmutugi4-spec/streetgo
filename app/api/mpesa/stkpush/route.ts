@@ -22,7 +22,7 @@ export async function POST(req: Request) {
   try {
     const { amount, phone } = await req.json()
 
-    console.log('STK Push request:', { amount, phone })
+    
 
     // Format phone number to 2547XXXXXXXX
     const cleanPhone = String(phone).replace(/\D/g, '')
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       ? `254${cleanPhone.slice(1)}`
       : cleanPhone
 
-    console.log('Formatted phone:', formattedPhone)
+    
 
     const date = new Date()
 
@@ -48,8 +48,8 @@ export async function POST(req: Request) {
 
     const token = await getAccessToken()
 
-    console.log('Access token received')
-    console.log('Callback URL:', process.env.MPESA_CALLBACK_URL)
+    
+    
 
     const { data } = await axios.post(
       'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest',
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
       }
     )
 
-    console.log('Safaricom Response:', data)
+    
 
     return NextResponse.json(data)
   } catch (error: any) {

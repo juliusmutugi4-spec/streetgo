@@ -15,7 +15,7 @@ export async function getCurrentUser(){
 
   if(!session?.user){
 
-    console.log("NO CURRENT SESSION")
+    
 
     return null
 

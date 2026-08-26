@@ -111,10 +111,7 @@ and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})
 
 if(error){
 
-console.log(
-"CHECK CONNECTION ERROR",
-error
-)
+
 
 
 return NextResponse.json(
@@ -151,7 +148,7 @@ connection:data
 catch(error){
 
 
-console.log(error)
+
 
 
 return NextResponse.json(

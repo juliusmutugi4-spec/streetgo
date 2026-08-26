@@ -200,11 +200,11 @@ const {
     },
   },
 })
-console.log("=== SIGNUP DEBUG ===")
-console.log("USER ID:", data.user?.id)
-console.log("SESSION EXISTS:", !!data.session)
-console.log("SESSION USER ID:", data.session?.user?.id)
-console.log("AUTH ERROR:", error)
+
+
+
+
+
 
 
 
@@ -220,10 +220,10 @@ console.log("AUTH ERROR:", error)
 
 
 if (data.user) {
-  console.log("=== ACCOUNT CREATED ===")
-  console.log("USER ID:", data.user.id)
-  console.log("USERNAME:", cleanUsername)
-  console.log("PROFILE + WALLET CREATED BY DATABASE TRIGGER")
+  
+  
+  
+  
 }
 
 

@@ -14,22 +14,22 @@ export default function CreatePrediction({
 
 const createPrediction = async () => {
   try {
-    console.log("Button clicked")
+    
 
     if (!title.trim()) {
       alert("Enter a title")
       return
     }
 
-    console.log("About to call Supabase")
+    
 
-console.log("User ID:", userId)
-console.log("Username:", username)
-console.log("Avatar:", avatarUrl)
+
+
+
 
 const sessionResult = await supabase.auth.getSession()
 
-console.log("Session Result:", sessionResult)
+
 
 const { data, error } = await supabase
   .from("predictions")
@@ -42,8 +42,8 @@ const { data, error } = await supabase
   })
   .select()
 
-console.log("Inserted data:", data)
-console.log("Insert error:", error)
+
+
 
 if (error) {
   alert(error.message)

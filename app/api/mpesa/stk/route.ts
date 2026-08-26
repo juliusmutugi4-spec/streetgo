@@ -136,10 +136,7 @@ await response.json()
 
 
 
-console.log(
-"STK RESPONSE:",
-data
-)
+
 
 
 
@@ -202,10 +199,7 @@ data
 }catch(error){
 
 
-console.log(
-"STK ERROR:",
-error
-)
+
 
 
 return NextResponse.json(

@@ -62,8 +62,8 @@ const { data: readData, error: readError } = await supabase
   .eq('receiver_id', user.id)
   .eq('is_read', false)
   .select()
-console.log('READ DATA:', readData)
-console.log('READ ERROR:', readError)
+
+
 
 
 window.dispatchEvent(

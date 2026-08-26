@@ -78,7 +78,7 @@ useEffect(() => {
 useEffect(() => {
   const refresh = async () => {
     if (!user?.id) return
-console.log('MESSAGES READ EVENT FIRED')
+
     await fetchConversations(user.id)
     await fetchUnread(user.id)
   }
@@ -107,11 +107,11 @@ useEffect(() => {
     const {
       data: { session },
     } = await supabase.auth.getSession()
-console.log("SESSION:", session)
+
     setUser(session?.user ?? null)
 
     if (session?.user) {
-console.log("SETTING ONLINE", session.user.id)
+
 const { data, error } = await supabase
   .from('profiles')
   .update({
@@ -121,15 +121,15 @@ const { data, error } = await supabase
   .eq('id', session.user.id)
   .select()
 alert("ONLINE UPDATE DONE")
-console.log("UPDATED PROFILE:", data)
-console.log("ONLINE UPDATE ERROR:", error)
+
+
 const { data: me } = await supabase
   .from('profiles')
   .select('username, is_online')
   .eq('id', session.user.id)
   .single()
 
-console.log("ME AFTER UPDATE:", me)
+
       const { data: profileData } = await supabase
         .from('profiles')
         .select(`
@@ -226,8 +226,8 @@ const { data, error } = await supabase
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .order('created_at', { ascending: false })
 
-console.log('CHAT DATA:', data)
-console.log('TOTAL MESSAGES:', data?.length)
+
+
 
  if (error) {
   alert(JSON.stringify(error, null, 2))
@@ -252,8 +252,8 @@ const { data: otherProfile } = await supabase
   `)
   .eq('id', otherUserId)
   .single()
-console.log('PROFILE:', otherProfile)
-console.log('OTHER USER ID:', otherUserId)
+
+
 
 
 const unreadCount = (data || []).filter(
@@ -277,7 +277,7 @@ uniqueUsers.set(otherUserId, {
 
 
 
-console.log("PROFILE FOUND:", otherProfile)
+
 
       }
     }
@@ -300,11 +300,11 @@ if (selectedChatRef.current) {
 }
 
 
-console.log('CONVERSATIONS:')
-console.log(Array.from(uniqueUsers.values()))
-console.log("MESSAGES:", data?.length)
-console.log("UNIQUE USERS:", uniqueUsers.size)
-console.log(Array.from(uniqueUsers.values()))
+
+
+
+
+
 
   }
 const fetchMessages = async (
@@ -342,7 +342,7 @@ setMessages(uniqueMessages)
 useEffect(() => {
   if (!user?.id) return
 
-  console.log('SUBSCRIBING TO CHAT_MESSAGES')
+  
 
   const channel = supabase
     .channel('message-updates')
@@ -354,14 +354,14 @@ useEffect(() => {
         table: 'messages',
       },
 (payload: any) => {
-  console.log('REALTIME EVENT:', payload)
-console.log('EVENT TYPE:', payload.eventType)
+  
+
         fetchConversations(user.id)
         fetchUnread(user.id)
       }
     )
 .subscribe((status: any) => {
-  console.log('REALTIME STATUS:', status)
+  
 })
 
   return () => {

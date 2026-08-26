@@ -68,7 +68,7 @@ export default function DatingRequests({
           status: string
           created_at: string
         }>) => {
-          console.log("NEW DATING REQUEST:", payload)
+          
 
           loadRequests()
         }
@@ -87,13 +87,13 @@ export default function DatingRequests({
           status: string
           created_at: string
         }>) => {
-          console.log("CONNECTION UPDATED:", payload)
+          
 
           loadRequests()
         }
       )
       .subscribe((status: string) => {
-        console.log("Dating requests realtime:", status)
+        
       })
 
     return () => {

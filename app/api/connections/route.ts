@@ -196,14 +196,7 @@ export async function POST(req: Request) {
         )
       }
 
-      console.log(
-        "REJECTED CONNECTION REACTIVATED:",
-        {
-          connectionId: existing.id,
-          senderId: user.id,
-          receiverId: receiver_id,
-        }
-      )
+      
 
       return NextResponse.json({
         success: true,

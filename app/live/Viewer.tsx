@@ -100,9 +100,7 @@ export default function Viewer({
     ) {
       video.srcObject = stream;
 
-      console.log(
-        "STREETGO VIEWER SRCOBJECT ATTACHED"
-      );
+      
     }
 
     video.muted = true;
@@ -177,25 +175,7 @@ export default function Viewer({
         return;
       }
 
-      console.log(
-        "STREETGO VIEWER VIDEO PLAYING:",
-        {
-          paused:
-            video.paused,
-
-          readyState:
-            video.readyState,
-
-          width:
-            video.videoWidth,
-
-          height:
-            video.videoHeight,
-
-          currentTime:
-            video.currentTime,
-        }
-      );
+      
     } catch (err) {
       console.warn(
         "STREETGO VIEWER PLAYBACK ERROR:",
@@ -246,19 +226,7 @@ export default function Viewer({
     if (!exists) {
       stream.addTrack(track);
 
-      console.log(
-        "STREETGO VIEWER TRACK ADDED:",
-        {
-          kind:
-            track.kind,
-
-          id:
-            track.id,
-
-          readyState:
-            track.readyState,
-        }
-      );
+      
     }
   }
 
@@ -306,46 +274,20 @@ export default function Viewer({
     const audioTracks =
       stream.getAudioTracks();
 
-    console.log(
-      "STREETGO VIEWER CURRENT TRACKS:",
-      stream
-        .getTracks()
-        .map((track) => ({
-          id:
-            track.id,
-
-          kind:
-            track.kind,
-
-          enabled:
-            track.enabled,
-
-          muted:
-            track.muted,
-
-          readyState:
-            track.readyState,
-        }))
-    );
+    
 
     if (
       videoTracks.length > 0
     ) {
       setHasVideo(true);
 
-      console.log(
-        "STREETGO VIEWER VIDEO TRACK READY:",
-        videoTracks[0].id
-      );
+      
     }
 
     if (
       audioTracks.length > 0
     ) {
-      console.log(
-        "STREETGO VIEWER AUDIO TRACK READY:",
-        audioTracks[0].id
-      );
+      
     }
   }
 
@@ -401,10 +343,7 @@ export default function Viewer({
         playbackPromiseRef.current =
           null;
 
-        console.log(
-          "STREETGO VIEWER STARTING:",
-          liveId
-        );
+        
 
         /*
          * =====================================================
@@ -412,8 +351,17 @@ export default function Viewer({
          * =====================================================
          */
 
-        const peer =
-          new RTCPeerConnection();
+const peer =
+  new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: "stun:stun.l.google.com:19302",
+      },
+      {
+        urls: "stun:stun1.l.google.com:19302",
+      },
+    ],
+  });
 
         peerRef.current =
           peer;
@@ -479,19 +427,7 @@ export default function Viewer({
 
           video.onloadedmetadata =
             () => {
-              console.log(
-                "STREETGO VIEWER VIDEO METADATA LOADED:",
-                {
-                  width:
-                    video.videoWidth,
-
-                  height:
-                    video.videoHeight,
-
-                  readyState:
-                    video.readyState,
-                }
-              );
+              
 
               /*
                * Metadata is now available.
@@ -502,39 +438,12 @@ export default function Viewer({
 
           video.oncanplay =
             () => {
-              console.log(
-                "STREETGO VIEWER VIDEO CAN PLAY:",
-                {
-                  width:
-                    video.videoWidth,
-
-                  height:
-                    video.videoHeight,
-
-                  readyState:
-                    video.readyState,
-                }
-              );
+              
             };
 
           video.onplaying =
             () => {
-              console.log(
-                "STREETGO VIEWER VIDEO PLAYING EVENT:",
-                {
-                  width:
-                    video.videoWidth,
-
-                  height:
-                    video.videoHeight,
-
-                  readyState:
-                    video.readyState,
-
-                  currentTime:
-                    video.currentTime,
-                }
-              );
+              
             };
 
           video.onerror =
@@ -561,30 +470,9 @@ export default function Viewer({
               return;
             }
 
-            console.log(
-              "STREETGO VIEWER TRACK RECEIVED:",
-              event.track.kind
-            );
+            
 
-            console.log(
-              "STREETGO VIEWER TRACK INFO:",
-              {
-                id:
-                  event.track.id,
-
-                kind:
-                  event.track.kind,
-
-                enabled:
-                  event.track.enabled,
-
-                readyState:
-                  event.track.readyState,
-
-                streams:
-                  event.streams.length,
-              }
-            );
+            
 
             /*
              * Prefer browser supplied stream tracks.
@@ -632,9 +520,7 @@ export default function Viewer({
                 currentVideo.srcObject =
                   currentStream;
 
-                console.log(
-                  "STREETGO VIEWER REMOTE STREAM ATTACHED"
-                );
+                
               }
 
               currentVideo.muted =
@@ -650,18 +536,14 @@ export default function Viewer({
             ) {
               setHasVideo(true);
 
-              console.log(
-                "STREETGO VIEWER VIDEO TRACK ATTACHED"
-              );
+              
             }
 
             if (
               event.track.kind ===
               "audio"
             ) {
-              console.log(
-                "STREETGO VIEWER AUDIO TRACK ATTACHED"
-              );
+              
             }
 
             /*
@@ -688,30 +570,21 @@ export default function Viewer({
             event.track.addEventListener(
               "ended",
               () => {
-                console.log(
-                  "STREETGO VIEWER TRACK ENDED:",
-                  event.track.kind
-                );
+                
               }
             );
 
             event.track.addEventListener(
               "mute",
               () => {
-                console.log(
-                  "STREETGO VIEWER TRACK MUTED:",
-                  event.track.kind
-                );
+                
               }
             );
 
             event.track.addEventListener(
               "unmute",
               () => {
-                console.log(
-                  "STREETGO VIEWER TRACK UNMUTED:",
-                  event.track.kind
-                );
+                
 
                 /*
                  * A video track becoming unmuted
@@ -735,10 +608,7 @@ export default function Viewer({
          */
 peer.onconnectionstatechange =
   () => {
-    console.log(
-      "STREETGO VIEWER WEBRTC STATE:",
-      peer.connectionState
-    );
+    
 
     if (
       cancelled ||
@@ -754,9 +624,7 @@ peer.onconnectionstatechange =
       setConnected(true);
       setConnecting(false);
 
-      console.log(
-        "STREETGO VIEWER CONNECTION ESTABLISHED"
-      );
+      
 
       syncReceiverTracks(peer);
 
@@ -795,9 +663,7 @@ peer.onconnectionstatechange =
       setConnected(false);
       setConnecting(false);
 
-      console.log(
-        "STREETGO VIEWER WEBRTC PEER CLOSED"
-      );
+      
     }
   };
         /*
@@ -808,10 +674,7 @@ peer.onconnectionstatechange =
 
         peer.oniceconnectionstatechange =
           () => {
-            console.log(
-              "STREETGO VIEWER ICE STATE:",
-              peer.iceConnectionState
-            );
+            
           };
 
         /*
@@ -822,10 +685,7 @@ peer.onconnectionstatechange =
 
         peer.onicegatheringstatechange =
           () => {
-            console.log(
-              "STREETGO VIEWER ICE GATHERING STATE:",
-              peer.iceGatheringState
-            );
+            
           };
 
         /*
@@ -836,10 +696,7 @@ peer.onconnectionstatechange =
 
         peer.onsignalingstatechange =
           () => {
-            console.log(
-              "STREETGO VIEWER SIGNALING STATE:",
-              peer.signalingState
-            );
+            
           };
 
         /*
@@ -878,14 +735,9 @@ peer.onconnectionstatechange =
           );
         }
 
-        console.log(
-          "STREETGO VIEWER ICE GATHERING COMPLETE"
-        );
+        
 
-        console.log(
-          "STREETGO VIEWER SDP TYPE:",
-          localDescription.type
-        );
+        
 
         /*
          * =====================================================
@@ -893,10 +745,7 @@ peer.onconnectionstatechange =
          * =====================================================
          */
 
-        console.log(
-          "STREETGO VIEWER API:",
-          `${API_URL}/live/webrtc/offer`
-        );
+        
 
         const response =
           await fetch(
@@ -938,10 +787,7 @@ peer.onconnectionstatechange =
         const answer =
           await response.json();
 
-        console.log(
-          "STREETGO VIEWER ANSWER:",
-          answer
-        );
+        
 
 
 
@@ -950,9 +796,7 @@ peer.onconnectionstatechange =
   peer.connectionState === "closed" ||
   peer.signalingState === "closed"
 ) {
-  console.log(
-    "STREETGO VIEWER: peer closed before remote answer"
-  )
+  
   return
 }  
 
@@ -977,9 +821,7 @@ peer.onconnectionstatechange =
           }
         );
 
-        console.log(
-          "STREETGO VIEWER ANSWER APPLIED"
-        );
+        
 
         /*
          * =====================================================
@@ -1033,9 +875,7 @@ peer.onconnectionstatechange =
       cancelledRef.current =
         true;
 
-      console.log(
-        "STREETGO VIEWER CLEANUP"
-      );
+      
 
       const peer =
         peerRef.current;
@@ -1145,9 +985,7 @@ peer.onconnectionstatechange =
 
       setMuted(false);
 
-      console.log(
-        "STREETGO VIEWER SOUND ENABLED"
-      );
+      
     } catch (err) {
       console.error(
         "Unable to enable viewer sound:",
@@ -1186,9 +1024,7 @@ peer.onconnectionstatechange =
 
     setMuted(true);
 
-    console.log(
-      "STREETGO VIEWER MUTED"
-    );
+    
   }
 
   /*
