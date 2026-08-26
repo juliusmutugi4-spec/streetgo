@@ -497,6 +497,11 @@ const peer =
     ],
   });
 
+console.log(
+  "=== STREETGO BROADCASTER ICE SERVERS ===",
+  peer.getConfiguration().iceServers
+);
+
       peerRef.current =
         peer;
 
