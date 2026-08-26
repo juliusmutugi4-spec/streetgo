@@ -186,7 +186,6 @@ setUser(data.session?.user ?? null)
   loadUser()
 
 }, [])
-
 useEffect(() => {
   const watchId = navigator.geolocation.watchPosition(
     (position) => {
@@ -196,27 +195,35 @@ useEffect(() => {
       setLongitude(lng)
       setLatitude(lat)
 
-setViewState((prev) => ({
-  ...prev,
-  longitude: prev.longitude + (lng - prev.longitude) * 0.12,
-  latitude: prev.latitude + (lat - prev.latitude) * 0.12,
-  zoom: 16,
-  pitch: 60
-}))
+      setViewState((prev) => ({
+        ...prev,
+        longitude:
+          prev.longitude +
+          (lng - prev.longitude) * 0.12,
+        latitude:
+          prev.latitude +
+          (lat - prev.latitude) * 0.12,
+        zoom: 16,
+        pitch: 60,
+      }))
     },
-    (error) => {}
+    (error: GeolocationPositionError) => {
+      console.warn(
+        'Geolocation error:',
+        error.message,
+      )
+    },
     {
       enableHighAccuracy: true,
       maximumAge: 0,
-      timeout: 10000
-    }
+      timeout: 10000,
+    },
   )
 
   return () => {
     navigator.geolocation.clearWatch(watchId)
   }
 }, [])
-
 useEffect(() => {
   if (!searching && !rideAccepted) {
     setPickup([longitude, latitude])
