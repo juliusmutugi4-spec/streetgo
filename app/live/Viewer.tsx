@@ -129,36 +129,26 @@ export default function Viewer({
       return;
     }
 
-    /*
-     * Wait for metadata when necessary.
+     /*
+     * Do not wait forever for loadedmetadata.
+     * WebRTC metadata can arrive after the remote track.
      */
-    if (
-      video.readyState < 1
-    ) {
-      await new Promise<void>(
-        (resolve) => {
-          const handleMetadata =
-            () => {
-              video.removeEventListener(
-                "loadedmetadata",
-                handleMetadata
-              );
-
-              resolve();
-            };
-
-          video.addEventListener(
-            "loadedmetadata",
-            handleMetadata
-          );
-        }
-      );
-    }
-
     if (cancelledRef.current) {
       return;
     }
 
+    console.log(
+      "=== STREETGO VIEWER PLAY ATTEMPT ===",
+      {
+        readyState: video.readyState,
+        paused: video.paused,
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+        trackState: activeVideoTrack.readyState,
+        trackEnabled: activeVideoTrack.enabled,
+        trackMuted: activeVideoTrack.muted,
+      }
+    );
     /*
      * Start playback exactly once.
      */
