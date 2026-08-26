@@ -524,10 +524,13 @@ const peer =
        * CONNECTION STATE
        * ========================================================
        */
-
       peer.onconnectionstatechange =
         () => {
-          
+
+          console.log(
+            "=== STREETGO BROADCASTER CONNECTION STATE ===",
+            peer.connectionState
+          );
 
           if (
             peer.connectionState ===
@@ -535,8 +538,6 @@ const peer =
           ) {
             setConnected(true);
             setConnecting(false);
-
-            
           }
 
           if (
@@ -547,14 +548,19 @@ const peer =
           ) {
             setConnected(false);
 
-            
+            console.error(
+              "STREETGO BROADCASTER CONNECTION FAILED:",
+              peer.connectionState
+            );
           }
 
           if (
             peer.connectionState ===
-            "disconnected"
+              "disconnected"
           ) {
-            
+            console.warn(
+              "STREETGO BROADCASTER CONNECTION DISCONNECTED"
+            );
           }
         };
 
@@ -563,10 +569,25 @@ const peer =
        * ICE STATE
        * ========================================================
        */
-
       peer.oniceconnectionstatechange =
         () => {
-          
+
+          console.log(
+            "=== STREETGO BROADCASTER ICE STATE ===",
+            {
+              iceConnectionState:
+                peer.iceConnectionState,
+
+              connectionState:
+                peer.connectionState,
+
+              signalingState:
+                peer.signalingState,
+
+              iceGatheringState:
+                peer.iceGatheringState,
+            }
+          );
         };
 
       /*
@@ -577,7 +598,11 @@ const peer =
 
       peer.onicegatheringstatechange =
         () => {
-          
+
+          console.log(
+            "=== STREETGO BROADCASTER ICE GATHERING ===",
+            peer.iceGatheringState
+          );
         };
 
       /*
