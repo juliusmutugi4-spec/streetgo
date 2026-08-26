@@ -351,17 +351,64 @@ export default function Viewer({
          * =====================================================
          */
 
-const peer =
-  new RTCPeerConnection({
-    iceServers: [
-      {
-        urls: "stun:stun.l.google.com:19302",
-      },
-      {
-        urls: "stun:stun1.l.google.com:19302",
-      },
-    ],
-  });
+        const iceResponse = await fetch(
+          `${API_URL}/live/webrtc/ice-servers`,
+          {
+            method: "GET",
+            headers: {
+              "Accept": "application/json",
+            },
+          }
+        );
+
+        if (!iceResponse.ok) {
+          const text = await iceResponse.text();
+
+          console.error(
+            "=== WEBRTC ICE SERVERS FAILED ==="
+          );
+          console.error(
+            "STATUS:",
+            iceResponse.status
+          );
+          console.error(
+            "SERVER RESPONSE:",
+            text
+          );
+
+          throw new Error(
+            `Unable to get WebRTC ICE servers (${iceResponse.status})`
+          );
+        }
+
+        const iceData = await iceResponse.json();
+
+        if (
+          !iceData ||
+          !Array.isArray(iceData.iceServers) ||
+          iceData.iceServers.length === 0
+        ) {
+          throw new Error(
+            "WebRTC ICE server list is empty."
+          );
+        }
+
+        console.log(
+          "=== STREETGO VIEWER ICE SERVERS RECEIVED ===",
+          iceData.iceServers.map(
+            (server: {
+              urls?: string | string[];
+            }) => ({
+              urls: server.urls,
+            })
+          )
+        );
+
+        const peer =
+          new RTCPeerConnection({
+            iceServers:
+              iceData.iceServers,
+          });
 
         peerRef.current =
           peer;
