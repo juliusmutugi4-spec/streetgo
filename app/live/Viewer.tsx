@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   useEffect,
@@ -610,6 +610,12 @@ peer.onconnectionstatechange =
   () => {
     
 
+console.log(
+  "=== STREETGO VIEWER CONNECTION STATE ===",
+  peer.connectionState
+);
+
+
     if (
       cancelled ||
       cancelledRef.current
@@ -672,10 +678,21 @@ peer.onconnectionstatechange =
          * =====================================================
          */
 
-        peer.oniceconnectionstatechange =
-          () => {
-            
-          };
+     peer.oniceconnectionstatechange = () => {
+  if (cancelled || cancelledRef.current) {
+    return;
+  }
+
+  console.log(
+    "=== STREETGO VIEWER ICE STATE ===",
+    {
+      iceConnectionState: peer.iceConnectionState,
+      connectionState: peer.connectionState,
+      signalingState: peer.signalingState,
+      iceGatheringState: peer.iceGatheringState,
+    }
+  );
+};
 
         /*
          * =====================================================
@@ -747,8 +764,26 @@ peer.onconnectionstatechange =
 
         
 
+console.log("WEBRTC VIEWER REQUEST:", {
+  liveId,
+  apiUrl: API_URL,
+  sdpType: localDescription.type,
+  hasSdp: !!localDescription.sdp,
+})
+
+
+
+
         const response =
           await fetch(
+
+
+
+
+
+            
+
+
             `${API_URL}/live/webrtc/offer`,
             {
               method:
@@ -775,17 +810,23 @@ peer.onconnectionstatechange =
             }
           );
 
-        if (!response.ok) {
-          const text =
-            await response.text();
+if (!response.ok) {
+  const text = await response.text();
 
-          throw new Error(
-            `Viewer WebRTC server error ${response.status}: ${text}`
-          );
-        }
+  console.error("=== WEBRTC OFFER FAILED ===");
+  console.error("STATUS:", response.status);
+  console.error("STATUS TEXT:", response.statusText);
+  console.error("URL:", `${API_URL}/live/webrtc/offer`);
+  console.error("SERVER RESPONSE:", text);
 
-        const answer =
-          await response.json();
+  throw new Error(
+    `WebRTC server error ${response.status}: ${text}`
+  );
+}
+const answer = await response.json();
+
+console.log("=== WEBRTC ANSWER RECEIVED ===");
+console.log("ANSWER:", answer);
 
         
 
@@ -1094,7 +1135,7 @@ peer.onconnectionstatechange =
             onClick={enableSound}
             className="absolute bottom-4 left-4 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black shadow-lg hover:bg-zinc-200"
           >
-            🔊 Enable Sound
+            ðŸ”Š Enable Sound
           </button>
         )}
 
@@ -1106,7 +1147,7 @@ peer.onconnectionstatechange =
             onClick={muteVideo}
             className="absolute bottom-4 left-4 rounded-lg bg-black/80 px-4 py-2 text-sm font-semibold text-white shadow-lg hover:bg-black"
           >
-            🔇 Mute
+            ðŸ”‡ Mute
           </button>
         )}
 
@@ -1177,6 +1218,47 @@ function waitForIceGatheringComplete(
   return new Promise(
     (resolve) => {
 
+      let timer:
+        ReturnType<typeof setTimeout> |
+        undefined;
+
+      let finished = false;
+
+      const finish = () => {
+
+        if (finished) {
+          return;
+        }
+
+        finished = true;
+
+        if (timer) {
+          clearTimeout(timer);
+        }
+
+        peer.removeEventListener(
+          "icegatheringstatechange",
+          checkState
+        );
+
+        resolve();
+      };
+
+      const checkState = () => {
+
+        if (
+          peer.iceGatheringState ===
+          "complete"
+        ) {
+
+          console.log(
+            "STREETGO VIEWER ICE GATHERING: COMPLETE"
+          );
+
+          finish();
+        }
+      };
+
       if (
         peer.iceGatheringState ===
         "complete"
@@ -1185,24 +1267,25 @@ function waitForIceGatheringComplete(
         return;
       }
 
-      function checkState() {
-        if (
-          peer.iceGatheringState ===
-          "complete"
-        ) {
-          peer.removeEventListener(
-            "icegatheringstatechange",
-            checkState
-          );
-
-          resolve();
-        }
-      }
-
       peer.addEventListener(
         "icegatheringstatechange",
         checkState
       );
+
+      timer = setTimeout(
+        () => {
+
+          console.warn(
+            "STREETGO VIEWER ICE GATHERING TIMEOUT:",
+            peer.iceGatheringState
+          );
+
+          finish();
+
+        },
+        10000
+      );
     }
   );
 }
+
