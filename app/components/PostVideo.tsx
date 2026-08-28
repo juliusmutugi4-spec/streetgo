@@ -102,6 +102,55 @@ export default function PostVideo({
     const [videoError, setVideoError] =
   useState(false)
 
+  /* ======================================================================== */
+  /* RECOVER VIDEO WHEN INTERNET RETURNS                                     */
+  /* ======================================================================== */
+
+  useEffect(() => {
+    const handleOnline = () => {
+      if (!mountedRef.current) {
+        return
+      }
+
+      setVideoError(false)
+      setIsPlaying(false)
+      setProgress(0)
+      setCurrentTime(0)
+      setDuration(0)
+      setBufferedProgress(0)
+    }
+
+    window.addEventListener(
+      'online',
+      handleOnline
+    )
+
+    return () => {
+      window.removeEventListener(
+        'online',
+        handleOnline
+      )
+    }
+  }, [])
+
+  useEffect(() => {
+    if (
+      videoError ||
+      typeof window === 'undefined' ||
+      !navigator.onLine
+    ) {
+      return
+    }
+
+    const video = videoRef.current
+
+    if (!video) {
+      return
+    }
+
+    video.load()
+  }, [videoError])
+
 
   /* ======================================================================== */
   /* CLEANUP                                                                  */
