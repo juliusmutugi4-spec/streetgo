@@ -99,6 +99,10 @@ export default function PostVideo({
   const [isMobile, setIsMobile] =
     useState(false)
 
+    const [videoError, setVideoError] =
+  useState(false)
+
+
   /* ======================================================================== */
   /* CLEANUP                                                                  */
   /* ======================================================================== */
@@ -862,15 +866,16 @@ export default function PostVideo({
   /* CONTROL VISIBILITY                                                        */
   /* ======================================================================== */
 
-  const controlVisibility =
-    isMobile
+const controlVisibility =
+  videoError
+    ? 'opacity-0 invisible pointer-events-none'
+    : isMobile
       ? showControls
         ? 'opacity-100 visible'
         : 'opacity-0 invisible'
       : showControls
         ? 'opacity-100 visible'
         : 'opacity-0 invisible group-hover/player:opacity-100 group-hover/player:visible'
-
   /* ======================================================================== */
   /* RENDER                                                                   */
   /* ======================================================================== */
@@ -894,397 +899,129 @@ export default function PostVideo({
         font-sans
       "
     >
-      {/* ================================================================== */}
-      {/* VIDEO SURFACE                                                       */}
-      {/* ================================================================== */}
+              {/* ================================================================== */}
+        {/* VIDEO SURFACE                                                       */}
+        {/* ================================================================== */}
 
-      <div
-        onClick={
-          handleVideoClick
-        }
-        onPointerDown={
-          handleVideoPointerDown
-        }
-        className="
-          relative
-          flex
-          h-full
-          w-full
-          items-center
-          justify-center
-          cursor-pointer
-          touch-manipulation
-        "
-      >
-        {/* ================================================================ */}
-        {/* VIDEO                                                             */}
-        {/* ================================================================ */}
-
-        <video
-          ref={videoRef}
-          src={post.video_url}
-          preload="metadata"
-          playsInline
-          muted={isMuted}
-          loop
-          controlsList="nodownload noremoteplayback"
-          disablePictureInPicture
-          onContextMenu={(event) =>
-            event.preventDefault()
+        <div
+          onClick={
+            videoError
+              ? undefined
+              : handleVideoClick
           }
-          style={{
-            WebkitTouchCallout:
-              'none',
-            userSelect: 'none',
-          }}
+          onPointerDown={
+            videoError
+              ? undefined
+              : handleVideoPointerDown
+          }
           className="
-            block
+            relative
+            flex
             h-full
             w-full
-            object-cover
-            select-none
-            touch-manipulation
-          "
-        />
-
-        {/* ================================================================ */}
-        {/* VIGNETTE                                                         */}
-        {/* ================================================================ */}
-
-        <div
-          className={`
-            pointer-events-none
-            absolute
-            inset-0
-            z-10
-            bg-gradient-to-t
-            from-black/70
-            via-transparent
-            to-black/35
-            transition-opacity
-            duration-200
-            ${controlVisibility}
-          `}
-        />
-
-        {/* ================================================================ */}
-        {/* TOP PORTAL                                                        */}
-        {/* ================================================================ */}
-
-        <div
-          data-video-control="true"
-          className={`
-            absolute
-            inset-x-0
-            top-0
-            z-30
-            flex
-            justify-end
-            p-3
-            transition-opacity
-            duration-200
-            ${controlVisibility}
-          `}
-          onClick={
-            handleControlInteraction
-          }
-          onPointerDown={
-            handleControlInteraction
-          }
-        >
-          <VideoPortalButton
-            showVideoPortal={
-              isMobile
-                ? true
-                : showPortal
-            }
-            portalVideos={
-              portalVideos
-            }
-            loadPortalVideos={
-              handleLoadPortalVideos
-            }
-            showSimilarVideos={
-              showSimilar
-            }
-            setShowSimilarVideos={
-              setShowSimilar
-            }
-            onSelect={(video) =>
-              console.log(
-                'Routing Target:',
-                video,
-              )
-            }
-          />
-        </div>
-
-        {/* ================================================================ */}
-        {/* CENTER PLAY / PAUSE                                               */}
-        {/* ================================================================ */}
-
-        <div
-          className="
-            pointer-events-none
-            absolute
-            inset-0
-            z-20
-            flex
             items-center
             justify-center
+            cursor-pointer
+            touch-manipulation
           "
         >
-          <div
-            className={`
-              rounded-full
-              border
-              border-white/20
-              bg-black/55
-              p-4
-              text-white
-              shadow-2xl
-              backdrop-blur-md
-              transition-all
-              duration-200
-              ease-out
-              ${
-                showControls
-                  ? 'scale-100 opacity-100'
-                  : 'scale-90 opacity-0'
+          {!videoError ? (
+            <video
+              ref={videoRef}
+              src={post.video_url}
+              poster={
+                post.thumbnail_url ||
+                undefined
               }
-            `}
-          >
-            {isPlaying ? (
-              <svg
-                className="
-                  h-6
-                  w-6
-                  fill-current
-                "
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-              </svg>
-            ) : (
-              <svg
-                className="
-                  h-6
-                  w-6
-                  fill-current
-                "
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </div>
-        </div>
-
-        {/* ================================================================ */}
-        {/* BOTTOM CONTROL DECK                                               */}
-        {/* ================================================================ */}
-
-        <div
-          data-video-control="true"
-          className={`
-            pointer-events-auto
-            absolute
-            inset-x-0
-            bottom-0
-            z-30
-            flex
-            flex-col
-            gap-1
-            px-2
-            pb-2
-            pt-16
-            sm:px-3
-            sm:pb-3
-            transition-opacity
-            duration-200
-            ${controlVisibility}
-          `}
-          onClick={
-            handleControlInteraction
-          }
-          onPointerDown={
-            handleControlInteraction
-          }
-        >
-          {/* ============================================================ */}
-          {/* PROFESSIONAL TIMELINE                                          */}
-          {/* ============================================================ */}
-
-          <VideoTimeline
-            videoRef={videoRef}
-            progress={progress}
-            bufferedProgress={
-              bufferedProgress
-            }
-            currentTime={
-              currentTime
-            }
-            duration={duration}
-            onUserInteraction={
-              showControlsFor40Seconds
-            }
-          />
-
-          {/* ============================================================ */}
-          {/* CONTROL ROW                                                    */}
-          {/* ============================================================ */}
-
-          <div
-            className="
-              flex
-              min-h-10
-              items-center
-              justify-between
-              gap-3
-              px-1
-              text-white
-            "
-          >
-            {/* ========================================================== */}
-            {/* PLAY BUTTON                                                  */}
-            {/* ========================================================== */}
-
-            <div
-              className="
-                flex
-                items-center
-                gap-3
-              "
-            >
-              <button
-                type="button"
-                data-video-control="true"
-                onClick={(event) => {
-                  event.stopPropagation()
-
-                  handleTogglePlay()
-                }}
-                onPointerDown={(
-                  event,
-                ) => {
-                  event.stopPropagation()
-
-                  showControlsFor40Seconds()
-                }}
-                aria-label={
-                  isPlaying
-                    ? 'Pause video'
-                    : 'Play video'
+              preload="metadata"
+              playsInline
+              muted={isMuted}
+              loop
+              onError={() => {
+                if (!mountedRef.current) {
+                  return
                 }
-                title={
-                  isPlaying
-                    ? 'Pause'
-                    : 'Play'
-                }
-                className="
-                  flex
-                  h-10
-                  w-10
-                  touch-manipulation
-                  items-center
-                  justify-center
-                  rounded-xl
-                  bg-black/35
-                  text-white
-                  backdrop-blur-sm
-                  transition-all
-                  duration-150
-                  hover:bg-white/10
-                  active:scale-95
-                  focus:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-white/80
-                "
-              >
-                {isPlaying ? (
-                  <svg
-                    className="
-                      h-5
-                      w-5
-                      fill-current
-                    "
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                  </svg>
-                ) : (
-                  <svg
-                    className="
-                      h-5
-                      w-5
-                      fill-current
-                    "
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                )}
-              </button>
-            </div>
 
-            {/* ========================================================== */}
-            {/* RIGHT CONTROL                                                */}
-            {/* ========================================================== */}
-
-            <div
+                setVideoError(true)
+                setIsPlaying(false)
+              }}
+              controlsList="nodownload noremoteplayback"
+              disablePictureInPicture
+              onContextMenu={(event) =>
+                event.preventDefault()
+              }
+              style={{
+                WebkitTouchCallout:
+                  'none',
+                userSelect:
+                  'none',
+              }}
               className="
-                flex
-                items-center
+                block
+                h-full
+                w-full
+                object-cover
+                select-none
+                touch-manipulation
               "
-            >
-              <button
-                type="button"
-                data-video-control="true"
-                onClick={(event) => {
-                  event.stopPropagation()
-
-                  setShowSimilar(
-                    (previous) =>
-                      !previous,
-                  )
-
-                  showControlsFor40Seconds()
-                }}
-                onPointerDown={(
-                  event,
-                ) => {
-                  event.stopPropagation()
-
-                  showControlsFor40Seconds()
-                }}
+            />
+          ) : post.thumbnail_url ? (
+            <>
+              <img
+                src={post.thumbnail_url}
+                alt="Video thumbnail"
                 className="
-                  min-h-10
-                  rounded-lg
-                  px-2
-                  text-[11px]
-                  font-medium
+                  block
+                  h-full
+                  w-full
+                  object-cover
+                  select-none
+                "
+              />
+
+              <div
+                className="
+                  pointer-events-none
+                  absolute
+                  left-3
+                  top-3
+                  z-30
+                  rounded-full
+                  bg-black/70
+                  px-3
+                  py-1.5
+                  text-[10px]
+                  font-semibold
                   tracking-wide
-                  text-white/60
-                  transition-colors
-                  hover:text-white
-                  active:bg-white/10
-                  focus:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-white/70
+                  text-white
+                  backdrop-blur-md
                 "
               >
-                {showSimilar
-                  ? 'Autoplay On'
-                  : 'Autoplay Off'}
-              </button>
+                Offline
+              </div>
+            </>
+          ) : (
+            <div
+              className="
+                flex
+                h-full
+                w-full
+                items-center
+                justify-center
+                bg-zinc-900
+              "
+            >
+              <span
+                className="
+                  text-xs
+                  text-zinc-500
+                "
+              >
+                Video unavailable
+              </span>
             </div>
-          </div>
+          )}
         </div>
-      </div>
     </div>
   )
 }

@@ -18,7 +18,67 @@ type Profile = {
   avatar_url: string | null
 }
 
+const FEED_CACHE_KEY = "streetgo-feed-cache"
+
+function getCachedPosts(): PostType[] {
+  if (typeof window === "undefined") {
+    return []
+  }
+
+  try {
+    const cached = localStorage.getItem(FEED_CACHE_KEY)
+
+    if (!cached) {
+      return []
+    }
+
+    const parsed = JSON.parse(cached)
+
+    if (!Array.isArray(parsed)) {
+      return []
+    }
+
+    return parsed
+  } catch (error) {
+    console.warn(
+      "StreetGO offline feed cache could not be read:",
+      error
+    )
+
+    return []
+  }
+}
+
+function saveCachedPosts(posts: PostType[]) {
+  if (typeof window === "undefined") {
+    return
+  }
+
+  try {
+    localStorage.setItem(
+      FEED_CACHE_KEY,
+      JSON.stringify(posts)
+    )
+  } catch (error) {
+    console.warn(
+      "StreetGO offline feed cache could not be saved:",
+      error
+    )
+  }
+}
+
 async function fetchPostsFromSupabase(): Promise<PostType[]> {
+  /*
+   * If the device is offline, immediately use the
+   * last successful StreetGO feed.
+   */
+  if (
+    typeof window !== "undefined" &&
+    !navigator.onLine
+  ) {
+    return getCachedPosts()
+  }
+
   const supabase = getSupabaseBrowser()
 
   const {
@@ -26,42 +86,36 @@ async function fetchPostsFromSupabase(): Promise<PostType[]> {
     error: postsError,
   } = await supabase
     .from("posts")
-    .select(`
-      id,
-      content,
-      video_url,
-      image_urls,
-      user_id,
-      created_at
-    `)
+.select(`
+  id,
+  content,
+  video_url,
+  image_urls,
+  thumbnail_url,
+  user_id,
+  created_at
+`)
     .order("created_at", {
       ascending: false,
     })
 
+  /*
+   * Internet/Supabase failed.
+   *
+   * Do NOT throw an error that destroys the feed.
+   * Use the last successful feed instead.
+   */
   if (postsError) {
-    throw new Error(
-      [
-        "Failed to load posts.",
-        postsError.message
-          ? `Message: ${postsError.message}`
-          : "",
-        postsError.code
-          ? `Code: ${postsError.code}`
-          : "",
-        postsError.details
-          ? `Details: ${postsError.details}`
-          : "",
-        postsError.hint
-          ? `Hint: ${postsError.hint}`
-          : "",
-      ]
-        .filter(Boolean)
-        .join(" ")
+    console.warn(
+      "StreetGO could not reach the feed. Using cached posts.",
+      postsError.message
     )
+
+    return getCachedPosts()
   }
 
   if (!postsData || postsData.length === 0) {
-    return []
+    return getCachedPosts()
   }
 
   const userIds = [
@@ -85,9 +139,11 @@ async function fetchPostsFromSupabase(): Promise<PostType[]> {
     .in("id", userIds)
 
   /*
-   * Profiles are supplementary data.
-   * If the profile query fails, posts should still load.
+   * Profiles are supplementary.
+   * If profiles fail, keep the posts.
    */
+  void profileError
+
   const profileMap = new Map<string, Profile>(
     (profiles || []).map(
       (profile: Profile) => [
@@ -97,13 +153,7 @@ async function fetchPostsFromSupabase(): Promise<PostType[]> {
     )
   )
 
-  /*
-   * Prevent an unused-variable warning while
-   * intentionally allowing posts to continue loading.
-   */
-  void profileError
-
-  return postsData.map(
+  const finalPosts = postsData.map(
     (post: PostType): PostType => ({
       ...post,
 
@@ -118,6 +168,15 @@ async function fetchPostsFromSupabase(): Promise<PostType[]> {
         null,
     })
   )
+
+  /*
+   * Save the successful feed locally.
+   * This is what allows StreetGO to show the
+   * feed again when the device is offline.
+   */
+  saveCachedPosts(finalPosts)
+
+  return finalPosts
 }
 
 export function useFeed() {
@@ -134,12 +193,20 @@ export function useFeed() {
 
     staleTime: 1000 * 60 * 5,
 
-    gcTime: 1000 * 60 * 30,
+    gcTime: 1000 * 60 * 60 * 24,
 
     refetchOnWindowFocus: false,
 
-    refetchOnReconnect: false,
+    /*
+     * Allow React Query to refresh the feed
+     * when the connection comes back.
+     */
+    refetchOnReconnect: true,
 
+    /*
+     * Keep the previous feed visible while
+     * a fresh online request is happening.
+     */
     placeholderData: (
       previousData
     ) => previousData,
@@ -155,11 +222,18 @@ export function useFeed() {
     queryClient.setQueryData<PostType[]>(
       ["feed"],
       (old = []) => {
-        if (typeof updater === "function") {
-          return updater(old)
-        }
+        const nextPosts =
+          typeof updater === "function"
+            ? updater(old)
+            : updater
 
-        return updater
+        /*
+         * Keep the local offline copy updated
+         * whenever the feed changes.
+         */
+        saveCachedPosts(nextPosts)
+
+        return nextPosts
       }
     )
   }

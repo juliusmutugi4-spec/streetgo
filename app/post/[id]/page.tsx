@@ -70,33 +70,58 @@ export default function PostPage() {
 
   const [loading, setLoading] =
     useState(true)
-
   // =========================================================
   // INITIALIZE
   // =========================================================
 
   useEffect(() => {
-    initialize()
-  }, [rawId])
+    let cancelled = false
 
-  async function initialize() {
-    setLoading(true)
+    async function runInitialize() {
+      try {
+        setLoading(true)
 
-    const {
-      data: { user: currentUser },
-    } = await supabase.auth.getUser()
+        const {
+          data: { user: currentUser },
+          error: authError,
+        } = await supabase.auth.getUser()
 
-    setUser(currentUser)
+        if (cancelled) return
 
-    if (isLiveRoute) {
-      await fetchLive(currentUser)
-    } else {
-      await fetchPost(currentUser)
+        if (authError) {
+          console.error("AUTH ERROR:", authError)
+          setUser(null)
+        } else {
+          setUser(currentUser)
+        }
+
+        if (isLiveRoute) {
+          await fetchLive(currentUser)
+        } else {
+          await fetchPost(currentUser)
+        }
+
+        if (!cancelled) {
+          setLoading(false)
+        }
+      } catch (error) {
+        if (cancelled) return
+
+        console.error(
+          "POST PAGE INITIALIZE ERROR:",
+          error
+        )
+
+        setLoading(false)
+      }
     }
 
-    setLoading(false)
-  }
+    runInitialize()
 
+    return () => {
+      cancelled = true
+    }
+  }, [rawId, isLiveRoute, liveId])
   // =========================================================
   // FETCH LIVE SESSION
   // =========================================================
@@ -1179,10 +1204,12 @@ export default function PostPage() {
           onClose={() =>
             setShowLogin(false)
           }
-          onLogin={() => {
-            setShowLogin(false)
-            initialize()
-          }}
+onLogin={() => {
+  setShowLogin(false)
+
+  // Reload the current page state after login
+  window.location.reload()
+}}
         />
       )}
 

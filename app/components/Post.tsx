@@ -146,9 +146,17 @@ if (entry.isIntersecting) {
 }, [post.id, setActivePostId])
 
 
+// =====================================================
+// OFFLINE-SAFE VIEWER SYSTEM
+// =====================================================
 
 useEffect(() => {
   if (post.is_live === true) {
+    return
+  }
+
+  // Never contact Supabase while offline
+  if (!navigator.onLine) {
     return
   }
 
@@ -165,7 +173,11 @@ useEffect(() => {
         filter: `post_id=eq.${post.id}`,
       },
       () => {
-        loadViewerCount()
+        // Connection may have disappeared after
+        // the subscription was created.
+        if (navigator.onLine) {
+          loadViewerCount()
+        }
       }
     )
     .subscribe()
@@ -175,6 +187,94 @@ useEffect(() => {
   }
 }, [post.id, post.is_live])
 
+
+// =====================================================
+// REGISTER CURRENT VIEWER
+// =====================================================
+
+useEffect(() => {
+  if (!isActive || !user) {
+    setShowAIBubble(false)
+    return
+  }
+
+  if (post.is_live === true) {
+    return
+  }
+
+  // OFFLINE = do nothing
+  if (!navigator.onLine) {
+    return
+  }
+
+  const registerViewer = async () => {
+    if (!navigator.onLine) {
+      return
+    }
+
+    await supabase
+      .from("post_viewers")
+      .upsert(
+        {
+          post_id: post.id,
+          user_id: user.id,
+          last_seen: new Date().toISOString(),
+        },
+        {
+          onConflict: "post_id,user_id",
+          ignoreDuplicates: true,
+        }
+      )
+      .select()
+  }
+
+  registerViewer()
+
+  return () => {
+    // Do not send cleanup request while offline
+    if (!navigator.onLine) {
+      return
+    }
+
+    supabase
+      .from("post_viewers")
+      .delete()
+      .eq("post_id", post.id)
+      .eq("user_id", user.id)
+  }
+}, [isActive, user, post.id, post.is_live])
+
+
+// =====================================================
+// VIEWER HEARTBEAT
+// =====================================================
+
+useEffect(() => {
+  if (!isActive || !user || post.is_live === true) {
+    return
+  }
+
+  // OFFLINE = no heartbeat
+  if (!navigator.onLine) {
+    return
+  }
+
+  const heartbeat = setInterval(async () => {
+    if (!navigator.onLine) {
+      return
+    }
+
+    await supabase
+      .from("post_viewers")
+      .update({
+        last_seen: new Date().toISOString(),
+      })
+      .eq("post_id", post.id)
+      .eq("user_id", user.id)
+  }, 30000)
+
+  return () => clearInterval(heartbeat)
+}, [isActive, user, post.id, post.is_live])
 
 
 

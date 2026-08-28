@@ -198,25 +198,37 @@ const onCreateSelect = (
 
 
 
-
-
 const loadLiveSessions = async () => {
+  // Do not contact the Live API while offline.
+  if (!navigator.onLine) {
+    console.log('STREETGO: Offline — skipping live sessions')
+    return
+  }
+
   try {
     const API_URL =
       process.env.NEXT_PUBLIC_API_URL ||
-      process.env.NEXT_PUBLIC_ENGINE_URL!
+      process.env.NEXT_PUBLIC_ENGINE_URL
+
+    if (!API_URL) {
+      console.warn('STREETGO: Live API URL is not configured')
+      return
+    }
 
     const response = await fetch(
       `${API_URL}/live`,
       {
-        cache: "no-store",
+        cache: 'no-store',
       }
     )
 
+    // A temporary server/network failure should never
+    // break the StreetGO feed.
     if (!response.ok) {
-      throw new Error(
-        `Live API returned ${response.status}`
+      console.warn(
+        `STREETGO: Live API unavailable (${response.status})`
       )
+      return
     }
 
     const result = await response.json()
@@ -225,7 +237,7 @@ const loadLiveSessions = async () => {
       result.live ?? []
     ).filter(
       (live: any) =>
-        live.status === "live"
+        live.status === 'live'
     )
 
     const livePosts: PostType[] =
@@ -235,14 +247,14 @@ const loadLiveSessions = async () => {
         content:
           live.description ||
           live.title ||
-          "StreetGO Live",
+          'StreetGO Live',
 
         user_id:
           live.host_id,
 
         username:
           live.host_name ||
-          "StreetGO User",
+          'StreetGO User',
 
         avatar_url:
           live.avatar_url ||
@@ -251,7 +263,6 @@ const loadLiveSessions = async () => {
         created_at:
           live.created_at,
 
-        // IMPORTANT
         is_live: true,
 
         live_id:
@@ -283,29 +294,45 @@ const loadLiveSessions = async () => {
       ]
     })
   } catch (error) {
-    console.error(
-      "STREETGO LIVE FEED ERROR:",
+    // Never show a network error to the user.
+    // The cached/normal feed should continue working.
+    console.warn(
+      'STREETGO: Live sessions unavailable',
       error
     )
   }
 }
-
-
-
 useEffect(() => {
-  loadLiveSessions()
+  const runLiveCheck = () => {
+    if (navigator.onLine) {
+      loadLiveSessions()
+    }
+  }
 
-  const interval =
-    setInterval(
-      loadLiveSessions,
-      10000
-    )
+  // Initial check
+  runLiveCheck()
+
+  // Check when connection comes back
+  window.addEventListener(
+    'online',
+    runLiveCheck
+  )
+
+  // Refresh live sessions every 10 seconds
+  const interval = setInterval(
+    runLiveCheck,
+    10000
+  )
 
   return () => {
+    window.removeEventListener(
+      'online',
+      runLiveCheck
+    )
+
     clearInterval(interval)
   }
 }, [])
-
   // Fetch unread messages count
 
 
