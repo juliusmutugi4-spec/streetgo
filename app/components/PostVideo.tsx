@@ -9,7 +9,7 @@ import React, {
 
 import VideoPortalButton from './VideoPortalButton'
 import VideoTimeline from './VideoTimeline'
-
+import VideoPlayer from './VideoPlayer'
 interface PostVideoProps {
   post: any
 }
@@ -101,6 +101,12 @@ export default function PostVideo({
 
     const [videoError, setVideoError] =
   useState(false)
+
+
+const [videoLoading, setVideoLoading] =
+  useState(true)
+
+
 
   /* ======================================================================== */
   /* RECOVER VIDEO WHEN INTERNET RETURNS                                     */
@@ -974,102 +980,23 @@ const controlVisibility =
             touch-manipulation
           "
         >
-          {!videoError ? (
-            <video
-              ref={videoRef}
-              src={post.video_url}
-              poster={
-                post.thumbnail_url ||
-                undefined
-              }
-              preload="metadata"
-              playsInline
-              muted={isMuted}
-              loop
-              onError={() => {
-                if (!mountedRef.current) {
-                  return
-                }
+          <VideoPlayer
+  post={{
+    video_url: post.video_url,
+    thumbnail_url:
+      post.thumbnail_url || null,
+  }}
+  isMuted={isMuted}
+  setIsPlaying={setIsPlaying}
+  onError={() => {
+    if (!mountedRef.current) {
+      return
+    }
 
-                setVideoError(true)
-                setIsPlaying(false)
-              }}
-              controlsList="nodownload noremoteplayback"
-              disablePictureInPicture
-              onContextMenu={(event) =>
-                event.preventDefault()
-              }
-              style={{
-                WebkitTouchCallout:
-                  'none',
-                userSelect:
-                  'none',
-              }}
-              className="
-                block
-                h-full
-                w-full
-                object-cover
-                select-none
-                touch-manipulation
-              "
-            />
-          ) : post.thumbnail_url ? (
-            <>
-              <img
-                src={post.thumbnail_url}
-                alt="Video thumbnail"
-                className="
-                  block
-                  h-full
-                  w-full
-                  object-cover
-                  select-none
-                "
-              />
-
-              <div
-                className="
-                  pointer-events-none
-                  absolute
-                  left-3
-                  top-3
-                  z-30
-                  rounded-full
-                  bg-black/70
-                  px-3
-                  py-1.5
-                  text-[10px]
-                  font-semibold
-                  tracking-wide
-                  text-white
-                  backdrop-blur-md
-                "
-              >
-                Offline
-              </div>
-            </>
-          ) : (
-            <div
-              className="
-                flex
-                h-full
-                w-full
-                items-center
-                justify-center
-                bg-zinc-900
-              "
-            >
-              <span
-                className="
-                  text-xs
-                  text-zinc-500
-                "
-              >
-                Video unavailable
-              </span>
-            </div>
-          )}
+    setVideoError(true)
+    setIsPlaying(false)
+  }}
+/>
         </div>
     </div>
   )
