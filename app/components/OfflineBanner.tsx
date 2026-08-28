@@ -6,35 +6,46 @@ export default function OfflineBanner() {
   const [isOffline, setIsOffline] = useState(false)
   const [showBackOnline, setShowBackOnline] = useState(false)
 
-  useEffect(() => {
-    const updateStatus = () => {
-      const offline = !navigator.onLine
+useEffect(() => {
+  let backOnlineTimer: ReturnType<typeof setTimeout> | null = null
 
-      setIsOffline(offline)
+  const updateStatus = () => {
+    const offline = !navigator.onLine
 
-      if (!offline) {
-        setShowBackOnline(true)
+    setIsOffline(offline)
 
-        const timer = setTimeout(() => {
-          setShowBackOnline(false)
-        }, 2500)
+    if (backOnlineTimer) {
+      clearTimeout(backOnlineTimer)
+      backOnlineTimer = null
+    }
 
-        return () => clearTimeout(timer)
-      }
-
+    if (offline) {
       setShowBackOnline(false)
+      return
     }
 
-    updateStatus()
+    setShowBackOnline(true)
 
-    window.addEventListener('online', updateStatus)
-    window.addEventListener('offline', updateStatus)
+    backOnlineTimer = setTimeout(() => {
+      setShowBackOnline(false)
+      backOnlineTimer = null
+    }, 3500)
+  }
 
-    return () => {
-      window.removeEventListener('online', updateStatus)
-      window.removeEventListener('offline', updateStatus)
+  updateStatus()
+
+  window.addEventListener('online', updateStatus)
+  window.addEventListener('offline', updateStatus)
+
+  return () => {
+    window.removeEventListener('online', updateStatus)
+    window.removeEventListener('offline', updateStatus)
+
+    if (backOnlineTimer) {
+      clearTimeout(backOnlineTimer)
     }
-  }, [])
+  }
+}, [])
 
   if (!isOffline && !showBackOnline) {
     return null
@@ -42,68 +53,40 @@ export default function OfflineBanner() {
 
   return (
     <div
-      className={`
-        fixed
-        left-1/2
-        top-3
-        z-[9999]
-        -translate-x-1/2
-        transition-all
-        duration-300
-        ${
-          isOffline
-            ? 'translate-y-0 opacity-100'
-            : '-translate-y-2 opacity-100'
-        }
-      `}
+      className={`fixed left-1/2 top-4 z-[9999] -translate-x-1/2 transition-all duration-500 ease-out ${
+        isOffline 
+          ? 'translate-y-0 opacity-100 scale-100' 
+          : 'translate-y-0 opacity-100 scale-100 animate-fade-out-delayed'
+      }`}
     >
       <div
-        className={`
-          flex
-          items-center
-          gap-3
-          rounded-full
-          border
-          px-4
-          py-2.5
-          shadow-2xl
-          backdrop-blur-xl
-          ${
-            isOffline
-              ? 'border-white/10 bg-zinc-900/95 text-white'
-              : 'border-white/10 bg-zinc-900/95 text-white'
-          }
-        `}
+        className={`flex items-center gap-3.5 rounded-xl border px-4 py-3 shadow-2xl backdrop-blur-md transition-colors duration-500 ${
+          isOffline
+            ? 'border-red-500/20 bg-zinc-950/90 text-zinc-100 shadow-red-950/20'
+            : 'border-purple-500/20 bg-zinc-950/90 text-zinc-100 shadow-purple-950/20'
+        }`}
       >
-        <span
-          className={`
-            flex
-            h-7
-            w-7
-            items-center
-            justify-center
-            rounded-full
-            ${
-              isOffline
-                ? 'bg-amber-500/15'
-                : 'bg-emerald-500/15'
-            }
-          `}
-        >
-          {isOffline ? '📡' : '✓'}
-        </span>
+        {/* Status Indicator Icon */}
+        <div className="relative flex h-2 w-2 items-center justify-center">
+          <span
+            className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 duration-1000 ${
+              isOffline ? 'bg-red-400' : 'bg-purple-400'
+            }`}
+          />
+          <span
+            className={`relative inline-flex h-2 w-2 rounded-full ${
+              isOffline ? 'bg-red-500' : 'bg-purple-500'
+            }`}
+          />
+        </div>
 
-        <div className="flex flex-col">
-          <span className="text-xs font-semibold">
-            {isOffline
-              ? 'You’re offline'
-              : 'Back online'}
+        {/* Text Details */}
+        <div className="flex flex-col gap-0.5 leading-none">
+          <span className="text-xs font-medium tracking-wide">
+            {isOffline ? 'Connection Lost' : 'Connection Restored'}
           </span>
-
-          <span className="text-[10px] text-white/50">
-            {isOffline
-              ? 'Some features may be unavailable'
-              : 'Connection restored'}
+          <span className="text-[10px] font-normal text-zinc-400 tracking-normal">
+            {isOffline ? 'Operating in offline mode' : 'Syncing changes with server'}
           </span>
         </div>
       </div>
