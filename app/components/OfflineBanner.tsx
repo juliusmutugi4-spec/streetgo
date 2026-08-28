@@ -1,92 +1,92 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 
 export default function OfflineBanner() {
-  const [isOffline, setIsOffline] = useState(false)
+  const [, startTransition] = useTransition()
+  const [isOffline, setIsOffline] = useState<boolean>(() => {
+    // Safe SSR check: default to online during server render
+    if (typeof window !== 'undefined') {
+      return !navigator.onLine
+    }
+    return false
+  })
+  
   const [showBackOnline, setShowBackOnline] = useState(false)
 
-useEffect(() => {
-  let backOnlineTimer: ReturnType<typeof setTimeout> | null = null
+  useEffect(() => {
+    let timerId: ReturnType<typeof setTimeout> | null = null
 
-  const updateStatus = () => {
-    const offline = !navigator.onLine
+    const handleOnline = () => {
+      startTransition(() => {
+        setIsOffline(false)
+        setShowBackOnline(true)
+      })
 
-    setIsOffline(offline)
-
-    if (backOnlineTimer) {
-      clearTimeout(backOnlineTimer)
-      backOnlineTimer = null
+      // Auto-hide the "Back Online" banner after 3.5 seconds
+      timerId = setTimeout(() => {
+        startTransition(() => {
+          setShowBackOnline(false)
+        })
+      }, 3500)
     }
 
-    if (offline) {
-      setShowBackOnline(false)
-      return
+    const handleOffline = () => {
+      if (timerId) clearTimeout(timerId)
+      
+      startTransition(() => {
+        setIsOffline(true)
+        setShowBackOnline(false)
+      })
     }
 
-    setShowBackOnline(true)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
 
-    backOnlineTimer = setTimeout(() => {
-      setShowBackOnline(false)
-      backOnlineTimer = null
-    }, 3500)
-  }
-
-  updateStatus()
-
-  window.addEventListener('online', updateStatus)
-  window.addEventListener('offline', updateStatus)
-
-  return () => {
-    window.removeEventListener('online', updateStatus)
-    window.removeEventListener('offline', updateStatus)
-
-    if (backOnlineTimer) {
-      clearTimeout(backOnlineTimer)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+      if (timerId) clearTimeout(timerId)
     }
-  }
-}, [])
+  }, [])
 
-  if (!isOffline && !showBackOnline) {
-    return null
-  }
+  // Do not render anything if the user is online and the success message timed out
+  if (!isOffline && !showBackOnline) return null
 
   return (
-    <div
-      className={`fixed left-1/2 top-4 z-[9999] -translate-x-1/2 transition-all duration-500 ease-out ${
-        isOffline 
-          ? 'translate-y-0 opacity-100 scale-100' 
-          : 'translate-y-0 opacity-100 scale-100 animate-fade-out-delayed'
-      }`}
+    <div 
+      role="status"
+      aria-live="polite"
+      className="fixed left-1/2 top-4 z-[9999] -translate-x-1/2 transform transition-all duration-300 ease-out"
     >
       <div
-        className={`flex items-center gap-3.5 rounded-xl border px-4 py-3 shadow-2xl backdrop-blur-md transition-colors duration-500 ${
+        className={`flex items-center gap-3 rounded-xl border bg-zinc-950/90 px-4 py-3 shadow-2xl backdrop-blur-md transition-all duration-300 ${
           isOffline
-            ? 'border-red-500/20 bg-zinc-950/90 text-zinc-100 shadow-red-950/20'
-            : 'border-purple-500/20 bg-zinc-950/90 text-zinc-100 shadow-purple-950/20'
+            ? 'border-red-500/20 text-zinc-100 shadow-red-950/20'
+            : 'border-emerald-500/20 text-zinc-100 shadow-emerald-950/20'
         }`}
       >
         {/* Status Indicator Icon */}
         <div className="relative flex h-2 w-2 items-center justify-center">
           <span
-            className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 duration-1000 ${
-              isOffline ? 'bg-red-400' : 'bg-purple-400'
+            className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 [animation-duration:2s] ${
+              isOffline ? 'bg-red-400' : 'bg-emerald-400'
             }`}
           />
           <span
             className={`relative inline-flex h-2 w-2 rounded-full ${
-              isOffline ? 'bg-red-500' : 'bg-purple-500'
+              isOffline ? 'bg-red-500' : 'bg-emerald-500'
             }`}
           />
         </div>
 
         {/* Text Details */}
         <div className="flex flex-col gap-0.5 leading-none">
-          <span className="text-xs font-medium tracking-wide">
-            {isOffline ? 'Connection Lost' : 'Connection Restored'}
+          <span className="text-xs font-semibold tracking-wide text-zinc-50">
+            {isOffline ? 'Connection Lost' : 'Back Online'}
           </span>
-          <span className="text-[10px] font-normal text-zinc-400 tracking-normal">
-            {isOffline ? 'Operating in offline mode' : 'Syncing changes with server'}
+          <span className="text-[10px] font-medium text-zinc-400">
+            {isOffline ? 'Operating in offline mode' : 'Changes synced successfully'}
           </span>
         </div>
       </div>
