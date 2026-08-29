@@ -227,12 +227,12 @@ export default function ServicesPage() {
               <span>↗</span>
             </button>
 
-            <a
-              href="#services"
-              className="secondaryButton"
-            >
-              EXPLORE SERVICES
-            </a>
+<a
+  href="/explore"
+  className="secondaryButton"
+>
+  EXPLORE SERVICES
+</a>
 
           </div>
 
@@ -620,9 +620,22 @@ export default function ServicesPage() {
 
           </div>
 
+<div className="exploreAction">
+  <a href="/explore" className="exploreButton">
+    EXPLORE THE FULL PROCESS
+    <span>↗</span>
+  </a>
+</div>
+
+
         </div>
 
       </section>
+
+
+
+
+
 
       {/* CTA */}
 
