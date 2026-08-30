@@ -8,6 +8,7 @@ import {
   Film, 
   CircleDollarSign,
   Satellite,
+  LifeBuoy,
   LogOut, 
   User 
 } from 'lucide-react'
@@ -45,6 +46,11 @@ const navigation: NavigationItem[] = [
     name: 'Satellite Radar',
     href: '/admin/satellite',
     icon: Satellite
+  },
+  {
+    name: 'Support',
+    href: '/admin/support',
+    icon: LifeBuoy,
   },
 ]
 

@@ -72,6 +72,27 @@ export default function SettingsPage() {
         savedTheme === 'dark'
       ) {
         setTheme(savedTheme)
+
+        const root =
+          document.documentElement
+
+        if (savedTheme === 'light') {
+          root.dataset.theme = 'light'
+        } else if (
+          savedTheme === 'dark'
+        ) {
+          root.dataset.theme = 'dark'
+        } else {
+          const prefersDark =
+            window.matchMedia(
+              '(prefers-color-scheme: dark)'
+            ).matches
+
+          root.dataset.theme =
+            prefersDark
+              ? 'dark'
+              : 'light'
+        }
       }
 
       if (
@@ -122,18 +143,21 @@ export default function SettingsPage() {
       const root =
         document.documentElement
 
-      root.classList.remove(
-        'light',
-        'dark'
-      )
+      if (
+        nextTheme === 'light'
+      ) {
+        root.dataset.theme =
+          'light'
 
-      if (nextTheme === 'light') {
-        root.classList.add('light')
         return
       }
 
-      if (nextTheme === 'dark') {
-        root.classList.add('dark')
+      if (
+        nextTheme === 'dark'
+      ) {
+        root.dataset.theme =
+          'dark'
+
         return
       }
 
@@ -142,11 +166,10 @@ export default function SettingsPage() {
           '(prefers-color-scheme: dark)'
         ).matches
 
-      root.classList.add(
+      root.dataset.theme =
         prefersDark
           ? 'dark'
           : 'light'
-      )
     } catch {
       // Ignore.
     }
@@ -209,7 +232,7 @@ export default function SettingsPage() {
     items-center
     gap-3
     px-3
-    py-3
+    py-3.5
     text-left
     transition-colors
     duration-150
@@ -231,12 +254,10 @@ export default function SettingsPage() {
           max-w-2xl
           px-3
           py-4
-
           sm:px-5
           sm:py-6
         "
       >
-
         {/* =================================================
             HEADER
             ================================================= */}
@@ -279,7 +300,7 @@ export default function SettingsPage() {
             <h1
               className="
                 font-['Courier_New']
-                text-[14px]
+                text-[15px]
                 font-black
                 tracking-tight
               "
@@ -291,7 +312,7 @@ export default function SettingsPage() {
               className="
                 mt-0.5
                 font-['Courier_New']
-                text-[8px]
+                text-[9px]
                 text-[var(--muted)]
               "
             >
@@ -319,7 +340,7 @@ export default function SettingsPage() {
               px-3
               py-2.5
               font-['Courier_New']
-              text-[8px]
+              text-[9px]
               font-bold
               uppercase
               tracking-[0.16em]
@@ -340,9 +361,21 @@ export default function SettingsPage() {
           >
             {(
               [
-                ['system', 'System', Palette],
-                ['light', 'Light', Sun],
-                ['dark', 'Dark', Moon],
+                [
+                  'system',
+                  'System',
+                  Palette,
+                ],
+                [
+                  'light',
+                  'Light',
+                  Sun,
+                ],
+                [
+                  'dark',
+                  'Dark',
+                  Moon,
+                ],
               ] as const
             ).map(
               ([
@@ -366,9 +399,10 @@ export default function SettingsPage() {
                     px-2
                     py-3
                     font-['Courier_New']
-                    text-[8px]
+                    text-[9px]
                     font-bold
                     transition-colors
+                    duration-150
 
                     ${
                       theme === value
@@ -415,7 +449,7 @@ export default function SettingsPage() {
               px-3
               py-2.5
               font-['Courier_New']
-              text-[8px]
+              text-[9px]
               font-bold
               uppercase
               tracking-[0.16em]
@@ -437,7 +471,10 @@ export default function SettingsPage() {
             <User
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-[var(--muted)]"
+              className="
+                shrink-0
+                text-[var(--muted)]
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -445,7 +482,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                 "
               >
@@ -457,7 +494,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >
@@ -481,7 +518,10 @@ export default function SettingsPage() {
             <Wallet
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-emerald-500"
+              className="
+                shrink-0
+                text-emerald-500
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -489,7 +529,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                   text-emerald-500
                 "
@@ -502,7 +542,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >
@@ -536,7 +576,7 @@ export default function SettingsPage() {
               px-3
               py-2.5
               font-['Courier_New']
-              text-[8px]
+              text-[9px]
               font-bold
               uppercase
               tracking-[0.16em]
@@ -554,14 +594,17 @@ export default function SettingsPage() {
               items-center
               gap-3
               px-3
-              py-3
+              py-3.5
               hover:bg-[var(--surface-hover)]
             "
           >
             <Bell
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-[var(--muted)]"
+              className="
+                shrink-0
+                text-[var(--muted)]
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -569,7 +612,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                 "
               >
@@ -581,7 +624,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >
@@ -591,9 +634,7 @@ export default function SettingsPage() {
 
             <input
               type="checkbox"
-              checked={
-                notifications
-              }
+              checked={notifications}
               onChange={(event) =>
                 updateNotifications(
                   event.target.checked
@@ -615,14 +656,17 @@ export default function SettingsPage() {
               items-center
               gap-3
               px-3
-              py-3
+              py-3.5
               hover:bg-[var(--surface-hover)]
             "
           >
             <User
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-[var(--muted)]"
+              className="
+                shrink-0
+                text-[var(--muted)]
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -630,7 +674,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                 "
               >
@@ -642,7 +686,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >
@@ -674,14 +718,17 @@ export default function SettingsPage() {
               items-center
               gap-3
               px-3
-              py-3
+              py-3.5
               hover:bg-[var(--surface-hover)]
             "
           >
             <Wallet
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-emerald-500"
+              className="
+                shrink-0
+                text-emerald-500
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -689,7 +736,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                   text-emerald-500
                 "
@@ -702,7 +749,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >
@@ -748,7 +795,7 @@ export default function SettingsPage() {
               px-3
               py-2.5
               font-['Courier_New']
-              text-[8px]
+              text-[9px]
               font-bold
               uppercase
               tracking-[0.16em]
@@ -765,7 +812,10 @@ export default function SettingsPage() {
             <Lock
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-[var(--muted)]"
+              className="
+                shrink-0
+                text-[var(--muted)]
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -773,7 +823,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                 "
               >
@@ -785,7 +835,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >
@@ -806,7 +856,10 @@ export default function SettingsPage() {
             <Shield
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-[var(--muted)]"
+              className="
+                shrink-0
+                text-[var(--muted)]
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -814,7 +867,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                 "
               >
@@ -826,7 +879,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >
@@ -847,7 +900,10 @@ export default function SettingsPage() {
             <Globe
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-[var(--muted)]"
+              className="
+                shrink-0
+                text-[var(--muted)]
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -855,7 +911,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                 "
               >
@@ -867,7 +923,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >
@@ -901,7 +957,7 @@ export default function SettingsPage() {
               px-3
               py-2.5
               font-['Courier_New']
-              text-[8px]
+              text-[9px]
               font-bold
               uppercase
               tracking-[0.16em]
@@ -921,7 +977,10 @@ export default function SettingsPage() {
             <HelpCircle
               size={15}
               strokeWidth={1.8}
-              className="shrink-0 text-[var(--muted)]"
+              className="
+                shrink-0
+                text-[var(--muted)]
+              "
             />
 
             <span className="min-w-0 flex-1">
@@ -929,7 +988,7 @@ export default function SettingsPage() {
                 className="
                   block
                   font-['Courier_New']
-                  text-[9px]
+                  text-[10px]
                   font-bold
                 "
               >
@@ -941,7 +1000,7 @@ export default function SettingsPage() {
                   mt-0.5
                   block
                   font-['Courier_New']
-                  text-[8px]
+                  text-[9px]
                   text-[var(--muted)]
                 "
               >

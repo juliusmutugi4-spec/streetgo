@@ -6,18 +6,39 @@ import { Moon, Sun } from 'lucide-react'
 type Theme = 'dark' | 'light'
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('dark')
+const [theme, setTheme] =
+  useState<Theme>('dark')
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('streetgo-theme') as Theme | null
+useEffect(() => {
+  const currentTheme =
+    document.documentElement.dataset.theme
 
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      setTheme(savedTheme)
-      document.documentElement.dataset.theme = savedTheme
-    } else {
-      document.documentElement.dataset.theme = 'dark'
-    }
-  }, [])
+  if (
+    currentTheme === 'light' ||
+    currentTheme === 'dark'
+  ) {
+    setTheme(currentTheme)
+    return
+  }
+
+  const savedTheme =
+    localStorage.getItem(
+      'streetgo-theme'
+    ) as Theme | null
+
+  if (
+    savedTheme === 'light' ||
+    savedTheme === 'dark'
+  ) {
+    setTheme(savedTheme)
+    document.documentElement.dataset.theme =
+      savedTheme
+    return
+  }
+
+  document.documentElement.dataset.theme =
+    'dark'
+}, [])
 
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark'

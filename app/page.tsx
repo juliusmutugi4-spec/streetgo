@@ -798,11 +798,12 @@ const addImageComment = async () => {
     transitionTimingFunction: 'cubic-bezier(0.25, 1, 0.3, 1)'
   }}
 >
-  <TopNav
-    user={user}
-    onLogin={() => setShowLogin(true)}
-    onLogout={handleLogout}
-  />
+<TopNav
+  user={user}
+  profile={profile}
+  onLogin={() => setShowLogin(true)}
+  onLogout={handleLogout}
+/>
   </div>
 
   {/* STREETGO TOP UPDATES */}
@@ -1056,24 +1057,26 @@ const counts = imageUrls.map(
   ✕
 </button>
 
-<CreatePost
-  userId={user.id}
-  profile={profile}
-  onPosted={(newPost) => {
-    if (newPost) {
-      setPosts((prev) => [
-        {
-          ...newPost,
-          username: profile?.username,
-          avatar_url: profile?.avatar_url,
-        },
-        ...prev,
-      ])
-    }
+{user && (
+  <CreatePost
+    userId={user.id}
+    profile={profile}
+    onPosted={(newPost) => {
+      if (newPost) {
+        setPosts((prev) => [
+          {
+            ...newPost,
+            username: profile?.username,
+            avatar_url: profile?.avatar_url,
+          },
+          ...prev,
+        ])
+      }
 
-    setCreateMode('none')
-  }}
-/>
+      setCreateMode('none')
+    }}
+  />
+)}
 
     </div>
 
@@ -1092,15 +1095,17 @@ const counts = imageUrls.map(
         ✕
       </button>
 
-      <CreatePrediction
-        userId={user.id}
-        username={profile?.username}
-        avatarUrl={profile?.avatar_url}
-        onCreated={() => {
-          fetchPredictions()
-          setCreateMode('none')
-        }}
-      />
+{user && (
+  <CreatePrediction
+    userId={user.id}
+    username={profile?.username}
+    avatarUrl={profile?.avatar_url}
+    onCreated={() => {
+      fetchPredictions()
+      setCreateMode('none')
+    }}
+  />
+)}
 
     </div>
 

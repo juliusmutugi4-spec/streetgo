@@ -380,4 +380,9 @@ body {
 .dispatch-slide-up {
   animation: dispatchSlideUp 280ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-
+html,
+body {
+  transition:
+    background-color .2s ease,
+    color .2s ease;
+}

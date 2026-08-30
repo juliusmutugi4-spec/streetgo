@@ -4,14 +4,14 @@ interface SendReaxParams {
   senderId: string
   receiverId: string
   amount?: number
-  postId: string
+  postId?: string | null
 }
 
 export async function sendReax({
   senderId,
   receiverId,
   amount = 1,
-  postId,
+  postId = null,
 }: SendReaxParams) {
   if (!senderId) {
     throw new Error("Missing sender ID.")
@@ -21,8 +21,10 @@ export async function sendReax({
     throw new Error("Missing receiver ID.")
   }
 
-  if (!postId) {
-    throw new Error("Missing post ID.")
+  if (senderId === receiverId) {
+    throw new Error(
+      "You cannot send REAX to yourself."
+    )
   }
 
   const safeAmount = Math.max(
@@ -30,8 +32,48 @@ export async function sendReax({
     Math.floor(Number(amount) || 1)
   )
 
+  /*
+   * =====================================================
+   * PROFILE REAX
+   *
+   * No post involved.
+   * Uses the existing 3-argument RPC.
+   * =====================================================
+   */
+
+  if (!postId) {
+    const {
+      error,
+    } = await supabase.rpc(
+      "send_reax",
+      {
+        sender: senderId,
+        receiver: receiverId,
+        amount: safeAmount,
+      }
+    )
+
+    if (error) {
+      console.error(
+        "PROFILE REAX ERROR:",
+        error.message
+      )
+
+      throw error
+    }
+
+    return true
+  }
+
+  /*
+   * =====================================================
+   * POST REAX
+   *
+   * Uses the existing 4-argument RPC.
+   * =====================================================
+   */
+
   const {
-    data,
     error,
   } = await supabase.rpc(
     "send_reax",
@@ -45,12 +87,12 @@ export async function sendReax({
 
   if (error) {
     console.error(
-      "REAX ERROR:",
+      "POST REAX ERROR:",
       error.message
     )
 
     throw error
   }
 
-  return data ?? true
+  return true
 }
