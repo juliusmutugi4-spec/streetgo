@@ -472,11 +472,12 @@ return (
 
     {/* TOP NAV */}
 {!mobileChatOpen && (
-  <TopNav
-    user={user}
-    onLogin={() => {}}
-    onLogout={handleLogout}
-  />
+<TopNav
+  user={user}
+  profile={profile}
+  onLogin={() => {}}
+  onLogout={handleLogout}
+/>
 )}
 
 {/* CONTENT */}
