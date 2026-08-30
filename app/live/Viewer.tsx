@@ -42,6 +42,13 @@ export default function Viewer({
       null
     );
 
+  // Step 2: measure the path to the first remote video frame.
+  const viewerStartTimeRef =
+    useRef<number | null>(null);
+
+  const firstFrameLoggedRef =
+    useRef(false);
+
   const cancelledRef =
     useRef(false);
 
@@ -450,6 +457,12 @@ export default function Viewer({
       true;
 
     async function startViewer() {
+      viewerStartTimeRef.current =
+        performance.now();
+
+      firstFrameLoggedRef.current =
+        false;
+
       /*
        * Prevent duplicate connections.
        */
@@ -794,9 +807,69 @@ export default function Viewer({
                 return;
               }
 
+              const playingAt =
+                performance.now();
+
+              if (
+                !firstFrameLoggedRef.current
+              ) {
+                firstFrameLoggedRef.current =
+                  true;
+
+                console.log(
+                  "STREETGO VIEWER FIRST PLAYBACK TIMING:",
+                  {
+                    liveId,
+                    elapsedMs:
+                      viewerStartTimeRef.current !== null
+                        ? Math.round(
+                            playingAt -
+                              viewerStartTimeRef.current
+                          )
+                        : null,
+                    readyState:
+                      video.readyState,
+                  }
+                );
+
+                const videoWithFrameCallback =
+                  video as HTMLVideoElement & {
+                    requestVideoFrameCallback?: (
+                      callback: (
+                        now: number,
+                        metadata: VideoFrameCallbackMetadata
+                      ) => void
+                    ) => number;
+                  };
+
+                if (
+                  videoWithFrameCallback.requestVideoFrameCallback
+                ) {
+                  try {
+                    videoWithFrameCallback.requestVideoFrameCallback(
+                      (frameNow) => {
+                        console.log(
+                          "STREETGO VIEWER FIRST VIDEO FRAME:",
+                          {
+                            liveId,
+                            elapsedMs:
+                              viewerStartTimeRef.current !== null
+                                ? Math.round(
+                                    frameNow -
+                                      viewerStartTimeRef.current
+                                  )
+                                : null,
+                          }
+                        );
+                      }
+                    );
+                  } catch {
+                    // Diagnostic only.
+                  }
+                }
+              }
+
               /*
-               * THIS FIXES THE SCREENSHOT
-               *
                * A successfully playing video
                * clears the old interruption error.
                */
@@ -973,6 +1046,23 @@ export default function Viewer({
               peer.connectionState ===
               "connected"
             ) {
+              const connectedAt =
+                performance.now();
+
+              console.log(
+                "STREETGO VIEWER CONNECTED TIMING:",
+                {
+                  liveId,
+                  elapsedMs:
+                    viewerStartTimeRef.current !== null
+                      ? Math.round(
+                          connectedAt -
+                            viewerStartTimeRef.current
+                        )
+                      : null,
+                }
+              );
+
               setConnected(
                 true
               );
@@ -1272,7 +1362,8 @@ export default function Viewer({
          */
 
         await waitForIceGatheringComplete(
-          peer
+          peer,
+          1500
         );
 
         if (
@@ -1325,6 +1416,23 @@ export default function Viewer({
               localDescription.type,
             hasSdp:
               !!localDescription.sdp,
+          }
+        );
+
+        const offerSentAt =
+          performance.now();
+
+        console.log(
+          "STREETGO VIEWER OFFER SENT TIMING:",
+          {
+            liveId,
+            elapsedMs:
+              viewerStartTimeRef.current !== null
+                ? Math.round(
+                    offerSentAt -
+                      viewerStartTimeRef.current
+                  )
+                : null,
           }
         );
 
@@ -1394,6 +1502,28 @@ export default function Viewer({
 
         const answer =
           await response.json();
+
+        const answerReceivedAt =
+          performance.now();
+
+        console.log(
+          "STREETGO VIEWER ANSWER RECEIVED TIMING:",
+          {
+            liveId,
+            elapsedMs:
+              viewerStartTimeRef.current !== null
+                ? Math.round(
+                    answerReceivedAt -
+                      viewerStartTimeRef.current
+                  )
+                : null,
+            networkMs:
+              Math.round(
+                answerReceivedAt -
+                  offerSentAt
+              ),
+          }
+        );
 
         console.log(
           "=== WEBRTC ANSWER RECEIVED ===",
@@ -2285,7 +2415,8 @@ export default function Viewer({
  */
 
 function waitForIceGatheringComplete(
-  peer: RTCPeerConnection
+  peer: RTCPeerConnection,
+  timeoutMs = 1500
 ): Promise<void> {
   return new Promise(
     (resolve) => {
@@ -2364,7 +2495,7 @@ function waitForIceGatheringComplete(
 
             finish();
           },
-          10000
+          timeoutMs
         );
     }
   );
