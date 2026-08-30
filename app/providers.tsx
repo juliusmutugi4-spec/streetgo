@@ -20,8 +20,12 @@ export default function Providers({
     typeof window !== 'undefined' &&
     'serviceWorker' in navigator
   ) {
-    navigator.serviceWorker
-      .register('/sw.js')
+navigator.serviceWorker.register(
+  '/sw.js',
+  {
+    updateViaCache: 'none',
+  }
+)
       .then((registration) => {
         console.log(
           'StreetGO Service Worker registered:',
