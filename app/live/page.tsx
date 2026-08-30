@@ -15,7 +15,6 @@ import Broadcaster from "./Broadcaster";
 import Viewer from "./Viewer";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_ENGINE_URL ||
   process.env.NEXT_PUBLIC_ENGINE_URL!;
 
 type LiveSession = {
@@ -39,13 +38,22 @@ type Profile = {
 };
 
 function LivePageContent() {
-  const searchParams = useSearchParams();
+  const searchParams =
+    useSearchParams();
 
   const isBroadcaster =
     searchParams.get("broadcast") === "1";
 
   const [live, setLive] =
-    useState<LiveSession | null>(null);
+    useState<LiveSession | null>(
+      null
+    );
+
+  /*
+   * ========================================================
+   * CONNECTION / STATUS
+   * ========================================================
+   */
 
   const [connected, setConnected] =
     useState(false);
@@ -63,21 +71,63 @@ function LivePageContent() {
     useState("");
 
   /*
+   * IMPORTANT:
+   *
+   * Do NOT use navigator.onLine directly
+   * inside JSX.
+   *
+   * Initial value must be deterministic
+   * so SSR and the first client render
+   * produce the same HTML.
+   */
+  const [isOffline, setIsOffline] =
+    useState(false);
+
+  /*
+   * ========================================================
+   * NETWORK STATUS
+   * ========================================================
+   */
+
+  useEffect(() => {
+    const updateNetworkStatus =
+      () => {
+        setIsOffline(
+          !navigator.onLine
+        );
+      };
+
+    /*
+     * This runs only after hydration.
+     */
+    updateNetworkStatus();
+
+    window.addEventListener(
+      "online",
+      updateNetworkStatus
+    );
+
+    window.addEventListener(
+      "offline",
+      updateNetworkStatus
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        updateNetworkStatus
+      );
+
+      window.removeEventListener(
+        "offline",
+        updateNetworkStatus
+      );
+    };
+  }, []);
+
+  /*
    * ========================================================
    * BROADCASTER
-   *
-   * Automatically create and start a live session.
-   *
-   * The broadcaster identity comes from:
-   *
-   * Supabase Auth
-   *       ↓
-   * authenticated user.id
-   *       ↓
-   * profiles.id
-   *       ↓
-   * real username
-   *
    * ========================================================
    */
 
@@ -103,17 +153,16 @@ function LivePageContent() {
         const supabase =
           getSupabaseBrowser();
 
-        
+        const {
+          data: {
+            session,
+          },
+          error: authError,
+        } =
+          await supabase.auth.getSession();
 
-const {
-  data: {
-    session,
-  },
-  error: authError,
-} =
-  await supabase.auth.getSession();
-
-const user = session?.user ?? null;
+        const user =
+          session?.user ?? null;
 
         if (authError) {
           throw new Error(
@@ -127,15 +176,11 @@ const user = session?.user ?? null;
           );
         }
 
-        
-
         /*
          * ====================================================
          * GET REAL STREETGO PROFILE
          * ====================================================
          */
-
-        
 
         const {
           data: profile,
@@ -178,15 +223,11 @@ const user = session?.user ?? null;
         const broadcasterProfile =
           profile as Profile;
 
-        
-
         /*
          * ====================================================
          * CREATE LIVE SESSION
          * ====================================================
          */
-
-        
 
         const createResponse =
           await fetch(
@@ -206,15 +247,9 @@ const user = session?.user ?? null;
                 description:
                   "StreetGO real-time live video",
 
-                /*
-                 * REAL SUPABASE USER ID
-                 */
                 host_id:
                   user.id,
 
-                /*
-                 * REAL STREETGO USERNAME
-                 */
                 host_name:
                   broadcasterProfile.username,
 
@@ -236,12 +271,12 @@ const user = session?.user ?? null;
         const createResult =
           await createResponse.json();
 
-        
-
         const createdLive =
           createResult.live as LiveSession;
 
-        if (!createdLive?.live_id) {
+        if (
+          !createdLive?.live_id
+        ) {
           throw new Error(
             "Backend did not return a live_id."
           );
@@ -252,8 +287,6 @@ const user = session?.user ?? null;
          * START LIVE SESSION
          * ====================================================
          */
-
-        
 
         const startResponse =
           await fetch(
@@ -275,8 +308,6 @@ const user = session?.user ?? null;
         const startResult =
           await startResponse.json();
 
-        
-
         const startedLive =
           startResult.live as LiveSession;
 
@@ -287,14 +318,11 @@ const user = session?.user ?? null;
         /*
          * ====================================================
          * FORCE REAL PROFILE INFORMATION
-         *
-         * Even if the backend returns an old/default
-         * host_name, keep the authenticated profile name
-         * in the frontend.
          * ====================================================
          */
 
-        const finalLive: LiveSession = {
+        const finalLive:
+          LiveSession = {
           ...startedLive,
 
           host_id:
@@ -310,30 +338,45 @@ const user = session?.user ?? null;
          * ====================================================
          */
 
-        setLive(finalLive);
-
-        setViewerCount(
-          finalLive.viewer_count ?? 0
+        setLive(
+          finalLive
         );
 
-        
-
+        setViewerCount(
+          finalLive.viewer_count ??
+            0
+        );
       } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        /*
+         * Network failure during offline mode
+         * should be handled as connectivity state.
+         */
+        if (
+          !navigator.onLine
+        ) {
+          setIsOffline(true);
+          setError("");
+          setLive(null);
+
+          return;
+        }
+
         console.error(
-          "StreetGo broadcaster startup error:",
+          "StreetGO broadcaster startup error:",
           err
         );
 
-        if (!cancelled) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "Unable to start StreetGo Live."
-          );
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to start StreetGO Live."
+        );
 
-          setLive(null);
-        }
-
+        setLive(null);
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -342,7 +385,7 @@ const user = session?.user ?? null;
       }
     }
 
-    createAndStartLive();
+    void createAndStartLive();
 
     return () => {
       cancelled = true;
@@ -352,8 +395,6 @@ const user = session?.user ?? null;
   /*
    * ========================================================
    * VIEWER
-   *
-   * Viewer only searches for an existing live session.
    * ========================================================
    */
 
@@ -369,9 +410,31 @@ const user = session?.user ?? null;
         setLoading(true);
         setError("");
 
+        /*
+         * Check connection only inside an effect,
+         * never during SSR rendering.
+         */
+        if (!navigator.onLine) {
+          setIsOffline(true);
+
+          setError(
+            "You are offline. Waiting for your internet connection..."
+          );
+
+          setLive(null);
+
+          return;
+        }
+
+        setIsOffline(false);
+
         const response =
           await fetch(
-            `${API_URL}/live`
+            `${API_URL}/live`,
+            {
+              cache:
+                "no-store",
+            }
           );
 
         if (!response.ok) {
@@ -389,8 +452,11 @@ const user = session?.user ?? null;
 
         const activeSession =
           sessions.find(
-            (session) =>
-              session.status === "live"
+            (
+              session
+            ) =>
+              session.status ===
+              "live"
           );
 
         if (cancelled) {
@@ -407,26 +473,39 @@ const user = session?.user ?? null;
           return;
         }
 
-        setLive(activeSession);
-
-        setViewerCount(
-          activeSession.viewer_count ?? 0
+        setLive(
+          activeSession
         );
 
-        
-
+        setViewerCount(
+          activeSession.viewer_count ??
+            0
+        );
       } catch (err) {
-        console.error(
-          "Live session discovery error:",
+        if (cancelled) {
+          return;
+        }
+
+        if (
+          !navigator.onLine
+        ) {
+          setIsOffline(true);
+
+          setError(
+            "You are offline. Waiting for your internet connection..."
+          );
+
+          return;
+        }
+
+        console.warn(
+          "StreetGO Live: session discovery failed:",
           err
         );
 
-        if (!cancelled) {
-          setError(
-            "Unable to connect to the StreetGo Live server."
-          );
-        }
-
+        setError(
+          "Unable to connect to the StreetGO Live server."
+        );
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -434,7 +513,7 @@ const user = session?.user ?? null;
       }
     }
 
-    findLiveSession();
+    void findLiveSession();
 
     return () => {
       cancelled = true;
@@ -443,9 +522,13 @@ const user = session?.user ?? null;
 
   /*
    * ========================================================
-   * WEBSOCKET
+   * STATUS WEBSOCKET
    *
-   * Used for connection status + viewer count.
+   * This socket is ONLY for:
+   * - viewer count
+   * - live status
+   *
+   * Actual video is WebRTC.
    * ========================================================
    */
 
@@ -454,87 +537,443 @@ const user = session?.user ?? null;
       return;
     }
 
-const wsProtocol =
-  window.location.protocol === "https:"
-    ? "wss:"
-    : "ws:";
+    let cancelled = false;
 
-const apiUrl =
-  new URL(API_URL);
+    let reconnectTimer:
+      ReturnType<typeof setTimeout> |
+      null = null;
 
-const wsHost =
-  apiUrl.host;
+    let ws:
+      WebSocket | null = null;
 
-const ws =
-  new WebSocket(
-    `${wsProtocol}//${wsHost}/live/${live.live_id}/ws`
-  );
-    ws.onopen = () => {
-      
+    let connectingSocket =
+      false;
 
-      setConnected(true);
-    };
+    /*
+     * ======================================================
+     * CLEAR RECONNECT TIMER
+     * ======================================================
+     */
 
-    ws.onmessage = (event) => {
-      try {
-        const message =
-          JSON.parse(event.data);
-
-        
-
+    const clearReconnectTimer =
+      () => {
         if (
-          message.type ===
-            "viewer_count" ||
-          message.type ===
-            "connected"
+          reconnectTimer
         ) {
-          setViewerCount(
-            message.viewer_count ?? 0
+          clearTimeout(
+            reconnectTimer
           );
+
+          reconnectTimer =
+            null;
+        }
+      };
+
+    /*
+     * ======================================================
+     * CONNECT
+     * ======================================================
+     */
+
+    const connectWebSocket =
+      () => {
+        if (
+          cancelled ||
+          connectingSocket
+        ) {
+          return;
         }
 
-      } catch (err) {
-        console.error(
-          "Live WebSocket event error:",
-          err
-        );
-      }
-    };
+        if (
+          !navigator.onLine
+        ) {
+          setConnected(false);
+          return;
+        }
 
-    ws.onerror = (event) => {
-      console.error(
-        "StreetGo Live WebSocket error:",
-        event
-      );
+        /*
+         * Avoid duplicate sockets.
+         */
+        if (
+          ws &&
+          (
+            ws.readyState ===
+              WebSocket.OPEN ||
+            ws.readyState ===
+              WebSocket.CONNECTING
+          )
+        ) {
+          return;
+        }
 
-      setConnected(false);
-    };
+        connectingSocket =
+          true;
 
-    ws.onclose = () => {
-      
+        try {
+          const wsProtocol =
+            window.location.protocol ===
+            "https:"
+              ? "wss:"
+              : "ws:";
 
-      setConnected(false);
-    };
+          const apiUrl =
+            new URL(API_URL);
+
+          const wsHost =
+            apiUrl.host;
+
+          const socketUrl =
+            `${wsProtocol}//${wsHost}/live/${live.live_id}/ws`;
+
+          ws =
+            new WebSocket(
+              socketUrl
+            );
+
+          ws.onopen = () => {
+            connectingSocket =
+              false;
+
+            if (cancelled) {
+              return;
+            }
+
+            setConnected(true);
+
+            console.log(
+              "StreetGO Live WebSocket connected"
+            );
+          };
+
+          ws.onmessage = (
+            event
+          ) => {
+            if (cancelled) {
+              return;
+            }
+
+            try {
+              const message =
+                JSON.parse(
+                  event.data
+                );
+
+              if (
+                message.type ===
+                  "viewer_count" ||
+                message.type ===
+                  "connected"
+              ) {
+                setViewerCount(
+                  Number(
+                    message.viewer_count
+                  ) || 0
+                );
+              }
+            } catch (err) {
+              console.warn(
+                "StreetGO Live: invalid status message.",
+                err
+              );
+            }
+          };
+
+          /*
+           * IMPORTANT:
+           *
+           * Do NOT console.error here.
+           * A browser WebSocket error is often
+           * an expected network transition.
+           */
+          ws.onerror = () => {
+            connectingSocket =
+              false;
+
+            if (cancelled) {
+              return;
+            }
+
+            setConnected(false);
+
+            if (
+              !navigator.onLine
+            ) {
+              setIsOffline(true);
+              return;
+            }
+
+            console.warn(
+              "StreetGO Live: status connection unavailable; waiting for reconnect."
+            );
+          };
+
+          ws.onclose = () => {
+            connectingSocket =
+              false;
+
+            if (cancelled) {
+              return;
+            }
+
+            setConnected(false);
+
+            if (
+              !navigator.onLine
+            ) {
+              return;
+            }
+
+            if (
+              reconnectTimer
+            ) {
+              return;
+            }
+
+            reconnectTimer =
+              setTimeout(
+                () => {
+                  reconnectTimer =
+                    null;
+
+                  if (
+                    cancelled ||
+                    !navigator.onLine
+                  ) {
+                    return;
+                  }
+
+                  connectWebSocket();
+                },
+                3000
+              );
+          };
+        } catch (err) {
+          connectingSocket =
+            false;
+
+          setConnected(false);
+
+          if (
+            !navigator.onLine
+          ) {
+            setIsOffline(true);
+            return;
+          }
+
+          console.warn(
+            "StreetGO Live: unable to create status connection.",
+            err
+          );
+
+          if (
+            !reconnectTimer
+          ) {
+            reconnectTimer =
+              setTimeout(
+                () => {
+                  reconnectTimer =
+                    null;
+
+                  if (
+                    !cancelled &&
+                    navigator.onLine
+                  ) {
+                    connectWebSocket();
+                  }
+                },
+                3000
+              );
+          }
+        }
+      };
+
+    /*
+     * ======================================================
+     * OFFLINE
+     * ======================================================
+     */
+
+    const handleOffline =
+      () => {
+        if (cancelled) {
+          return;
+        }
+
+        setIsOffline(true);
+        setConnected(false);
+
+        clearReconnectTimer();
+
+        if (
+          ws &&
+          (
+            ws.readyState ===
+              WebSocket.OPEN ||
+            ws.readyState ===
+              WebSocket.CONNECTING
+          )
+        ) {
+          try {
+            ws.close();
+          } catch {
+            // Ignore offline close errors.
+          }
+        }
+
+        ws = null;
+        connectingSocket =
+          false;
+      };
+
+    /*
+     * ======================================================
+     * ONLINE
+     * ======================================================
+     */
+
+    const handleOnline =
+      () => {
+        if (cancelled) {
+          return;
+        }
+
+        setIsOffline(false);
+
+        clearReconnectTimer();
+
+        reconnectTimer =
+          setTimeout(
+            () => {
+              reconnectTimer =
+                null;
+
+              if (
+                cancelled ||
+                !navigator.onLine
+              ) {
+                return;
+              }
+
+              connectWebSocket();
+            },
+            500
+          );
+      };
+
+    window.addEventListener(
+      "offline",
+      handleOffline
+    );
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    /*
+     * Initial connection.
+     */
+    connectWebSocket();
 
     return () => {
-      ws.close();
+      cancelled = true;
+
+      clearReconnectTimer();
+
+      window.removeEventListener(
+        "offline",
+        handleOffline
+      );
+
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+
+      if (ws) {
+        try {
+          ws.close();
+        } catch {
+          // Ignore cleanup errors.
+        }
+
+        ws = null;
+      }
+
+      connectingSocket =
+        false;
     };
   }, [live?.live_id]);
 
   /*
    * ========================================================
+   * VIEWER OFFLINE RECOVERY
+   * ========================================================
+   */
+
+  useEffect(() => {
+    if (isBroadcaster) {
+      return;
+    }
+
+    const handleOnline =
+      () => {
+        setIsOffline(false);
+
+        /*
+         * When no session was loaded because
+         * the browser was offline, reload once
+         * the connection is available.
+         */
+        if (!live) {
+          setLoading(true);
+          setError("");
+
+          window.location.reload();
+        }
+      };
+
+    window.addEventListener(
+      "online",
+      handleOnline
+    );
+
+    return () => {
+      window.removeEventListener(
+        "online",
+        handleOnline
+      );
+    };
+  }, [
+    isBroadcaster,
+    live,
+  ]);
+
+  /*
+   * ========================================================
    * LOADING
+   *
+   * IMPORTANT:
+   *
+   * Use isOffline state here.
+   * NEVER navigator.onLine directly in JSX.
    * ========================================================
    */
 
   if (loading) {
     return (
       <main className="min-h-screen bg-black text-white">
-
         <div className="mx-auto max-w-5xl px-4 py-8">
-
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
-
+          <div
+            className="
+              rounded-2xl
+              border
+              border-zinc-800
+              bg-zinc-950
+              p-8
+              text-center
+            "
+          >
             <div className="mb-4 text-4xl">
               📡
             </div>
@@ -546,13 +985,12 @@ const ws =
             <p className="mt-3 text-sm text-zinc-400">
               {creatingLive
                 ? "Preparing your live broadcast..."
-                : "Loading StreetGo Live..."}
+                : isOffline
+                  ? "Waiting for your internet connection..."
+                  : "Loading StreetGo Live..."}
             </p>
-
           </div>
-
         </div>
-
       </main>
     );
   }
@@ -566,11 +1004,17 @@ const ws =
   if (!live) {
     return (
       <main className="min-h-screen bg-black text-white">
-
         <div className="mx-auto max-w-5xl px-4 py-8">
-
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
-
+          <div
+            className="
+              rounded-2xl
+              border
+              border-zinc-800
+              bg-zinc-950
+              p-8
+              text-center
+            "
+          >
             <div className="mb-4 text-4xl">
               📡
             </div>
@@ -584,10 +1028,37 @@ const ws =
                 "There is currently no active live session."}
             </p>
 
+            {isOffline && (
+              <div
+                className="
+                  mt-5
+                  inline-flex
+                  items-center
+                  gap-2
+                  rounded-lg
+                  border
+                  border-yellow-500/20
+                  bg-yellow-500/5
+                  px-4
+                  py-2
+                  text-xs
+                  text-yellow-300
+                "
+              >
+                <span
+                  className="
+                    h-2
+                    w-2
+                    rounded-full
+                    bg-yellow-400
+                  "
+                />
+
+                Waiting for connection...
+              </div>
+            )}
           </div>
-
         </div>
-
       </main>
     );
   }
@@ -600,15 +1071,21 @@ const ws =
 
   return (
     <main className="min-h-screen bg-black text-white">
-
       <div className="mx-auto max-w-5xl px-4 py-8">
 
-        {/* HEADER */}
+        {/* =================================================
+            HEADER
+            ================================================= */}
 
-        <div className="mb-6 flex items-center justify-between">
-
+        <div
+          className="
+            mb-6
+            flex
+            items-center
+            justify-between
+          "
+        >
           <div>
-
             <h1 className="text-2xl font-bold">
               StreetGo Live
             </h1>
@@ -618,133 +1095,250 @@ const ws =
                 ? "Live Broadcasting"
                 : "Live Coverage"}
             </p>
-
           </div>
 
-          <div className="flex items-center gap-3">
-
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+            "
+          >
             <span
-              className={`h-3 w-3 rounded-full ${
-                connected
-                  ? "bg-red-500"
-                  : "bg-zinc-600"
-              }`}
+              className={`
+                h-3
+                w-3
+                rounded-full
+
+                ${
+                  connected
+                    ? "bg-red-500"
+                    : isOffline
+                      ? "bg-yellow-400"
+                      : "bg-zinc-600"
+                }
+              `}
             />
 
-            <span className="text-sm font-medium">
+            <span
+              className="
+                text-sm
+                font-medium
+              "
+            >
               {connected
                 ? "LIVE"
-                : "DISCONNECTED"}
+                : isOffline
+                  ? "OFFLINE"
+                  : "RECONNECTING..."}
             </span>
-
           </div>
-
         </div>
 
-        {/* BROADCASTER OR VIEWER */}
+        {/* =================================================
+            BROADCASTER / VIEWER
+            ================================================= */}
 
         {isBroadcaster ? (
-
           <Broadcaster
-            liveId={live.live_id}
+            liveId={
+              live.live_id
+            }
           />
-
         ) : (
-
           <Viewer
-            liveId={live.live_id}
+            liveId={
+              live.live_id
+            }
           />
-
         )}
 
-        {/* LIVE INFORMATION */}
+        {/* =================================================
+            LIVE INFORMATION
+            ================================================= */}
 
-        <section className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-950 p-6">
-
-          <h2 className="text-lg font-semibold">
+        <section
+          className="
+            mt-6
+            rounded-2xl
+            border
+            border-zinc-800
+            bg-zinc-950
+            p-6
+          "
+        >
+          <h2
+            className="
+              text-lg
+              font-semibold
+            "
+          >
             {live.title}
           </h2>
 
           {live.description && (
-            <p className="mt-1 text-sm text-zinc-400">
+            <p
+              className="
+                mt-1
+                text-sm
+                text-zinc-400
+              "
+            >
               {live.description}
             </p>
           )}
 
-          <div className="mt-5 flex flex-wrap gap-8">
+          <div
+            className="
+              mt-5
+              flex
+              flex-wrap
+              gap-8
+            "
+          >
+            {/* STATUS */}
 
             <div>
-
-              <p className="text-xs text-zinc-500">
+              <p
+                className="
+                  text-xs
+                  text-zinc-500
+                "
+              >
                 STATUS
               </p>
 
-              <p className="mt-1 font-semibold">
+              <p
+                className="
+                  mt-1
+                  font-semibold
+                "
+              >
                 {connected
                   ? "Connected"
-                  : "Disconnected"}
+                  : isOffline
+                    ? "Offline"
+                    : "Reconnecting"}
               </p>
-
             </div>
 
-            <div>
+            {/* VIEWERS */}
 
-              <p className="text-xs text-zinc-500">
+            <div>
+              <p
+                className="
+                  text-xs
+                  text-zinc-500
+                "
+              >
                 VIEWERS
               </p>
 
-              <p className="mt-1 font-semibold">
+              <p
+                className="
+                  mt-1
+                  font-semibold
+                "
+              >
                 {viewerCount}
               </p>
-
             </div>
 
-            <div>
+            {/* HOST */}
 
-              <p className="text-xs text-zinc-500">
+            <div>
+              <p
+                className="
+                  text-xs
+                  text-zinc-500
+                "
+              >
                 HOST
               </p>
 
-              <p className="mt-1 font-semibold">
+              <p
+                className="
+                  mt-1
+                  font-semibold
+                "
+              >
                 {live.host_name}
               </p>
-
             </div>
+
+            {/* LOCATION */}
 
             {live.location && (
               <div>
-
-                <p className="text-xs text-zinc-500">
+                <p
+                  className="
+                    text-xs
+                    text-zinc-500
+                  "
+                >
                   LOCATION
                 </p>
 
-                <p className="mt-1 font-semibold">
+                <p
+                  className="
+                    mt-1
+                    font-semibold
+                  "
+                >
                   {live.location}
                 </p>
-
               </div>
             )}
 
-            <div>
+            {/* MODE */}
 
-              <p className="text-xs text-zinc-500">
+            <div>
+              <p
+                className="
+                  text-xs
+                  text-zinc-500
+                "
+              >
                 MODE
               </p>
 
-              <p className="mt-1 font-semibold">
+              <p
+                className="
+                  mt-1
+                  font-semibold
+                "
+              >
                 {isBroadcaster
                   ? "Broadcaster"
                   : "Viewer"}
               </p>
-
             </div>
-
           </div>
 
+          {/* OFFLINE NOTICE */}
+
+          {isOffline && (
+            <div
+              className="
+                mt-5
+                rounded-lg
+                border
+                border-yellow-500/20
+                bg-yellow-500/5
+                px-4
+                py-3
+                text-xs
+                text-yellow-300
+              "
+            >
+              Internet connection lost.
+              StreetGO Live will reconnect
+              automatically when the connection
+              returns.
+            </div>
+          )}
         </section>
-
       </div>
-
     </main>
   );
 }
@@ -755,7 +1349,16 @@ export default function LivePage() {
       fallback={
         <main className="min-h-screen bg-black text-white">
           <div className="mx-auto max-w-5xl px-4 py-8">
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-8 text-center">
+            <div
+              className="
+                rounded-2xl
+                border
+                border-zinc-800
+                bg-zinc-950
+                p-8
+                text-center
+              "
+            >
               <div className="mb-4 text-4xl">
                 📡
               </div>
@@ -774,6 +1377,5 @@ export default function LivePage() {
     >
       <LivePageContent />
     </Suspense>
-  )
+  );
 }
-

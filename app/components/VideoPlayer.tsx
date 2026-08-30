@@ -15,6 +15,7 @@ import {
   Maximize,
   Loader2,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react'
 
 interface VideoPlayerProps {
@@ -480,6 +481,37 @@ export default function VideoPlayer({
       onError?.()
     }
 
+
+const handleRefresh = () => {
+  const video =
+    videoRef.current
+
+  if (!video) {
+    return
+  }
+
+  setError(false)
+  setLoading(true)
+  setIsPlaying(false)
+
+  try {
+    video.load()
+
+    void video.play().catch(() => {
+      // Browser may block autoplay.
+      // The user can press play manually.
+    })
+  } catch (error) {
+    console.error(
+      'VIDEO REFRESH ERROR:',
+      error
+    )
+  }
+}
+
+
+
+
   /*
    * =====================================================
    * FORMAT TIME
@@ -657,14 +689,38 @@ export default function VideoPlayer({
             "
           />
 
-          <span
-            className="
-              text-sm
-              text-white/60
-            "
-          >
-            Video unavailable
-          </span>
+<button
+  type="button"
+  onClick={(event) => {
+    event.stopPropagation()
+    handleRefresh()
+  }}
+  className="
+    inline-flex
+    items-center
+    gap-2
+    rounded-lg
+    border
+    border-white/20
+    bg-white/10
+    px-4
+    py-2
+    text-xs
+    font-semibold
+    text-white
+    backdrop-blur-md
+    transition-all
+    hover:bg-white/15
+    active:scale-[0.97]
+  "
+>
+  <RefreshCw
+    size={14}
+    strokeWidth={2}
+  />
+
+  Refresh video
+</button>
         </div>
       )}
 
