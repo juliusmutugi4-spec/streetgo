@@ -1,43 +1,49 @@
 'use client'
 
-import { Home, MessageCircle, User } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import {
+  Home,
+  MessageCircle,
+  User,
+} from 'lucide-react'
+
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+
 import CreateButton from './CreateButton'
 
-
-interface UserProfile {
-  username?: string
+interface BottomNavProfile {
+  username?: string | null
   avatar_url?: string | null
 }
 
-
 interface BottomNavProps {
-  profile: UserProfile | null
+  profile: BottomNavProfile | null
   unreadCount: number
-  onCreateSelect: (mode: 'post' | 'prediction') => void
+  onCreateSelect: (
+    mode: 'post' | 'prediction'
+  ) => void
 }
-
-
 
 export default function BottomNav({
   profile,
   unreadCount,
-  onCreateSelect
+  onCreateSelect,
 }: BottomNavProps) {
-
-
   const router = useRouter()
 
-
-  const navigate = (path:string) => {
+  const navigate = (
+    path: string
+  ) => {
     router.push(path)
   }
 
+  const username =
+    profile?.username?.trim() || ''
 
+  const avatarUrl =
+    profile?.avatar_url || null
 
   return (
-
     <nav
       className="
         lg:hidden
@@ -48,41 +54,37 @@ export default function BottomNav({
         z-50
         border-t
         border-[var(--border)]
-        bg-[var(--background)]/80
+        bg-[var(--background)]/90
         backdrop-blur-xl
         text-[var(--muted)]
-        shadow-[0_-10px_30px_rgba(0,0,0,0.15)]
+        shadow-[0_-8px_25px_rgba(0,0,0,0.12)]
         select-none
-        transition-all
-        duration-300
       "
     >
-
-
       <div
         className="
           mx-auto
           grid
           h-14
+          w-full
           max-w-xl
           grid-cols-4
           items-center
           justify-items-center
-          px-4
+          px-3
         "
       >
 
-
-
-
-
-        {/* FEED */}
-
+        {/* =================================================
+            FEED
+            ================================================= */}
 
         <button
-
-          onClick={() => navigate('/')}
-
+          type="button"
+          onClick={() =>
+            navigate('/')
+          }
+          aria-label="Feed"
           className="
             group
             flex
@@ -90,83 +92,73 @@ export default function BottomNav({
             flex-col
             items-center
             justify-center
+            gap-0.5
             py-1
-            transition-all
-            duration-200
+            transition-colors
+            duration-150
             hover:text-[var(--foreground)]
             active:scale-95
+            focus:outline-none
           "
-
         >
-
           <Home
             size={18}
+            strokeWidth={1.9}
             className="
               transition-transform
-              duration-200
-              group-hover:scale-110
+              duration-150
+              group-hover:scale-105
             "
           />
 
-
           <span
             className="
-              mt-1
-              text-[10px]
+              font-['Courier_New']
+              text-[8px]
               font-bold
               uppercase
-              tracking-wider
+              tracking-wide
               text-[var(--muted)]
               group-hover:text-[var(--foreground)]
             "
           >
             Feed
           </span>
-
-
         </button>
 
-
-
-
-
-
-
-        {/* CREATE */}
-
+        {/* =================================================
+            CREATE
+            ================================================= */}
 
         <div
           className="
-            relative
             flex
             w-full
             items-center
             justify-center
           "
         >
-
           <CreateButton
-            onCreateSelect={onCreateSelect}
+            onCreateSelect={
+              onCreateSelect
+            }
           />
-
         </div>
 
-
-
-
-
-
-
-
-
-        {/* MESSAGES */}
-
-
+        {/* =================================================
+            MESSAGES
+            ================================================= */}
 
         <button
-
-          onClick={() => navigate('/messages')}
-
+          type="button"
+          onClick={() =>
+            navigate('/messages')
+          }
+          aria-label={
+            unreadCount > 0
+              ? `${unreadCount} unread messages`
+              : 'Messages'
+          }
           className="
             group
             relative
@@ -175,197 +167,207 @@ export default function BottomNav({
             flex-col
             items-center
             justify-center
+            gap-0.5
             py-1
-            transition-all
-            duration-200
+            transition-colors
+            duration-150
             hover:text-[var(--foreground)]
             active:scale-95
+            focus:outline-none
           "
-
         >
-
-
-          <div className="relative">
-
-
+          <div
+            className="
+              relative
+              flex
+              items-center
+              justify-center
+            "
+          >
             <MessageCircle
               size={18}
+              strokeWidth={1.9}
               className="
                 transition-transform
-                duration-200
-                group-hover:scale-110
+                duration-150
+                group-hover:scale-105
               "
             />
 
-
-
-            {
-              unreadCount > 0 && (
-
-                <span
-                  className="
-                    absolute
-                    -right-2.5
-                    -top-1.5
-                    flex
-                    h-[14px]
-                    min-w-[14px]
-                    items-center
-                    justify-center
-                    rounded-full
-                    border
-                    border-[var(--background)]
-                    bg-red-500
-                    px-1
-                    text-[8px]
-                    font-black
-                    text-white
-                    shadow-lg
-                    animate-pulse
-                  "
-                >
-
-                  {
-                    unreadCount > 99
-                    ? '99+'
-                    : unreadCount
-                  }
-
-                </span>
-
-              )
-            }
-
-
-
+            {unreadCount > 0 && (
+              <span
+                className="
+                  absolute
+                  -right-2
+                  -top-1.5
+                  flex
+                  h-3.5
+                  min-w-3.5
+                  items-center
+                  justify-center
+                  rounded-full
+                  border
+                  border-[var(--background)]
+                  bg-red-500
+                  px-0.5
+                  font-['Courier_New']
+                  text-[7px]
+                  font-black
+                  leading-none
+                  text-white
+                  shadow-sm
+                "
+              >
+                {unreadCount > 99
+                  ? '99+'
+                  : unreadCount}
+              </span>
+            )}
           </div>
-
-
 
           <span
             className="
-              mt-1
-              text-[10px]
+              font-['Courier_New']
+              text-[8px]
               font-bold
               uppercase
-              tracking-wider
+              tracking-wide
               text-[var(--muted)]
               group-hover:text-[var(--foreground)]
             "
           >
             Comms
           </span>
-
-
         </button>
 
-
-
-
-
-
-
-
-        {/* PROFILE */}
-
-
+        {/* =================================================
+            PROFILE
+            ================================================= */}
 
         <button
-
-          onClick={() =>
-            navigate(
-              profile?.username
-              ? `/profile/${profile.username}`
-              : '/'
-            )
+          type="button"
+          onClick={() => {
+            if (username) {
+              navigate(
+                `/profile/${encodeURIComponent(
+                  username
+                )}`
+              )
+            } else {
+              navigate('/')
+            }
+          }}
+          aria-label={
+            username
+              ? `Open ${username}'s profile`
+              : 'Open profile'
           }
-
           className="
             group
             flex
             w-full
+            min-w-0
             flex-col
             items-center
             justify-center
+            gap-0.5
             py-1
-            transition-all
-            duration-200
+            transition-colors
+            duration-150
             hover:text-[var(--foreground)]
             active:scale-95
+            focus:outline-none
           "
-
         >
+          {/* AVATAR */}
 
-
-          {
-            profile?.avatar_url ? (
-
-              <div
+          {avatarUrl ? (
+            <div
+              className="
+                relative
+                h-5
+                w-5
+                shrink-0
+                overflow-hidden
+                rounded-full
+                border
+                border-[var(--border)]
+                bg-[var(--surface)]
+                transition-transform
+                duration-150
+                group-hover:scale-105
+              "
+            >
+              <Image
+                src={avatarUrl}
+                alt={
+                  username ||
+                  'Profile'
+                }
+                fill
+                sizes="20px"
                 className="
-                  relative
-                  h-5
-                  w-5
-                  overflow-hidden
-                  rounded-md
-                  border
-                  border-[var(--border)]
-                  transition-all
-                  duration-200
-                  group-hover:scale-110
-                "
-              >
-
-                <Image
-                  src={profile.avatar_url}
-                  alt="Profile"
-                  fill
-                  className="object-cover"
-                />
-
-              </div>
-
-
-            ) : (
-
-
-              <User
-                size={18}
-                className="
-                  transition-transform
-                  duration-200
-                  group-hover:scale-110
+                  object-cover
+                  select-none
                 "
               />
+            </div>
+          ) : (
+            <div
+              className="
+                flex
+                h-5
+                w-5
+                shrink-0
+                items-center
+                justify-center
+                overflow-hidden
+                rounded-full
+                border
+                border-[var(--border)]
+                bg-[var(--surface)]
+                font-['Courier_New']
+                text-[8px]
+                font-bold
+                text-[var(--foreground)]
+                transition-transform
+                duration-150
+                group-hover:scale-105
+              "
+            >
+              {username ? (
+                username
+                  .charAt(0)
+                  .toUpperCase()
+              ) : (
+                <User
+                  size={12}
+                  strokeWidth={1.8}
+                />
+              )}
+            </div>
+          )}
 
-
-            )
-          }
-
-
+          {/* USERNAME */}
 
           <span
             className="
-              mt-1
-              text-[10px]
+              max-w-[65px]
+              truncate
+              font-['Courier_New']
+              text-[8px]
               font-bold
-              uppercase
-              tracking-wider
+              leading-none
+              tracking-tight
               text-[var(--muted)]
               group-hover:text-[var(--foreground)]
             "
           >
-            User
+            {username || 'Profile'}
           </span>
-
-
         </button>
 
-
-
       </div>
-
-
     </nav>
-
   )
 }

@@ -26,7 +26,9 @@ import DatingCircle from './components/DatingCircle'
 type PostType = {
   id: string
   content: string
+  image_urls?: string[] | null
   video_url?: string | null
+  thumbnail_url?: string | null
   user_id: string
   created_at: string
   username?: string
@@ -530,65 +532,107 @@ if (showSplash) {
   )
 }
 
-const handleSendComment = async (message: string) => {
-  if (!user) {
-    console.error("No logged in user")
-    return
-  }
+const handleSendComment = async (
+  message: string
+) => {
+  const cleanMessage = message
+    .replace(/[ \t]+/g, ' ')
+    .trim()
 
-  if (!selectedPost) {
-    console.error("No selected post")
-    return
-  }
-
-  const { data, error } = await supabase
-    .from("comments")
-    .insert({
-      post_id: selectedPost.id,
-      user_id: user.id,
-      username: profile?.username ?? "Unknown",
-      avatar_url: profile?.avatar_url,
-      content: message,
-      
-    })
-    .select()
-    .single()
-
-if (error) {
-  const commentError = {
-    message:
-      error?.message ?? null,
-
-    details:
-      error?.details ?? null,
-
-    hint:
-      error?.hint ?? null,
-
-    code:
-      error?.code ?? null,
-
-    status:
-      error?.status ?? null,
-
-    name:
-      error?.name ?? null,
-  }
-
-  console.error(
-    "STREETGO COMMENT ERROR:",
-    JSON.stringify(
-      commentError,
-      null,
-      2
+  if (!cleanMessage) {
+    throw new Error(
+      'Comment cannot be empty.'
     )
+  }
+
+  /*
+   * Get the REAL authenticated Supabase user.
+   * This is safer than relying only on the
+   * React user object.
+   */
+  const {
+    data: {
+      user: authUser,
+    },
+    error: authError,
+  } = await supabase.auth.getUser()
+
+  if (authError) {
+    console.error(
+      'AUTH CHECK ERROR:',
+      authError
+    )
+
+    throw new Error(
+      authError.message ||
+        'Unable to verify your login.'
+    )
+  }
+
+  if (!authUser) {
+    throw new Error(
+      'You must be logged in to comment.'
+    )
+  }
+
+  if (!selectedPost?.id) {
+    throw new Error(
+      'No post selected.'
+    )
+  }
+
+  /*
+   * =====================================================
+   * SAVE COMMENT
+   * =====================================================
+   */
+
+  const { data, error } =
+    await supabase
+      .from('comments')
+      .insert({
+        post_id: selectedPost.id,
+        user_id: authUser.id,
+        content: cleanMessage,
+        username:
+          profile?.username ||
+          authUser.email?.split('@')[0] ||
+          'Anonymous',
+        avatar_url:
+          profile?.avatar_url ||
+          null,
+      })
+      .select()
+      .single()
+
+  if (error) {
+    console.error(
+      'STREETGO COMMENT SAVE ERROR:',
+      {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      }
+    )
+
+    throw new Error(
+      error.message ||
+        'Comment could not be saved.'
+    )
+  }
+
+  /*
+   * Add the CONFIRMED database row
+   * to the UI.
+   */
+  setDiscussionComments(
+    (previous) => [
+      ...previous,
+      data,
+    ]
   )
-
-  return
 }
-  setDiscussionComments(prev => [...prev, data])
-}
-
 const toggleImageLike = async () => {
   if (!user) {
     setShowLogin(true)
@@ -719,7 +763,19 @@ const addImageComment = async () => {
 
 
   return (
-    <main className="min-h-screen bg-[#060608] text-[#f4f4f5] antialiased selection:bg-emerald-500/30 font-sans tracking-tight relative overflow-x-hidden">
+    <main
+  className="
+    min-h-screen
+    bg-[var(--surface)]
+    text-[var(--foreground)]
+    antialiased
+    selection:bg-emerald-500/30
+    font-sans
+    tracking-tight
+    relative
+    overflow-x-hidden
+  "
+>
 {/* TopNav fixed wrapper */}
 <div
   className={`
@@ -805,11 +861,35 @@ const addImageComment = async () => {
   isActive={activePostId === post.id}
   setActivePostId={setActivePostId}
   onRequireAuth={() => setShowLogin(true)}
-        onOpenDiscussion={(currentPost, comments) => {
-          setSelectedPost(currentPost);
-          setDiscussionComments(comments);
-          setDiscussionOpen(true);
-        }}
+onOpenDiscussion={async (currentPost) => {
+  setSelectedPost(currentPost)
+
+  const {
+    data,
+    error,
+  } = await supabase
+    .from('comments')
+    .select('*')
+    .eq('post_id', currentPost.id)
+    .order('created_at', {
+      ascending: true,
+    })
+
+  if (error) {
+    console.error(
+      'DISCUSSION COMMENTS LOAD ERROR:',
+      error
+    )
+
+    setDiscussionComments([])
+  } else {
+    setDiscussionComments(
+      data || []
+    )
+  }
+
+  setDiscussionOpen(true)
+}}
 
 onOpenDispatch={() => setDispatchPost(post)}
 

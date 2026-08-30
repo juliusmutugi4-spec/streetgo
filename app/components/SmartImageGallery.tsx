@@ -1,10 +1,12 @@
 'use client'
 
-import SingleImage from "./SingleImage"
-import TwoImage from "./TwoImage"
-import ThreeImage from "./ThreeImage"
-import FourImage from "./FourImage"
-import MultiImage from "./MultiImage"
+import { useCallback } from 'react'
+
+import SingleImage from './SingleImage'
+import TwoImage from './TwoImage'
+import ThreeImage from './ThreeImage'
+import FourImage from './FourImage'
+import MultiImage from './MultiImage'
 
 interface SmartImageGalleryProps {
   imageUrls: string[]
@@ -20,59 +22,123 @@ export default function SmartImageGallery({
   setShowImageViewer,
   onOpenImageViewer,
 }: SmartImageGalleryProps) {
+  /*
+   * =====================================================
+   * VALIDATE IMAGES
+   * =====================================================
+   */
 
-  if (!imageUrls || imageUrls.length === 0) return null
+  const validImageUrls = imageUrls.filter(
+    (url): url is string =>
+      typeof url === 'string' &&
+      url.trim().length > 0
+  )
 
-const openImage = (index: number) => {
-  setCurrentImage(index)
-
-  if (onOpenImageViewer) {
-    onOpenImageViewer(index)
-    return
+  if (validImageUrls.length === 0) {
+    return null
   }
 
-  setShowImageViewer(true)
-}
+  /*
+   * =====================================================
+   * OPEN IMAGE VIEWER
+   * =====================================================
+   */
 
-  if (imageUrls.length === 1) {
+  const openImage = useCallback(
+    (index: number) => {
+      if (
+        index < 0 ||
+        index >= validImageUrls.length
+      ) {
+        return
+      }
+
+      setCurrentImage(index)
+
+      if (onOpenImageViewer) {
+        onOpenImageViewer(index)
+        return
+      }
+
+      setShowImageViewer(true)
+    },
+    [
+      validImageUrls.length,
+      setCurrentImage,
+      setShowImageViewer,
+      onOpenImageViewer,
+    ]
+  )
+
+  /*
+   * =====================================================
+   * SINGLE IMAGE
+   * =====================================================
+   */
+
+  if (validImageUrls.length === 1) {
     return (
       <SingleImage
-        imageUrls={imageUrls}
+        imageUrls={validImageUrls}
         openImage={openImage}
       />
     )
   }
 
-  if (imageUrls.length === 2) {
+  /*
+   * =====================================================
+   * TWO IMAGES
+   * =====================================================
+   */
+
+  if (validImageUrls.length === 2) {
     return (
       <TwoImage
-        imageUrls={imageUrls}
+        imageUrls={validImageUrls}
         openImage={openImage}
       />
     )
   }
 
-  if (imageUrls.length === 3) {
+  /*
+   * =====================================================
+   * THREE IMAGES
+   * =====================================================
+   */
+
+  if (validImageUrls.length === 3) {
     return (
       <ThreeImage
-        imageUrls={imageUrls}
+        imageUrls={validImageUrls}
         openImage={openImage}
       />
     )
   }
 
-  if (imageUrls.length === 4) {
+  /*
+   * =====================================================
+   * FOUR IMAGES
+   * =====================================================
+   */
+
+  if (validImageUrls.length === 4) {
     return (
       <FourImage
-        imageUrls={imageUrls}
+        imageUrls={validImageUrls}
         openImage={openImage}
       />
     )
   }
+
+  /*
+   * =====================================================
+   * FIVE OR MORE
+   * =====================================================
+   */
 
   return (
     <MultiImage
-      imageUrls={imageUrls}
+      imageUrls={validImageUrls}
       openImage={openImage}
     />
   )

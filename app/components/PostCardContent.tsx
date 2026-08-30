@@ -1,12 +1,6 @@
 'use client'
 
-import {
-  useMemo,
-  useState,
-  useTransition,
-} from 'react'
-
-import PostTextVisual from './PostTextVisual'
+import { useMemo, useState } from 'react'
 
 interface PostCardContentProps {
   content?: string | null
@@ -23,370 +17,116 @@ export default function PostCardContent({
   isLive = false,
   liveId = null,
 }: PostCardContentProps) {
-  const [isExpanded, setIsExpanded] =
-    useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
 
-  const [isPending, startTransition] =
-    useTransition()
+  /* Clean up whitespace but keep line breaks intact like authentic Facebook */
+  const cleanedContent = useMemo(() => {
+    if (!content) return ''
+    return content.trim()
+  }, [content])
 
-  const normalizedContent =
-    useMemo(
-      () =>
-        content?.trim() || '',
-      [content]
-    )
+  if (!cleanedContent) return null
 
-  const analysis = useMemo(() => {
-    if (!normalizedContent) {
-      return {
-        isEmpty: true,
-        isShortText: false,
-        wordCount: 0,
-        charCount: 0,
-      }
-    }
+  const words = cleanedContent.split(/\s+/).filter(Boolean)
+  const wordCount = words.length
+  const actuallyLive = isLive === true && !!liveId
+  
+  // High-density view truncation thresholds
+  const isShortTextStyle = wordCount < 25 && !hasMedia && !actuallyLive
+  const shouldTruncate = wordCount > 70 && !isExpanded
 
-    const words =
-      normalizedContent
-        .split(/\s+/)
-        .filter(Boolean)
-
-    const paragraphCount =
-      normalizedContent
-        .split(/\n+/)
-        .filter(Boolean)
-        .length
-
-    return {
-      isEmpty: false,
-
-      isShortText:
-        words.length < 20 &&
-        !hasMedia &&
-        paragraphCount <= 1,
-
-      wordCount:
-        words.length,
-
-      charCount:
-        normalizedContent.length,
-    }
-  }, [
-    normalizedContent,
-    hasMedia,
-  ])
+  // Custom Times New Roman Font Stack
+  const timesFontStack = '"Times New Roman", Times, Georgia, serif'
 
   /*
-   * =========================================================
-   * EMPTY
-   * =========================================================
+   * =====================================================
+   * STYLIZED SHORT TEXT (Facebook Status Style)
+   * =====================================================
    */
-
-  if (analysis.isEmpty) {
-    return null
-  }
-
-  /*
-   * =========================================================
-   * LIVE POST
-   * =========================================================
-   *
-   * LIVE posts should NEVER use the large typography
-   * visual treatment.
-   *
-   * Only treat it as live when both values are present.
-   */
-
-  const actuallyLive =
-    isLive === true &&
-    !!liveId
-
-  if (actuallyLive) {
+  if (isShortTextStyle) {
     return (
-      <div className="relative px-4 group/content select-text font-sans antialiased">
-        <PostTextVisual
-          content={normalizedContent}
-          isLive={true}
-        />
-      </div>
-    )
-  }
-
-  /*
-   * =========================================================
-   * NORMAL SHORT TEXT POST
-   * =========================================================
-   *
-   * This keeps the original large typography behavior.
-   */
-
-  if (analysis.isShortText) {
-    return (
-      <PostTextVisual
-        content={normalizedContent}
-        isLive={false}
-      />
-    )
-  }
-
-  /*
-   * =========================================================
-   * NORMAL LONG TEXT POST
-   * =========================================================
-   */
-
-  const shouldClamp =
-    analysis.wordCount > 80 &&
-    !isExpanded
-
-  /*
-   * =========================================================
-   * EXPAND / COLLAPSE
-   * =========================================================
-   */
-
-  const handleToggleExpand = () => {
-    startTransition(() => {
-      setIsExpanded(
-        (prev) => !prev
-      )
-    })
-  }
-
-  /*
-   * =========================================================
-   * RENDER
-   * =========================================================
-   */
-
-  return (
-    <div
-      className="
-        relative
-        px-4
-        group/content
-        select-text
-        font-sans
-        antialiased
-      "
-    >
-      {/* =====================================================
-          GEZEE INDUSTRIAL METADATA TRACE
-          ===================================================== */}
-
-      <div
-        className="
-          flex
-          items-center
-          gap-2
-          mb-2
-          font-mono
-          text-[9px]
-          uppercase
-          tracking-[0.15em]
-          text-slate-400
-          dark:text-zinc-500
-          select-none
-        "
-      >
-        <span
-          className="
-            flex
-            items-center
-            gap-1.5
-          "
+      <div className="w-full px-4 pb-3 pt-0.5">
+        <div 
+          className="w-full min-h-[140px] flex items-center justify-center p-5 rounded-lg bg-gradient-to-br from-[#1c2e4a] via-[#0f172a] to-[#1e293b] dark:from-[#0f172a] dark:to-[#1e293b] shadow-inner text-center select-text"
+          style={{ fontFamily: timesFontStack }}
         >
-          <span
-            className={`
-              h-1
-              w-1
-              rounded-full
-              ${
-                isPending
-                  ? 'bg-amber-400 animate-spin'
-                  : 'bg-cyan-400'
-              }
-            `}
-          />
-
-          DATA//SRC
-        </span>
-
-        <span className="opacity-30">
-          |
-        </span>
-
-        <span>
-          W:{analysis.wordCount}
-        </span>
-
-        <span className="opacity-30">
-          |
-        </span>
-
-        <span>
-          C:{analysis.charCount}
-        </span>
+          <p className="m-0 text-lg md:text-xl font-bold leading-snug tracking-tight text-white drop-shadow-sm whitespace-pre-wrap break-words max-w-[95%]">
+            {cleanedContent}
+          </p>
+        </div>
       </div>
+    )
+  }
 
-      {/* =====================================================
-          CORE TEXT FIELD
-          ===================================================== */}
-
-      <p
-        className={`
-          text-[12px]
-          leading-[1.75]
-          text-slate-700
-          dark:text-zinc-300
-          font-normal
-          tracking-[0.02em]
-          whitespace-pre-line
-          [text-wrap:pretty]
-          transition-all
-          duration-500
-          ease-in-out
-          ${
-            shouldClamp
-              ? 'line-clamp-4 opacity-85 select-none pointer-events-none'
-              : 'line-clamp-none opacity-100'
-          }
-        `}
+  /*
+   * =====================================================
+   * NORMAL / LONG / MEDIA / LIVE POST (Micro Style)
+   * =====================================================
+   */
+  return (
+    <div className="w-full px-4 pb-2.5 pt-0.5">
+      <div 
+        className="relative"
+        style={{ fontFamily: timesFontStack }}
       >
-        {normalizedContent}
-      </p>
-
-      {/* =====================================================
-          EXPAND / COLLAPSE CONTROLLER
-          ===================================================== */}
-
-      {analysis.wordCount > 80 && (
-        <div
+        <p
           className={`
-            transition-all
-            duration-300
-            ${
-              shouldClamp
-                ? `
-                  absolute
-                  bottom-0
-                  left-0
-                  right-0
-                  h-16
-                  bg-gradient-to-t
-                  from-white
-                  via-white/95
-                  to-transparent
-                  dark:from-slate-950
-                  dark:via-slate-950/95
-                  flex
-                  items-end
-                  px-4
-                  pb-0
-                `
-                : `
-                  relative
-                  mt-3
-                  flex
-                  pb-0
-                `
-            }
+            m-0 
+            break-words 
+            whitespace-pre-wrap 
+            text-[13px] 
+            font-normal 
+            leading-[1.4] 
+            tracking-normal
+            text-[#050505] 
+            dark:text-[#E4E6EB]
+            ${shouldTruncate ? 'line-clamp-4 overflow-hidden' : ''}
           `}
         >
-          <button
-            onClick={
-              handleToggleExpand
-            }
-            type="button"
-            aria-expanded={
-              isExpanded
-            }
-            className="
-              group/btn
-              relative
-              pointer-events-auto
-              cursor-pointer
-              text-[9px]
-              font-bold
-              tracking-[0.2em]
-              uppercase
-              font-mono
-              py-2
-              w-full
-              flex
-              items-center
-              justify-between
-              border-t
-              border-slate-200/60
-              dark:border-zinc-800/80
-              text-slate-500
-              dark:text-zinc-400
-              hover:text-slate-900
-              dark:hover:text-zinc-100
-              transition-colors
-              duration-200
-              select-none
-            "
+          {cleanedContent}
+        </p>
+
+        {/* =================================================
+            THEME-RESPONSIVE INLINE SEE MORE / LESS
+            ================================================= */}
+        {wordCount > 70 && (
+          <div 
+            className={`
+              flex justify-end mt-0.5
+              ${shouldTruncate 
+                ? 'absolute bottom-0 right-0 bg-gradient-to-l from-white via-white pl-10 dark:from-[#242526] dark:via-[#242526]' 
+                : ''
+              }
+            `}
           >
-            <span
+            <button
+              type="button"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              aria-expanded={isExpanded}
               className="
-                flex
-                items-center
-                gap-1.5
+                inline-block
+                cursor-pointer
+                border-0
+                bg-transparent
+                p-0
+                text-[13px]
+                font-semibold
+                text-[#1877F2]
+                dark:text-[#4599FF]
+                hover:text-[#166FE5]
+                dark:hover:text-[#67AFFF]
+                hover:underline
+                focus:outline-none
+                select-none
+                transition-colors
+                duration-150
               "
             >
-              <span
-                className="
-                  text-slate-300
-                  dark:text-zinc-700
-                  group-hover/btn:text-slate-400
-                  dark:group-hover/btn:text-zinc-500
-                  transition-colors
-                "
-              >
-                ⌁
-              </span>
-
-              {shouldClamp
-                ? 'FETCH_STREAM'
-                : 'COLLAPSE_STREAM'}
-            </span>
-
-            <div
-              className="
-                flex
-                items-center
-                gap-1.5
-                text-[8px]
-                opacity-60
-              "
-            >
-              <span>
-                {shouldClamp
-                  ? '01'
-                  : '02'}
-              </span>
-
-              <span
-                className={`
-                  inline-block
-                  transition-transform
-                  duration-300
-                  ease-out
-                  text-[7px]
-                  ${
-                    shouldClamp
-                      ? 'rotate-0'
-                      : 'rotate-180'
-                  }
-                `}
-              >
-                ▼
-              </span>
-            </div>
-          </button>
-        </div>
-      )}
+              {isExpanded ? 'See less' : 'See more'}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

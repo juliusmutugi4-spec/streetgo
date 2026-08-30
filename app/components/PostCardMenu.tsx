@@ -1,6 +1,17 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import {
+  Copy,
+  Flag,
+  MoreHorizontal,
+  Trash2,
+} from 'lucide-react'
+
+import {
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
 
 interface PostCardMenuProps {
   postId: string
@@ -13,195 +24,393 @@ export default function PostCardMenu({
   postUserId,
   user,
 }: PostCardMenuProps) {
-  const [showMenu, setShowMenu] = useState(false)
-  const [copied, setCopied] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [showMenu, setShowMenu] =
+    useState(false)
 
-  // Close interface safely when clicking outside the menu node
+  const [copied, setCopied] =
+    useState(false)
+
+  const menuRef =
+    useRef<HTMLDivElement>(null)
+
+  /*
+   * =====================================================
+   * CLOSE OUTSIDE / ESCAPE
+   * =====================================================
+   */
+
   useEffect(() => {
-    if (!showMenu) return
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+    if (!showMenu) {
+      return
+    }
+
+    const handleClickOutside = (
+      event: MouseEvent
+    ) => {
+      const target =
+        event.target as Node
+
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(
+          target
+        )
+      ) {
         setShowMenu(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+
+    const handleEscape = (
+      event: KeyboardEvent
+    ) => {
+      if (event.key === 'Escape') {
+        setShowMenu(false)
+      }
+    }
+
+    document.addEventListener(
+      'mousedown',
+      handleClickOutside
+    )
+
+    document.addEventListener(
+      'keydown',
+      handleEscape
+    )
+
+    return () => {
+      document.removeEventListener(
+        'mousedown',
+        handleClickOutside
+      )
+
+      document.removeEventListener(
+        'keydown',
+        handleEscape
+      )
+    }
   }, [showMenu])
 
+  /*
+   * =====================================================
+   * COPY
+   * =====================================================
+   */
+
   const copyLink = async () => {
-    if (typeof window === 'undefined') return
+    if (
+      typeof window ===
+      'undefined'
+    ) {
+      return
+    }
+
     try {
-      await navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`)
+      const url =
+        `${window.location.origin}/post/${postId}`
+
+      await navigator.clipboard.writeText(
+        url
+      )
+
       setCopied(true)
-      setTimeout(() => {
+
+      window.setTimeout(() => {
         setCopied(false)
         setShowMenu(false)
-      }, 1000)
-    } catch (err) {
+      }, 900)
+    } catch {
       setShowMenu(false)
     }
   }
 
+  /*
+   * =====================================================
+   * RENDER
+   * =====================================================
+   */
+
   return (
-    <div ref={menuRef} className="relative inline-block select-none font-mono">
-      
-      {/* SLIM TRIGGER DOTS */}
+    <div
+      ref={menuRef}
+      className="
+        relative
+        select-none
+      "
+    >
+      {/* =================================================
+          TRIGGER
+          ================================================= */}
+
       <button
-        onClick={() => setShowMenu((prev) => !prev)}
         type="button"
+        onClick={() =>
+          setShowMenu(
+            (previous) =>
+              !previous
+          )
+        }
+        aria-label="Post options"
         aria-expanded={showMenu}
         className="
           flex
+          h-7
+          w-7
           items-center
           justify-center
-          h-5
-          w-5
-          rounded-[4px]
-          border
-          border-slate-200/40
-          dark:border-zinc-800/80
-          bg-transparent
-          text-[10px]
-          text-slate-400
-          dark:text-zinc-500
-          hover:text-slate-900
-          dark:hover:text-zinc-200
-          hover:border-slate-300/60
-          dark:hover:border-zinc-700/60
-          cursor-pointer
+          rounded-full
+          text-[var(--muted)]
           transition-colors
           duration-150
+          hover:bg-[var(--surface-hover)]
+          hover:text-[var(--foreground)]
+          active:scale-95
+          focus:outline-none
+          focus-visible:ring-1
+          focus-visible:ring-[var(--accent)]/40
         "
       >
-        •••
+        <MoreHorizontal
+          size={16}
+          strokeWidth={2.2}
+        />
       </button>
 
-      {/* TECHNICAL FLOATING DROPDOWN NODE */}
+      {/* =================================================
+          MENU
+          ================================================= */}
+
       {showMenu && (
         <div
+          role="menu"
+          aria-label="Post options"
           className="
             absolute
             right-0
-            top-6
-            z-50
-            w-40
+            top-8
+            z-[100]
+            w-[170px]
             overflow-hidden
-            rounded-[4px]
+            rounded-lg
             border
-            border-slate-200/80
-            dark:border-zinc-800/90
-            bg-white/95
-            dark:bg-zinc-950/95
-            backdrop-blur-xl
-            shadow-[0_4px_12px_rgba(0,0,0,0.15)]
-            animate-in fade-in slide-in-from-top-1
-            duration-150
+            border-[var(--border)]
+            bg-[var(--surface)]
+            p-1
+            shadow-[0_8px_24px_rgba(0,0,0,0.14)]
+            dark:shadow-[0_8px_24px_rgba(0,0,0,0.34)]
+            animate-in
+            fade-in
+            zoom-in-95
+            duration-100
           "
         >
-          <button
-            className="
-              w-full
-              px-2.5
-              py-1.5
-              text-left
-              text-[10px]
-              font-bold
-              tracking-wider
-              uppercase
-              text-slate-600
-              dark:text-zinc-400
-              hover:text-cyan-500
-              dark:hover:text-cyan-400
-              hover:bg-slate-50
-              dark:hover:bg-zinc-900/50
-              border-b
-              border-slate-100
-              dark:border-zinc-900/40
-              transition-colors
-              cursor-pointer
-            "
-            onClick={copyLink}
-          >
-            {copied ? '✔_COPIED' : 'LN_COPY'}
-          </button>
+          {/* =================================================
+              COPY LINK
+              ================================================= */}
 
           <button
+            type="button"
+            role="menuitem"
+            onClick={
+              copyLink
+            }
             className="
+              flex
               w-full
-              px-2.5
+              items-center
+              gap-2
+              rounded-md
+              px-2
               py-1.5
               text-left
-              text-[10px]
+              font-['Courier_New']
+              text-[9px]
               font-bold
-              tracking-wider
-              uppercase
-              text-slate-600
-              dark:text-zinc-400
-              hover:text-slate-900
-              dark:hover:text-zinc-100
-              hover:bg-slate-50
-              dark:hover:bg-zinc-900/50
-              border-b
-              border-slate-100
-              dark:border-zinc-900/40
+              text-[var(--foreground)]
               transition-colors
-              cursor-pointer
+              duration-100
+              hover:bg-[var(--surface-hover)]
+              hover:text-[var(--accent)]
+              focus:outline-none
+              focus-visible:ring-1
+              focus-visible:ring-[var(--accent)]/40
             "
-            onClick={() => setShowMenu(false)}
           >
-            ST_SAVE
-          </button>
-
-          <button
-            className="
-              w-full
-              px-2.5
-              py-1.5
-              text-left
-              text-[10px]
-              font-bold
-              tracking-wider
-              uppercase
-              text-slate-600
-              dark:text-zinc-400
-              hover:text-rose-500
-              hover:bg-slate-50
-              dark:hover:bg-zinc-900/50
-              transition-colors
-              cursor-pointer
-            "
-            onClick={() => setShowMenu(false)}
-          >
-            FL_REPORT
-          </button>
-
-          {user?.id === postUserId && (
-            <button
+            <Copy
+              size={12}
+              strokeWidth={2}
               className="
-                w-full
-                px-2.5
-                py-1.5
-                text-left
-                text-[10px]
-                font-bold
-                tracking-wider
-                uppercase
-                text-rose-500
-                dark:text-rose-400/90
-                hover:text-white
-                bg-rose-500/5
-                hover:bg-rose-600
-                border-t
-                border-slate-100
-                dark:border-zinc-900/40
-                transition-all
-                cursor-pointer
+                shrink-0
+                text-[var(--muted)]
               "
-              onClick={() => setShowMenu(false)}
+            />
+
+            <span className="min-w-0 truncate">
+              {copied
+                ? 'Link copied'
+                : 'Copy link'}
+            </span>
+          </button>
+
+          {/* =================================================
+              SAVE
+              ================================================= */}
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() =>
+              setShowMenu(
+                false
+              )
+            }
+            className="
+              flex
+              w-full
+              items-center
+              gap-2
+              rounded-md
+              px-2
+              py-1.5
+              text-left
+              font-['Courier_New']
+              text-[9px]
+              font-bold
+              text-[var(--foreground)]
+              transition-colors
+              duration-100
+              hover:bg-[var(--surface-hover)]
+              hover:text-[var(--accent)]
+              focus:outline-none
+              focus-visible:ring-1
+              focus-visible:ring-[var(--accent)]/40
+            "
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="
+                h-3
+                w-3
+                shrink-0
+                fill-current
+                text-[var(--muted)]
+              "
+              aria-hidden="true"
             >
-              SYS_DELETE
-            </button>
+              <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2Z" />
+            </svg>
+
+            <span>
+              Save post
+            </span>
+          </button>
+
+          {/* =================================================
+              REPORT
+              ================================================= */}
+
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() =>
+              setShowMenu(
+                false
+              )
+            }
+            className="
+              flex
+              w-full
+              items-center
+              gap-2
+              rounded-md
+              px-2
+              py-1.5
+              text-left
+              font-['Courier_New']
+              text-[9px]
+              font-bold
+              text-[var(--foreground)]
+              transition-colors
+              duration-100
+              hover:bg-[var(--surface-hover)]
+              hover:text-amber-500
+              focus:outline-none
+              focus-visible:ring-1
+              focus-visible:ring-amber-500/40
+            "
+          >
+            <Flag
+              size={12}
+              strokeWidth={2}
+              className="
+                shrink-0
+                text-[var(--muted)]
+              "
+            />
+
+            <span>
+              Report post
+            </span>
+          </button>
+
+          {/* =================================================
+              DELETE — OWNER ONLY
+              ================================================= */}
+
+          {user?.id ===
+            postUserId && (
+            <>
+              <div
+                className="
+                  my-1
+                  h-px
+                  bg-[var(--border)]
+                "
+              />
+
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() =>
+                  setShowMenu(
+                    false
+                  )
+                }
+                className="
+                  flex
+                  w-full
+                  items-center
+                  gap-2
+                  rounded-md
+                  px-2
+                  py-1.5
+                  text-left
+                  font-['Courier_New']
+                  text-[9px]
+                  font-bold
+                  text-rose-500
+                  transition-colors
+                  duration-100
+                  hover:bg-rose-500/10
+                  hover:text-rose-500
+                  focus:outline-none
+                  focus-visible:ring-1
+                  focus-visible:ring-rose-500/40
+                "
+              >
+                <Trash2
+                  size={12}
+                  strokeWidth={2}
+                  className="
+                    shrink-0
+                  "
+                />
+
+                <span>
+                  Delete post
+                </span>
+              </button>
+            </>
           )}
         </div>
       )}

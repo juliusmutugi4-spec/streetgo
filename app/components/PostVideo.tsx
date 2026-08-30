@@ -8,7 +8,7 @@ import React, {
 } from 'react'
 
 import VideoPortalButton from './VideoPortalButton'
-import VideoTimeline from './VideoTimeline'
+
 import VideoPlayer from './VideoPlayer'
 interface PostVideoProps {
   post: any
@@ -105,6 +105,10 @@ export default function PostVideo({
 
 const [videoLoading, setVideoLoading] =
   useState(true)
+
+const [videoAspectRatio, setVideoAspectRatio] =
+  useState<number | null>(null)
+
 
 
 
@@ -936,24 +940,28 @@ const controlVisibility =
   /* ======================================================================== */
 
   return (
-    <div
-      ref={containerRef}
-      className="
-        group/player
-        relative
-        mt-4
-        w-full
-        aspect-video
-        overflow-hidden
-        bg-black
-        rounded-none
-        md:max-w-[854px]
-        md:rounded-xl
-        select-none
-        touch-manipulation
-        font-sans
-      "
-    >
+<div
+  ref={containerRef}
+  className="
+    group/player
+    relative
+    mt-4
+    w-full
+    overflow-hidden
+    bg-black
+    rounded-none
+    md:max-w-[854px]
+    md:rounded-xl
+    select-none
+    touch-manipulation
+    font-sans
+  "
+style={{
+  aspectRatio: videoAspectRatio
+    ? `${videoAspectRatio}`
+    : undefined,
+}}
+>
               {/* ================================================================== */}
         {/* VIDEO SURFACE                                                       */}
         {/* ================================================================== */}
@@ -980,7 +988,7 @@ const controlVisibility =
             touch-manipulation
           "
         >
-          <VideoPlayer
+<VideoPlayer
   post={{
     video_url: post.video_url,
     thumbnail_url:
@@ -988,6 +996,19 @@ const controlVisibility =
   }}
   isMuted={isMuted}
   setIsPlaying={setIsPlaying}
+  onMuteChange={setIsMuted}
+  onAspectRatioChange={
+    setVideoAspectRatio
+  }
+  onProgressChange={(
+    currentTime,
+    duration,
+    progress
+  ) => {
+    setCurrentTime(currentTime)
+    setDuration(duration)
+    setProgress(progress)
+  }}
   onError={() => {
     if (!mountedRef.current) {
       return

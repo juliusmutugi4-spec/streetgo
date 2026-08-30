@@ -1,7 +1,15 @@
 'use client'
 
-import React, { useState, useRef, useEffect, FormEvent, KeyboardEvent, useMemo } from 'react'
-import CommentCard from "./CommentCard"
+import React, {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  FormEvent,
+  KeyboardEvent,
+} from 'react'
+
+import CommentCard from './CommentCard'
 
 export interface Comment {
   id: string | number
@@ -20,6 +28,19 @@ interface DiscussionRoomProps {
     username?: string
     content?: string
     avatar_url?: string | null
+
+    /*
+     * ORIGINAL POST MEDIA
+     */
+    image_urls?: string[] | null
+    video_url?: string | null
+    thumbnail_url?: string | null
+
+    /*
+     * Optional LIVE information
+     */
+    is_live?: boolean
+    live_id?: string | null
   } | null
 
   currentUser: {
@@ -29,7 +50,9 @@ interface DiscussionRoomProps {
 
   comments: Comment[]
 
-  onSendMessage?: (msg: string) => Promise<void> | void
+  onSendMessage?: (
+    msg: string
+  ) => Promise<void> | void
 }
 
 type TabType = 'chat' | 'ai'
@@ -40,440 +63,1224 @@ export default function DiscussionRoom({
   comments = [],
   onSendMessage,
   post,
-  currentUser
+  currentUser,
 }: DiscussionRoomProps) {
-  const [newComment, setNewComment] = useState<string>('')
-  const [activeTab, setActiveTab] = useState<TabType>('chat')
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [newComment, setNewComment] =
+    useState('')
 
-  // Auto-scroll comment container to the bottom when comments refresh or active tabs change
-  useEffect(() => {
-    if (openRoom && scrollContainerRef.current) {
-      const container = scrollContainerRef.current
-      container.scrollTop = container.scrollHeight
+  const [activeTab, setActiveTab] =
+    useState<TabType>('chat')
+
+  const [isSubmitting, setIsSubmitting] =
+    useState(false)
+
+  const scrollContainerRef =
+    useRef<HTMLDivElement>(null)
+
+  /*
+   * =====================================================
+   * NORMALIZED ORIGINAL POST MEDIA
+   * =====================================================
+   */
+
+  const postImages = useMemo(() => {
+    if (
+      !post?.image_urls ||
+      !Array.isArray(post.image_urls)
+    ) {
+      return []
     }
-  }, [comments, openRoom, activeTab])
 
-  // Optimize performance: Memoize sentiment calculation
-  const positivePercentage = useMemo(() => {
-    if (!comments.length) return 0
-    const positiveCount = comments.filter(c => c.sentiment === 'positive').length
-    return Math.round((positiveCount / comments.length) * 100)
-  }, [comments])
+    return post.image_urls.filter(
+      (url): url is string =>
+        typeof url === 'string' &&
+        url.trim().length > 0
+    )
+  }, [post])
 
-  if (!openRoom) return null
+  const postVideo =
+    typeof post?.video_url === 'string' &&
+    post.video_url.trim().length > 0
+      ? post.video_url.trim()
+      : null
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    const cleanComment = newComment.trim()
-    if (!cleanComment || isSubmitting) return
+  /*
+   * =====================================================
+   * AUTO SCROLL
+   * =====================================================
+   */
+
+  useEffect(() => {
+    if (
+      !openRoom ||
+      activeTab !== 'chat' ||
+      !scrollContainerRef.current
+    ) {
+      return
+    }
+
+    const container =
+      scrollContainerRef.current
+
+    requestAnimationFrame(() => {
+      container.scrollTop =
+        container.scrollHeight
+    })
+  }, [
+    comments,
+    openRoom,
+    activeTab,
+  ])
+
+  /*
+   * =====================================================
+   * SENTIMENT
+   * =====================================================
+   */
+
+  const positivePercentage =
+    useMemo(() => {
+      if (!comments.length) {
+        return 0
+      }
+
+      const positiveCount =
+        comments.filter(
+          (comment) =>
+            comment.sentiment ===
+            'positive'
+        ).length
+
+      return Math.round(
+        (positiveCount /
+          comments.length) *
+          100
+      )
+    }, [comments])
+
+  /*
+   * =====================================================
+   * CLOSE
+   * =====================================================
+   */
+
+  const closeRoom = () => {
+    setOpenRoom(false)
+  }
+
+  /*
+   * =====================================================
+   * SEND COMMENT
+   * =====================================================
+   */
+
+  const handleSubmit = async (
+    event: FormEvent
+  ) => {
+    event.preventDefault()
+
+    const cleanComment =
+      newComment
+        .replace(/[ \t]+/g, ' ')
+        .trim()
+
+    if (
+      !cleanComment ||
+      isSubmitting
+    ) {
+      return
+    }
 
     try {
       setIsSubmitting(true)
-      await onSendMessage?.(cleanComment)
+
+      await onSendMessage?.(
+        cleanComment
+      )
+
       setNewComment('')
     } catch (error) {
-      console.error('Failed to submit comment:', error)
+      console.error(
+        'Failed to submit comment:',
+        error
+      )
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      void handleSubmit(e)
+  /*
+   * =====================================================
+   * ENTER TO SEND
+   * =====================================================
+   */
+
+  const handleKeyDown = (
+    event: KeyboardEvent<HTMLTextAreaElement>
+  ) => {
+    if (
+      event.key === 'Enter' &&
+      !event.shiftKey
+    ) {
+      event.preventDefault()
+
+      void handleSubmit(event)
     }
   }
 
-const postInitial =
-  post?.username?.charAt(0).toUpperCase() || "P"
+  /*
+   * =====================================================
+   * USER DATA
+   * =====================================================
+   */
 
-const currentUserInitial =
-  currentUser?.username?.charAt(0).toUpperCase() || "U"
+  const postUsername =
+    post?.username?.trim() ||
+    'Anonymous'
+
+  const currentUsername =
+    currentUser?.username?.trim() ||
+    'You'
+
+  /*
+   * =====================================================
+   * CLOSED
+   * =====================================================
+   */
+
+  if (!openRoom) {
+    return null
+  }
+
+  /*
+   * =====================================================
+   * RENDER
+   * =====================================================
+   */
 
   return (
-<div
-  className="
-    fixed
-    inset-0
-    z-[99999]
-    bg-[#060608]
-  "
+    <div
+      className="
+        fixed
+        inset-0
+        z-[99999]
+        flex
+        items-center
+        justify-center
+        bg-black/45
+        p-0
+        backdrop-blur-[2px]
+        sm:p-5
+      "
       role="dialog"
       aria-modal="true"
       aria-labelledby="discussion-title"
+      onClick={closeRoom}
     >
-      <div
-  className="
-    flex
-    h-full
-    w-full
-    flex-col
-    bg-[#060608]
-    text-white
-  "
->
-        
-        {/* Header Block */}
-<header
-  className="
-    sticky
-    top-0
-    z-20
-    border-b
-    border-[#4A4038]
-    bg-[#2B2521]/95
-    px-5
-    py-3.5
-    backdrop-blur-md
-  "
->
-  <div className="flex items-center justify-between max-w-3xl mx-auto w-full">
-    {/* Discussion Title & Meta Counter */}
-    <div className="flex items-center gap-2.5 select-none">
-      <h2 id="discussion-title" className="text-[15px] font-bold tracking-tight text-[#F5EFE6]">
-        Comments
-      </h2>
-      <span className="
-        inline-flex
-        h-5
-        min-w-5
-        items-center
-        justify-center
-        rounded-full
-        border
-        border-[#4A4038]
-        bg-[#1F1A17]
-        px-1.5
-        text-[11px]
-        font-bold
-        tabular-nums
-        text-[#D4A574]
-        shadow-xs
-      ">
-        {comments.length}
-      </span>
-    </div>
-
-    {/* Header Actions Panel */}
-    <div className="flex items-center gap-4">
-      {/* Premium Segmented Tab Bar */}
-      <div 
-        className="inline-flex h-8 items-center rounded-lg bg-[#1F1A17] p-1 border border-[#4A4038]" 
-        role="tablist"
-      >
-        <button
-          role="tab"
-          aria-selected={activeTab === 'chat'}
-          onClick={() => setActiveTab('chat')}
-          className={`rounded-md px-3 py-1 text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer ${
-            activeTab === 'chat'
-              ? 'bg-[#D4A574] text-[#1F1A17] shadow-xs'
-              : 'text-[#A89B8F] hover:text-[#F5EFE6]'
-          }`}
-        >
-          All Comments
-        </button>
-        <button
-          role="tab"
-          aria-selected={activeTab === 'ai'}
-          onClick={() => setActiveTab('ai')}
-          className={`rounded-md px-3 py-1 text-xs font-bold tracking-wide transition-all duration-200 cursor-pointer ${
-            activeTab === 'ai'
-              ? 'bg-[#D4A574] text-[#1F1A17] shadow-xs'
-              : 'text-[#A89B8F] hover:text-[#F5EFE6]'
-          }`}
-        >
-          Insights
-        </button>
-      </div>
-
-      {/* Elegant Dismiss Control */}
-      <button
-        onClick={() => setOpenRoom(false)}
+      <section
         className="
+          relative
           flex
-          h-7
-          w-7
-          items-center
-          justify-center
-          rounded-full
-          border
-          border-transparent
-          text-[#A89B8F]
-          transition-all
-          duration-200
-          hover:scale-105
-          hover:border-[#4A4038]
-          hover:bg-[#3A312C]
-          hover:text-[#F5EFE6]
-          active:scale-95
-          cursor-pointer
-          outline-none
-          focus-visible:border-[#D4A574]
+          h-full
+          w-full
+          flex-col
+          overflow-hidden
+          bg-[var(--surface)]
+          text-[var(--foreground)]
+          font-['Courier_New']
+          shadow-2xl
+
+          sm:h-[min(760px,calc(100vh-40px))]
+          sm:max-w-[680px]
+          sm:rounded-xl
+          sm:border
+          sm:border-[var(--border)]
         "
-        aria-label="Close dialog"
+        onClick={(event) => {
+          event.stopPropagation()
+        }}
       >
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          className="h-4 w-4" 
-          fill="none" 
-          viewBox="0 0 24 24" 
-          stroke="currentColor" 
-          strokeWidth={2.5}
+
+        {/* =================================================
+            HEADER
+            ================================================= */}
+
+        <header
+          className="
+            flex
+            min-h-[60px]
+            shrink-0
+            items-center
+            justify-between
+            bg-[var(--surface)]
+            px-4
+            py-2.5
+          "
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
-    </div>
-  </div>
-</header>
+          <div
+            className="
+              flex
+              min-w-0
+              items-center
+            "
+          >
+            <div className="min-w-0">
+              <h2
+                id="discussion-title"
+                className="
+                  truncate
+                  font-['Courier_New']
+                  text-[15px]
+                  font-bold
+                  leading-5
+                  tracking-tight
+                  text-[var(--foreground)]
+                "
+              >
+                Comments
+              </h2>
 
+              <p
+                className="
+                  mt-0.5
+                  font-['Courier_New']
+                  text-[10px]
+                  font-bold
+                  leading-4
+                  tracking-wide
+                  text-[var(--muted)]
+                "
+              >
+                {comments.length.toLocaleString()}
+                {' '}
+                {comments.length === 1
+                  ? 'COMMENT'
+                  : 'COMMENTS'}
+              </p>
+            </div>
+          </div>
 
-        {/* Content Stream View */}
-<div
-  ref={scrollContainerRef}
-  className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth bg-[#060608]"
-          style={{ scrollbarWidth: 'thin' }}
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
+            {/* DESKTOP TABS */}
+
+            <div
+              className="
+                hidden
+                items-center
+                rounded-lg
+                bg-[var(--surface-hover)]
+                p-0.5
+                sm:flex
+              "
+              role="tablist"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={
+                  activeTab === 'chat'
+                }
+                onClick={() =>
+                  setActiveTab('chat')
+                }
+                className={`
+                  rounded-md
+                  px-3
+                  py-1.5
+                  font-['Courier_New']
+                  text-[10px]
+                  font-bold
+                  tracking-wide
+                  transition-all
+                  duration-150
+
+                  ${
+                    activeTab === 'chat'
+                      ? `
+                        bg-[var(--accent)]
+                        text-white
+                        shadow-sm
+                      `
+                      : `
+                        text-[var(--muted)]
+                        hover:text-[var(--foreground)]
+                      `
+                  }
+                `}
+              >
+                ALL
+              </button>
+
+              <button
+                type="button"
+                role="tab"
+                aria-selected={
+                  activeTab === 'ai'
+                }
+                onClick={() =>
+                  setActiveTab('ai')
+                }
+                className={`
+                  rounded-md
+                  px-3
+                  py-1.5
+                  font-['Courier_New']
+                  text-[10px]
+                  font-bold
+                  tracking-wide
+                  transition-all
+                  duration-150
+
+                  ${
+                    activeTab === 'ai'
+                      ? `
+                        bg-[var(--accent)]
+                        text-white
+                        shadow-sm
+                      `
+                      : `
+                        text-[var(--muted)]
+                        hover:text-[var(--foreground)]
+                      `
+                  }
+                `}
+              >
+                INSIGHTS
+              </button>
+            </div>
+
+            {/* CLOSE */}
+
+            <button
+              type="button"
+              onClick={closeRoom}
+              aria-label="Close comments"
+              className="
+                flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                rounded-full
+                bg-[var(--surface-hover)]
+                text-[var(--muted)]
+                transition-all
+                duration-150
+                hover:text-[var(--foreground)]
+                active:scale-95
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-[var(--accent)]/40
+              "
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              >
+                <path d="M6 6L18 18" />
+                <path d="M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        {/* =================================================
+            MOBILE TABS
+            ================================================= */}
+
+        <div
+          className="
+            flex
+            shrink-0
+            items-center
+            gap-1
+            bg-[var(--surface)]
+            px-3
+            pb-2
+            sm:hidden
+          "
+        >
+          <button
+            type="button"
+            onClick={() =>
+              setActiveTab('chat')
+            }
+            className={`
+              flex-1
+              rounded-lg
+              px-3
+              py-2
+              font-['Courier_New']
+              text-[10px]
+              font-bold
+              tracking-wide
+              transition-all
+
+              ${
+                activeTab === 'chat'
+                  ? `
+                    bg-[var(--accent)]
+                    text-white
+                  `
+                  : `
+                    bg-[var(--surface-hover)]
+                    text-[var(--muted)]
+                  `
+              }
+            `}
+          >
+            ALL COMMENTS
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setActiveTab('ai')
+            }
+            className={`
+              flex-1
+              rounded-lg
+              px-3
+              py-2
+              font-['Courier_New']
+              text-[10px]
+              font-bold
+              tracking-wide
+              transition-all
+
+              ${
+                activeTab === 'ai'
+                  ? `
+                    bg-[var(--accent)]
+                    text-white
+                  `
+                  : `
+                    bg-[var(--surface-hover)]
+                    text-[var(--muted)]
+                  `
+              }
+            `}
+          >
+            INSIGHTS
+          </button>
+        </div>
+
+        {/* =================================================
+            CONTENT
+            ================================================= */}
+
+        <div
+          ref={scrollContainerRef}
+          className="
+            min-h-0
+            flex-1
+            overflow-y-auto
+            overscroll-contain
+            bg-[var(--surface)]
+            px-3
+            py-3
+            sm:px-4
+          "
+          style={{
+            scrollbarWidth: 'thin',
+          }}
           aria-live="polite"
         >
 
-{post && (
-  <article 
-    className="
-      group 
-      relative 
-      mb-4 
-      w-full 
-      overflow-hidden 
-      rounded-none 
-      border-y 
-      border-x-0 
-      border-[#EAE4D7] 
-      border-t-2 
-      border-t-[#D4A574] 
-      bg-[#FAF8F5] 
-      shadow-xs
-    "
-    role="article"
-  >
-    {/* Compact Mobile Native Header */}
-    <div className="relative flex items-center justify-between border-b border-[#EAE4D7] bg-[#F1EDE4]/50 px-4 py-2.5 select-none">
-      <div className="flex items-center gap-2.5 min-w-0">
-        
-        {/* Streamlined Profile Avatar Frame */}
-        <div className="relative h-9 w-9 shrink-0 rounded-full border border-[#D4A574]/30 bg-[#FAF8F5] p-0.5 shadow-xs">
-          <div className="h-full w-full rounded-full overflow-hidden flex items-center justify-center bg-[#F1EDE4]">
-<img
-  src={post.avatar_url || "/avatar-placeholder.png"}
-  alt={`${post.username || "Author"} avatar`}
-  className="h-full w-full object-cover"
-  loading="lazy"
-/>
-          </div>
-          {/* Flat Online Status Node */}
-          <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-emerald-500 border border-[#FAF8F5]" />
-        </div>
-
-        {/* Identity Details Stack */}
-        <div className="flex flex-col min-w-0">
-          <h3 className="text-xs font-bold tracking-tight text-[#2B2521] truncate pr-1">
-            {post.username || 'Anonymous User'}
-          </h3>
-          <span className="text-[10px] font-bold text-[#A89B8F] mt-0.5">
-            Original Post
-          </span>
-        </div>
-      </div>
-
-      {/* Lightweight Contextual Mini Badge */}
-      <span className="inline-flex h-4 items-center justify-center rounded bg-[#D4A574]/15 border border-[#D4A574]/20 px-1.5 text-[9px] font-black uppercase tracking-widest text-[#C28D56] shrink-0">
-        OP
-      </span>
-    </div>
-
-    {/* Primary Full Width Structural Content Body */}
-    {post.content && (
-      <div className="relative px-4 py-3.5 selection:bg-[#D4A574]/20 selection:text-[#2B2521]">
-        <p className="text-[14px] leading-5 text-[#2B2521] whitespace-pre-wrap break-words font-medium tracking-wide">
-          {post.content}
-        </p>
-      </div>
-    )}
-
-  </article>
-)}
-
-
-
-
+          {/* =================================================
+              INSIGHTS
+              ================================================= */}
 
           {activeTab === 'ai' ? (
-            <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
-              <div className="text-5xl font-extrabold tracking-tight text-stone-900">
-                {positivePercentage}%
+            <div
+              className="
+                flex
+                min-h-full
+                flex-col
+                items-center
+                justify-center
+                text-center
+              "
+            >
+              <div
+                className="
+                  flex
+                  h-20
+                  w-20
+                  items-center
+                  justify-center
+                  rounded-full
+                  bg-[var(--surface-hover)]
+                  ring-1
+                  ring-[var(--border)]
+                "
+              >
+                <span
+                  className="
+                    font-['Courier_New']
+                    text-[22px]
+                    font-bold
+                    text-[var(--accent)]
+                  "
+                >
+                  {positivePercentage}%
+                </span>
               </div>
 
+              <h3
+                className="
+                  mt-4
+                  font-['Courier_New']
+                  text-[13px]
+                  font-bold
+                  tracking-wide
+                  text-[var(--foreground)]
+                "
+              >
+                POSITIVE SENTIMENT
+              </h3>
+
+              <p
+                className="
+                  mt-1
+                  max-w-[290px]
+                  font-['Courier_New']
+                  text-[10px]
+                  leading-5
+                  text-[var(--muted)]
+                "
+              >
+                Based on the available
+                comments on this post.
+              </p>
             </div>
           ) : (
             <>
+              {/* =================================================
+                  ORIGINAL POST
+                  ================================================= */}
+
+              {post && (
+                <article
+                  className="
+                    mb-4
+                    overflow-hidden
+                    rounded-xl
+                    bg-[var(--surface-hover)]
+                  "
+                >
+                  {/* POST HEADER */}
+
+                  <div
+                    className="
+                      flex
+                      items-center
+                      gap-2.5
+                      p-3
+                    "
+                  >
+                    <div
+                      className="
+                        h-9
+                        w-9
+                        shrink-0
+                        overflow-hidden
+                        rounded-full
+                        bg-[var(--surface)]
+                      "
+                    >
+                      <img
+                        src={
+                          post.avatar_url ||
+                          '/avatar-placeholder.png'
+                        }
+                        alt=""
+                        className="
+                          h-full
+                          w-full
+                          object-cover
+                        "
+                        loading="lazy"
+                        draggable={false}
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <div
+                        className="
+                          truncate
+                          font-['Courier_New']
+                          text-[11px]
+                          font-bold
+                          text-[var(--foreground)]
+                        "
+                      >
+                        {postUsername}
+                      </div>
+
+                      <div
+                        className="
+                          mt-0.5
+                          font-['Courier_New']
+                          text-[9px]
+                          font-bold
+                          uppercase
+                          tracking-wide
+                          text-[var(--muted)]
+                        "
+                      >
+                        Original post
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* POST TEXT */}
+
+                  {post.content?.trim() && (
+                    <p
+                      className="
+                        px-3
+                        pb-3
+                        break-words
+                        whitespace-pre-wrap
+                        font-['Courier_New']
+                        text-[11px]
+                        leading-5
+                        text-[var(--foreground)]
+                      "
+                    >
+                      {post.content.trim()}
+                    </p>
+                  )}
+
+                  {/* =================================================
+                      ORIGINAL POST IMAGES
+                      ================================================= */}
+
+                  {postImages.length > 0 && (
+                    <div
+                      className="
+                        w-full
+                        overflow-hidden
+                        bg-[var(--surface)]
+                      "
+                    >
+                      {/* ONE IMAGE */}
+
+                      {postImages.length === 1 && (
+                        <img
+                          src={postImages[0]}
+                          alt="Original post"
+                          loading="lazy"
+                          decoding="async"
+                          draggable={false}
+                          className="
+                            block
+                            max-h-[480px]
+                            w-full
+                            object-contain
+                            bg-black
+                          "
+                        />
+                      )}
+
+                      {/* TWO IMAGES */}
+
+                      {postImages.length === 2 && (
+                        <div
+                          className="
+                            grid
+                            grid-cols-2
+                            gap-1
+                            bg-[var(--surface)]
+                          "
+                        >
+                          {postImages.map(
+                            (url, index) => (
+                              <img
+                                key={`${url}-${index}`}
+                                src={url}
+                                alt={`Original post image ${
+                                  index + 1
+                                }`}
+                                loading="lazy"
+                                decoding="async"
+                                draggable={false}
+                                className="
+                                  block
+                                  aspect-square
+                                  h-full
+                                  w-full
+                                  object-cover
+                                  bg-black
+                                "
+                              />
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {/* THREE IMAGES */}
+
+                      {postImages.length === 3 && (
+                        <div
+                          className="
+                            grid
+                            grid-cols-3
+                            gap-1
+                            bg-[var(--surface)]
+                          "
+                        >
+                          <img
+                            src={postImages[0]}
+                            alt="Original post image 1"
+                            loading="lazy"
+                            decoding="async"
+                            draggable={false}
+                            className="
+                              col-span-2
+                              block
+                              h-full
+                              min-h-[260px]
+                              w-full
+                              object-cover
+                              bg-black
+                            "
+                          />
+
+                          <div
+                            className="
+                              grid
+                              grid-rows-2
+                              gap-1
+                            "
+                          >
+                            {postImages
+                              .slice(1, 3)
+                              .map(
+                                (
+                                  url,
+                                  index
+                                ) => (
+                                  <img
+                                    key={`${url}-${index + 1}`}
+                                    src={url}
+                                    alt={`Original post image ${
+                                      index +
+                                      2
+                                    }`}
+                                    loading="lazy"
+                                    decoding="async"
+                                    draggable={false}
+                                    className="
+                                      block
+                                      h-full
+                                      min-h-0
+                                      w-full
+                                      object-cover
+                                      bg-black
+                                    "
+                                  />
+                                )
+                              )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* FOUR OR MORE */}
+
+                      {postImages.length >= 4 && (
+                        <div
+                          className="
+                            grid
+                            grid-cols-2
+                            gap-1
+                            bg-[var(--surface)]
+                          "
+                        >
+                          {postImages
+                            .slice(0, 4)
+                            .map(
+                              (
+                                url,
+                                index
+                              ) => (
+                                <img
+                                  key={`${url}-${index}`}
+                                  src={url}
+                                  alt={`Original post image ${
+                                    index + 1
+                                  }`}
+                                  loading="lazy"
+                                  decoding="async"
+                                  draggable={false}
+                                  className="
+                                    block
+                                    aspect-square
+                                    h-full
+                                    w-full
+                                    object-cover
+                                    bg-black
+                                  "
+                                />
+                              )
+                            )}
+                        </div>
+                      )}
+
+                      {/* IMAGE COUNT */}
+
+                      {postImages.length >
+                        4 && (
+                        <div
+                          className="
+                            bg-[var(--surface-hover)]
+                            px-3
+                            py-2
+                            font-['Courier_New']
+                            text-[9px]
+                            font-bold
+                            tracking-wide
+                            text-[var(--muted)]
+                          "
+                        >
+                          +{postImages.length - 4}
+                          {' '}
+                          MORE IMAGES
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* =================================================
+                      ORIGINAL POST VIDEO
+                      ================================================= */}
+
+                  {postVideo && (
+                    <div
+                      className="
+                        w-full
+                        overflow-hidden
+                        bg-black
+                      "
+                    >
+                      <video
+                        src={postVideo}
+                        poster={
+                          post.thumbnail_url ||
+                          undefined
+                        }
+                        controls
+                        playsInline
+                        preload="metadata"
+                        className="
+                          block
+                          h-auto
+                          max-h-[480px]
+                          w-full
+                          object-contain
+                          bg-black
+                        "
+                      />
+                    </div>
+                  )}
+
+                  {/* =================================================
+                      LIVE INDICATOR
+                      ================================================= */}
+
+                  {post.is_live &&
+                    post.live_id && (
+                    <div
+                      className="
+                        flex
+                        items-center
+                        gap-2
+                        px-3
+                        py-2
+                        font-['Courier_New']
+                        text-[9px]
+                        font-bold
+                        uppercase
+                        tracking-wide
+                        text-[var(--foreground)]
+                      "
+                    >
+                      <span
+                        className="
+                          h-1.5
+                          w-1.5
+                          animate-pulse
+                          rounded-full
+                          bg-red-500
+                        "
+                      />
+
+                      LIVE
+                    </div>
+                  )}
+                </article>
+              )}
+
+              {/* =================================================
+                  COMMENTS
+                  ================================================= */}
+
               {comments.length === 0 ? (
-                <div className="flex h-44 flex-col items-center justify-center text-center">
-                  <p className="text-sm font-bold text-stone-800">No comments yet</p>
-                  <p className="text-xs text-stone-500 mt-1">Be the first to share your thoughts.</p>
+                <div
+                  className="
+                    flex
+                    min-h-[280px]
+                    flex-col
+                    items-center
+                    justify-center
+                    text-center
+                  "
+                >
+                  <div
+                    className="
+                      flex
+                      h-14
+                      w-14
+                      items-center
+                      justify-center
+                      rounded-full
+                      bg-[var(--surface-hover)]
+                      text-[var(--muted)]
+                    "
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-6 w-6"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H8l-4 3v-5.5A7.5 7.5 0 1 1 20 11.5Z" />
+                    </svg>
+                  </div>
+
+                  <p
+                    className="
+                      mt-3
+                      font-['Courier_New']
+                      text-[12px]
+                      font-bold
+                      text-[var(--foreground)]
+                    "
+                  >
+                    NO COMMENTS YET
+                  </p>
+
+                  <p
+                    className="
+                      mt-1
+                      font-['Courier_New']
+                      text-[10px]
+                      text-[var(--muted)]
+                    "
+                  >
+                    Be the first to comment.
+                  </p>
                 </div>
               ) : (
-              comments.map((comment) => (
-                  <div key={comment.id} className="w-full">
-                    <CommentCard comment={comment} />
-                  </div>
-                ))
+                <div className="space-y-3">
+                  {comments.map(
+                    (comment) => (
+                      <div
+                        key={comment.id}
+                        className="w-full"
+                      >
+                        <CommentCard
+                          comment={comment}
+                        />
+                      </div>
+                    )
+                  )}
+                </div>
               )}
             </>
-          )}  
+          )}
         </div>
 
-{/* Bottom Composer Element */}
-<form
-  onSubmit={handleSubmit}
-  className="sticky bottom-0 z-20 border-t border-[#4A4038] bg-[#2B2521]/95 px-5 py-4 backdrop-blur-md"
->
-  <div className="flex items-end gap-3.5 max-w-3xl mx-auto w-full">
+        {/* =================================================
+            COMMENT COMPOSER
+            ================================================= */}
 
-    {/* Current User Profile Token */}
-{/* Current User Avatar */}
-<div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-[#4A4038] bg-[#1F1A17]">
-
-<img
-  src={currentUser?.avatar_url || "/avatar-placeholder.png"}
-  alt={currentUser?.username || "You"}
-  className="h-full w-full object-cover"
-/>
-
-</div>
-
-    {/* Input Matrix Shield */}
-    <div
-      className="
-        flex 
-        flex-1 
-        items-end 
-        gap-3 
-        rounded-xl 
-        border 
-        border-[#4A4038] 
-        bg-[#1F1A17] 
-        px-4 
-        py-2.5 
-        transition-all 
-        duration-300 
-        ease-[cubic-bezier(0.16,1,0.3,1)] 
-        focus-within:border-[#D4A574]/70 
-        focus-within:ring-1 
-        focus-within:ring-[#D4A574]/40 
-        focus-within:shadow-[0_0_24px_rgba(212,165,116,0.08)]
-      "
-    >
-      {/* Precision Dynamic Expansion Layer */}
-      <div 
-        className="
-          grid 
-          flex-1 
-          break-words 
-          m-0 
-          p-0
-          after:whitespace-pre-wrap 
-          after:invisible 
-          after:content-[attr(data-replicated-value)]_'_'] 
-          after:row-start-1 
-          after:col-start-1 
-          after:py-1 
-          after:text-[15px] 
-          after:leading-6
-        "
-        data-replicated-value={newComment}
-      >
-        <textarea
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={isSubmitting}
-          placeholder="Share your thoughts..."
-          rows={1}
+        <form
+          onSubmit={handleSubmit}
           className="
-            row-start-1 
-            col-start-1 
-            m-0 
-            p-0 
-            resize-none 
-            bg-transparent 
-            py-1 
-            text-[15px] 
-            leading-6 
-            text-[#F5EFE6] 
-            placeholder:text-[#A89B8F] 
-            outline-none 
-            max-h-36 
-            min-h-[24px] 
-            transition-opacity 
-            duration-200
-            disabled:opacity-40
+            shrink-0
+            bg-[var(--surface)]
+            px-3
+            py-3
+            sm:px-4
           "
-        />
-      </div>
-
-      {/* Action Submit Control */}
-      <button
-        type="submit"
-        disabled={!newComment.trim() || isSubmitting}
-        className="
-          flex 
-          h-8 
-          w-8 
-          shrink-0 
-          items-center 
-          justify-center 
-          rounded-lg 
-          bg-[#D4A574] 
-          text-[#1F1A17] 
-          transition-all 
-          duration-300 
-          ease-[cubic-bezier(0.16,1,0.3,1)] 
-          hover:scale-105 
-          hover:bg-[#E2B886] 
-          active:scale-95 
-          disabled:pointer-events-none 
-          disabled:scale-100 
-          disabled:bg-[#3A312C] 
-          disabled:text-[#4A4038] 
-          shadow-md 
-          cursor-pointer
-        "
-        aria-label="Send comment"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="h-3.5 w-3.5 transform translate-x-[0.5px] -translate-y-[0.5px] transition-transform duration-200"
         >
-          <line x1="22" y1="2" x2="11" y2="13" />
-          <polygon points="22 2 15 22 11 13 2 9 22 2" />
-        </svg>
-      </button>
+          <div
+            className="
+              flex
+              w-full
+              items-end
+              gap-2
+            "
+          >
+            {/* CURRENT USER AVATAR */}
 
-    </div>
-  </div>
-</form>
+            <div
+              className="
+                h-9
+                w-9
+                shrink-0
+                overflow-hidden
+                rounded-full
+                bg-[var(--surface-hover)]
+              "
+            >
+              <img
+                src={
+                  currentUser?.avatar_url ||
+                  '/avatar-placeholder.png'
+                }
+                alt={currentUsername}
+                className="
+                  h-full
+                  w-full
+                  object-cover
+                "
+                loading="lazy"
+                draggable={false}
+              />
+            </div>
 
+            {/* INPUT */}
 
-      </div>
+            <div
+              className="
+                flex
+                min-w-0
+                flex-1
+                items-end
+                rounded-2xl
+                bg-[var(--surface-hover)]
+                px-3.5
+                py-2
+                transition-all
+                duration-150
+                focus-within:ring-1
+                focus-within:ring-[var(--accent)]/50
+              "
+            >
+              <textarea
+                value={newComment}
+                onChange={(event) =>
+                  setNewComment(
+                    event.target.value
+                  )
+                }
+                onKeyDown={
+                  handleKeyDown
+                }
+                disabled={isSubmitting}
+                placeholder="Write a comment..."
+                rows={1}
+                maxLength={1000}
+                className="
+                  min-h-[22px]
+                  max-h-32
+                  min-w-0
+                  flex-1
+                  resize-none
+                  bg-transparent
+                  p-0
+                  font-['Courier_New']
+                  text-[11px]
+                  leading-5
+                  text-[var(--foreground)]
+                  placeholder:text-[var(--muted)]
+                  outline-none
+                "
+              />
+            </div>
+
+            {/* SEND */}
+
+            <button
+              type="submit"
+              disabled={
+                !newComment.trim() ||
+                isSubmitting
+              }
+              aria-label="Send comment"
+              className="
+                flex
+                h-9
+                w-9
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                bg-[var(--accent)]
+                text-white
+                transition-all
+                duration-150
+                hover:opacity-90
+                active:scale-95
+                disabled:cursor-not-allowed
+                disabled:opacity-35
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-[var(--accent)]/40
+              "
+            >
+              {isSubmitting ? (
+                <svg
+                  className="
+                    h-4
+                    w-4
+                    animate-spin
+                  "
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="8"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeDasharray="28 20"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="
+                    h-4
+                    w-4
+                    translate-x-[1px]
+                  "
+                  fill="currentColor"
+                >
+                  <path d="M3.4 3.1 21 11.2c.8.4.8 1.2 0 1.6L3.4 20.9c-.8.4-1.6.1-1.3-1.1l2-6.1c.1-.3.3-.5.7-.6l7.5-1.1-7.5-1.1c-.3 0-.6-.3-.7-.6l-2-6.1c-.3-.9.5-1.6 1.3-1.1Z" />
+                </svg>
+              )}
+            </button>
+          </div>
+        </form>
+      </section>
     </div>
   )
 }

@@ -1,6 +1,11 @@
 'use client'
 
-import { Flame, MessageCircle, Sparkles } from 'lucide-react'
+import {
+  Flame,
+  MessageCircle,
+  Sparkles,
+} from 'lucide-react'
+
 import PostCardValley from './PostCardValley'
 
 interface PostCardMetaProps {
@@ -10,21 +15,37 @@ interface PostCardMetaProps {
   onCommentsClick?: () => void
 }
 
+/*
+ * =====================================================
+ * FORMAT COUNTS
+ * =====================================================
+ */
+
 function formatCount(value: number): string {
   if (value < 1000) {
     return value.toLocaleString()
   }
 
   if (value < 10000) {
-    return `${(value / 1000).toFixed(1)}k`
+    return `${(value / 1000)
+      .toFixed(1)
+      .replace('.0', '')}k`
   }
 
   if (value < 1000000) {
     return `${Math.round(value / 1000)}k`
   }
 
-  return `${(value / 1000000).toFixed(1)}M`
+  return `${(value / 1000000)
+    .toFixed(1)
+    .replace('.0', '')}M`
 }
+
+/*
+ * =====================================================
+ * COMPONENT
+ * =====================================================
+ */
 
 export default function PostCardMeta({
   likes,
@@ -32,48 +53,59 @@ export default function PostCardMeta({
   commentsCount,
   onCommentsClick,
 }: PostCardMetaProps) {
-  const totalReactions = likes
+  const totalReactions = Math.max(
+    0,
+    likes
+  )
 
   const hasContent =
     totalReactions > 0 ||
     reaxCount > 0 ||
     commentsCount > 0
 
-  if (!hasContent) return null
+  if (!hasContent) {
+    return null
+  }
 
   return (
     <PostCardValley>
-
       <div
         className="
           flex
-          min-h-[28px]
+          min-h-[32px]
           w-full
           items-center
           justify-between
-          gap-2
-          px-2.5
-          py-1
-          text-[10px]
-          font-medium
+          gap-3
+          px-4
+          py-1.5
+          font-['Courier_New']
+          text-[11px]
           leading-none
-          tracking-tight
           text-[var(--muted)]
-          antialiased
+          select-none
         "
       >
 
-        {/* LEFT — REACTIONS */}
+        {/* =================================================
+            LEFT — REACTION COUNT
+            ================================================= */}
+
         <div className="flex min-w-0 items-center">
-
           {totalReactions > 0 && (
-            <div className="flex items-center gap-1.5">
-
+            <div
+              className="
+                flex
+                items-center
+                gap-1.5
+              "
+            >
+              {/* Reaction icon */}
               <span
                 className="
                   flex
-                  h-4
-                  w-4
+                  h-[18px]
+                  w-[18px]
                   shrink-0
                   items-center
                   justify-center
@@ -90,110 +122,160 @@ export default function PostCardMeta({
                 />
               </span>
 
-              <span className="font-semibold text-[var(--foreground)]">
-                {formatCount(totalReactions)}
+              {/* Count */}
+              <span
+                className="
+                  font-['Courier_New']
+                  text-[11px]
+                  font-bold
+                  text-[var(--foreground)]
+                "
+              >
+                {formatCount(
+                  totalReactions
+                )}
               </span>
-
             </div>
           )}
-
         </div>
 
-        {/* RIGHT */}
-        <div className="flex min-w-0 items-center gap-2.5">
+        {/* =================================================
+            RIGHT — REAX + COMMENTS
+            ================================================= */}
 
-          {/* REAX */}
+        <div
+          className="
+            flex
+            min-w-0
+            items-center
+            gap-3
+          "
+        >
+
+          {/* =================================================
+              REAX
+              ================================================= */}
+
           {reaxCount > 0 && (
-            <div className="flex shrink-0 items-center gap-1">
-
+            <div
+              className="
+                flex
+                shrink-0
+                items-center
+                gap-1
+                font-['Courier_New']
+                text-[10px]
+              "
+            >
               <Sparkles
-                size={10}
+                size={11}
                 strokeWidth={2}
                 className="
+                  shrink-0
                   text-amber-500
                   dark:text-amber-400
                 "
               />
 
-              <span>
-                {formatCount(reaxCount)}
-
-                <span
-                  className="
-                    ml-0.5
-                    hidden
-                    min-[360px]:inline
-                    opacity-60
-                  "
-                >
-                  Reax
-                </span>
+              <span
+                className="
+                  font-semibold
+                  text-[var(--muted)]
+                "
+              >
+                {formatCount(
+                  reaxCount
+                )}
               </span>
 
+              <span
+                className="
+                  hidden
+                  text-[9px]
+                  opacity-60
+                  min-[380px]:inline
+                "
+              >
+                Reax
+              </span>
             </div>
           )}
 
-          {/* DISCUSSIONS */}
+          {/* =================================================
+              COMMENTS
+              ================================================= */}
+
           {commentsCount > 0 && (
             <button
               type="button"
               onClick={onCommentsClick}
               aria-label={`Open ${commentsCount} ${
                 commentsCount === 1
-                  ? 'discussion'
-                  : 'discussions'
+                  ? 'comment'
+                  : 'comments'
               }`}
               className="
                 group
-                relative
                 flex
                 shrink-0
                 items-center
-                gap-1
+                gap-1.5
                 rounded-md
                 px-1.5
                 py-1
+                font-['Courier_New']
                 text-[10px]
-                transition-all
+                text-[var(--muted)]
+                transition-colors
                 duration-150
-                touch-manipulation
                 hover:bg-[var(--surface-hover)]
                 hover:text-[var(--foreground)]
                 active:scale-95
+                focus:outline-none
+                focus-visible:ring-2
+                focus-visible:ring-[#1877F2]/40
+                touch-manipulation
               "
             >
-
               <MessageCircle
-                size={10}
+                size={11}
                 strokeWidth={2}
                 className="
                   shrink-0
-                  text-[var(--muted)]
                   transition-colors
-                  group-hover:text-cyan-400
-                  group-active:text-cyan-400
+                  duration-150
+                  group-hover:text-[#1877F2]
+                  group-active:text-[#1877F2]
                 "
               />
 
-              <span className="whitespace-nowrap">
-                {formatCount(commentsCount)}
-
-                <span className="ml-0.5 opacity-60">
-                  <span className="hidden min-[340px]:inline">
-                    {commentsCount === 1
-                      ? 'discussion'
-                      : 'discussions'}
-                  </span>
-                </span>
+              <span
+                className="
+                  whitespace-nowrap
+                  font-semibold
+                "
+              >
+                {formatCount(
+                  commentsCount
+                )}
               </span>
 
+              <span
+                className="
+                  hidden
+                  opacity-60
+                  min-[400px]:inline
+                "
+              >
+                {commentsCount === 1
+                  ? 'comment'
+                  : 'comments'}
+              </span>
             </button>
           )}
 
         </div>
-
       </div>
-
     </PostCardValley>
   )
 }

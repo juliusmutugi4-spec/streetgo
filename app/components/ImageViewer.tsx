@@ -1,13 +1,9 @@
 'use client'
-import ImageViewerHeader from "./ImageViewerHeader"
-import ImageViewerImage from "./ImageViewerImage"
-import ImageViewerActions from "./ImageViewerActions"
-import ImageViewerComments from "./ImageViewerComments"
-import {
-  Heart,
-  MessageCircle,
-  Bookmark,
-} from "lucide-react"
+
+import ImageViewerHeader from './ImageViewerHeader'
+import ImageViewerImage from './ImageViewerImage'
+import ImageViewerActions from './ImageViewerActions'
+import ImageViewerComments from './ImageViewerComments'
 
 interface ImageViewerProps {
   show: boolean
@@ -29,12 +25,11 @@ interface ImageViewerProps {
   imageLikes: number[]
   imageCommentCounts: number[]
 
-imageComments: any[]
-imageCommentText: string
+  imageComments: any[]
+  imageCommentText: string
 
-setImageCommentText: (text: string) => void
-
-addImageComment: () => void
+  setImageCommentText: (text: string) => void
+  addImageComment: () => void
 
   toggleImageLike: () => void
 }
@@ -48,70 +43,162 @@ export default function ImageViewer({
   username,
   avatarUrl,
   onClose,
-
-showImageComments,
-setShowImageComments,
-
-imageLikes,
-imageCommentCounts,
-
-imageComments,
-imageCommentText,
-
-setImageCommentText,
-
-addImageComment,
-
-toggleImageLike,
+  showImageComments,
+  setShowImageComments,
+  imageLikes,
+  imageCommentCounts,
+  imageComments,
+  imageCommentText,
+  setImageCommentText,
+  addImageComment,
+  toggleImageLike,
 }: ImageViewerProps) {
-
-  if (!show) return null
+  if (!show) {
+    return null
+  }
 
   return (
     <div
-      onClick={onClose}
       className="
         fixed
         inset-0
         z-[99999]
-        bg-black/95
-        flex
-        items-center
-        justify-center
+        bg-black
       "
+      role="dialog"
+      aria-modal="true"
+      aria-label="Image viewer"
+      onClick={onClose}
     >
+      {/* =====================================================
+          VIEWER
+          ===================================================== */}
 
-<ImageViewerHeader
-  username={username}
-  avatarUrl={avatarUrl}
-  currentImage={currentImage}
-  imageUrls={imageUrls}
-  onClose={onClose}
-/>
-<ImageViewerImage
-  imageUrls={imageUrls}
-  currentImage={currentImage}
-  setCurrentImage={setCurrentImage}
-/>
+      <div
+        className="
+          relative
+          h-full
+          w-full
+          overflow-hidden
+          bg-black
+        "
+        onClick={(event) => {
+          event.stopPropagation()
+        }}
+      >
+        {/* =================================================
+            IMAGE SCROLLER
+            ================================================= */}
 
-<ImageViewerActions
-  imageUrls={imageUrls}
-  currentImage={currentImage}
-  imageLikes={imageLikes}
-  imageCommentCounts={imageCommentCounts}
-  toggleImageLike={toggleImageLike}
-  setShowImageComments={setShowImageComments}
-/>
+        <div
+          className="
+            absolute
+            inset-0
+          "
+        >
+          <ImageViewerImage
+            imageUrls={imageUrls}
+            currentImage={currentImage}
+            setCurrentImage={setCurrentImage}
+          />
+        </div>
 
-<ImageViewerComments
-  showImageComments={showImageComments}
-  setShowImageComments={setShowImageComments}
-  imageComments={imageComments}
-  imageCommentText={imageCommentText}
-  setImageCommentText={setImageCommentText}
-  addImageComment={addImageComment}
-/>
+        {/* =================================================
+            HEADER
+            ================================================= */}
 
+        <div
+          className="
+            pointer-events-none
+            absolute
+            inset-x-0
+            top-0
+            z-[700]
+          "
+        >
+          <div className="pointer-events-auto">
+            <ImageViewerHeader
+              username={username}
+              avatarUrl={avatarUrl}
+              currentImage={currentImage}
+              imageUrls={imageUrls}
+              onClose={onClose}
+            />
+          </div>
+        </div>
+
+        {/* =================================================
+            BOTTOM ACTIONS
+            Hide them while comments are open so the
+            comments panel owns the bottom area.
+            ================================================= */}
+
+        {!showImageComments && (
+          <div
+            className="
+              pointer-events-none
+              absolute
+              inset-x-0
+              bottom-0
+              z-[650]
+            "
+          >
+            <div className="pointer-events-auto">
+              <ImageViewerActions
+                imageUrls={imageUrls}
+                currentImage={currentImage}
+                imageLikes={imageLikes}
+                imageCommentCounts={
+                  imageCommentCounts
+                }
+                isLiked={isImageLiked}
+                toggleImageLike={
+                  toggleImageLike
+                }
+                setShowImageComments={
+                  setShowImageComments
+                }
+              />
+            </div>
+          </div>
+        )}
+
+        {/* =================================================
+            COMMENTS
+            ================================================= */}
+
+        {showImageComments && (
+          <div
+            className="
+              absolute
+              inset-x-0
+              bottom-0
+              z-[800]
+            "
+          >
+            <ImageViewerComments
+              showImageComments={
+                showImageComments
+              }
+              setShowImageComments={
+                setShowImageComments
+              }
+              imageComments={
+                imageComments
+              }
+              imageCommentText={
+                imageCommentText
+              }
+              setImageCommentText={
+                setImageCommentText
+              }
+              addImageComment={
+                addImageComment
+              }
+            />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

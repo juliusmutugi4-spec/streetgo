@@ -1,57 +1,84 @@
 import { supabase } from "./supabase"
 import { sendReax } from "./reax"
 
+interface SendPostReaxParams {
+  senderId: string
+  receiverId: string
+  postId: string
+  onSuccess: () => void
+  onRollback: () => void
+}
+
 export async function sendPostReax({
   senderId,
   receiverId,
+  postId,
   onSuccess,
   onRollback,
-}: {
-  senderId: string
-  receiverId: string
-  onSuccess: () => void
-  onRollback: () => void
-}) {
-  
-  
-  
+}: SendPostReaxParams) {
+  if (!senderId) {
+    throw new Error("Missing sender ID.")
+  }
 
-  // 1. Check sender REAX balance
-  const { data: senderWallet, error: senderError } = await supabase
+  if (!receiverId) {
+    throw new Error("Missing receiver ID.")
+  }
+
+  if (!postId) {
+    throw new Error("Missing post ID.")
+  }
+
+  /*
+   * ONE CLICK = ONE REAX
+   */
+  const amount = 1
+
+  const {
+    data: wallet,
+    error: walletError,
+  } = await supabase
     .from("wallets")
-    .select("*")
+    .select("reax_balance")
     .eq("user_id", senderId)
     .maybeSingle()
 
-  
-  
-
-  if (senderError || !senderWallet) {
-    throw new Error("Your REAX wallet was not found")
+  if (walletError) {
+    throw new Error(
+      walletError.message ||
+        "Unable to check your REAX wallet."
+    )
   }
 
-  if ((senderWallet.reax_balance ?? 0) <= 0) {
-    throw new Error("Insufficient REAX balance ⭐ Fund your REAX")
+  if (!wallet) {
+    throw new Error(
+      "Your REAX wallet was not found."
+    )
   }
 
-  // 2. Optimistic UI update
-  onSuccess()
+  const balance =
+    Number(wallet.reax_balance) || 0
+
+  if (balance < amount) {
+    throw new Error(
+      "Insufficient REAX balance ⭐ Fund your REAX"
+    )
+  }
 
   try {
-    
-    
-
-    await sendReax(
+    await sendReax({
       senderId,
       receiverId,
-      1
+      amount,
+      postId,
+    })
+
+    onSuccess()
+  } catch (error) {
+    console.error(
+      "SEND REAX FAILED:",
+      error
     )
 
-    
-  } catch (error) {
-    console.error("SEND REAX FAILED:", error)
-
-    // Rollback UI
     onRollback()
 
     throw error

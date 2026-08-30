@@ -1,6 +1,5 @@
 'use client'
 
-import React from 'react'
 import Image from 'next/image'
 import { X, MoreHorizontal } from 'lucide-react'
 
@@ -21,105 +20,181 @@ export default function ImageViewerHeader({
   onClose,
   onMenuClick,
 }: ImageViewerHeaderProps) {
-  const hasMultipleImages = imageUrls.length > 1
-
   return (
     <header
       className="
-        absolute 
-        top-0 
-        inset-x-0 
-        z-20 
-        flex 
-        items-center 
-        justify-between 
-        px-6 
-        py-5 
-        bg-gradient-to-b 
-        from-black/90 
-        via-black/40 
-        to-transparent 
+        absolute
+        inset-x-0
+        top-0
+        z-50
+        flex
+        items-center
+        justify-between
+        px-4
+        py-4
+        sm:px-6
+        sm:py-5
+        bg-gradient-to-b
+        from-black/90
+        via-black/50
+        to-transparent
         select-none
+        pointer-events-none
       "
       aria-label="Image viewer header"
     >
-      {/* Close Button */}
+      {/* =====================================================
+          CLOSE
+          ===================================================== */}
+
       <button
-        onClick={(e) => {
-          e.stopPropagation()
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
           onClose()
         }}
-        type="button"
-        className="
-          p-2 
-          -ml-2
-          text-zinc-300 
-          hover:text-white 
-          focus-visible:text-white
-          rounded-full 
-          hover:bg-white/10 
-          focus:outline-none 
-          focus-visible:ring-2 
-          focus-visible:ring-white/50 
-          transition-all 
-          duration-200
-        "
         aria-label="Close image viewer"
+        className="
+          pointer-events-auto
+          flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-full
+          text-white
+          transition-all
+          duration-200
+          hover:bg-white/10
+          hover:scale-105
+          active:scale-95
+          focus:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-white/60
+        "
       >
-        <X className="h-6 w-6" aria-hidden="true" />
+        <X
+          className="h-6 w-6"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </button>
 
-      {/* User Information & Counter */}
-      <div className="flex items-center gap-3 framework-user-info">
-        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border border-white/10 bg-zinc-800">
+      {/* =====================================================
+          USER INFORMATION
+          ===================================================== */}
+
+      <div
+        className="
+          pointer-events-auto
+          flex
+          min-w-0
+          max-w-[60%]
+          items-center
+          gap-3
+        "
+      >
+        {/* Avatar */}
+
+        <div
+          className="
+            relative
+            h-9
+            w-9
+            shrink-0
+            overflow-hidden
+            rounded-full
+            border
+            border-white/20
+            bg-zinc-800
+            sm:h-10
+            sm:w-10
+          "
+        >
           <Image
-            src={avatarUrl || '/placeholder-avatar.png'}
+            src={
+              avatarUrl ||
+              '/placeholder-avatar.png'
+            }
             alt={`${username}'s avatar`}
             fill
             sizes="40px"
             className="object-cover"
             priority
+            unoptimized
           />
         </div>
 
-        <div className="flex flex-col min-w-0">
-          <span className="truncate text-sm font-medium text-white tracking-wide">
+        {/* Name */}
+
+        <div className="min-w-0">
+          <div
+            className="
+              truncate
+              text-sm
+              font-semibold
+              tracking-tight
+              text-white
+            "
+          >
             {username}
-          </span>
-          {hasMultipleImages && (
-            <span className="text-xs text-zinc-400 font-normal mt-0.5">
-              {currentImage + 1} / {imageUrls.length}
-            </span>
+          </div>
+
+          {/* Counter */}
+
+          {imageUrls.length > 1 && (
+            <div
+              className="
+                mt-0.5
+                text-[11px]
+                font-medium
+                text-zinc-400
+              "
+            >
+              {currentImage + 1} of {imageUrls.length}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Actions Menu */}
+      {/* =====================================================
+          MORE MENU
+          ===================================================== */}
+
       <button
-        onClick={(e) => {
-          e.stopPropagation()
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation()
           onMenuClick?.()
         }}
-        type="button"
-        className="
-          p-2 
-          -mr-2
-          text-zinc-300 
-          hover:text-white 
-          focus-visible:text-white
-          rounded-full 
-          hover:bg-white/10 
-          focus:outline-none 
-          focus-visible:ring-2 
-          focus-visible:ring-white/50 
-          transition-all 
-          duration-200
-          disabled:opacity-50
-        "
-        aria-label="More options"
         disabled={!onMenuClick}
+        aria-label="More options"
+        className="
+          pointer-events-auto
+          flex
+          h-10
+          w-10
+          items-center
+          justify-center
+          rounded-full
+          text-white
+          transition-all
+          duration-200
+          hover:bg-white/10
+          hover:scale-105
+          active:scale-95
+          focus:outline-none
+          focus-visible:ring-2
+          focus-visible:ring-white/60
+          disabled:pointer-events-none
+          disabled:opacity-40
+        "
       >
-        <MoreHorizontal className="h-6 w-6" aria-hidden="true" />
+        <MoreHorizontal
+          className="h-6 w-6"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
       </button>
     </header>
   )

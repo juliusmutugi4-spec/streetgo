@@ -65,7 +65,10 @@ interface PostProps {
   isActive?: boolean
   setActivePostId?: React.Dispatch<React.SetStateAction<string | null>>
 
-  onOpenDiscussion?: (post: any, comments: any[]) => void
+ onOpenDiscussion?: (
+  post: any,
+  comments?: any[]
+) => void | Promise<void>
 onOpenDispatch: (post: any) => void
 
 onRequireAuth?: () => void
@@ -186,6 +189,72 @@ useEffect(() => {
     supabase.removeChannel(channel)
   }
 }, [post.id, post.is_live])
+const loadReaxCount = async () => {
+  if (!post?.id) {
+    setReaxCount(0)
+    return
+  }
+
+  try {
+    const {
+      data,
+      error,
+    } = await supabase.rpc(
+      'get_post_reax_total',
+      {
+        target_post_id: post.id,
+      }
+    )
+
+    if (error) {
+      console.error(
+        'LOAD REAX COUNT ERROR:',
+        JSON.stringify(
+          error,
+          null,
+          2
+        )
+      )
+
+      console.error(
+        'REAX ERROR MESSAGE:',
+        error.message
+      )
+
+      console.error(
+        'REAX ERROR CODE:',
+        error.code
+      )
+
+      console.error(
+        'REAX ERROR DETAILS:',
+        error.details
+      )
+
+      console.error(
+        'REAX ERROR HINT:',
+        error.hint
+      )
+
+      setReaxCount(0)
+      return
+    }
+
+    setReaxCount(
+      Number(data) || 0
+    )
+  } catch (error) {
+    console.error(
+      'LOAD REAX COUNT EXCEPTION:',
+      error
+    )
+
+    setReaxCount(0)
+  }
+}
+
+
+
 
 
 // =====================================================
@@ -708,19 +777,21 @@ if (!user) {
   return
 }
 
+await sendPostReax({
+  senderId: user.id,
+  receiverId: post.user_id,
+  postId: post.id,
 
-  await sendPostReax({
-    senderId: user.id,
-    receiverId: post.user_id,
+  onSuccess: () => {
+    setReaxCount((prev) => prev + 1)
+  },
 
-    onSuccess: () => {
-      setReaxCount(prev => prev + 1)
-    },
-
-    onRollback: () => {
-      setReaxCount(prev => Math.max(0, prev - 1))
-    }
-  })
+  onRollback: () => {
+    setReaxCount((prev) =>
+      Math.max(0, prev - 1)
+    )
+  },
+})
 }
 useEffect(() => {
   loadPostData()
@@ -1106,8 +1177,63 @@ return (
   reaxCount={reaxCount}
   toggleLike={toggleLike}
   handleSendReax={handleSendReax}
-  setOpenRoom={() => {
-    onOpenDiscussion?.(post, comments)
+  setOpenRoom={async () => {
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from('comments')
+        .select('*')
+        .eq('post_id', post.id)
+        .order('created_at', {
+          ascending: true,
+        })
+
+      if (error) {
+        console.error(
+          'DISCUSSION LOAD ERROR:',
+          error
+        )
+
+        onOpenDiscussion?.(
+          post,
+          comments
+        )
+
+        return
+      }
+
+      const freshComments =
+        data || []
+
+      /*
+       * Update the post card immediately.
+       * This changes Discuss 0 -> Discuss 5.
+       */
+      setComments(
+        freshComments
+      )
+
+      /*
+       * Open the discussion with the
+       * same fresh comments.
+       */
+      onOpenDiscussion?.(
+        post,
+        freshComments
+      )
+    } catch (error) {
+      console.error(
+        'DISCUSSION LOAD FAILED:',
+        error
+      )
+
+      onOpenDiscussion?.(
+        post,
+        comments
+      )
+    }
   }}
   post={post}
   onOpenDispatch={onOpenDispatch}

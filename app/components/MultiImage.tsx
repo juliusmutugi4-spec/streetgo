@@ -9,60 +9,237 @@ export default function MultiImage({
   imageUrls,
   openImage,
 }: MultiImageProps) {
-  const count = imageUrls.length
-  const remaining = count - 5
+  if (
+    !Array.isArray(imageUrls) ||
+    imageUrls.length < 5
+  ) {
+    return null
+  }
+
+  const images = imageUrls
+    .slice(0, 5)
+    .map((url) => url?.trim())
+
+  if (images.some((url) => !url)) {
+    return null
+  }
+
+  const remaining =
+    Math.max(imageUrls.length - 5, 0)
+
+  /*
+   * =====================================================
+   * IMAGE TILE
+   * =====================================================
+   */
+
+  const tileClassName = `
+    group
+    relative
+    block
+    min-w-0
+    overflow-hidden
+    bg-[var(--surface)]
+    p-0
+    focus:outline-none
+    focus-visible:ring-2
+    focus-visible:ring-[#1877F2]/50
+    focus-visible:ring-inset
+  `
+
+  const imageClassName = `
+    block
+    h-full
+    w-full
+    object-cover
+    select-none
+    transition-[filter,transform]
+    duration-200
+    ease-out
+    group-hover:scale-[1.01]
+    group-hover:brightness-[0.97]
+  `
 
   return (
-    <div className="w-full my-6 overflow-hidden rounded-2xl bg-gray-200 flex flex-col gap-1 select-none">
-      
-      {/* Top Row: 2 Split Images */}
-      <div className="grid grid-cols-2 gap-1 w-full">
-        {imageUrls.slice(0, 2).map((url, idx) => (
-          <div key={idx} className="aspect-[4/3] overflow-hidden bg-gray-100">
-            <img
-              src={url}
-              alt=""
-              loading="lazy"
-              onClick={() => openImage(idx)}
-              className="w-full h-full object-cover cursor-pointer hover:brightness-95 transition-all duration-200"
-            />
-          </div>
-        ))}
-      </div>
+    <div
+      className="
+        w-full
+        overflow-hidden
+        bg-[var(--surface)]
+        select-none
+      "
+    >
 
-      {/* Bottom Row: 3 Split Images with Potential Overlay */}
-      <div className="grid grid-cols-3 gap-1 w-full">
-        {imageUrls.slice(2, 5).map((url, idx) => {
-          const actualIndex = idx + 2
-          const isLastSlot = actualIndex === 4
-          const hasRemaining = remaining > 0
+      {/* =================================================
+          TOP ROW — 2 IMAGES
+          ================================================= */}
 
-          return (
-            <div key={actualIndex} className="relative aspect-square overflow-hidden bg-gray-100">
+      <div
+        className="
+          grid
+          w-full
+          grid-cols-2
+          gap-1
+          bg-[var(--surface)]
+        "
+      >
+        {images
+          .slice(0, 2)
+          .map((url, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() =>
+                openImage(index)
+              }
+              aria-label={`Open image ${
+                index + 1
+              }`}
+              className={`
+                ${tileClassName}
+                aspect-[4/3]
+              `}
+            >
               <img
                 src={url}
-                alt=""
+                alt={`Post image ${
+                  index + 1
+                }`}
                 loading="lazy"
-                onClick={() => openImage(actualIndex)}
-                className="w-full h-full object-cover cursor-pointer hover:brightness-95 transition-all duration-200"
+                decoding="async"
+                draggable={false}
+                className={
+                  imageClassName
+                }
               />
-              
-              {/* Facebook-style overlay container */}
-              {isLastSlot && hasRemaining && (
-                <div 
-                  onClick={() => openImage(actualIndex)}
-                  className="absolute inset-0 bg-black/60 hover:bg-black/50 transition-colors duration-200 flex items-center justify-center cursor-pointer"
-                >
-                  <span className="text-white text-3xl font-bold tracking-wide font-sans">
-                    +{remaining}
-                  </span>
-                </div>
-              )}
-            </div>
-          )
-        })}
+
+              <span
+                aria-hidden="true"
+                className="
+                  pointer-events-none
+                  absolute
+                  inset-0
+                  bg-black/0
+                  transition-colors
+                  duration-200
+                  group-hover:bg-black/[0.025]
+                "
+              />
+            </button>
+          ))}
       </div>
 
+      {/* =================================================
+          BOTTOM ROW — 3 IMAGES
+          ================================================= */}
+
+      <div
+        className="
+          grid
+          w-full
+          grid-cols-3
+          gap-1
+          bg-[var(--surface)]
+        "
+      >
+        {images
+          .slice(2, 5)
+          .map((url, index) => {
+            const actualIndex =
+              index + 2
+
+            const isLastVisible =
+              actualIndex === 4
+
+            return (
+              <button
+                key={actualIndex}
+                type="button"
+                onClick={() =>
+                  openImage(
+                    actualIndex
+                  )
+                }
+                aria-label={
+                  isLastVisible &&
+                  remaining > 0
+                    ? `Open image 5 and ${remaining} more images`
+                    : `Open image ${
+                        actualIndex + 1
+                      }`
+                }
+                className={`
+                  ${tileClassName}
+                  aspect-square
+                `}
+              >
+                <img
+                  src={url}
+                  alt={`Post image ${
+                    actualIndex + 1
+                  }`}
+                  loading="lazy"
+                  decoding="async"
+                  draggable={false}
+                  className={
+                    imageClassName
+                  }
+                />
+
+                <span
+                  aria-hidden="true"
+                  className="
+                    pointer-events-none
+                    absolute
+                    inset-0
+                    bg-black/0
+                    transition-colors
+                    duration-200
+                    group-hover:bg-black/[0.025]
+                  "
+                />
+
+                {/* =======================================
+                    MORE IMAGES
+                    ======================================= */}
+
+                {isLastVisible &&
+                  remaining > 0 && (
+                    <span
+                      className="
+                        pointer-events-none
+                        absolute
+                        inset-0
+                        z-20
+                        flex
+                        items-center
+                        justify-center
+                        bg-black/55
+                        transition-colors
+                        duration-200
+                        group-hover:bg-black/45
+                      "
+                    >
+                      <span
+                        className="
+                          font-sans
+                          text-2xl
+                          font-semibold
+                          leading-none
+                          tracking-tight
+                          text-white
+                          drop-shadow-sm
+                          sm:text-3xl
+                        "
+                      >
+                        +{remaining}
+                      </span>
+                    </span>
+                  )}
+              </button>
+            )
+          })}
+      </div>
     </div>
   )
 }

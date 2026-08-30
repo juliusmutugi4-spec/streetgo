@@ -15,7 +15,9 @@ interface PostActionsProps {
   reaxCount: number
   toggleLike: () => void
   handleSendReax: () => Promise<void>
-  setOpenRoom: React.Dispatch<React.SetStateAction<boolean>>
+  setOpenRoom: (
+    open: boolean
+  ) => void | Promise<void>
   post: {
     id: string
     content: string
@@ -23,6 +25,53 @@ interface PostActionsProps {
   onOpenDispatch: (post: any) => void
   onRequireAuth?: () => void
 }
+
+/*
+ * =====================================================
+ * COUNT FORMAT
+ * =====================================================
+ */
+
+function formatCount(
+  value: number
+): string {
+  const safeValue = Math.max(
+    0,
+    Number(value) || 0
+  )
+
+  if (safeValue < 1000) {
+    return safeValue.toLocaleString()
+  }
+
+  if (safeValue < 10000) {
+    return `${(safeValue / 1000)
+      .toFixed(1)
+      .replace('.0', '')}k`
+  }
+
+  if (safeValue < 1000000) {
+    return `${Math.round(
+      safeValue / 1000
+    )}k`
+  }
+
+  if (safeValue < 1000000000) {
+    return `${(safeValue / 1000000)
+      .toFixed(1)
+      .replace('.0', '')}M`
+  }
+
+  return `${(safeValue / 1000000000)
+    .toFixed(1)
+    .replace('.0', '')}B`
+}
+
+/*
+ * =====================================================
+ * COMPONENT
+ * =====================================================
+ */
 
 export default function PostActions({
   liked,
@@ -34,100 +83,100 @@ export default function PostActions({
   setOpenRoom,
   post,
   onOpenDispatch,
-  onRequireAuth,
 }: PostActionsProps) {
+  const safeLikes = Math.max(
+    0,
+    Number(likes) || 0
+  )
 
-  // --------------------------------------------------
-  // SOUND ENGINE
-  // --------------------------------------------------
+  const commentsCount =
+    Array.isArray(comments)
+      ? comments.length
+      : 0
+
+  const safeReax = Math.max(
+    0,
+    Number(reaxCount) || 0
+  )
+
+  /*
+   * =====================================================
+   * SOUND
+   * =====================================================
+   */
 
   const playSound = (
-    type: 'click' | 'success' | 'pop'
+    type:
+      | 'click'
+      | 'success'
+      | 'pop'
   ) => {
     try {
       const AudioContext =
         window.AudioContext ||
-        (window as any).webkitAudioContext
+        (
+          window as any
+        ).webkitAudioContext
 
-      if (!AudioContext) return
+      if (!AudioContext) {
+        return
+      }
 
-      const ctx = new AudioContext()
+      const ctx =
+        new AudioContext()
 
-      const osc = ctx.createOscillator()
-      const gain = ctx.createGain()
+      const oscillator =
+        ctx.createOscillator()
 
-      osc.connect(gain)
-      gain.connect(ctx.destination)
+      const gain =
+        ctx.createGain()
+
+      oscillator.connect(gain)
+      gain.connect(
+        ctx.destination
+      )
 
       if (type === 'click') {
-        osc.type = 'sine'
+        oscillator.type = 'sine'
 
-        osc.frequency.setValueAtTime(
+        oscillator.frequency.setValueAtTime(
           400,
           ctx.currentTime
         )
 
-        osc.frequency.exponentialRampToValueAtTime(
+        oscillator.frequency.exponentialRampToValueAtTime(
           100,
           ctx.currentTime + 0.05
         )
 
         gain.gain.setValueAtTime(
-          0.05,
+          0.04,
           ctx.currentTime
         )
 
         gain.gain.linearRampToValueAtTime(
-          0.01,
+          0.001,
           ctx.currentTime + 0.05
         )
 
-        osc.start()
-        osc.stop(
+        oscillator.start()
+        oscillator.stop(
           ctx.currentTime + 0.05
         )
       }
 
       if (type === 'success') {
-        osc.type = 'triangle'
+        oscillator.type =
+          'triangle'
 
-        osc.frequency.setValueAtTime(
+        oscillator.frequency.setValueAtTime(
           523.25,
           ctx.currentTime
         )
 
-        osc.frequency.setValueAtTime(
+        oscillator.frequency.setValueAtTime(
           659.25,
           ctx.currentTime + 0.06
-        )
-
-        gain.gain.setValueAtTime(
-          0.08,
-          ctx.currentTime
-        )
-
-        gain.gain.linearRampToValueAtTime(
-          0.01,
-          ctx.currentTime + 0.15
-        )
-
-        osc.start()
-        osc.stop(
-          ctx.currentTime + 0.15
-        )
-      }
-
-      if (type === 'pop') {
-        osc.type = 'sine'
-
-        osc.frequency.setValueAtTime(
-          150,
-          ctx.currentTime
-        )
-
-        osc.frequency.exponentialRampToValueAtTime(
-          600,
-          ctx.currentTime + 0.08
         )
 
         gain.gain.setValueAtTime(
@@ -136,52 +185,62 @@ export default function PostActions({
         )
 
         gain.gain.linearRampToValueAtTime(
-          0.01,
+          0.001,
+          ctx.currentTime + 0.15
+        )
+
+        oscillator.start()
+        oscillator.stop(
+          ctx.currentTime + 0.15
+        )
+      }
+
+      if (type === 'pop') {
+        oscillator.type = 'sine'
+
+        oscillator.frequency.setValueAtTime(
+          150,
+          ctx.currentTime
+        )
+
+        oscillator.frequency.exponentialRampToValueAtTime(
+          600,
           ctx.currentTime + 0.08
         )
 
-        osc.start()
-        osc.stop(
+        gain.gain.setValueAtTime(
+          0.05,
+          ctx.currentTime
+        )
+
+        gain.gain.linearRampToValueAtTime(
+          0.001,
+          ctx.currentTime + 0.08
+        )
+
+        oscillator.start()
+        oscillator.stop(
           ctx.currentTime + 0.08
         )
       }
 
-    } catch (error) {
-      console.error(error)
+      window.setTimeout(() => {
+        try {
+          void ctx.close()
+        } catch {
+          // Ignore cleanup.
+        }
+      }, 200)
+    } catch {
+      // Sound should never affect the UI.
     }
   }
 
-  // --------------------------------------------------
-  // SHARE
-  // --------------------------------------------------
-
-  const handleShare = async () => {
-    playSound('success')
-
-    const url =
-      `${window.location.origin}/post/${post.id}`
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'StreetGO',
-          text: post.content,
-          url,
-        })
-      } catch (error) {
-        console.error(
-          'Error sharing:',
-          error
-        )
-      }
-    } else {
-      await navigator.clipboard.writeText(url)
-    }
-  }
-
-  // --------------------------------------------------
-  // LIKE
-  // --------------------------------------------------
+  /*
+   * =====================================================
+   * ACTIONS
+   * =====================================================
+   */
 
   const handleLikeClick = () => {
     playSound(
@@ -193,264 +252,246 @@ export default function PostActions({
     toggleLike()
   }
 
-  // --------------------------------------------------
-  // COMMENTS
-  // --------------------------------------------------
-
   const handleCommentClick = () => {
     playSound('click')
-    setOpenRoom(true)
+    void setOpenRoom(true)
   }
+
+  const handleDispatch = () => {
+    playSound('success')
+    onOpenDispatch(post)
+  }
+
+  /*
+   * =====================================================
+   * MICRO BUTTON
+   * =====================================================
+   */
+
+  const buttonBase = `
+    group
+    flex
+    h-7
+    min-w-0
+    flex-1
+    items-center
+    justify-center
+    gap-1
+    rounded-md
+    px-1
+    font-['Courier_New']
+    text-[9px]
+    font-bold
+    leading-none
+    tracking-tight
+    text-[var(--muted)]
+    transition-colors
+    duration-150
+    touch-manipulation
+    select-none
+    active:scale-[0.97]
+    focus:outline-none
+    focus-visible:ring-1
+    focus-visible:ring-[var(--accent)]/40
+    hover:bg-[var(--surface-hover)]
+  `
 
   return (
     <div
       className="
         w-full
         bg-[var(--surface)]
-        p-0
-        m-0
+        px-1.5
+        py-0.5
         select-none
-        border-t
-        border-[var(--border)]
-        rounded-b-xl
       "
     >
-
-      {/* SUPER SLIM ACTION BAR */}
       <div
         className="
           flex
-          h-5
           w-full
           items-center
-          justify-between
-          gap-0
-          p-0
-          m-0
+          gap-0.5
         "
       >
 
-        {/* =========================================
+        {/* =================================================
             IGNITE
-        ========================================= */}
+            ================================================= */}
 
         <button
           type="button"
           onClick={handleLikeClick}
-          className="
-            flex
-            h-5
-            min-h-0
-            flex-1
-            items-center
-            justify-center
-            gap-0.5
-            rounded-md
-            p-0
-            m-0
-            text-[9px]
-            font-semibold
-            leading-none
-            text-[var(--muted)]
-            transition-all
-            duration-150
-            hover:bg-[var(--surface-hover)]
-            hover:text-[var(--foreground)]
-            active:scale-95
-            group
-          "
-        >
+          aria-label={
+            liked
+              ? `Remove Ignite. ${safeLikes}`
+              : `Ignite post. ${safeLikes}`
+          }
+          aria-pressed={liked}
+          className={`
+            ${buttonBase}
 
+            ${
+              liked
+                ? `
+                  text-rose-500
+                  hover:bg-rose-500/10
+                `
+                : `
+                  hover:text-rose-500
+                `
+            }
+          `}
+        >
           <Flame
-            size={10}
+            size={13}
             strokeWidth={2}
             className={`
               shrink-0
-              transition-all
-              duration-200
+              transition-transform
+              duration-150
+
               ${
                 liked
                   ? `
-                    text-rose-500
-                    fill-rose-500
-                    drop-shadow-[0_0_5px_rgba(244,63,94,0.5)]
+                    fill-current
                     scale-105
                   `
                   : `
-                    text-[var(--muted)]
-                    group-hover:text-rose-400
+                    group-hover:scale-105
                   `
               }
             `}
           />
 
-          <span
-            className={
-              liked
-                ? 'text-rose-400'
-                : ''
-            }
-          >
+          <span className="truncate">
             Ignite
           </span>
 
+          <span
+            className={`
+              shrink-0
+              tabular-nums
+
+              ${
+                liked
+                  ? 'text-rose-500'
+                  : 'text-[var(--muted)]'
+              }
+            `}
+          >
+            {formatCount(
+              safeLikes
+            )}
+          </span>
         </button>
 
-
-        {/* =========================================
+        {/* =================================================
             DISCUSS
-        ========================================= */}
+            ================================================= */}
 
         <button
           type="button"
-          onClick={handleCommentClick}
-          className="
-            flex
-            h-5
-            min-h-0
-            flex-1
-            items-center
-            justify-center
-            gap-0.5
-            rounded-md
-            p-0
-            m-0
-            text-[9px]
-            font-semibold
-            leading-none
-            text-[var(--muted)]
-            transition-all
-            duration-150
-            hover:bg-[var(--surface-hover)]
-            hover:text-[var(--foreground)]
-            active:scale-95
-            group
-          "
-        >
+          onClick={
+            handleCommentClick
+          }
+          aria-label={`Open comments. ${commentsCount}`}
+          className={`
+            ${buttonBase}
 
+            hover:text-[var(--accent)]
+          `}
+        >
           <MessageSquare
-            size={10}
-            strokeWidth={1.8}
+            size={13}
+            strokeWidth={2}
             className="
               shrink-0
-              transition-colors
-              group-hover:text-cyan-400
+              transition-transform
+              duration-150
+              group-hover:scale-105
             "
           />
 
-          <span>
+          <span className="truncate">
             Discuss
           </span>
 
+          <span
+            className="
+              shrink-0
+              tabular-nums
+              text-[var(--muted)]
+            "
+          >
+            {formatCount(
+              commentsCount
+            )}
+          </span>
         </button>
 
-
-        {/* =========================================
+        {/* =================================================
             REAX
-        ========================================= */}
+            ================================================= */}
 
         <div
-          onClick={() =>
-            playSound('pop')
-          }
           className="
             flex
-            h-5
-            min-h-0
+            h-7
+            min-w-0
             flex-1
             items-center
             justify-center
-            gap-0
+            overflow-hidden
             rounded-md
-            p-0
-            m-0
-            transition-all
-            duration-150
-            hover:bg-[var(--surface-hover)]
+            hover:bg-emerald-500/[0.04]
           "
         >
-
           <ReactionButton
             handleSendReax={
               handleSendReax
             }
             reaxCount={
-              reaxCount
+              safeReax
             }
           />
-
         </div>
 
-
-        {/* =========================================
+        {/* =================================================
             DISPATCH
-        ========================================= */}
+            ================================================= */}
 
-        <div
-          className="
-            relative
-            flex
-            h-5
-            min-h-0
-            flex-1
-            p-0
-            m-0
-          "
+        <button
+          type="button"
+          onClick={
+            handleDispatch
+          }
+          aria-label="Dispatch post"
+          className={`
+            ${buttonBase}
+
+            hover:text-emerald-500
+            hover:bg-emerald-500/[0.04]
+          `}
         >
-
-          <button
-            type="button"
-            onClick={() => {
-              playSound('success')
-              onOpenDispatch(post)
-            }}
+          <Send
+            size={13}
+            strokeWidth={2}
             className="
-              flex
-              h-5
-              min-h-0
-              w-full
-              items-center
-              justify-center
-              gap-0.5
-              rounded-md
-              p-0
-              m-0
-              text-[9px]
-              font-semibold
-              leading-none
-              text-[var(--muted)]
-              transition-all
+              shrink-0
+              transition-transform
               duration-150
-              hover:bg-emerald-400/5
-              hover:text-[var(--foreground)]
-              active:scale-95
-              group
+              group-hover:-translate-y-0.5
+              group-hover:translate-x-0.5
             "
-          >
+          />
 
-            <Send
-              size={10}
-              strokeWidth={1.8}
-              className="
-                shrink-0
-                transition-all
-                duration-150
-                group-hover:text-emerald-400
-                group-hover:-translate-y-0.5
-                group-hover:translate-x-0.5
-              "
-            />
-
-            <span>
-              Dispatch
-            </span>
-
-          </button>
-
-        </div>
+          <span className="truncate">
+            Dispatch
+          </span>
+        </button>
 
       </div>
-
     </div>
   )
 }
