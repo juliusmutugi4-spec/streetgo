@@ -365,6 +365,88 @@ export default function Broadcaster({
 
   /*
    * ============================================================
+   * GET BROWSER ICE SERVERS
+   * ============================================================
+   */
+
+  async function getBroadcasterIceServers(): Promise<RTCIceServer[]> {
+    const fallback: RTCIceServer[] = [
+      {
+        urls:
+          'stun:stun.l.google.com:19302',
+      },
+      {
+        urls:
+          'stun:stun1.l.google.com:19302',
+      },
+    ]
+
+    try {
+      const response =
+        await fetch(
+          `${API_URL}/live/webrtc/ice-servers`,
+          {
+            method: 'GET',
+            headers: {
+              Accept:
+                'application/json',
+            },
+            cache:
+              'no-store',
+          }
+        )
+
+      if (!response.ok) {
+        const body =
+          await response.text()
+
+        console.warn(
+          'STREETGO BROADCASTER ICE SERVER REQUEST FAILED:',
+          response.status,
+          body
+        )
+
+        return fallback
+      }
+
+      const result =
+        await response.json()
+
+      const servers =
+        Array.isArray(
+          result?.iceServers
+        )
+          ? result.iceServers
+          : []
+
+      if (
+        servers.length === 0
+      ) {
+        console.warn(
+          'STREETGO BROADCASTER ICE SERVER RESPONSE WAS EMPTY.'
+        )
+
+        return fallback
+      }
+
+      console.log(
+        '=== STREETGO BROADCASTER ICE SERVERS RECEIVED ===',
+        servers
+      )
+
+      return servers as RTCIceServer[]
+    } catch (err) {
+      console.warn(
+        'STREETGO BROADCASTER ICE SERVER FETCH ERROR:',
+        err
+      )
+
+      return fallback
+    }
+  }
+
+  /*
+   * ============================================================
    * CREATE WEBRTC CONNECTION
    *
    * This can be called:
@@ -457,18 +539,12 @@ export default function Broadcaster({
        * ======================================================
        */
 
+      const iceServers =
+        await getBroadcasterIceServers()
+
       const peer =
         new RTCPeerConnection({
-          iceServers: [
-            {
-              urls:
-                'stun:stun.l.google.com:19302',
-            },
-            {
-              urls:
-                'stun:stun1.l.google.com:19302',
-            },
-          ],
+          iceServers,
         })
 
       peerRef.current =
@@ -1929,36 +2005,48 @@ function waitForIceGatheringComplete(
   }
 
   return new Promise((resolve) => {
-    let finished = false
+    let finished =
+      false
 
-    const timeoutId =
-      setTimeout(() => {
-        if (finished) {
-          return
-        }
+    let timeoutId:
+      ReturnType<typeof setTimeout> |
+      null = null
 
-        console.warn(
-          'STREETGO BROADCASTER ICE GATHERING TIMEOUT:',
-          peer.iceGatheringState
+    function cleanup() {
+      if (timeoutId) {
+        clearTimeout(
+          timeoutId
         )
 
-        finish()
-      }, timeoutMs)
-
-    function finish() {
-      if (finished) {
-        return
+        timeoutId = null
       }
-
-      finished = true
-
-      clearTimeout(timeoutId)
 
       peer.removeEventListener(
         'icegatheringstatechange',
         checkState
       )
+    }
 
+    function finish(
+      reason: string
+    ) {
+      if (finished) {
+        return
+      }
+
+      finished =
+        true
+
+      console.log(
+        'STREETGO BROADCASTER ICE GATHERING FINISHED:',
+        {
+          reason,
+          state:
+            peer.iceGatheringState,
+        }
+      )
+
+      cleanup()
       resolve()
     }
 
@@ -1972,11 +2060,9 @@ function waitForIceGatheringComplete(
         peer.iceGatheringState ===
         'complete'
       ) {
-        console.log(
-          'STREETGO BROADCASTER ICE GATHERING: COMPLETE'
+        finish(
+          'complete'
         )
-
-        finish()
       }
     }
 
@@ -1985,11 +2071,17 @@ function waitForIceGatheringComplete(
       checkState
     )
 
-    if (
-      peer.iceGatheringState ===
-      'complete'
-    ) {
-      finish()
-    }
+    timeoutId =
+      setTimeout(() => {
+        /*
+         * Continue with the candidates already gathered.
+         * Never leave the broadcaster blocked forever.
+         */
+        finish(
+          'timeout'
+        )
+      }, timeoutMs)
+
+    checkState()
   })
 }
