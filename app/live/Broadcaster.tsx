@@ -1918,54 +1918,78 @@ export default function Broadcaster({
  */
 
 function waitForIceGatheringComplete(
-  peer: RTCPeerConnection
+  peer: RTCPeerConnection,
+  timeoutMs = 10000
 ): Promise<void> {
-  return new Promise(
-    (resolve) => {
-      if (
-        peer.iceGatheringState ===
-        'complete'
-      ) {
-        resolve()
-        return
-      }
+  if (
+    peer.iceGatheringState ===
+    'complete'
+  ) {
+    return Promise.resolve()
+  }
 
-      let finished =
-        false
+  return new Promise((resolve) => {
+    let finished = false
 
-      function finish() {
+    const timeoutId =
+      setTimeout(() => {
         if (finished) {
           return
         }
 
-        finished =
-          true
-
-        peer.removeEventListener(
-          'icegatheringstatechange',
-          checkState
+        console.warn(
+          'STREETGO BROADCASTER ICE GATHERING TIMEOUT:',
+          peer.iceGatheringState
         )
 
-        resolve()
+        finish()
+      }, timeoutMs)
+
+    function finish() {
+      if (finished) {
+        return
       }
 
-      function checkState() {
-        if (
-          peer.iceGatheringState ===
-          'complete'
-        ) {
-          console.log(
-            'STREETGO BROADCASTER ICE GATHERING: COMPLETE'
-          )
+      finished = true
 
-          finish()
-        }
-      }
+      clearTimeout(timeoutId)
 
-      peer.addEventListener(
+      peer.removeEventListener(
         'icegatheringstatechange',
         checkState
       )
+
+      resolve()
     }
-  )
+
+    function checkState() {
+      console.log(
+        '=== STREETGO BROADCASTER ICE GATHERING ===',
+        peer.iceGatheringState
+      )
+
+      if (
+        peer.iceGatheringState ===
+        'complete'
+      ) {
+        console.log(
+          'STREETGO BROADCASTER ICE GATHERING: COMPLETE'
+        )
+
+        finish()
+      }
+    }
+
+    peer.addEventListener(
+      'icegatheringstatechange',
+      checkState
+    )
+
+    if (
+      peer.iceGatheringState ===
+      'complete'
+    ) {
+      finish()
+    }
+  })
 }
