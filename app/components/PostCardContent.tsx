@@ -91,13 +91,11 @@ export default function PostCardContent({
             ================================================= */}
         {wordCount > 70 && (
           <div 
-            className={`
-              flex justify-end mt-0.5
-              ${shouldTruncate 
-                ? 'absolute bottom-0 right-0 bg-gradient-to-l from-white via-white pl-10 dark:from-[#242526] dark:via-[#242526]' 
-                : ''
-              }
-            `}
+className="
+  mt-1
+  flex
+  justify-end
+"
           >
             <button
               type="button"
