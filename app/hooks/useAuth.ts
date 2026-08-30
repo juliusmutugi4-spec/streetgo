@@ -13,11 +13,11 @@ import type {
 import { getSupabaseBrowser } from '../lib/supabase-browser'
 
 interface StreetGoProfile {
-  username?: string | null
+  username?: string
   avatar_url?: string | null
-  reputation?: number | null
-  predictions_correct?: number | null
-  predictions_wrong?: number | null
+  reputation?: number
+  predictions_correct?: number
+  predictions_wrong?: number
 }
 
 export function useAuth() {
@@ -34,15 +34,6 @@ export function useAuth() {
 
   const [unreadCount, setUnreadCount] =
     useState(0)
-
-  /*
-   * =====================================================
-   * REQUEST CONTROL
-   * =====================================================
-   *
-   * Prevent an older profile request from
-   * replacing newer authentication state.
-   */
 
   const requestIdRef =
     useRef(0)
@@ -133,10 +124,6 @@ export function useAuth() {
           )
           .maybeSingle()
 
-        /*
-         * Ignore stale requests.
-         */
-
         if (
           requestId !==
           requestIdRef.current
@@ -157,15 +144,37 @@ export function useAuth() {
 
           setProfile(null)
         } else {
+          /*
+           * Normalize nullable username
+           * to undefined so it matches
+           * the rest of the application.
+           */
           setProfile(
-            data ?? null
+            data
+              ? {
+                  username:
+                    data.username ??
+                    undefined,
+
+                  avatar_url:
+                    data.avatar_url ??
+                    null,
+
+                  reputation:
+                    data.reputation ??
+                    undefined,
+
+                  predictions_correct:
+                    data.predictions_correct ??
+                    undefined,
+
+                  predictions_wrong:
+                    data.predictions_wrong ??
+                    undefined,
+                }
+              : null
           )
         }
-
-        /*
-         * Load unread messages
-         * outside auth callback.
-         */
 
         await fetchUnreadMessages(
           userId
@@ -228,13 +237,6 @@ export function useAuth() {
             return null
           }
 
-          /*
-           * IMPORTANT:
-           *
-           * Profile loading happens here,
-           * outside onAuthStateChange().
-           */
-
           await loadProfile(
             currentUser.id
           )
@@ -290,11 +292,6 @@ export function useAuth() {
             throw error
           }
         } finally {
-          /*
-           * Invalidate any running profile
-           * request and clear local state.
-           */
-
           requestIdRef.current += 1
 
           setUser(null)
@@ -314,14 +311,6 @@ export function useAuth() {
   useEffect(() => {
     let mounted = true
 
-    /*
-     * IMPORTANT:
-     *
-     * Keep this callback synchronous.
-     * Do not directly await Supabase
-     * database queries here.
-     */
-
     const {
       data: {
         subscription,
@@ -339,17 +328,9 @@ export function useAuth() {
           const currentUser =
             session?.user ?? null
 
-          /*
-           * Update authentication state.
-           */
-
           setUser(
             currentUser
           )
-
-          /*
-           * Signed out.
-           */
 
           if (!currentUser) {
             requestIdRef.current += 1
@@ -361,13 +342,8 @@ export function useAuth() {
           }
 
           /*
-           * IMPORTANT:
-           *
-           * Defer profile/database work until
-           * after the auth callback has finished.
-           *
-           * This avoids the Supabase auth
-           * Navigator LockManager problem.
+           * Never perform database work
+           * directly inside the auth callback.
            */
 
           window.setTimeout(
@@ -385,23 +361,10 @@ export function useAuth() {
         }
       )
 
-    /*
-     * Initial authentication check.
-     *
-     * This happens outside the listener.
-     */
-
     void checkUser()
-
-    /*
-     * ===================================================
-     * CLEANUP
-     * ===================================================
-     */
 
     return () => {
       mounted = false
-
       subscription.unsubscribe()
     }
   }, [
@@ -409,12 +372,6 @@ export function useAuth() {
     checkUser,
     loadProfile,
   ])
-
-  /*
-   * =====================================================
-   * RETURN API
-   * =====================================================
-   */
 
   return {
     user,
