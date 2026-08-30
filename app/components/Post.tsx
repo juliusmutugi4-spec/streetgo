@@ -1077,17 +1077,19 @@ return (
   content={post.content}
   createdAt={post.created_at}
 /> */}
-<div 
-  ref={postRef} 
-  className={`group relative overflow-visible backdrop-blur-xl transition-all duration-500 rounded-xl bg-[var(--surface)] border border-[var(--border)] ${
-    portalOpening ? "scale-110 opacity-0 blur-md" : "scale-100 opacity-100"
-  }`} 
+<div
+  ref={postRef}
+  className={`group relative z-0 overflow-hidden transition-all duration-500 rounded-xl bg-[var(--surface)] border border-[var(--border)] ${
+    portalOpening
+      ? "scale-110 opacity-0 blur-md"
+      : "scale-100 opacity-100"
+  }`}
 >
 
 
 
 
-  <div className="relative px-0 pb-4 pt-4">
+  <div className="relative z-0 px-0 pb-4 pt-4">
       {/* Header */}
       
 
