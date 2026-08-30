@@ -78,8 +78,7 @@ export default function PostCardContent({
             font-normal 
             leading-[1.4] 
             tracking-normal
-            text-[#050505] 
-            dark:text-[#E4E6EB]
+text-[var(--foreground)]
             ${shouldTruncate ? 'line-clamp-4 overflow-hidden' : ''}
           `}
         >
