@@ -227,12 +227,24 @@ export async function connectBroadcasterWebRTC({
       }
     }
 
-    peer.onicegatheringstatechange = () => {
-      console.log(
-        'StreetGO ICE gathering:',
-        peer.iceGatheringState,
-      )
-    }
+peer.onicecandidate = (event) => {
+  if (!event.candidate) {
+    console.log('StreetGO ICE candidate gathering complete.')
+    return
+  }
+
+  console.log(
+    'StreetGO ICE candidate:',
+    event.candidate.candidate,
+  )
+}
+
+peer.onicegatheringstatechange = () => {
+  console.log(
+    'StreetGO ICE gathering:',
+    peer.iceGatheringState,
+  )
+}
 
     peer.onsignalingstatechange = () => {
       console.log(
