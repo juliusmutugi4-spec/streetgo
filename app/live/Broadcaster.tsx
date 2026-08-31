@@ -11,9 +11,7 @@ export default function Broadcaster({ liveId: initialLiveId }: BroadcasterProps)
   const streamRef = useRef<MediaStream | null>(null)
   const peerRef = useRef<RTCPeerConnection | null>(null)
   const liveIdRef = useRef<string | null>(
-    initialLiveId && initialLiveId !== '1' && initialLiveId !== 'unknown'
-      ? initialLiveId
-      : null
+    initialLiveId && initialLiveId !== '1' && initialLiveId !== 'unknown' ? initialLiveId : null
   )
   const stoppingRef = useRef(false)
   const startingRef = useRef(false)
@@ -35,32 +33,30 @@ export default function Broadcaster({ liveId: initialLiveId }: BroadcasterProps)
   }
 
   const controller = useMemo(
-    () =>
-      createBroadcasterController({
-        videoRef,
-        streamRef,
-        peerRef,
-        liveIdRef,
-        stoppingRef,
-        startingRef,
-        reconnectingRef,
-        reconnectTimerRef,
-        mountedRef,
-        cameraOn,
-        setCameraOn,
-        setConnecting,
-        setConnected,
-        setIsOffline,
-        setError,
-        clearReconnectTimer,
-      }),
-    [cameraOn]
+    () => createBroadcasterController({
+      videoRef,
+      streamRef,
+      peerRef,
+      liveIdRef,
+      stoppingRef,
+      startingRef,
+      reconnectingRef,
+      reconnectTimerRef,
+      mountedRef,
+      setCameraOn,
+      setConnecting,
+      setConnected,
+      setIsOffline,
+      setError,
+      clearReconnectTimer,
+    }),
+    []
   )
 
   useEffect(() => {
     mountedRef.current = true
 
-    const cleanup = setupBroadcasterNetwork({
+    return setupBroadcasterNetwork({
       cameraOn,
       liveIdRef,
       stoppingRef,
@@ -76,8 +72,6 @@ export default function Broadcaster({ liveId: initialLiveId }: BroadcasterProps)
         void controller.reconnect(liveId, stream)
       },
     })
-
-    return cleanup
   }, [cameraOn, controller])
 
   useEffect(() => {
