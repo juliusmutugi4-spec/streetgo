@@ -358,6 +358,14 @@ peer.onicegatheringstatechange = () => {
       )
     }
 
+
+console.log('StreetGO API URL:', API_URL)
+console.log(
+  'StreetGO WebRTC endpoint:',
+  `${API_URL}/live/webrtc/offer`
+)
+
+
     const response =
       await fetch(
         `${API_URL}/live/webrtc/offer`,

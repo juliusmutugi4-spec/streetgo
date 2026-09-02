@@ -1,26 +1,50 @@
-"use client";
+'use client'
 
-import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from "react";
-import { attachViewerTrack, clearViewerMedia } from "./viewerMedia";
+import type {
+  Dispatch,
+  MutableRefObject,
+  RefObject,
+  SetStateAction,
+} from 'react'
 
-const API_URL = process.env.NEXT_PUBLIC_ENGINE_URL!;
+import {
+  startViewerPlaybackWatchdog,
+  stopViewerPlaybackWatchdog,
+} from './viewerPlayback'
+
+import {
+  attachViewerTrack,
+  clearViewerMedia,
+} from './viewerMedia'
+
+import {
+  collectViewerStats,
+  getPacketLossRate,
+} from './viewerStats'
+
+const API_URL = process.env.NEXT_PUBLIC_ENGINE_URL!
 
 export interface ViewerWebRTCOptions {
-  liveId: string;
-  videoRef: RefObject<HTMLVideoElement | null>;
-  peerRef: MutableRefObject<RTCPeerConnection | null>;
-  remoteStreamRef: MutableRefObject<MediaStream | null>;
-  playbackPromiseRef: MutableRefObject<Promise<void> | null>;
-  cancelledRef: MutableRefObject<boolean>;
-  mountedRef: MutableRefObject<boolean>;
-  retryTimerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>;
-  connectingRef: MutableRefObject<boolean>;
-  setConnecting: Dispatch<SetStateAction<boolean>>;
-  setConnected: Dispatch<SetStateAction<boolean>>;
-  setError: Dispatch<SetStateAction<string>>;
-  setHasVideo: Dispatch<SetStateAction<boolean>>;
-  setIsOffline: Dispatch<SetStateAction<boolean>>;
+  liveId: string
+  videoRef: RefObject<HTMLVideoElement | null>
+  peerRef: MutableRefObject<RTCPeerConnection | null>
+  remoteStreamRef: MutableRefObject<MediaStream | null>
+  playbackPromiseRef: MutableRefObject<Promise<void> | null>
+  cancelledRef: MutableRefObject<boolean>
+  mountedRef: MutableRefObject<boolean>
+  retryTimerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>
+  connectingRef: MutableRefObject<boolean>
+  setConnecting: Dispatch<SetStateAction<boolean>>
+  setConnected: Dispatch<SetStateAction<boolean>>
+  setError: Dispatch<SetStateAction<string>>
+  setHasVideo: Dispatch<SetStateAction<boolean>>
+  setIsOffline: Dispatch<SetStateAction<boolean>>
 }
+
+const statsMonitors = new WeakMap<
+  RTCPeerConnection,
+  () => void
+>()
 
 export async function connectViewerWebRTC({
   liveId,
@@ -38,124 +62,311 @@ export async function connectViewerWebRTC({
   setHasVideo,
   setIsOffline,
 }: ViewerWebRTCOptions): Promise<void> {
-  if (cancelledRef.current || !mountedRef.current || connectingRef.current) return;
-  if (!navigator.onLine) {
-    setIsOffline(true);
-    setConnected(false);
-    setConnecting(false);
-    return;
+  if (
+    cancelledRef.current ||
+    !mountedRef.current ||
+    connectingRef.current
+  ) {
+    return
   }
 
-  connectingRef.current = true;
-  clearViewerRetry(retryTimerRef);
+  if (!navigator.onLine) {
+    setIsOffline(true)
+    setConnected(false)
+    setConnecting(false)
+    return
+  }
+
+  connectingRef.current = true
+  clearViewerRetry(retryTimerRef)
+
+  const oldPeer = peerRef.current
+
+  if (oldPeer) {
+    stopViewerMonitors(oldPeer)
+
+    try {
+      oldPeer.ontrack = null
+      oldPeer.onconnectionstatechange = null
+      oldPeer.oniceconnectionstatechange = null
+      oldPeer.onicegatheringstatechange = null
+      oldPeer.onsignalingstatechange = null
+      oldPeer.close()
+    } catch {}
+
+    peerRef.current = null
+  }
 
   try {
-    setError("");
-    setConnecting(true);
-    setConnected(false);
-    setHasVideo(false);
-    setIsOffline(false);
+    setError('')
+    setConnecting(true)
+    setConnected(false)
+    setHasVideo(false)
+    setIsOffline(false)
 
-    closeViewerPeer(peerRef);
+    clearViewerMedia({
+      videoRef,
+      remoteStreamRef,
+    })
 
-    clearViewerMedia({ videoRef, remoteStreamRef });
-    playbackPromiseRef.current = null;
+    playbackPromiseRef.current = null
 
-    if (cancelledRef.current || !mountedRef.current) return;
+    if (
+      cancelledRef.current ||
+      !mountedRef.current
+    ) {
+      return
+    }
 
-    const iceResponse = await fetch(`${API_URL}/live/webrtc/ice-servers`, {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
+    const iceResponse = await fetch(
+      `${API_URL}/live/webrtc/ice-servers`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      },
+    )
 
-    if (cancelledRef.current || !mountedRef.current) return;
+    if (
+      cancelledRef.current ||
+      !mountedRef.current
+    ) {
+      return
+    }
 
     if (!iceResponse.ok) {
-      const text = await iceResponse.text();
-      throw new Error(`Unable to get WebRTC ICE servers (${iceResponse.status}): ${text}`);
+      const text =
+        await iceResponse.text()
+
+      throw new Error(
+        `Unable to get WebRTC ICE servers (${iceResponse.status}): ${text}`,
+      )
     }
 
-    const iceData = await iceResponse.json();
+    const iceData =
+      await iceResponse.json()
 
-    if (!Array.isArray(iceData?.iceServers) || !iceData.iceServers.length) {
-      throw new Error("WebRTC ICE server list is empty.");
+    if (
+      !Array.isArray(
+        iceData?.iceServers,
+      ) ||
+      !iceData.iceServers.length
+    ) {
+      throw new Error(
+        'WebRTC ICE server list is empty.',
+      )
     }
 
-    console.log("=== STREETGO VIEWER ICE SERVERS RECEIVED ===", iceData.iceServers);
+    console.log(
+      '=== STREETGO VIEWER ICE SERVERS RECEIVED ===',
+      iceData.iceServers,
+    )
 
-    const peer = new RTCPeerConnection({ iceServers: iceData.iceServers });
-    peerRef.current = peer;
+    const peer =
+      new RTCPeerConnection({
+        iceServers:
+          iceData.iceServers,
+      })
 
-    const remoteStream = new MediaStream();
-    remoteStreamRef.current = remoteStream;
+    peerRef.current = peer
 
-    peer.addTransceiver("video", { direction: "recvonly" });
-    peer.addTransceiver("audio", { direction: "recvonly" });
+    const remoteStream =
+      new MediaStream()
 
-    const video = videoRef.current;
+    remoteStreamRef.current =
+      remoteStream
+
+    peer.addTransceiver(
+      'video',
+      {
+        direction: 'recvonly',
+      },
+    )
+
+    peer.addTransceiver(
+      'audio',
+      {
+        direction: 'recvonly',
+      },
+    )
+
+    startViewerPlaybackWatchdog({
+      peerRef,
+      videoRef,
+      cancelledRef,
+      mountedRef,
+      setHasVideo,
+      onStall: () => {
+        if (
+          cancelledRef.current ||
+          !mountedRef.current
+        ) {
+          return
+        }
+
+        scheduleViewerRetry(
+          retryTimerRef,
+        )
+      },
+    })
+
+    const stopStatsMonitor =
+      startViewerStatsMonitor(
+        peer,
+        mountedRef,
+        cancelledRef,
+      )
+
+    statsMonitors.set(
+      peer,
+      stopStatsMonitor,
+    )
+
+    const video =
+      videoRef.current
 
     if (video) {
-      video.autoplay = true;
-      video.playsInline = true;
-      video.muted = true;
+      video.autoplay = true
+      video.playsInline = true
+      video.muted = true
 
       video.onloadedmetadata = () => {
-        if (cancelledRef.current) return;
-        setHasVideo(true);
-        setError("");
-        void playViewerVideo(videoRef, remoteStreamRef, playbackPromiseRef, cancelledRef, setHasVideo, setConnected, setConnecting, setError, setIsOffline);
-      };
+        if (
+          cancelledRef.current
+        ) {
+          return
+        }
+
+        setHasVideo(true)
+        setError('')
+
+        void playViewerVideo(
+          videoRef,
+          remoteStreamRef,
+          playbackPromiseRef,
+          cancelledRef,
+          setHasVideo,
+          setConnected,
+          setConnecting,
+          setError,
+          setIsOffline,
+        )
+      }
 
       video.oncanplay = () => {
-        if (cancelledRef.current) return;
-        setHasVideo(true);
-        setError("");
-        void playViewerVideo(videoRef, remoteStreamRef, playbackPromiseRef, cancelledRef, setHasVideo, setConnected, setConnecting, setError, setIsOffline);
-      };
+        if (
+          cancelledRef.current
+        ) {
+          return
+        }
+
+        setHasVideo(true)
+        setError('')
+
+        void playViewerVideo(
+          videoRef,
+          remoteStreamRef,
+          playbackPromiseRef,
+          cancelledRef,
+          setHasVideo,
+          setConnected,
+          setConnecting,
+          setError,
+          setIsOffline,
+        )
+      }
 
       video.onplaying = () => {
-        if (cancelledRef.current) return;
-        setHasVideo(true);
-        setConnected(true);
-        setConnecting(false);
-        setError("");
-        setIsOffline(false);
-      };
+        if (
+          cancelledRef.current
+        ) {
+          return
+        }
+
+        setHasVideo(true)
+        setConnected(true)
+        setConnecting(false)
+        setError('')
+        setIsOffline(false)
+      }
 
       video.onerror = () => {
-        console.warn("STREETGO VIEWER VIDEO ELEMENT ERROR:", video.error);
-      };
+        console.warn(
+          'STREETGO VIEWER VIDEO ELEMENT ERROR:',
+          video.error,
+        )
+      }
     }
 
     peer.ontrack = (event) => {
-      if (cancelledRef.current || !mountedRef.current) return;
+      if (
+        cancelledRef.current ||
+        !mountedRef.current
+      ) {
+        return
+      }
 
       if (event.streams.length) {
-        for (const track of event.streams[0].getTracks()) {
+        const sourceStream =
+          event.streams[0]
+
+        for (
+          const track of
+            sourceStream.getTracks()
+        ) {
           attachViewerTrack(
-            event.streams[0],
+            sourceStream,
             videoRef,
             remoteStreamRef,
             setHasVideo,
             setConnected,
             setConnecting,
             setError,
-          );
-          if (!remoteStream.getTracks().some((t) => t.id === track.id)) {
-            remoteStream.addTrack(track);
+          )
+
+          if (
+            !remoteStream
+              .getTracks()
+              .some(
+                (existing) =>
+                  existing.id ===
+                  track.id,
+              )
+          ) {
+            remoteStream.addTrack(
+              track,
+            )
           }
         }
-      } else if (!remoteStream.getTracks().some((t) => t.id === event.track.id)) {
-        remoteStream.addTrack(event.track);
+      } else if (
+        !remoteStream
+          .getTracks()
+          .some(
+            (existing) =>
+              existing.id ===
+              event.track.id,
+          )
+      ) {
+        remoteStream.addTrack(
+          event.track,
+        )
       }
 
-      if (event.track.kind === "video") {
-        setHasVideo(true);
-        setError("");
+      if (
+        event.track.kind ===
+        'video'
+      ) {
+        setHasVideo(true)
+        setError('')
       }
 
-      console.log("STREETGO VIEWER TRACK RECEIVED:", event.track.kind, event.track.id);
+      console.log(
+        'STREETGO VIEWER TRACK RECEIVED:',
+        event.track.kind,
+        event.track.id,
+      )
 
       void playViewerVideo(
         videoRef,
@@ -167,171 +378,320 @@ export async function connectViewerWebRTC({
         setConnecting,
         setError,
         setIsOffline,
-      );
-    };
+      )
+    }
 
-    peer.onconnectionstatechange = () => {
-      if (cancelledRef.current || !mountedRef.current) return;
-
-      console.log("=== STREETGO VIEWER CONNECTION STATE ===", peer.connectionState);
-
-      if (peer.connectionState === "connected") {
-        setConnected(true);
-        setConnecting(false);
-        setError("");
-        setIsOffline(false);
-
-        syncViewerReceivers(peer, remoteStream, setHasVideo, setError);
-        void playViewerVideo(
-          videoRef,
-          remoteStreamRef,
-          playbackPromiseRef,
-          cancelledRef,
-          setHasVideo,
-          setConnected,
-          setConnecting,
-          setError,
-          setIsOffline,
-        );
-        return;
-      }
-
-      if (peer.connectionState === "connecting") {
-        setConnected(false);
-        setConnecting(true);
-        setError("");
-        return;
-      }
-
-      if (peer.connectionState === "disconnected" || peer.connectionState === "failed") {
-        setConnected(false);
-
-        if (!navigator.onLine) {
-          setIsOffline(true);
-          setConnecting(false);
-          setError("");
-          return;
+    peer.onconnectionstatechange =
+      () => {
+        if (
+          cancelledRef.current ||
+          !mountedRef.current
+        ) {
+          return
         }
 
-        setConnecting(true);
-        setError("Reconnecting to StreetGO Live...");
-        scheduleViewerRetry(retryTimerRef);
-      }
+        console.log(
+          '=== STREETGO VIEWER CONNECTION STATE ===',
+          peer.connectionState,
+        )
 
-      if (peer.connectionState === "closed") {
-        setConnected(false);
-        setConnecting(false);
-      }
-    };
+        if (
+          peer.connectionState ===
+          'connected'
+        ) {
+          setConnected(true)
+          setConnecting(false)
+          setError('')
+          setIsOffline(false)
 
-    peer.oniceconnectionstatechange = () => {
-      if (cancelledRef.current || !mountedRef.current) return;
+          syncViewerReceivers(
+            peer,
+            remoteStream,
+            setHasVideo,
+            setError,
+          )
 
-      console.log("=== STREETGO VIEWER ICE STATE ===", {
-        iceConnectionState: peer.iceConnectionState,
-        connectionState: peer.connectionState,
-        signalingState: peer.signalingState,
-        iceGatheringState: peer.iceGatheringState,
-      });
+          void playViewerVideo(
+            videoRef,
+            remoteStreamRef,
+            playbackPromiseRef,
+            cancelledRef,
+            setHasVideo,
+            setConnected,
+            setConnecting,
+            setError,
+            setIsOffline,
+          )
 
-      if (peer.iceConnectionState === "connected" || peer.iceConnectionState === "completed") {
-        setError("");
-      }
-
-      if (peer.iceConnectionState === "failed" || peer.iceConnectionState === "disconnected") {
-        if (!navigator.onLine) {
-          setIsOffline(true);
-          setConnected(false);
-          setConnecting(false);
-          setError("");
-          return;
+          return
         }
 
-        setConnected(false);
-        setConnecting(true);
-        scheduleViewerRetry(retryTimerRef);
+        if (
+          peer.connectionState ===
+          'connecting'
+        ) {
+          setConnected(false)
+          setConnecting(true)
+          setError('')
+          return
+        }
+
+        if (
+          peer.connectionState ===
+            'disconnected' ||
+          peer.connectionState ===
+            'failed'
+        ) {
+          setConnected(false)
+
+          if (!navigator.onLine) {
+            setIsOffline(true)
+            setConnecting(false)
+            setError('')
+            return
+          }
+
+          setConnecting(true)
+          setError(
+            'Reconnecting to StreetGO Live...',
+          )
+
+          scheduleViewerRetry(
+            retryTimerRef,
+          )
+
+          return
+        }
+
+        if (
+          peer.connectionState ===
+          'closed'
+        ) {
+          setConnected(false)
+          setConnecting(false)
+        }
       }
-    };
 
-    peer.onicegatheringstatechange = () => {
-      console.log("STREETGO VIEWER ICE GATHERING:", peer.iceGatheringState);
-    };
+    peer.oniceconnectionstatechange =
+      () => {
+        if (
+          cancelledRef.current ||
+          !mountedRef.current
+        ) {
+          return
+        }
 
-    peer.onsignalingstatechange = () => {
-      console.log("STREETGO VIEWER SIGNALING:", peer.signalingState);
-    };
+        console.log(
+          '=== STREETGO VIEWER ICE STATE ===',
+          {
+            iceConnectionState:
+              peer.iceConnectionState,
+            connectionState:
+              peer.connectionState,
+            signalingState:
+              peer.signalingState,
+            iceGatheringState:
+              peer.iceGatheringState,
+          },
+        )
 
-    const offer = await peer.createOffer();
+        if (
+          peer.iceConnectionState ===
+            'connected' ||
+          peer.iceConnectionState ===
+            'completed'
+        ) {
+          setError('')
+        }
 
-    if (cancelledRef.current || !mountedRef.current) return;
+        if (
+          peer.iceConnectionState ===
+            'failed' ||
+          peer.iceConnectionState ===
+            'disconnected'
+        ) {
+          if (!navigator.onLine) {
+            setIsOffline(true)
+            setConnected(false)
+            setConnecting(false)
+            setError('')
+            return
+          }
 
-    await peer.setLocalDescription(offer);
-    await waitForIceGathering(peer, 1500);
+          setConnected(false)
+          setConnecting(true)
 
-    if (cancelledRef.current || !mountedRef.current) return;
+          scheduleViewerRetry(
+            retryTimerRef,
+          )
+        }
+      }
+
+    peer.onicegatheringstatechange =
+      () => {
+        console.log(
+          'STREETGO VIEWER ICE GATHERING:',
+          peer.iceGatheringState,
+        )
+      }
+
+    peer.onsignalingstatechange =
+      () => {
+        console.log(
+          'STREETGO VIEWER SIGNALING:',
+          peer.signalingState,
+        )
+      }
+
+    const offer =
+      await peer.createOffer()
+
+    if (
+      cancelledRef.current ||
+      !mountedRef.current
+    ) {
+      stopViewerMonitors(peer)
+      return
+    }
+
+    await peer.setLocalDescription(
+      offer,
+    )
+
+    await waitForIceGathering(
+      peer,
+      1500,
+    )
+
+    if (
+      cancelledRef.current ||
+      !mountedRef.current
+    ) {
+      stopViewerMonitors(peer)
+      return
+    }
 
     if (!navigator.onLine) {
-      setIsOffline(true);
-      setConnected(false);
-      setConnecting(false);
-      return;
+      stopViewerMonitors(peer)
+
+      setIsOffline(true)
+      setConnected(false)
+      setConnecting(false)
+
+      return
     }
 
-    const localDescription = peer.localDescription;
+    const localDescription =
+      peer.localDescription
 
     if (!localDescription?.sdp) {
-      throw new Error("Viewer local description was not created.");
+      throw new Error(
+        'Viewer local description was not created.',
+      )
     }
 
-    console.log("WEBRTC VIEWER REQUEST:", {
-      liveId,
-      apiUrl: API_URL,
-      sdpType: localDescription.type,
-      hasSdp: !!localDescription.sdp,
-    });
+    console.log(
+      'WEBRTC VIEWER REQUEST:',
+      {
+        liveId,
+        apiUrl: API_URL,
+        sdpType:
+          localDescription.type,
+        hasSdp:
+          !!localDescription.sdp,
+      },
+    )
 
-    const response = await fetch(`${API_URL}/live/webrtc/offer`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        live_id: liveId,
-        sdp: localDescription.sdp,
-        type: localDescription.type,
-        role: "viewer",
-      }),
-    });
+    const response =
+      await fetch(
+        `${API_URL}/live/webrtc/offer`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type':
+              'application/json',
+          },
+          body: JSON.stringify({
+            live_id: liveId,
+            sdp:
+              localDescription.sdp,
+            type:
+              localDescription.type,
+            role: 'viewer',
+          }),
+        },
+      )
 
-    if (cancelledRef.current || !mountedRef.current) return;
+    if (
+      cancelledRef.current ||
+      !mountedRef.current
+    ) {
+      stopViewerMonitors(peer)
+      return
+    }
 
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`WebRTC server error ${response.status}: ${text}`);
+      const text =
+        await response.text()
+
+      throw new Error(
+        `WebRTC server error ${response.status}: ${text}`,
+      )
     }
 
-    const answer = await response.json();
+    const answer =
+      await response.json()
 
-    console.log("=== WEBRTC ANSWER RECEIVED ===", answer);
+    console.log(
+      '=== WEBRTC ANSWER RECEIVED ===',
+      answer,
+    )
 
-    if (answer?.type !== "answer" || typeof answer?.sdp !== "string" || !answer.sdp) {
-      throw new Error("WebRTC server returned an invalid SDP answer.");
+    if (
+      answer?.type !== 'answer' ||
+      typeof answer?.sdp !==
+        'string' ||
+      !answer.sdp
+    ) {
+      throw new Error(
+        'WebRTC server returned an invalid SDP answer.',
+      )
     }
 
-    if (peer.signalingState !== "have-local-offer") {
-      throw new Error(`Cannot apply WebRTC answer in signaling state: ${peer.signalingState}`);
+    if (
+      peer.signalingState !==
+      'have-local-offer'
+    ) {
+      throw new Error(
+        `Cannot apply WebRTC answer in signaling state: ${peer.signalingState}`,
+      )
     }
 
     await peer.setRemoteDescription({
-      type: "answer",
+      type: 'answer',
       sdp: answer.sdp,
-    });
+    })
 
-    if (cancelledRef.current || !mountedRef.current) return;
+    if (
+      cancelledRef.current ||
+      !mountedRef.current
+    ) {
+      stopViewerMonitors(peer)
+      return
+    }
 
-    console.log("STREETGO VIEWER ANSWER APPLIED");
+    console.log(
+      'STREETGO VIEWER ANSWER APPLIED',
+    )
 
-    syncViewerReceivers(peer, remoteStream, setHasVideo, setError);
+    syncViewerReceivers(
+      peer,
+      remoteStream,
+      setHasVideo,
+      setError,
+    )
 
-    setError("");
+    setError('')
 
     void playViewerVideo(
       videoRef,
@@ -343,27 +703,73 @@ export async function connectViewerWebRTC({
       setConnecting,
       setError,
       setIsOffline,
-    );
+    )
   } catch (err) {
-    if (cancelledRef.current || !mountedRef.current) return;
+    const currentPeer =
+      peerRef.current
 
-    if (!navigator.onLine) {
-      setIsOffline(true);
-      setConnected(false);
-      setConnecting(false);
-      setError("");
-      return;
+    if (currentPeer) {
+      stopViewerMonitors(
+        currentPeer,
+      )
     }
 
-    console.warn("StreetGO Viewer WebRTC connection attempt failed. Retrying...", err);
+    if (
+      cancelledRef.current ||
+      !mountedRef.current
+    ) {
+      return
+    }
 
-    setConnected(false);
-    setConnecting(true);
-    setError(err instanceof Error ? err.message : "Unable to connect to the live stream.");
+    if (!navigator.onLine) {
+      setIsOffline(true)
+      setConnected(false)
+      setConnecting(false)
+      setError('')
+      return
+    }
 
-    scheduleViewerRetry(retryTimerRef);
+    console.warn(
+      'StreetGO Viewer WebRTC connection attempt failed. Retrying...',
+      err,
+    )
+
+    setConnected(false)
+    setConnecting(true)
+
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Unable to connect to the live stream.',
+    )
+
+    scheduleViewerRetry(
+      retryTimerRef,
+    )
   } finally {
-    connectingRef.current = false;
+    connectingRef.current =
+      false
+
+    if (
+      !stoppingOrCancelled(
+        cancelledRef,
+        mountedRef,
+      )
+    ) {
+      if (!navigator.onLine) {
+        setIsOffline(true)
+        setConnecting(false)
+      } else if (
+        peerRef.current
+          ?.connectionState ===
+        'connected'
+      ) {
+        setConnected(true)
+        setConnecting(false)
+      } else {
+        setConnecting(false)
+      }
+    }
   }
 }
 
@@ -372,62 +778,152 @@ export function cleanupViewerWebRTC({
   remoteStreamRef,
   retryTimerRef,
   videoRef,
-}: Pick<ViewerWebRTCOptions, "peerRef" | "remoteStreamRef" | "retryTimerRef" | "videoRef">) {
-  clearViewerRetry(retryTimerRef);
-  closeViewerPeer(peerRef);
-  clearViewerMedia({ videoRef, remoteStreamRef });
+}: Pick<
+  ViewerWebRTCOptions,
+  | 'peerRef'
+  | 'remoteStreamRef'
+  | 'retryTimerRef'
+  | 'videoRef'
+>) {
+  clearViewerRetry(
+    retryTimerRef,
+  )
+
+  closeViewerPeer(peerRef)
+
+  clearViewerMedia({
+    videoRef,
+    remoteStreamRef,
+  })
 }
 
-function closeViewerPeer(peerRef: MutableRefObject<RTCPeerConnection | null>) {
-  const peer = peerRef.current;
-  if (!peer) return;
+function closeViewerPeer(
+  peerRef: MutableRefObject<RTCPeerConnection | null>,
+) {
+  const peer = peerRef.current
+
+  if (!peer) {
+    return
+  }
+
+  stopViewerMonitors(peer)
 
   try {
-    peer.ontrack = null;
-    peer.onconnectionstatechange = null;
-    peer.oniceconnectionstatechange = null;
-    peer.onicegatheringstatechange = null;
-    peer.onsignalingstatechange = null;
-    peer.close();
+    peer.ontrack = null
+    peer.onconnectionstatechange =
+      null
+    peer.oniceconnectionstatechange =
+      null
+    peer.onicegatheringstatechange =
+      null
+    peer.onsignalingstatechange =
+      null
+    peer.close()
   } catch {}
 
-  peerRef.current = null;
+  peerRef.current = null
 }
 
-function clearViewerRetry(timerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>) {
+function stopViewerMonitors(
+  peer: RTCPeerConnection,
+) {
+  const stopStats =
+    statsMonitors.get(peer)
+
+  if (stopStats) {
+    stopStats()
+    statsMonitors.delete(peer)
+  }
+
+  stopViewerPlaybackWatchdog(
+    peer,
+  )
+}
+
+function clearViewerRetry(
+  timerRef: MutableRefObject<
+    ReturnType<typeof setTimeout> | null
+  >,
+) {
   if (timerRef.current) {
-    clearTimeout(timerRef.current);
-    timerRef.current = null;
+    clearTimeout(
+      timerRef.current,
+    )
+
+    timerRef.current = null
   }
 }
 
-function scheduleViewerRetry(timerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>) {
-  if (timerRef.current || !navigator.onLine) return;
+function scheduleViewerRetry(
+  timerRef: MutableRefObject<
+    ReturnType<typeof setTimeout> | null
+  >,
+) {
+  if (
+    timerRef.current ||
+    !navigator.onLine
+  ) {
+    return
+  }
 
-  timerRef.current = setTimeout(() => {
-    timerRef.current = null;
-    if (!navigator.onLine) return;
-    window.dispatchEvent(new CustomEvent("streetgo-viewer-reconnect"));
-  }, 3000);
+  timerRef.current =
+    setTimeout(() => {
+      timerRef.current = null
+
+      if (!navigator.onLine) {
+        return
+      }
+
+      window.dispatchEvent(
+        new CustomEvent(
+          'streetgo-viewer-reconnect',
+        ),
+      )
+    }, 3000)
 }
 
 function syncViewerReceivers(
   peer: RTCPeerConnection,
   stream: MediaStream,
-  setHasVideo: Dispatch<SetStateAction<boolean>>,
-  setError: Dispatch<SetStateAction<string>>,
+  setHasVideo: Dispatch<
+    SetStateAction<boolean>
+  >,
+  setError: Dispatch<
+    SetStateAction<string>
+  >,
 ) {
-  for (const receiver of peer.getReceivers()) {
-    const track = receiver.track;
-    if (!track || track.readyState === "ended") continue;
+  for (
+    const receiver of
+      peer.getReceivers()
+  ) {
+    const track =
+      receiver.track
 
-    if (!stream.getTracks().some((existing) => existing.id === track.id)) {
-      stream.addTrack(track);
+    if (
+      !track ||
+      track.readyState ===
+        'ended'
+    ) {
+      continue
     }
 
-    if (track.kind === "video") {
-      setHasVideo(true);
-      setError("");
+    if (
+      !stream
+        .getTracks()
+        .some(
+          (existing) =>
+            existing.id ===
+            track.id,
+        )
+    ) {
+      stream.addTrack(track)
+    }
+
+    if (
+      track.kind === 'video'
+    ) {
+      setHasVideo(true)
+      setError('')
     }
   }
 }
@@ -437,80 +933,276 @@ async function playViewerVideo(
   remoteStreamRef: MutableRefObject<MediaStream | null>,
   playbackPromiseRef: MutableRefObject<Promise<void> | null>,
   cancelledRef: MutableRefObject<boolean>,
-  setHasVideo: Dispatch<SetStateAction<boolean>>,
-  setConnected: Dispatch<SetStateAction<boolean>>,
-  setConnecting: Dispatch<SetStateAction<boolean>>,
-  setError: Dispatch<SetStateAction<string>>,
-  setIsOffline: Dispatch<SetStateAction<boolean>>,
+  setHasVideo: Dispatch<
+    SetStateAction<boolean>
+  >,
+  setConnected: Dispatch<
+    SetStateAction<boolean>
+  >,
+  setConnecting: Dispatch<
+    SetStateAction<boolean>
+  >,
+  setError: Dispatch<
+    SetStateAction<string>
+  >,
+  setIsOffline: Dispatch<
+    SetStateAction<boolean>
+  >,
 ) {
-  const video = videoRef.current;
-  const stream = remoteStreamRef.current;
+  const video =
+    videoRef.current
 
-  if (!video || !stream || cancelledRef.current) return;
+  const stream =
+    remoteStreamRef.current
 
-  const activeVideo = stream.getVideoTracks().find((track) => track.readyState !== "ended");
-  if (!activeVideo) return;
-
-  if (video.srcObject !== stream) {
-    video.srcObject = stream;
+  if (
+    !video ||
+    !stream ||
+    cancelledRef.current
+  ) {
+    return
   }
 
-  video.muted = true;
-  video.playsInline = true;
-  video.autoplay = true;
+  const activeVideo =
+    stream
+      .getVideoTracks()
+      .find(
+        (track) =>
+          track.readyState !==
+          'ended',
+      )
 
-  if (playbackPromiseRef.current) {
+  if (!activeVideo) {
+    return
+  }
+
+  if (
+    video.srcObject !== stream
+  ) {
+    video.srcObject = stream
+  }
+
+  video.muted = true
+  video.playsInline = true
+  video.autoplay = true
+
+  if (
+    playbackPromiseRef.current
+  ) {
     try {
-      await playbackPromiseRef.current;
+      await playbackPromiseRef.current
     } catch {}
-    return;
+
+    return
   }
 
-  if (!video.paused && video.readyState >= 2) return;
+  if (
+    !video.paused &&
+    video.readyState >= 2
+  ) {
+    return
+  }
 
-  const promise = video.play();
-  playbackPromiseRef.current = promise;
+  const promise =
+    video.play()
+
+  playbackPromiseRef.current =
+    promise
 
   try {
-    await promise;
+    await promise
 
-    if (cancelledRef.current) return;
+    if (
+      cancelledRef.current
+    ) {
+      return
+    }
 
-    setHasVideo(true);
-    setConnected(true);
-    setConnecting(false);
-    setError("");
-    setIsOffline(false);
+    setHasVideo(true)
+    setConnected(true)
+    setConnecting(false)
+    setError('')
+    setIsOffline(false)
   } catch (err) {
-    console.warn("STREETGO VIEWER PLAYBACK ERROR:", err);
+    console.warn(
+      'STREETGO VIEWER PLAYBACK ERROR:',
+      err,
+    )
   } finally {
-    if (playbackPromiseRef.current === promise) {
-      playbackPromiseRef.current = null;
+    if (
+      playbackPromiseRef.current ===
+      promise
+    ) {
+      playbackPromiseRef.current =
+        null
     }
   }
 }
 
-function waitForIceGathering(peer: RTCPeerConnection, timeoutMs = 1500): Promise<void> {
-  if (peer.iceGatheringState === "complete") return Promise.resolve();
+function startViewerStatsMonitor(
+  peer: RTCPeerConnection,
+  mountedRef: MutableRefObject<boolean>,
+  cancelledRef: MutableRefObject<boolean>,
+) {
+  let previousStats:
+    | Awaited<
+        ReturnType<
+          typeof collectViewerStats
+        >
+      >
+    | undefined
 
-  return new Promise((resolve) => {
-    let finished = false;
+  let running = true
 
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
-      peer.removeEventListener("icegatheringstatechange", check);
-      resolve();
-    };
+  const timer =
+    window.setInterval(
+      async () => {
+        if (
+          !running ||
+          cancelledRef.current ||
+          !mountedRef.current ||
+          peer.connectionState ===
+            'closed'
+        ) {
+          return
+        }
 
-    const check = () => {
-      if (peer.iceGatheringState === "complete") finish();
-    };
+        try {
+          const stats =
+            await collectViewerStats(
+              peer,
+              previousStats,
+            )
 
-    const timer = setTimeout(finish, timeoutMs);
+          previousStats =
+            stats
 
-    peer.addEventListener("icegatheringstatechange", check);
-    check();
-  });
+          console.log(
+            '=== STREETGO VIEWER STATS ===',
+            {
+              bitrateMbps:
+                Number(
+                  (
+                    stats.bitrate /
+                    1_000_000
+                  ).toFixed(2),
+                ),
+              packetsReceived:
+                stats.packetsReceived,
+              packetsLost:
+                stats.packetsLost,
+              packetLossPercent:
+                Number(
+                  (
+                    getPacketLossRate(
+                      stats,
+                    ) * 100
+                  ).toFixed(2),
+                ),
+              jitterMs:
+                Number(
+                  (
+                    stats.jitter *
+                    1000
+                  ).toFixed(2),
+                ),
+              rttMs:
+                stats.rtt ===
+                null
+                  ? null
+                  : Number(
+                      (
+                        stats.rtt *
+                        1000
+                      ).toFixed(2),
+                    ),
+              framesReceived:
+                stats.framesReceived,
+              framesDecoded:
+                stats.framesDecoded,
+            },
+          )
+        } catch (err) {
+          console.warn(
+            'StreetGO viewer stats error:',
+            err,
+          )
+        }
+      },
+      2000,
+    )
+
+  return () => {
+    running = false
+    window.clearInterval(
+      timer,
+    )
+  }
+}
+
+function stoppingOrCancelled(
+  cancelledRef: MutableRefObject<boolean>,
+  mountedRef: MutableRefObject<boolean>,
+) {
+  return (
+    cancelledRef.current ||
+    !mountedRef.current
+  )
+}
+
+function waitForIceGathering(
+  peer: RTCPeerConnection,
+  timeoutMs = 1500,
+): Promise<void> {
+  if (
+    peer.iceGatheringState ===
+    'complete'
+  ) {
+    return Promise.resolve()
+  }
+
+  return new Promise(
+    (resolve) => {
+      let finished = false
+
+      const finish = () => {
+        if (finished) {
+          return
+        }
+
+        finished = true
+
+        clearTimeout(timer)
+
+        peer.removeEventListener(
+          'icegatheringstatechange',
+          check,
+        )
+
+        resolve()
+      }
+
+      const check = () => {
+        if (
+          peer.iceGatheringState ===
+          'complete'
+        ) {
+          finish()
+        }
+      }
+
+      const timer =
+        setTimeout(
+          finish,
+          timeoutMs,
+        )
+
+      peer.addEventListener(
+        'icegatheringstatechange',
+        check,
+      )
+
+      check()
+    },
+  )
 }

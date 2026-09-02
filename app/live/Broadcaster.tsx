@@ -6,13 +6,21 @@ import { setupBroadcasterNetwork } from './broadcaster/broadcasterNetwork'
 import { createBroadcasterController } from './broadcaster/broadcasterController'
 import BroadcasterUI from './broadcaster/BroadcasterUI'
 
-export default function Broadcaster({ liveId: initialLiveId }: BroadcasterProps) {
+export default function Broadcaster({
+  liveId: initialLiveId,
+}: BroadcasterProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const peerRef = useRef<RTCPeerConnection | null>(null)
+
   const liveIdRef = useRef<string | null>(
-    initialLiveId && initialLiveId !== '1' && initialLiveId !== 'unknown' ? initialLiveId : null
+    initialLiveId &&
+      initialLiveId !== '1' &&
+      initialLiveId !== 'unknown'
+      ? initialLiveId
+      : null
   )
+
   const stoppingRef = useRef(false)
   const startingRef = useRef(false)
   const reconnectingRef = useRef(false)
@@ -33,30 +41,31 @@ export default function Broadcaster({ liveId: initialLiveId }: BroadcasterProps)
   }
 
   const controller = useMemo(
-    () => createBroadcasterController({
-      videoRef,
-      streamRef,
-      peerRef,
-      liveIdRef,
-      stoppingRef,
-      startingRef,
-      reconnectingRef,
-      reconnectTimerRef,
-      mountedRef,
-      setCameraOn,
-      setConnecting,
-      setConnected,
-      setIsOffline,
-      setError,
-      clearReconnectTimer,
-    }),
+    () =>
+      createBroadcasterController({
+        videoRef,
+        streamRef,
+        peerRef,
+        liveIdRef,
+        stoppingRef,
+        startingRef,
+        reconnectingRef,
+        reconnectTimerRef,
+        mountedRef,
+        setCameraOn,
+        setConnecting,
+        setConnected,
+        setIsOffline,
+        setError,
+        clearReconnectTimer,
+      }),
     []
   )
 
   useEffect(() => {
     mountedRef.current = true
 
-    return setupBroadcasterNetwork({
+    const cleanup = setupBroadcasterNetwork({
       cameraOn,
       liveIdRef,
       stoppingRef,
@@ -72,6 +81,8 @@ export default function Broadcaster({ liveId: initialLiveId }: BroadcasterProps)
         void controller.reconnect(liveId, stream)
       },
     })
+
+    return cleanup
   }, [cameraOn, controller])
 
   useEffect(() => {
@@ -92,7 +103,11 @@ export default function Broadcaster({ liveId: initialLiveId }: BroadcasterProps)
       liveId={liveIdRef.current}
       stopping={stoppingRef.current}
       onStart={() => void controller.startCamera()}
-      onStop={() => void controller.stopCamera()}
+      onStartScreen={() => {
+        console.log('StreetGO: Screen Live button clicked')
+        void controller.startScreen()
+      }}
+      onStop={() => void controller.stopBroadcast()}
     />
   )
 }
