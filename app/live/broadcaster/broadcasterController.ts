@@ -1,11 +1,38 @@
 'use client'
 
-import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react'
-import { prepareLiveSession, stopLiveSession } from './broadcasterSession'
-import { startBroadcasterMedia, stopBroadcasterMedia } from './broadcasterMedia'
-import { startScreenCapture, stopScreenCapture } from './broadcasterScreen'
-import { connectBroadcasterWebRTC } from './broadcasterWebRTC'
-import { scheduleBroadcasterReconnect } from './broadcasterReconnect'
+import type {
+  Dispatch,
+  MutableRefObject,
+  RefObject,
+  SetStateAction,
+} from 'react'
+
+import {
+  prepareLiveSession,
+  stopLiveSession,
+} from './broadcasterSession'
+
+import {
+  startBroadcasterMedia,
+  stopBroadcasterMedia,
+} from './broadcasterMedia'
+
+import {
+  startScreenCapture,
+  stopScreenCapture,
+} from './broadcasterScreen'
+
+import {
+  connectBroadcasterWebRTC,
+} from './broadcasterWebRTC'
+
+import {
+  scheduleBroadcasterReconnect,
+} from './broadcasterReconnect'
+
+type CaptureMode =
+  | 'camera'
+  | 'screen'
 
 interface BroadcasterControllerOptions {
   videoRef: RefObject<HTMLVideoElement | null>
@@ -15,7 +42,9 @@ interface BroadcasterControllerOptions {
   stoppingRef: MutableRefObject<boolean>
   startingRef: MutableRefObject<boolean>
   reconnectingRef: MutableRefObject<boolean>
-  reconnectTimerRef: MutableRefObject<ReturnType<typeof setTimeout> | null>
+  reconnectTimerRef: MutableRefObject<
+    ReturnType<typeof setTimeout> | null
+  >
   mountedRef: MutableRefObject<boolean>
   setCameraOn: Dispatch<SetStateAction<boolean>>
   setConnecting: Dispatch<SetStateAction<boolean>>
@@ -42,14 +71,24 @@ export function createBroadcasterController({
   setError,
   clearReconnectTimer,
 }: BroadcasterControllerOptions) {
-  let captureMode: 'camera' | 'screen' = 'camera'
+  let captureMode: CaptureMode =
+    'camera'
 
-  function reconnect(liveId: string, stream: MediaStream) {
-    if (stoppingRef.current || !mountedRef.current) return
+  function reconnect(
+    liveId: string,
+    stream: MediaStream,
+  ) {
+    if (
+      stoppingRef.current ||
+      !mountedRef.current
+    ) {
+      return
+    }
 
     return connectBroadcasterWebRTC({
       liveId,
       stream,
+      captureMode,
       peerRef,
       stoppingRef,
       mountedRef,
@@ -63,7 +102,9 @@ export function createBroadcasterController({
     })
   }
 
-  function scheduleReconnect(liveId: string) {
+  function scheduleReconnect(
+    liveId: string,
+  ) {
     scheduleBroadcasterReconnect({
       liveId,
       stoppingRef,
@@ -73,8 +114,14 @@ export function createBroadcasterController({
       setConnected,
       setConnecting,
       setIsOffline,
-      connect: (reconnectLiveId, stream) => {
-        void reconnect(reconnectLiveId, stream)
+      connect: (
+        reconnectLiveId,
+        stream,
+      ) => {
+        void reconnect(
+          reconnectLiveId,
+          stream,
+        )
       },
     })
   }
@@ -82,11 +129,18 @@ export function createBroadcasterController({
   async function startCamera() {
     captureMode = 'camera'
 
-    if (startingRef.current || streamRef.current) return
+    if (
+      startingRef.current ||
+      streamRef.current
+    ) {
+      return
+    }
 
     if (!navigator.onLine) {
       setIsOffline(true)
-      setError('You are offline. Connect to the internet to start StreetGO Live.')
+      setError(
+        'You are offline. Connect to the internet to start StreetGO Live.',
+      )
       return
     }
 
@@ -99,31 +153,54 @@ export function createBroadcasterController({
       setConnecting(true)
       setConnected(false)
 
-      const liveId = await prepareLiveSession(liveIdRef.current)
+      const liveId =
+        await prepareLiveSession(
+          liveIdRef.current,
+        )
 
-      if (stoppingRef.current || !mountedRef.current) return
+      if (
+        stoppingRef.current ||
+        !mountedRef.current
+      ) {
+        return
+      }
 
-      liveIdRef.current = liveId
+      liveIdRef.current =
+        liveId
 
-      const stream = await startBroadcasterMedia({
-        videoRef,
-        streamRef,
-        setCameraOn,
-        setConnecting,
-        setConnected,
-        setIsOffline,
-        setError,
-      })
+      const stream =
+        await startBroadcasterMedia({
+          videoRef,
+          streamRef,
+          setCameraOn,
+          setConnecting,
+          setConnected,
+          setIsOffline,
+          setError,
+        })
 
-      if (stoppingRef.current || !mountedRef.current) return
+      if (
+        stoppingRef.current ||
+        !mountedRef.current
+      ) {
+        return
+      }
 
-      await reconnect(liveId, stream)
+      await reconnect(
+        liveId,
+        stream,
+      )
     } catch (err) {
       handleStartupError(err)
     } finally {
-      startingRef.current = false
+      startingRef.current =
+        false
 
-      if (!stoppingRef.current && mountedRef.current && !navigator.onLine) {
+      if (
+        !stoppingRef.current &&
+        mountedRef.current &&
+        !navigator.onLine
+      ) {
         setIsOffline(true)
         setConnecting(false)
       }
@@ -133,11 +210,18 @@ export function createBroadcasterController({
   async function startScreen() {
     captureMode = 'screen'
 
-    if (startingRef.current || streamRef.current) return
+    if (
+      startingRef.current ||
+      streamRef.current
+    ) {
+      return
+    }
 
     if (!navigator.onLine) {
       setIsOffline(true)
-      setError('You are offline. Connect to the internet to start StreetGO Live.')
+      setError(
+        'You are offline. Connect to the internet to start StreetGO Live.',
+      )
       return
     }
 
@@ -150,61 +234,106 @@ export function createBroadcasterController({
       setConnecting(true)
       setConnected(false)
 
-      const liveId = await prepareLiveSession(liveIdRef.current)
+      const liveId =
+        await prepareLiveSession(
+          liveIdRef.current,
+        )
 
-      if (stoppingRef.current || !mountedRef.current) return
-
-      liveIdRef.current = liveId
-
-      const result = await startScreenCapture({
-        includeAudio: true,
-        frameRate: 30,
-      })
-
-      if (stoppingRef.current || !mountedRef.current) {
-        stopScreenCapture(result.stream)
+      if (
+        stoppingRef.current ||
+        !mountedRef.current
+      ) {
         return
       }
 
-      const stream = result.stream
+      liveIdRef.current =
+        liveId
 
-      streamRef.current = stream
+      const result =
+        await startScreenCapture({
+          includeAudio: true,
+          frameRate: 30,
+        })
+
+      if (
+        stoppingRef.current ||
+        !mountedRef.current
+      ) {
+        stopScreenCapture(
+          result.stream,
+        )
+        return
+      }
+
+      const stream =
+        result.stream
+
+      streamRef.current =
+        stream
 
       if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        videoRef.current.muted = true
-        await videoRef.current.play().catch(() => {})
+        videoRef.current.srcObject =
+          stream
+
+        videoRef.current.muted =
+          true
+
+        await videoRef.current
+          .play()
+          .catch(() => {})
       }
 
       setCameraOn(true)
       setConnecting(true)
 
-      const screenTrack = result.videoTrack
+      const screenTrack =
+        result.videoTrack
 
       screenTrack.addEventListener(
         'ended',
         () => {
-          if (!mountedRef.current || stoppingRef.current) return
+          if (
+            !mountedRef.current ||
+            stoppingRef.current
+          ) {
+            return
+          }
+
           void stopBroadcast()
         },
-        { once: true }
+        { once: true },
       )
 
-      await reconnect(liveId, stream)
+      await reconnect(
+        liveId,
+        stream,
+      )
     } catch (err) {
       handleStartupError(err)
     } finally {
-      startingRef.current = false
+      startingRef.current =
+        false
 
-      if (!stoppingRef.current && mountedRef.current && !navigator.onLine) {
+      if (
+        !stoppingRef.current &&
+        mountedRef.current &&
+        !navigator.onLine
+      ) {
         setIsOffline(true)
         setConnecting(false)
       }
     }
   }
 
-  function handleStartupError(err: unknown) {
-    if (stoppingRef.current || !mountedRef.current) return
+  function handleStartupError(
+    err: unknown,
+  ) {
+    if (
+      stoppingRef.current ||
+      !mountedRef.current
+    ) {
+      return
+    }
 
     if (!navigator.onLine) {
       setIsOffline(true)
@@ -213,29 +342,52 @@ export function createBroadcasterController({
       return
     }
 
-    console.error('StreetGO broadcaster startup error:', err)
+    console.error(
+      'StreetGO broadcaster startup error:',
+      err,
+    )
 
-    const peer = peerRef.current
+    const peer =
+      peerRef.current
 
     if (peer) {
       try {
-        peer.onconnectionstatechange = null
-        peer.oniceconnectionstatechange = null
-        peer.onicegatheringstatechange = null
-        peer.onsignalingstatechange = null
+        peer.onconnectionstatechange =
+          null
+
+        peer.oniceconnectionstatechange =
+          null
+
+        peer.onicegatheringstatechange =
+          null
+
+        peer.onsignalingstatechange =
+          null
+
+        peer.onicecandidate =
+          null
+
         peer.close()
       } catch {}
     }
 
     peerRef.current = null
-    reconnectingRef.current = false
+    reconnectingRef.current =
+      false
 
-    if (captureMode === 'screen') {
-      stopScreenCapture(streamRef.current)
-      streamRef.current = null
+    if (
+      captureMode === 'screen'
+    ) {
+      stopScreenCapture(
+        streamRef.current,
+      )
+
+      streamRef.current =
+        null
 
       if (videoRef.current) {
-        videoRef.current.srcObject = null
+        videoRef.current.srcObject =
+          null
       }
 
       setCameraOn(false)
@@ -252,43 +404,70 @@ export function createBroadcasterController({
     }
 
     setIsOffline(false)
+
     setError(
       err instanceof Error
         ? err.message
-        : 'Unable to start StreetGO Live.'
+        : 'Unable to start StreetGO Live.',
     )
   }
 
   async function stopBroadcast() {
-    if (stoppingRef.current) return
+    if (
+      stoppingRef.current
+    ) {
+      return
+    }
 
-    stoppingRef.current = true
+    stoppingRef.current =
+      true
+
     clearReconnectTimer()
 
     try {
       setError('')
 
-      const peer = peerRef.current
+      const peer =
+        peerRef.current
 
       if (peer) {
         try {
-          peer.onconnectionstatechange = null
-          peer.oniceconnectionstatechange = null
-          peer.onicegatheringstatechange = null
-          peer.onsignalingstatechange = null
+          peer.onconnectionstatechange =
+            null
+
+          peer.oniceconnectionstatechange =
+            null
+
+          peer.onicegatheringstatechange =
+            null
+
+          peer.onsignalingstatechange =
+            null
+
+          peer.onicecandidate =
+            null
+
           peer.close()
         } catch {}
       }
 
       peerRef.current = null
-      reconnectingRef.current = false
+      reconnectingRef.current =
+        false
 
-      if (captureMode === 'screen') {
-        stopScreenCapture(streamRef.current)
-        streamRef.current = null
+      if (
+        captureMode === 'screen'
+      ) {
+        stopScreenCapture(
+          streamRef.current,
+        )
+
+        streamRef.current =
+          null
 
         if (videoRef.current) {
-          videoRef.current.srcObject = null
+          videoRef.current.srcObject =
+            null
         }
 
         setCameraOn(false)
@@ -304,35 +483,47 @@ export function createBroadcasterController({
         })
       }
 
-      const liveId = liveIdRef.current
+      const liveId =
+        liveIdRef.current
 
       if (liveId) {
         try {
-          await stopLiveSession(liveId)
+          await stopLiveSession(
+            liveId,
+          )
         } catch (err) {
-          console.error('StreetGO Live stop request failed:', err)
+          console.error(
+            'StreetGO Live stop request failed:',
+            err,
+          )
         }
       }
 
-      liveIdRef.current = null
+      liveIdRef.current =
+        null
+
       setCameraOn(false)
       setConnected(false)
       setConnecting(false)
       setIsOffline(false)
     } catch (err) {
-      console.error('StreetGO stop broadcast error:', err)
+      console.error(
+        'StreetGO stop broadcast error:',
+        err,
+      )
 
       setError(
         err instanceof Error
           ? err.message
-          : 'Unable to stop StreetGO Live.'
+          : 'Unable to stop StreetGO Live.',
       )
 
       setCameraOn(false)
       setConnected(false)
       setConnecting(false)
     } finally {
-      stoppingRef.current = false
+      stoppingRef.current =
+        false
     }
   }
 
@@ -343,27 +534,47 @@ export function createBroadcasterController({
   function cleanup() {
     clearReconnectTimer()
 
-    const peer = peerRef.current
+    const peer =
+      peerRef.current
 
     if (peer) {
       try {
-        peer.onconnectionstatechange = null
-        peer.oniceconnectionstatechange = null
-        peer.onicegatheringstatechange = null
-        peer.onsignalingstatechange = null
+        peer.onconnectionstatechange =
+          null
+
+        peer.oniceconnectionstatechange =
+          null
+
+        peer.onicegatheringstatechange =
+          null
+
+        peer.onsignalingstatechange =
+          null
+
+        peer.onicecandidate =
+          null
+
         peer.close()
       } catch {}
     }
 
     peerRef.current = null
-    reconnectingRef.current = false
+    reconnectingRef.current =
+      false
 
-    if (captureMode === 'screen') {
-      stopScreenCapture(streamRef.current)
-      streamRef.current = null
+    if (
+      captureMode === 'screen'
+    ) {
+      stopScreenCapture(
+        streamRef.current,
+      )
+
+      streamRef.current =
+        null
 
       if (videoRef.current) {
-        videoRef.current.srcObject = null
+        videoRef.current.srcObject =
+          null
       }
 
       setCameraOn(false)

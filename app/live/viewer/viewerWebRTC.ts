@@ -8,6 +8,18 @@ import type {
 } from 'react'
 
 import {
+  recoverViewer,
+  cancelViewerRecovery,
+  resetViewerRecovery,
+} from './viewerRecovery'
+
+import {
+  prepareViewerPlayer,
+  attachViewerStream,
+  ensureViewerPlayback,
+} from './viewerPlayer'
+
+import {
   startViewerPlaybackWatchdog,
   stopViewerPlaybackWatchdog,
 } from './viewerPlayback'
@@ -78,6 +90,7 @@ export async function connectViewerWebRTC({
   }
 
   connectingRef.current = true
+  resetViewerRecovery()
   clearViewerRetry(retryTimerRef)
 
   const oldPeer = peerRef.current
@@ -137,8 +150,7 @@ export async function connectViewerWebRTC({
     }
 
     if (!iceResponse.ok) {
-      const text =
-        await iceResponse.text()
+      const text = await iceResponse.text()
 
       throw new Error(
         `Unable to get WebRTC ICE servers (${iceResponse.status}): ${text}`,
@@ -178,6 +190,14 @@ export async function connectViewerWebRTC({
     remoteStreamRef.current =
       remoteStream
 
+    prepareViewerPlayer({
+      videoRef,
+      remoteStreamRef,
+      playbackPromiseRef,
+      cancelledRef,
+      mountedRef,
+    })
+
     peer.addTransceiver(
       'video',
       {
@@ -199,16 +219,21 @@ export async function connectViewerWebRTC({
       mountedRef,
       setHasVideo,
       onStall: () => {
-        if (
-          cancelledRef.current ||
-          !mountedRef.current
-        ) {
-          return
-        }
-
-        scheduleViewerRetry(
+        recoverViewer({
+          peerRef,
+          videoRef,
           retryTimerRef,
-        )
+          cancelledRef,
+          mountedRef,
+          reason: 'playback-stall',
+          reconnect: () => {
+            window.dispatchEvent(
+              new CustomEvent(
+                'streetgo-viewer-reconnect',
+              ),
+            )
+          },
+        })
       },
     })
 
@@ -231,6 +256,7 @@ export async function connectViewerWebRTC({
       video.autoplay = true
       video.playsInline = true
       video.muted = true
+      video.preload = 'auto'
 
       video.onloadedmetadata = () => {
         if (
@@ -242,17 +268,17 @@ export async function connectViewerWebRTC({
         setHasVideo(true)
         setError('')
 
-        void playViewerVideo(
+        attachViewerStream(
           videoRef,
-          remoteStreamRef,
+          remoteStream,
+        )
+
+        void ensureViewerPlayback({
+          videoRef,
           playbackPromiseRef,
           cancelledRef,
-          setHasVideo,
-          setConnected,
-          setConnecting,
-          setError,
-          setIsOffline,
-        )
+          mountedRef,
+        })
       }
 
       video.oncanplay = () => {
@@ -265,17 +291,17 @@ export async function connectViewerWebRTC({
         setHasVideo(true)
         setError('')
 
-        void playViewerVideo(
+        attachViewerStream(
           videoRef,
-          remoteStreamRef,
+          remoteStream,
+        )
+
+        void ensureViewerPlayback({
+          videoRef,
           playbackPromiseRef,
           cancelledRef,
-          setHasVideo,
-          setConnected,
-          setConnecting,
-          setError,
-          setIsOffline,
-        )
+          mountedRef,
+        })
       }
 
       video.onplaying = () => {
@@ -368,17 +394,17 @@ export async function connectViewerWebRTC({
         event.track.id,
       )
 
-      void playViewerVideo(
+      attachViewerStream(
         videoRef,
-        remoteStreamRef,
+        remoteStream,
+      )
+
+      void ensureViewerPlayback({
+        videoRef,
         playbackPromiseRef,
         cancelledRef,
-        setHasVideo,
-        setConnected,
-        setConnecting,
-        setError,
-        setIsOffline,
-      )
+        mountedRef,
+      })
     }
 
     peer.onconnectionstatechange =
@@ -411,17 +437,17 @@ export async function connectViewerWebRTC({
             setError,
           )
 
-          void playViewerVideo(
+          attachViewerStream(
             videoRef,
-            remoteStreamRef,
+            remoteStream,
+          )
+
+          void ensureViewerPlayback({
+            videoRef,
             playbackPromiseRef,
             cancelledRef,
-            setHasVideo,
-            setConnected,
-            setConnecting,
-            setError,
-            setIsOffline,
-          )
+            mountedRef,
+          })
 
           return
         }
@@ -456,9 +482,25 @@ export async function connectViewerWebRTC({
             'Reconnecting to StreetGO Live...',
           )
 
-          scheduleViewerRetry(
+          recoverViewer({
+            peerRef,
+            videoRef,
             retryTimerRef,
-          )
+            cancelledRef,
+            mountedRef,
+            reason:
+              peer.connectionState ===
+              'failed'
+                ? 'connection-failed'
+                : 'connection-disconnected',
+            reconnect: () => {
+              window.dispatchEvent(
+                new CustomEvent(
+                  'streetgo-viewer-reconnect',
+                ),
+              )
+            },
+          })
 
           return
         }
@@ -521,9 +563,25 @@ export async function connectViewerWebRTC({
           setConnected(false)
           setConnecting(true)
 
-          scheduleViewerRetry(
+          recoverViewer({
+            peerRef,
+            videoRef,
             retryTimerRef,
-          )
+            cancelledRef,
+            mountedRef,
+            reason:
+              peer.iceConnectionState ===
+              'failed'
+                ? 'ice-failed'
+                : 'ice-disconnected',
+            reconnect: () => {
+              window.dispatchEvent(
+                new CustomEvent(
+                  'streetgo-viewer-reconnect',
+                ),
+              )
+            },
+          })
         }
       }
 
@@ -691,19 +749,19 @@ export async function connectViewerWebRTC({
       setError,
     )
 
+    attachViewerStream(
+      videoRef,
+      remoteStream,
+    )
+
     setError('')
 
-    void playViewerVideo(
+    void ensureViewerPlayback({
       videoRef,
-      remoteStreamRef,
       playbackPromiseRef,
       cancelledRef,
-      setHasVideo,
-      setConnected,
-      setConnecting,
-      setError,
-      setIsOffline,
-    )
+      mountedRef,
+    })
   } catch (err) {
     const currentPeer =
       peerRef.current
@@ -786,6 +844,10 @@ export function cleanupViewerWebRTC({
   | 'videoRef'
 >) {
   clearViewerRetry(
+    retryTimerRef,
+  )
+
+  cancelViewerRecovery(
     retryTimerRef,
   )
 
@@ -928,117 +990,6 @@ function syncViewerReceivers(
   }
 }
 
-async function playViewerVideo(
-  videoRef: RefObject<HTMLVideoElement | null>,
-  remoteStreamRef: MutableRefObject<MediaStream | null>,
-  playbackPromiseRef: MutableRefObject<Promise<void> | null>,
-  cancelledRef: MutableRefObject<boolean>,
-  setHasVideo: Dispatch<
-    SetStateAction<boolean>
-  >,
-  setConnected: Dispatch<
-    SetStateAction<boolean>
-  >,
-  setConnecting: Dispatch<
-    SetStateAction<boolean>
-  >,
-  setError: Dispatch<
-    SetStateAction<string>
-  >,
-  setIsOffline: Dispatch<
-    SetStateAction<boolean>
-  >,
-) {
-  const video =
-    videoRef.current
-
-  const stream =
-    remoteStreamRef.current
-
-  if (
-    !video ||
-    !stream ||
-    cancelledRef.current
-  ) {
-    return
-  }
-
-  const activeVideo =
-    stream
-      .getVideoTracks()
-      .find(
-        (track) =>
-          track.readyState !==
-          'ended',
-      )
-
-  if (!activeVideo) {
-    return
-  }
-
-  if (
-    video.srcObject !== stream
-  ) {
-    video.srcObject = stream
-  }
-
-  video.muted = true
-  video.playsInline = true
-  video.autoplay = true
-
-  if (
-    playbackPromiseRef.current
-  ) {
-    try {
-      await playbackPromiseRef.current
-    } catch {}
-
-    return
-  }
-
-  if (
-    !video.paused &&
-    video.readyState >= 2
-  ) {
-    return
-  }
-
-  const promise =
-    video.play()
-
-  playbackPromiseRef.current =
-    promise
-
-  try {
-    await promise
-
-    if (
-      cancelledRef.current
-    ) {
-      return
-    }
-
-    setHasVideo(true)
-    setConnected(true)
-    setConnecting(false)
-    setError('')
-    setIsOffline(false)
-  } catch (err) {
-    console.warn(
-      'STREETGO VIEWER PLAYBACK ERROR:',
-      err,
-    )
-  } finally {
-    if (
-      playbackPromiseRef.current ===
-      promise
-    ) {
-      playbackPromiseRef.current =
-        null
-    }
-  }
-}
-
 function startViewerStatsMonitor(
   peer: RTCPeerConnection,
   mountedRef: MutableRefObject<boolean>,
@@ -1134,6 +1085,7 @@ function startViewerStatsMonitor(
 
   return () => {
     running = false
+
     window.clearInterval(
       timer,
     )

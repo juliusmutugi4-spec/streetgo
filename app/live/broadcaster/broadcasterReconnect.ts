@@ -1,3 +1,5 @@
+'use client'
+
 export interface BroadcasterReconnectOptions {
   liveId: string
 
@@ -12,23 +14,35 @@ export interface BroadcasterReconnectOptions {
     >
 
   setConnected: (
-    value: boolean
+    value: boolean,
   ) => void
 
   setConnecting: (
-    value: boolean
+    value: boolean,
   ) => void
 
   setIsOffline: (
-    value: boolean
+    value: boolean,
   ) => void
 
   connect: (
     liveId: string,
-    stream: MediaStream
+    stream: MediaStream,
   ) => void
 }
 
+/*
+ * Keep reconnect attempts controlled.
+ *
+ * A temporary WebRTC disconnect should not
+ * immediately create a new peer connection.
+ */
+const RECONNECT_DELAY = 3000
+
+/*
+ * Prevent the same reconnect cycle from
+ * being scheduled repeatedly.
+ */
 export function scheduleBroadcasterReconnect({
   liveId,
   stoppingRef,
@@ -56,6 +70,9 @@ export function scheduleBroadcasterReconnect({
   /*
    * ============================================================
    * OFFLINE
+   *
+   * Do not start a reconnect timer while
+   * the browser has no network connection.
    * ============================================================
    */
 
@@ -64,24 +81,33 @@ export function scheduleBroadcasterReconnect({
     setConnected(false)
     setConnecting(false)
 
+    console.log(
+      'StreetGO Live: browser is offline. Reconnect paused.',
+    )
+
     return
   }
 
   /*
    * ============================================================
-   * ALREADY WAITING FOR RECONNECT
+   * ALREADY SCHEDULED
+   *
+   * Connection-state and ICE-state events can
+   * fire almost simultaneously.
+   *
+   * Only allow one reconnect timer.
    * ============================================================
    */
 
   if (
-    reconnectTimerRef.current
+    reconnectTimerRef.current !== null
   ) {
     return
   }
 
   /*
    * ============================================================
-   * SHOW RECONNECTING STATE
+   * RECONNECTING UI
    * ============================================================
    */
 
@@ -90,12 +116,16 @@ export function scheduleBroadcasterReconnect({
   setIsOffline(false)
 
   console.log(
-    "StreetGO Live: scheduling WebRTC reconnect..."
+    `StreetGO Live: WebRTC reconnect scheduled in ${RECONNECT_DELAY}ms.`,
   )
 
   /*
    * ============================================================
-   * WAIT 3 SECONDS
+   * DELAYED RECONNECT
+   *
+   * The delay gives a temporarily disconnected
+   * WebRTC connection a chance to recover before
+   * we create another peer connection.
    * ============================================================
    */
 
@@ -105,21 +135,45 @@ export function scheduleBroadcasterReconnect({
         null
 
       /*
-       * Check state again after
-       * the reconnect delay.
+       * ========================================================
+       * VERIFY CURRENT STATE
+       * ========================================================
        */
 
       if (
         stoppingRef.current ||
-        !mountedRef.current ||
-        !navigator.onLine
+        !mountedRef.current
       ) {
         return
       }
 
       /*
-       * Reuse the existing camera
-       * and microphone stream.
+       * Network may have disappeared
+       * during the reconnect delay.
+       */
+
+      if (!navigator.onLine) {
+        setIsOffline(true)
+        setConnected(false)
+        setConnecting(false)
+
+        console.log(
+          'StreetGO Live: network went offline during reconnect delay.',
+        )
+
+        return
+      }
+
+      /*
+       * ========================================================
+       * REUSE EXISTING MEDIA
+       *
+       * Do NOT call getUserMedia() again.
+       *
+       * This keeps the camera/microphone alive and
+       * prevents unnecessary permission prompts,
+       * camera flickering, and device switching.
+       * ========================================================
        */
 
       const stream =
@@ -128,16 +182,142 @@ export function scheduleBroadcasterReconnect({
       if (!stream) {
         setConnecting(false)
 
+        console.warn(
+          'StreetGO Live: reconnect aborted because the media stream is unavailable.',
+        )
+
         return
       }
 
       /*
-       * Start a new WebRTC connection.
+       * Make sure the stream still contains
+       * usable media tracks.
        */
 
-      void connect(
-        liveId,
-        stream
+      const videoTracks =
+        stream.getVideoTracks()
+
+      const audioTracks =
+        stream.getAudioTracks()
+
+      const hasLiveVideo =
+        videoTracks.some(
+          (track) =>
+            track.readyState ===
+            'live',
+        )
+
+      const hasLiveAudio =
+        audioTracks.some(
+          (track) =>
+            track.readyState ===
+            'live',
+        )
+
+      /*
+       * Video is required for StreetGO Live.
+       */
+
+      if (!hasLiveVideo) {
+        setConnecting(false)
+
+        console.warn(
+          'StreetGO Live: reconnect aborted because the video track is no longer live.',
+        )
+
+        return
+      }
+
+      console.log(
+        'StreetGO Live: reconnecting with existing media stream.',
+        {
+          videoTracks:
+            videoTracks.length,
+          audioTracks:
+            audioTracks.length,
+          hasLiveVideo,
+          hasLiveAudio,
+        },
       )
-    }, 3000)
+
+      /*
+       * ========================================================
+       * START NEW WEBRTC CONNECTION
+       * ========================================================
+       *
+       * broadcasterWebRTC.ts is responsible for:
+       *
+       * - creating the RTCPeerConnection
+       * - attaching tracks
+       * - codec preferences
+       * - encoder parameters
+       * - adaptive quality
+       * - SDP negotiation
+       * - ICE handling
+       *
+       * This module only controls the reconnect timing.
+       */
+
+      try {
+        connect(
+          liveId,
+          stream,
+        )
+      } catch (error) {
+        /*
+         * connect() is normally asynchronous and
+         * reports its own errors. This catch protects
+         * against synchronous failures.
+         */
+
+        console.error(
+          'StreetGO Live: reconnect attempt failed to start.',
+          error,
+        )
+
+        if (
+          !stoppingRef.current &&
+          mountedRef.current
+        ) {
+          setConnected(false)
+          setConnecting(false)
+        }
+      }
+    }, RECONNECT_DELAY)
+}
+
+/*
+ * ==============================================================
+ * CLEAR RECONNECT
+ *
+ * Useful when:
+ *
+ * - the broadcaster stops
+ * - the connection recovers
+ * - the component unmounts
+ * - the user switches capture mode
+ * ==============================================================
+ */
+
+export function clearBroadcasterReconnect(
+  reconnectTimerRef:
+    React.MutableRefObject<
+      ReturnType<typeof setTimeout> | null
+    >,
+) {
+  const timer =
+    reconnectTimerRef.current
+
+  if (timer === null) {
+    return
+  }
+
+  clearTimeout(timer)
+
+  reconnectTimerRef.current =
+    null
+
+  console.log(
+    'StreetGO Live: pending WebRTC reconnect cancelled.',
+  )
 }

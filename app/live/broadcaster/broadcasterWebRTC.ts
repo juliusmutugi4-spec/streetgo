@@ -2,50 +2,220 @@
 
 import { getBroadcasterIceServers } from './broadcasterIceServers'
 
-const API_URL = process.env.NEXT_PUBLIC_ENGINE_URL!
+import {
+  collectBroadcasterStats,
+  type BroadcasterStats,
+} from './broadcasterStats'
+
+import {
+  createAdaptiveQualityController,
+  type BroadcasterCaptureMode,
+} from './broadcasterAdaptiveQuality'
+
+import {
+  configureBroadcasterVideoSender,
+  getBroadcasterCodecPreferences,
+} from './broadcasterEncoding'
+
+const API_URL =
+  process.env.NEXT_PUBLIC_ENGINE_URL!
 
 export interface BroadcasterWebRTCOptions {
   liveId: string
   stream: MediaStream
-  peerRef: React.MutableRefObject<RTCPeerConnection | null>
+  captureMode: BroadcasterCaptureMode
+
+  peerRef: React.MutableRefObject<
+    RTCPeerConnection | null
+  >
+
   stoppingRef: React.MutableRefObject<boolean>
   mountedRef: React.MutableRefObject<boolean>
   reconnectingRef: React.MutableRefObject<boolean>
-  setConnecting: (value: boolean) => void
-  setConnected: (value: boolean) => void
-  setIsOffline: (value: boolean) => void
-  setError: (value: string) => void
+
+  setConnecting: (
+    value: boolean,
+  ) => void
+
+  setConnected: (
+    value: boolean,
+  ) => void
+
+  setIsOffline: (
+    value: boolean,
+  ) => void
+
+  setError: (
+    value: string,
+  ) => void
+
   clearReconnectTimer: () => void
-  scheduleReconnect: (liveId: string) => void
+
+  scheduleReconnect: (
+    liveId: string,
+  ) => void
+
+  onStats?: (
+    stats: BroadcasterStats,
+  ) => void
+}
+
+const broadcasterStatsMonitors =
+  new WeakMap<
+    RTCPeerConnection,
+    () => void
+  >()
+
+export function startBroadcasterStatsMonitor(
+  peer: RTCPeerConnection,
+  onStats?: (
+    stats: BroadcasterStats,
+  ) => void,
+) {
+  stopBroadcasterStatsMonitor(peer)
+
+  let previousStats:
+    | BroadcasterStats
+    | undefined
+
+  const timer =
+    window.setInterval(
+      async () => {
+        if (
+          peer.connectionState ===
+            'closed' ||
+          peer.connectionState ===
+            'failed'
+        ) {
+          return
+        }
+
+        try {
+          const stats =
+            await collectBroadcasterStats(
+              peer,
+              previousStats,
+            )
+
+          previousStats =
+            stats
+
+          onStats?.(stats)
+        } catch (error) {
+          console.warn(
+            'StreetGO Broadcaster: stats collection failed:',
+            error,
+          )
+        }
+      },
+      2000,
+    )
+
+  const stop = () => {
+    window.clearInterval(
+      timer,
+    )
+
+    if (
+      broadcasterStatsMonitors.get(
+        peer,
+      ) === stop
+    ) {
+      broadcasterStatsMonitors.delete(
+        peer,
+      )
+    }
+  }
+
+  broadcasterStatsMonitors.set(
+    peer,
+    stop,
+  )
+
+  return stop
+}
+
+export function stopBroadcasterStatsMonitor(
+  peer: RTCPeerConnection | null,
+) {
+  if (!peer) return
+
+  const stop =
+    broadcasterStatsMonitors.get(
+      peer,
+    )
+
+  if (stop) {
+    stop()
+  }
 }
 
 export async function connectBroadcasterWebRTC({
-  liveId,stream,peerRef,stoppingRef,mountedRef,reconnectingRef,
-  setConnecting,setConnected,setIsOffline,setError,
-  clearReconnectTimer,scheduleReconnect,
+  liveId,
+  stream,
+  captureMode,
+  peerRef,
+  stoppingRef,
+  mountedRef,
+  reconnectingRef,
+  setConnecting,
+  setConnected,
+  setIsOffline,
+  setError,
+  clearReconnectTimer,
+  scheduleReconnect,
+  onStats,
 }: BroadcasterWebRTCOptions): Promise<void> {
-  if (stoppingRef.current || !mountedRef.current) return
+  if (
+    stoppingRef.current ||
+    !mountedRef.current
+  ) {
+    return
+  }
 
   if (!navigator.onLine) {
     setIsOffline(true)
     setConnected(false)
     setConnecting(false)
+
     return
   }
 
-  if (reconnectingRef.current) return
+  if (
+    reconnectingRef.current
+  ) {
+    return
+  }
 
-  reconnectingRef.current = true
+  reconnectingRef.current =
+    true
+
   clearReconnectTimer()
 
-  const oldPeer = peerRef.current
+  const oldPeer =
+    peerRef.current
 
   if (oldPeer) {
+    stopBroadcasterStatsMonitor(
+      oldPeer,
+    )
+
     try {
-      oldPeer.onconnectionstatechange = null
-      oldPeer.oniceconnectionstatechange = null
-      oldPeer.onicegatheringstatechange = null
-      oldPeer.onsignalingstatechange = null
+      oldPeer.onconnectionstatechange =
+        null
+
+      oldPeer.oniceconnectionstatechange =
+        null
+
+      oldPeer.onicegatheringstatechange =
+        null
+
+      oldPeer.onsignalingstatechange =
+        null
+
+      oldPeer.onicecandidate =
+        null
+
       oldPeer.close()
     } catch {}
 
@@ -64,7 +234,9 @@ export async function connectBroadcasterWebRTC({
     if (
       stoppingRef.current ||
       !mountedRef.current
-    ) return
+    ) {
+      return
+    }
 
     const videoTracks =
       stream.getVideoTracks()
@@ -75,20 +247,29 @@ export async function connectBroadcasterWebRTC({
     console.log(
       'StreetGO media tracks:',
       {
-        video: videoTracks.length,
-        audio: audioTracks.length,
-        videoStates: videoTracks.map(
-          (track) => track.readyState,
-        ),
-        audioStates: audioTracks.map(
-          (track) => track.readyState,
-        ),
+        captureMode,
+        video:
+          videoTracks.length,
+        audio:
+          audioTracks.length,
+        videoStates:
+          videoTracks.map(
+            (track) =>
+              track.readyState,
+          ),
+        audioStates:
+          audioTracks.map(
+            (track) =>
+              track.readyState,
+          ),
       },
     )
 
-    if (!videoTracks.length) {
+    if (
+      !videoTracks.length
+    ) {
       throw new Error(
-        'StreetGO camera stream contains no video track.',
+        'StreetGO stream contains no video track.',
       )
     }
 
@@ -97,26 +278,63 @@ export async function connectBroadcasterWebRTC({
         iceServers,
       })
 
-    peerRef.current = peer
+    peerRef.current =
+      peer
 
     const videoTransceiver =
       peer.addTransceiver(
         'video',
         {
-          direction: 'sendonly',
+          direction:
+            'sendonly',
         },
       )
 
+    /*
+     * Attach the current video track.
+     */
     await videoTransceiver.sender.replaceTrack(
       videoTracks[0],
     )
 
-    if (audioTracks.length) {
+    /*
+     * Configure codec preferences
+     * according to capture mode.
+     *
+     * Screen:
+     * - prefer VP9
+     * - protect text/UI quality
+     *
+     * Camera:
+     * - prefer VP8
+     * - keep broad compatibility
+     */
+    getBroadcasterCodecPreferences(
+      videoTransceiver,
+      captureMode,
+    )
+
+    /*
+     * Configure encoder parameters.
+     *
+     * Adaptive quality may later
+     * modify maxBitrate without
+     * recreating the peer connection.
+     */
+    await configureBroadcasterVideoSender(
+      videoTransceiver.sender,
+      captureMode,
+    )
+
+    if (
+      audioTracks.length
+    ) {
       const audioTransceiver =
         peer.addTransceiver(
           'audio',
           {
-            direction: 'sendonly',
+            direction:
+              'sendonly',
           },
         )
 
@@ -129,129 +347,211 @@ export async function connectBroadcasterWebRTC({
       'StreetGO transceivers:',
       peer.getTransceivers().map(
         (transceiver) => ({
-          kind: transceiver.receiver.track.kind,
-          direction: transceiver.direction,
-          mid: transceiver.mid,
+          kind:
+            transceiver.receiver
+              .track.kind,
+
+          direction:
+            transceiver.direction,
+
+          mid:
+            transceiver.mid,
+
           senderTrack:
-            transceiver.sender.track?.kind ??
+            transceiver.sender
+              .track?.kind ??
             null,
         }),
       ),
     )
 
-    peer.onconnectionstatechange = () => {
-      if (
-        !mountedRef.current ||
-        stoppingRef.current
-      ) return
-
-      console.log(
-        'StreetGO WebRTC connection:',
-        peer.connectionState,
+    /*
+     * Adaptive quality
+     *
+     * Camera and screen have
+     * different quality targets.
+     *
+     * Camera:
+     * - can reduce resolution
+     *
+     * Screen:
+     * - protects text/UI sharpness
+     * - reduces bitrate first
+     */
+    const adaptiveQuality =
+      createAdaptiveQualityController(
+        peer,
+        captureMode,
       )
 
-      if (
-        peer.connectionState ===
-        'connected'
-      ) {
-        reconnectingRef.current = false
-        setConnected(true)
-        setConnecting(false)
-        setIsOffline(false)
-        setError('')
-        return
-      }
+    /*
+     * Start outgoing quality
+     * monitoring.
+     *
+     * Every sample:
+     *
+     * stats
+     *   ↓
+     * adaptive quality
+     *   ↓
+     * sender parameters
+     *
+     * The optional onStats callback
+     * still receives the same stats.
+     */
+    startBroadcasterStatsMonitor(
+      peer,
+      (stats) => {
+        adaptiveQuality.evaluate(
+          stats,
+        )
 
-      if (
-        peer.connectionState ===
-        'connecting'
-      ) {
-        setConnected(false)
-        setConnecting(true)
-        return
-      }
+        onStats?.(stats)
+      },
+    )
 
-      if (
-        peer.connectionState ===
-          'disconnected' ||
-        peer.connectionState ===
-          'failed'
-      ) {
-        setConnected(false)
-
-        if (!navigator.onLine) {
-          setIsOffline(true)
-          setConnecting(false)
+    peer.onconnectionstatechange =
+      () => {
+        if (
+          !mountedRef.current ||
+          stoppingRef.current
+        ) {
           return
         }
 
-        setConnecting(true)
-        scheduleReconnect(liveId)
-        return
-      }
+        console.log(
+          'StreetGO WebRTC connection:',
+          peer.connectionState,
+        )
 
-      if (
-        peer.connectionState ===
-        'closed'
-      ) {
-        setConnected(false)
-        setConnecting(false)
-      }
-    }
+        if (
+          peer.connectionState ===
+          'connected'
+        ) {
+          reconnectingRef.current =
+            false
 
-    peer.oniceconnectionstatechange = () => {
-      if (
-        !mountedRef.current ||
-        stoppingRef.current
-      ) return
+          setConnected(true)
+          setConnecting(false)
+          setIsOffline(false)
+          setError('')
 
-      console.log(
-        'StreetGO ICE state:',
-        peer.iceConnectionState,
-      )
+          return
+        }
 
-      if (
-        peer.iceConnectionState ===
-          'failed' ||
-        peer.iceConnectionState ===
-          'disconnected'
-      ) {
-        if (!navigator.onLine) {
-          setIsOffline(true)
+        if (
+          peer.connectionState ===
+          'connecting'
+        ) {
+          setConnected(false)
+          setConnecting(true)
+
+          return
+        }
+
+        if (
+          peer.connectionState ===
+            'disconnected' ||
+          peer.connectionState ===
+            'failed'
+        ) {
+          setConnected(false)
+
+          if (
+            !navigator.onLine
+          ) {
+            setIsOffline(true)
+            setConnecting(false)
+
+            return
+          }
+
+          setConnecting(true)
+
+          scheduleReconnect(
+            liveId,
+          )
+
+          return
+        }
+
+        if (
+          peer.connectionState ===
+          'closed'
+        ) {
           setConnected(false)
           setConnecting(false)
+        }
+      }
+
+    peer.oniceconnectionstatechange =
+      () => {
+        if (
+          !mountedRef.current ||
+          stoppingRef.current
+        ) {
           return
         }
 
-        scheduleReconnect(liveId)
+        console.log(
+          'StreetGO ICE state:',
+          peer.iceConnectionState,
+        )
+
+        if (
+          peer.iceConnectionState ===
+            'failed' ||
+          peer.iceConnectionState ===
+            'disconnected'
+        ) {
+          if (
+            !navigator.onLine
+          ) {
+            setIsOffline(true)
+            setConnected(false)
+            setConnecting(false)
+
+            return
+          }
+
+          scheduleReconnect(
+            liveId,
+          )
+        }
       }
-    }
 
-peer.onicecandidate = (event) => {
-  if (!event.candidate) {
-    console.log('StreetGO ICE candidate gathering complete.')
-    return
-  }
+    peer.onicecandidate = (
+      event,
+    ) => {
+      if (!event.candidate) {
+        console.log(
+          'StreetGO ICE candidate gathering complete.',
+        )
 
-  console.log(
-    'StreetGO ICE candidate:',
-    event.candidate.candidate,
-  )
-}
+        return
+      }
 
-peer.onicegatheringstatechange = () => {
-  console.log(
-    'StreetGO ICE gathering:',
-    peer.iceGatheringState,
-  )
-}
-
-    peer.onsignalingstatechange = () => {
       console.log(
-        'StreetGO signaling:',
-        peer.signalingState,
+        'StreetGO ICE candidate:',
+        event.candidate.candidate,
       )
     }
+
+    peer.onicegatheringstatechange =
+      () => {
+        console.log(
+          'StreetGO ICE gathering:',
+          peer.iceGatheringState,
+        )
+      }
+
+    peer.onsignalingstatechange =
+      () => {
+        console.log(
+          'StreetGO signaling:',
+          peer.signalingState,
+        )
+      }
 
     const offer =
       await peer.createOffer()
@@ -268,19 +568,24 @@ peer.onicegatheringstatechange = () => {
     if (
       stoppingRef.current ||
       !mountedRef.current
-    ) return
+    ) {
+      return
+    }
 
     if (!navigator.onLine) {
       setIsOffline(true)
       setConnected(false)
       setConnecting(false)
+
       return
     }
 
     const localDescription =
       peer.localDescription
 
-    if (!localDescription?.sdp) {
+    if (
+      !localDescription?.sdp
+    ) {
       throw new Error(
         'WebRTC local SDP was not created.',
       )
@@ -294,14 +599,13 @@ peer.onicegatheringstatechange = () => {
         /^m=(audio|video)/gm,
       ) ?? []
 
-    const mids =
-      [
-        ...offerSdp.matchAll(
-          /^a=mid:([^\r\n]+)$/gm,
-        ),
-      ].map(
-        (match) => match[1],
-      )
+    const mids = [
+      ...offerSdp.matchAll(
+        /^a=mid:([^\r\n]+)$/gm,
+      ),
+    ].map(
+      (match) => match[1],
+    )
 
     const bundleMatch =
       offerSdp.match(
@@ -309,7 +613,12 @@ peer.onicegatheringstatechange = () => {
       )
 
     console.log(
-      '========== STREETGO WEBRTC OFFER =========='
+      '========== STREETGO WEBRTC OFFER ==========',
+    )
+
+    console.log(
+      'StreetGO capture mode:',
+      captureMode,
     )
 
     console.log(
@@ -334,7 +643,8 @@ peer.onicegatheringstatechange = () => {
 
     console.log(
       'StreetGO offer BUNDLE:',
-      bundleMatch?.[0] ?? 'NONE',
+      bundleMatch?.[0] ??
+        'NONE',
     )
 
     console.log(
@@ -343,10 +653,12 @@ peer.onicegatheringstatechange = () => {
     )
 
     console.log(
-      '==========================================='
+      '===========================================',
     )
 
-    if (!mediaSections.length) {
+    if (
+      !mediaSections.length
+    ) {
       throw new Error(
         'Browser created an SDP offer without audio/video media sections.',
       )
@@ -358,28 +670,39 @@ peer.onicegatheringstatechange = () => {
       )
     }
 
+    console.log(
+      'StreetGO API URL:',
+      API_URL,
+    )
 
-console.log('StreetGO API URL:', API_URL)
-console.log(
-  'StreetGO WebRTC endpoint:',
-  `${API_URL}/live/webrtc/offer`
-)
-
+    console.log(
+      'StreetGO WebRTC endpoint:',
+      `${API_URL}/live/webrtc/offer`,
+    )
 
     const response =
       await fetch(
         `${API_URL}/live/webrtc/offer`,
         {
           method: 'POST',
+
           headers: {
             'Content-Type':
               'application/json',
           },
+
           body: JSON.stringify({
-            live_id: liveId,
-            sdp: offerSdp,
-            type: localDescription.type,
-            role: 'broadcaster',
+            live_id:
+              liveId,
+
+            sdp:
+              offerSdp,
+
+            type:
+              localDescription.type,
+
+            role:
+              'broadcaster',
           }),
         },
       )
@@ -399,7 +722,8 @@ console.log(
     }
 
     try {
-      answer = JSON.parse(text)
+      answer =
+        JSON.parse(text)
     } catch {
       throw new Error(
         'WebRTC server returned invalid JSON.',
@@ -407,12 +731,14 @@ console.log(
     }
 
     const answerSdp =
-      typeof answer.sdp === 'string'
+      typeof answer.sdp ===
+      'string'
         ? answer.sdp
         : ''
 
     if (
-      answer.type !== 'answer' ||
+      answer.type !==
+        'answer' ||
       !answerSdp
     ) {
       throw new Error(
@@ -421,7 +747,7 @@ console.log(
     }
 
     console.log(
-      '========== STREETGO WEBRTC ANSWER =========='
+      '========== STREETGO WEBRTC ANSWER ==========',
     )
 
     console.log(
@@ -440,7 +766,7 @@ console.log(
     )
 
     console.log(
-      '============================================'
+      '============================================',
     )
 
     if (
@@ -472,12 +798,15 @@ console.log(
     if (
       stoppingRef.current ||
       !mountedRef.current
-    ) return
+    ) {
+      return
+    }
 
     if (!navigator.onLine) {
       setIsOffline(true)
       setConnected(false)
       setConnecting(false)
+
       return
     }
 
@@ -487,9 +816,13 @@ console.log(
     )
 
     setConnected(false)
-    scheduleReconnect(liveId)
+
+    scheduleReconnect(
+      liveId,
+    )
   } finally {
-    reconnectingRef.current = false
+    reconnectingRef.current =
+      false
 
     if (
       !stoppingRef.current &&
@@ -499,7 +832,8 @@ console.log(
         setIsOffline(true)
         setConnecting(false)
       } else if (
-        peerRef.current?.connectionState ===
+        peerRef.current
+          ?.connectionState ===
         'connected'
       ) {
         setConnected(true)
@@ -533,10 +867,15 @@ function waitForIceGathering(
         )
 
       function finish() {
-        if (finished) return
+        if (finished) {
+          return
+        }
 
         finished = true
-        clearTimeout(timer)
+
+        clearTimeout(
+          timer,
+        )
 
         peer.removeEventListener(
           'icegatheringstatechange',
