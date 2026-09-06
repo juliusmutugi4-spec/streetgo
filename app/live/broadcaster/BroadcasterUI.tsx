@@ -12,8 +12,9 @@ interface BroadcasterUIProps {
   liveId: string | null
   stopping: boolean
   onStart: () => void
-  onStartScreen: () => void
-  onStop: () => void
+onStartScreen: () => void
+onSwitchCamera: () => void
+onStop: () => void
 }
 
 export default function BroadcasterUI({
@@ -25,9 +26,10 @@ export default function BroadcasterUI({
   error,
   liveId,
   stopping,
-  onStart,
-  onStartScreen,
-  onStop,
+onStart,
+onStartScreen,
+onSwitchCamera,
+onStop,
 }: BroadcasterUIProps) {
   const status = connected
     ? { text: 'You’re Live', dot: 'bg-red-500 animate-pulse' }
@@ -174,8 +176,20 @@ export default function BroadcasterUI({
             >
               {stopping ? 'Stopping...' : 'Stop Live'}
             </button>
+<button
+  type="button"
+  onClick={onSwitchCamera}
+  disabled={stopping || connecting || !cameraOn}
+  className="min-w-[150px] rounded-xl border border-white/10 bg-zinc-800 px-7 py-3 text-sm font-semibold text-white transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
+>
+  🔄 Switch Camera
+</button>
+
           </div>
         )}
+
+
+
 
         <div className="mx-auto mt-4 flex max-w-5xl justify-center gap-5 text-[10px] font-medium text-zinc-400">
           <div>

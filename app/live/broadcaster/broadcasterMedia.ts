@@ -1,3 +1,5 @@
+'use client'
+
 export interface BroadcasterMediaOptions {
   videoRef: React.MutableRefObject<HTMLVideoElement | null>
   streamRef: React.MutableRefObject<MediaStream | null>
@@ -22,6 +24,13 @@ export interface BroadcasterMediaOptions {
     value: string
   ) => void
 }
+
+export type CameraFacingMode =
+  | 'user'
+  | 'environment'
+
+let currentFacingMode: CameraFacingMode =
+  'user'
 
 /*
  * ============================================================
@@ -54,11 +63,8 @@ export async function startBroadcasterMedia({
     setConnecting(true)
     setConnected(false)
 
-    /*
-     * ========================================================
-     * GET CAMERA + MICROPHONE
-     * ========================================================
-     */
+    currentFacingMode =
+      'user'
 
     const stream =
       await navigator.mediaDevices.getUserMedia({
@@ -72,7 +78,7 @@ export async function startBroadcasterMedia({
           },
 
           facingMode:
-            'user',
+            currentFacingMode,
         },
 
         audio: {
@@ -87,20 +93,8 @@ export async function startBroadcasterMedia({
         },
       })
 
-    /*
-     * ========================================================
-     * SAVE STREAM
-     * ========================================================
-     */
-
     streamRef.current =
       stream
-
-    /*
-     * ========================================================
-     * LOCAL CAMERA PREVIEW
-     * ========================================================
-     */
 
     if (videoRef.current) {
       videoRef.current.srcObject =
@@ -131,7 +125,7 @@ export async function startBroadcasterMedia({
     }
 
     console.error(
-      'StreetGo camera startup error:',
+      'StreetGO camera startup error:',
       err
     )
 
@@ -143,6 +137,159 @@ export async function startBroadcasterMedia({
       err instanceof Error
         ? err.message
         : 'Unable to access your camera and microphone.'
+    )
+
+    throw err
+  }
+}
+
+/*
+ * ============================================================
+ * SWITCH FRONT / BACK CAMERA
+ * ============================================================
+ */
+
+export async function switchBroadcasterCamera({
+  videoRef,
+  streamRef,
+  peer,
+}: Pick<
+  BroadcasterMediaOptions,
+  'videoRef' | 'streamRef'
+> & {
+  peer: RTCPeerConnection | null
+}): Promise<void> {
+  const stream =
+    streamRef.current
+
+  if (!stream) {
+    throw new Error(
+      'Camera stream is not active.'
+    )
+  }
+
+  if (!peer) {
+    throw new Error(
+      'Live connection is not ready.'
+    )
+  }
+
+  if (
+    !navigator.mediaDevices?.getUserMedia
+  ) {
+    throw new Error(
+      'Camera switching is not supported on this device.'
+    )
+  }
+
+  const oldVideoTrack =
+    stream.getVideoTracks()[0]
+
+  if (!oldVideoTrack) {
+    throw new Error(
+      'No active camera track was found.'
+    )
+  }
+
+  const nextFacingMode =
+    currentFacingMode === 'user'
+      ? 'environment'
+      : 'user'
+
+  let newStream: MediaStream | null =
+    null
+
+  try {
+    newStream =
+      await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: {
+            ideal: 1280,
+          },
+
+          height: {
+            ideal: 720,
+          },
+
+          facingMode:
+            nextFacingMode,
+        },
+
+        audio: false,
+      })
+
+    const newVideoTrack =
+      newStream.getVideoTracks()[0]
+
+    if (!newVideoTrack) {
+      throw new Error(
+        'The other camera could not be opened.'
+      )
+    }
+
+    const videoSender =
+      peer
+        .getSenders()
+        .find(
+          sender =>
+            sender.track?.kind ===
+            'video'
+        )
+
+    if (!videoSender) {
+      throw new Error(
+        'Live video sender was not found.'
+      )
+    }
+
+    await videoSender.replaceTrack(
+      newVideoTrack
+    )
+
+    stream.removeTrack(
+      oldVideoTrack
+    )
+
+    stream.addTrack(
+      newVideoTrack
+    )
+
+    oldVideoTrack.stop()
+
+    currentFacingMode =
+      nextFacingMode
+
+    if (videoRef.current) {
+      videoRef.current.srcObject =
+        stream
+
+      videoRef.current.muted =
+        true
+
+      await videoRef.current
+        .play()
+        .catch(() => {})
+    }
+
+    newStream = null
+
+    console.log(
+      `StreetGO: switched to ${nextFacingMode === 'user' ? 'front' : 'back'} camera.`
+    )
+  } catch (err) {
+    if (newStream) {
+      newStream
+        .getTracks()
+        .forEach(track => {
+          try {
+            track.stop()
+          } catch {}
+        })
+    }
+
+    console.error(
+      'StreetGO camera switch error:',
+      err
     )
 
     throw err
@@ -176,9 +323,7 @@ export function stopBroadcasterMedia({
     stream
       .getTracks()
       .forEach(
-        (
-          track
-        ) => {
+        track => {
           try {
             track.stop()
           } catch {
@@ -190,6 +335,9 @@ export function stopBroadcasterMedia({
 
   streamRef.current =
     null
+
+  currentFacingMode =
+    'user'
 
   if (videoRef.current) {
     videoRef.current.pause()

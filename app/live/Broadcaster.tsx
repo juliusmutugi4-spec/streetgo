@@ -1,6 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import type { BroadcasterProps } from './broadcaster/broadcasterTypes'
 import { setupBroadcasterNetwork } from './broadcaster/broadcasterNetwork'
 import { createBroadcasterController } from './broadcaster/broadcasterController'
@@ -9,34 +14,64 @@ import BroadcasterUI from './broadcaster/BroadcasterUI'
 export default function Broadcaster({
   liveId: initialLiveId,
 }: BroadcasterProps) {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const streamRef = useRef<MediaStream | null>(null)
-  const peerRef = useRef<RTCPeerConnection | null>(null)
+  const videoRef =
+    useRef<HTMLVideoElement | null>(null)
 
-  const liveIdRef = useRef<string | null>(
-    initialLiveId &&
-      initialLiveId !== '1' &&
-      initialLiveId !== 'unknown'
-      ? initialLiveId
-      : null
-  )
+  const streamRef =
+    useRef<MediaStream | null>(null)
 
-  const stoppingRef = useRef(false)
-  const startingRef = useRef(false)
-  const reconnectingRef = useRef(false)
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const mountedRef = useRef(true)
+  const peerRef =
+    useRef<RTCPeerConnection | null>(null)
 
-  const [cameraOn, setCameraOn] = useState(false)
-  const [connecting, setConnecting] = useState(false)
-  const [connected, setConnected] = useState(false)
-  const [isOffline, setIsOffline] = useState(false)
-  const [error, setError] = useState('')
+  const liveIdRef =
+    useRef<string | null>(
+      initialLiveId &&
+        initialLiveId !== '1' &&
+        initialLiveId !== 'unknown'
+        ? initialLiveId
+        : null
+    )
+
+  const stoppingRef =
+    useRef(false)
+
+  const startingRef =
+    useRef(false)
+
+  const reconnectingRef =
+    useRef(false)
+
+  const reconnectTimerRef =
+    useRef<ReturnType<typeof setTimeout> | null>(
+      null
+    )
+
+  const mountedRef =
+    useRef(true)
+
+  const [cameraOn, setCameraOn] =
+    useState(false)
+
+  const [connecting, setConnecting] =
+    useState(false)
+
+  const [connected, setConnected] =
+    useState(false)
+
+  const [isOffline, setIsOffline] =
+    useState(false)
+
+  const [error, setError] =
+    useState('')
 
   function clearReconnectTimer() {
     if (reconnectTimerRef.current) {
-      clearTimeout(reconnectTimerRef.current)
-      reconnectTimerRef.current = null
+      clearTimeout(
+        reconnectTimerRef.current
+      )
+
+      reconnectTimerRef.current =
+        null
     }
   }
 
@@ -65,22 +100,29 @@ export default function Broadcaster({
   useEffect(() => {
     mountedRef.current = true
 
-    const cleanup = setupBroadcasterNetwork({
-      cameraOn,
-      liveIdRef,
-      stoppingRef,
-      mountedRef,
-      peerRef,
-      streamRef,
-      reconnectTimerRef,
-      setIsOffline,
-      setConnected,
-      setConnecting,
-      clearReconnectTimer,
-      reconnect: (liveId, stream) => {
-        void controller.reconnect(liveId, stream)
-      },
-    })
+    const cleanup =
+      setupBroadcasterNetwork({
+        cameraOn,
+        liveIdRef,
+        stoppingRef,
+        mountedRef,
+        peerRef,
+        streamRef,
+        reconnectTimerRef,
+        setIsOffline,
+        setConnected,
+        setConnecting,
+        clearReconnectTimer,
+        reconnect: (
+          liveId,
+          stream
+        ) => {
+          void controller.reconnect(
+            liveId,
+            stream
+          )
+        },
+      })
 
     return cleanup
   }, [cameraOn, controller])
@@ -102,12 +144,22 @@ export default function Broadcaster({
       error={error}
       liveId={liveIdRef.current}
       stopping={stoppingRef.current}
-      onStart={() => void controller.startCamera()}
+      onStart={() =>
+        void controller.startCamera()
+      }
       onStartScreen={() => {
-        console.log('StreetGO: Screen Live button clicked')
+        console.log(
+          'StreetGO: Screen Live button clicked'
+        )
+
         void controller.startScreen()
       }}
-      onStop={() => void controller.stopBroadcast()}
+      onSwitchCamera={() => {
+        void controller.switchCamera()
+      }}
+      onStop={() =>
+        void controller.stopBroadcast()
+      }
     />
   )
 }

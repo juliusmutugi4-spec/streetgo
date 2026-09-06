@@ -15,6 +15,7 @@ import {
 import {
   startBroadcasterMedia,
   stopBroadcasterMedia,
+  switchBroadcasterCamera,
 } from './broadcasterMedia'
 
 import {
@@ -527,9 +528,46 @@ export function createBroadcasterController({
     }
   }
 
-  async function stopCamera() {
-    await stopBroadcast()
+async function stopCamera() {
+  await stopBroadcast()
+}
+
+async function switchCamera() {
+  if (
+    captureMode !== 'camera' ||
+    stoppingRef.current ||
+    !mountedRef.current ||
+    !streamRef.current
+  ) {
+    return
   }
+
+  try {
+    setError('')
+
+    await switchBroadcasterCamera({
+      videoRef,
+      streamRef,
+      peer: peerRef.current,
+    })
+  } catch (err) {
+    console.error(
+      'StreetGO camera switch failed:',
+      err
+    )
+
+    if (
+      !stoppingRef.current &&
+      mountedRef.current
+    ) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to switch camera.'
+      )
+    }
+  }
+}
 
   function cleanup() {
     clearReconnectTimer()
@@ -591,13 +629,14 @@ export function createBroadcasterController({
     }
   }
 
-  return {
-    startCamera,
-    startScreen,
-    stopCamera,
-    stopBroadcast,
-    reconnect,
-    scheduleReconnect,
-    cleanup,
-  }
+return {
+  startCamera,
+  startScreen,
+  switchCamera,
+  stopCamera,
+  stopBroadcast,
+  reconnect,
+  scheduleReconnect,
+  cleanup,
+}
 }
