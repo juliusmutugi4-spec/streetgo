@@ -153,7 +153,7 @@ export async function createViewerConnection(
 
   /*
    * ============================================================
-   * PREPARE VIEWER
+   * PREPARE VIEWER PLAYER
    * ============================================================
    */
 
@@ -265,6 +265,20 @@ export async function createViewerConnection(
           return
         }
 
+        console.log(
+          '🎬 STREETGO VIEWER VIDEO METADATA:',
+          {
+            width:
+              video.videoWidth,
+
+            height:
+              video.videoHeight,
+
+            readyState:
+              video.readyState,
+          }
+        )
+
         setHasVideo(true)
         setError('')
 
@@ -313,6 +327,17 @@ export async function createViewerConnection(
           return
         }
 
+        console.log(
+          '▶️ STREETGO VIEWER PLAYING:',
+          {
+            width:
+              video.videoWidth,
+
+            height:
+              video.videoHeight,
+          }
+        )
+
         setHasVideo(true)
         setConnected(true)
         setConnecting(false)
@@ -344,6 +369,27 @@ export async function createViewerConnection(
         return
       }
 
+      /*
+       * ========================================================
+       * RECEIVED VIDEO QUALITY
+       * ========================================================
+       */
+
+      if (
+        event.track.kind ===
+        'video'
+      ) {
+        console.log(
+          '🎥 STREETGO RECEIVED VIDEO SETTINGS:',
+          event.track.getSettings()
+        )
+
+        console.log(
+          '🎥 STREETGO RECEIVED VIDEO CONSTRAINTS:',
+          event.track.getConstraints()
+        )
+      }
+
       console.log(
         'STREETGO VIEWER TRACK RECEIVED:',
         event.track.kind,
@@ -351,9 +397,11 @@ export async function createViewerConnection(
       )
 
       /*
-       * If the browser gives us the source MediaStream,
-       * copy only tracks that are not already present.
+       * ========================================================
+       * ADD TRACKS TO ONE REMOTE MEDIA STREAM
+       * ========================================================
        */
+
       if (
         event.streams.length
       ) {
@@ -379,10 +427,6 @@ export async function createViewerConnection(
           }
         }
       } else {
-        /*
-         * Some browsers may deliver
-         * the track without a stream.
-         */
         if (
           !remoteStream
             .getTracks()
@@ -399,11 +443,11 @@ export async function createViewerConnection(
       }
 
       /*
-       * Attach the remote track/stream once.
-       *
-       * IMPORTANT:
-       * This is deliberately OUTSIDE the loop above.
+       * ========================================================
+       * ATTACH REMOTE STREAM ONCE
+       * ========================================================
        */
+
       attachViewerTrack(
         remoteStream,
         videoRef,
