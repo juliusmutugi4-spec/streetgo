@@ -33,11 +33,46 @@ export default function HistoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#060608] text-white p-6">
+    <main className="min-h-screen bg-[#0606] text-white p-6">
+
+
 
       <h1 className="text-4xl font-black mb-8">
         📜 Trip History
       </h1>
+<h1 className="text-2xl font-black mb-3 bg-[000000] "> </h1>hi 
+
+<div>
+
+
+    <p className=' 
+    
+    
+
+    
+     grouprelative
+        -aspect-[-3]
+    
+        overflow-hidden
+        rounded-2xl
+        shadow-lg
+        shadow-black/30
+        transition-all
+       hover:shadow-2xl
+       
+  
+       '
+
+
+        >
+    </p>
+
+
+
+
+</div>
+
+
 
       <div className="space-y-4">
 
