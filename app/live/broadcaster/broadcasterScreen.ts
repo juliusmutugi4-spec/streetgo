@@ -49,10 +49,14 @@ export async function startScreenCapture(
     )
   }
 
-  console.log(
-    '🖥️ STREETGO SCREEN CAPTURE SETTINGS:',
-    videoTrack.getSettings(),
-  )
+console.log(
+  '🖥️ STREETGO SCREEN CAPTURE:',
+  {
+    width: videoTrack.getSettings().width,
+    height: videoTrack.getSettings().height,
+    frameRate: videoTrack.getSettings().frameRate,
+  },
+)
 
   const audioTrack =
     stream.getAudioTracks()[0] ?? null
