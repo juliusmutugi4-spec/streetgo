@@ -4,33 +4,58 @@ import type {
 } from './broadcasterScreenTypes'
 
 export async function startScreenCapture(
-  options: ScreenCaptureOptions = {}
+  options: ScreenCaptureOptions = {},
 ): Promise<ScreenCaptureResult> {
   if (!navigator.mediaDevices?.getDisplayMedia) {
-    throw new Error('Screen sharing is not supported by this browser.')
+    throw new Error(
+      'Screen sharing is not supported by this browser.',
+    )
   }
 
-  const frameRate = options.frameRate ?? 30
-  const includeAudio = options.includeAudio ?? true
+  const frameRate = 30
+  const includeAudio =
+    options.includeAudio ?? true
 
-  const stream = await navigator.mediaDevices.getDisplayMedia({
-    video: {
-      frameRate: {
-        ideal: frameRate,
-        max: frameRate,
+  const stream =
+    await navigator.mediaDevices.getDisplayMedia({
+      video: {
+        width: {
+          ideal: 1920,
+          min: 1280,
+        },
+        height: {
+          ideal: 1080,
+          min: 720,
+        },
+        frameRate: {
+          ideal: 30,
+          min: 24,
+          max: 30,
+        },
       },
-    },
-    audio: includeAudio,
-  })
+      audio: includeAudio,
+    })
 
-  const videoTrack = stream.getVideoTracks()[0]
+  const videoTrack =
+    stream.getVideoTracks()[0]
 
   if (!videoTrack) {
-    stream.getTracks().forEach((track) => track.stop())
-    throw new Error('No screen video track was provided.')
+    stream
+      .getTracks()
+      .forEach((track) => track.stop())
+
+    throw new Error(
+      'No screen video track was provided.',
+    )
   }
 
-  const audioTrack = stream.getAudioTracks()[0] ?? null
+  console.log(
+    '🖥️ STREETGO SCREEN CAPTURE SETTINGS:',
+    videoTrack.getSettings(),
+  )
+
+  const audioTrack =
+    stream.getAudioTracks()[0] ?? null
 
   return {
     stream,
@@ -39,29 +64,42 @@ export async function startScreenCapture(
   }
 }
 
-export function stopScreenCapture(stream: MediaStream | null) {
+export function stopScreenCapture(
+  stream: MediaStream | null,
+) {
   if (!stream) return
 
-  stream.getTracks().forEach((track) => {
-    track.stop()
-  })
+  stream
+    .getTracks()
+    .forEach((track) => {
+      track.stop()
+    })
 }
 
 export function watchScreenCaptureEnded(
   stream: MediaStream,
-  onEnded: () => void
+  onEnded: () => void,
 ) {
-  const videoTrack = stream.getVideoTracks()[0]
+  const videoTrack =
+    stream.getVideoTracks()[0]
 
-  if (!videoTrack) return () => {}
+  if (!videoTrack) {
+    return () => {}
+  }
 
   const handleEnded = () => {
     onEnded()
   }
 
-  videoTrack.addEventListener('ended', handleEnded)
+  videoTrack.addEventListener(
+    'ended',
+    handleEnded,
+  )
 
   return () => {
-    videoTrack.removeEventListener('ended', handleEnded)
+    videoTrack.removeEventListener(
+      'ended',
+      handleEnded,
+    )
   }
 }

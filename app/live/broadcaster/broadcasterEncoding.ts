@@ -19,35 +19,46 @@ export async function configureBroadcasterVideoSender(
     parameters.encodings[0]
 
   /*
-   * Keep the encoder active and let
-   * WebRTC react to bandwidth changes.
+   * Keep the encoder active.
    */
   encoding.active = true
 
   /*
-   * Prefer maintaining frame rate
-   * while allowing WebRTC to reduce
-   * resolution when necessary.
-   */
-;(encoding as RTCRtpEncodingParameters & {
-  degradationPreference?: 'maintain-resolution' | 'balanced' | 'maintain-framerate'
-}).degradationPreference =
-  mode === 'screen' ? 'maintain-resolution' : 'balanced'
-
-  /*
-   * Do not request an artificially
-   * high frame rate from the encoder.
-   */
-  encoding.maxFramerate =
-    mode === 'screen'
-      ? 30
-      : 30
-
-  /*
-   * Initial bitrate targets.
+   * Screen recording:
+   * prioritize keeping the original resolution.
    *
-   * Adaptive quality will modify
-   * maxBitrate later.
+   * Camera:
+   * use balanced adaptation.
+   */
+  ;(
+    encoding as RTCRtpEncodingParameters & {
+      degradationPreference?:
+        | 'maintain-resolution'
+        | 'balanced'
+        | 'maintain-framerate'
+    }
+  ).degradationPreference =
+    mode === 'screen'
+      ? 'maintain-resolution'
+      : 'balanced'
+
+  /*
+   * Keep both camera and screen
+   * recording smooth at 30 FPS.
+   */
+  encoding.maxFramerate = 30
+
+  /*
+   * High-quality initial bitrate.
+   *
+   * Screen:
+   * 5 Mbps
+   *
+   * Camera:
+   * 2.5 Mbps
+   *
+   * Adaptive quality can change this
+   * later when network conditions change.
    */
   if (
     typeof encoding.maxBitrate !==
@@ -55,16 +66,16 @@ export async function configureBroadcasterVideoSender(
   ) {
     encoding.maxBitrate =
       mode === 'screen'
-        ? 3_500_000
+        ? 5_000_000
         : 2_500_000
   }
 
   /*
-   * Keep one encoding layer.
+   * Use one encoding layer.
    *
-   * We are deliberately not enabling
-   * simulcast yet because the current
-   * backend expects a single stream.
+   * Simulcast is intentionally disabled
+   * because the current backend expects
+   * a single video stream.
    */
   parameters.encodings =
     [encoding]
@@ -75,12 +86,10 @@ export async function configureBroadcasterVideoSender(
     )
   } catch (error) {
     /*
-     * Some browsers expose only part
-     * of RTCRtpEncodingParameters.
+     * Some browsers may reject
+     * degradationPreference.
      *
-     * If degradationPreference is not
-     * accepted, retry with the essential
-     * parameters only.
+     * Retry using essential parameters.
      */
     console.warn(
       'StreetGO Broadcaster: advanced encoding parameters were rejected. Retrying with safe parameters.',
@@ -108,7 +117,7 @@ export async function configureBroadcasterVideoSender(
 
     retryEncoding.maxBitrate =
       mode === 'screen'
-        ? 3_500_000
+        ? 5_000_000
         : 2_500_000
 
     try {
@@ -141,10 +150,14 @@ export function getBroadcasterCodecPreferences(
     capabilities.codecs
 
   /*
-   * Prefer modern efficient codecs.
+   * Screen recording:
+   * VP9 is preferred because it is
+   * generally efficient for detailed
+   * screen content.
    *
-   * We don't force a codec if the
-   * browser/backend doesn't support it.
+   * Camera:
+   * VP8 remains the first preference
+   * in the current StreetGO setup.
    */
   const preferredNames =
     mode === 'screen'

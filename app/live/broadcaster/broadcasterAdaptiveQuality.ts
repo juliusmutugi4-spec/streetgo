@@ -27,7 +27,7 @@ const CAMERA_HIGH: AdaptiveQualityState = {
 
 const CAMERA_MEDIUM: AdaptiveQualityState = {
   level: 'medium',
-  maxBitrate: 1_200_000,
+  maxBitrate: 1_800_000,
   maxFramerate: 30,
   scaleDown: 1,
 }
@@ -35,13 +35,13 @@ const CAMERA_MEDIUM: AdaptiveQualityState = {
 const CAMERA_LOW: AdaptiveQualityState = {
   level: 'low',
   maxBitrate: 600_000,
-  maxFramerate: 24,
+  maxFramerate: 30,
   scaleDown: 1.5,
 }
 
 const SCREEN_HIGH: AdaptiveQualityState = {
   level: 'high',
-  maxBitrate: 3_500_000,
+  maxBitrate: 5_000_000,
   maxFramerate: 30,
   scaleDown: 1,
 }
@@ -55,11 +55,10 @@ const SCREEN_MEDIUM: AdaptiveQualityState = {
 
 const SCREEN_LOW: AdaptiveQualityState = {
   level: 'low',
-  maxBitrate: 900_000,
-  maxFramerate: 24,
+  maxBitrate: 1_200_000,
+  maxFramerate: 30,
   scaleDown: 1,
 }
-
 const MIN_LEVEL_HOLD_MS = 8_000
 const BAD_SAMPLE_COUNT = 2
 const GOOD_SAMPLE_COUNT = 4
