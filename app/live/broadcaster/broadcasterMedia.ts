@@ -70,11 +70,18 @@ export async function startBroadcasterMedia({
       await navigator.mediaDevices.getUserMedia({
         video: {
           width: {
-            ideal: 1280,
+            ideal: 1920,
+            min: 1280,
           },
 
           height: {
-            ideal: 720,
+            ideal: 1080,
+            min: 720,
+          },
+
+          frameRate: {
+            ideal: 30,
+            min: 24,
           },
 
           facingMode:
@@ -95,6 +102,22 @@ export async function startBroadcasterMedia({
 
     streamRef.current =
       stream
+
+    /*
+     * ========================================================
+     * VERIFY ACTUAL CAMERA SETTINGS
+     * ========================================================
+     */
+
+    const videoTrack =
+      stream.getVideoTracks()[0]
+
+    if (videoTrack) {
+      console.log(
+        '🎥 StreetGO CAMERA SETTINGS:',
+        videoTrack.getSettings()
+      )
+    }
 
     if (videoRef.current) {
       videoRef.current.srcObject =
@@ -204,11 +227,18 @@ export async function switchBroadcasterCamera({
       await navigator.mediaDevices.getUserMedia({
         video: {
           width: {
-            ideal: 1280,
+            ideal: 1920,
+            min: 1280,
           },
 
           height: {
-            ideal: 720,
+            ideal: 1080,
+            min: 720,
+          },
+
+          frameRate: {
+            ideal: 30,
+            min: 24,
           },
 
           facingMode:
@@ -226,6 +256,17 @@ export async function switchBroadcasterCamera({
         'The other camera could not be opened.'
       )
     }
+
+    /*
+     * ========================================================
+     * VERIFY NEW CAMERA SETTINGS
+     * ========================================================
+     */
+
+    console.log(
+      '🎥 StreetGO SWITCHED CAMERA SETTINGS:',
+      newVideoTrack.getSettings()
+    )
 
     const videoSender =
       peer
@@ -274,7 +315,11 @@ export async function switchBroadcasterCamera({
     newStream = null
 
     console.log(
-      `StreetGO: switched to ${nextFacingMode === 'user' ? 'front' : 'back'} camera.`
+      `StreetGO: switched to ${
+        nextFacingMode === 'user'
+          ? 'front'
+          : 'back'
+      } camera.`
     )
   } catch (err) {
     if (newStream) {
