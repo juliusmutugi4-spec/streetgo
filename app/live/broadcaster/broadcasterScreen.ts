@@ -12,7 +12,6 @@ export async function startScreenCapture(
     )
   }
 
-  const frameRate = 30
   const includeAudio =
     options.includeAudio ?? true
 
@@ -21,16 +20,12 @@ export async function startScreenCapture(
       video: {
         width: {
           ideal: 1920,
-          min: 1280,
         },
         height: {
           ideal: 1080,
-          min: 720,
         },
         frameRate: {
           ideal: 30,
-          min: 24,
-          max: 30,
         },
       },
       audio: includeAudio,
@@ -49,14 +44,17 @@ export async function startScreenCapture(
     )
   }
 
-console.log(
-  '🖥️ STREETGO SCREEN CAPTURE:',
-  {
-    width: videoTrack.getSettings().width,
-    height: videoTrack.getSettings().height,
-    frameRate: videoTrack.getSettings().frameRate,
-  },
-)
+  const settings =
+    videoTrack.getSettings()
+
+  console.log(
+    '🖥️ STREETGO SCREEN CAPTURE:',
+    {
+      width: settings.width,
+      height: settings.height,
+      frameRate: settings.frameRate,
+    },
+  )
 
   const audioTrack =
     stream.getAudioTracks()[0] ?? null
