@@ -24,7 +24,7 @@ export interface ViewerPlaybackWatchdogOptions {
 }
 
 const CHECK_INTERVAL_MS = 2000
-const STALL_AFTER_MS = 6000
+const STALL_AFTER_MS = 12000
 
 const watchdogs = new WeakMap<
   RTCPeerConnection,
