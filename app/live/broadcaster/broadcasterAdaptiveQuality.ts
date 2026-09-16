@@ -59,6 +59,7 @@ const SCREEN_LOW: AdaptiveQualityState = {
   maxFramerate: 30,
   scaleDown: 1,
 }
+
 const MIN_LEVEL_HOLD_MS = 8_000
 const BAD_SAMPLE_COUNT = 2
 const GOOD_SAMPLE_COUNT = 4
@@ -67,10 +68,18 @@ export interface AdaptiveQualityController {
   evaluate: (
     stats: BroadcasterStats,
   ) => void
-  getLevel: () => BroadcasterQualityLevel
-  applyHigh: () => Promise<void>
-  applyMedium: () => Promise<void>
-  applyLow: () => Promise<void>
+
+  getLevel: () =>
+    BroadcasterQualityLevel
+
+  applyHigh: () =>
+    Promise<void>
+
+  applyMedium: () =>
+    Promise<void>
+
+  applyLow: () =>
+    Promise<void>
 }
 
 export function createAdaptiveQualityController(
@@ -85,33 +94,8 @@ export function createAdaptiveQualityController(
 
   let badSamples = 0
   let goodSamples = 0
+
   let lastChangeAt = 0
-
-  function getQualityState(
-    level: BroadcasterQualityLevel,
-  ): AdaptiveQualityState {
-    if (mode === 'screen') {
-      if (level === 'high') {
-        return SCREEN_HIGH
-      }
-
-      if (level === 'medium') {
-        return SCREEN_MEDIUM
-      }
-
-      return SCREEN_LOW
-    }
-
-    if (level === 'high') {
-      return CAMERA_HIGH
-    }
-
-    if (level === 'medium') {
-      return CAMERA_MEDIUM
-    }
-
-    return CAMERA_LOW
-  }
 
   async function applyQuality(
     state: AdaptiveQualityState,
@@ -185,6 +169,32 @@ export function createAdaptiveQualityController(
     }
   }
 
+  function getQualityState(
+    level: BroadcasterQualityLevel,
+  ): AdaptiveQualityState {
+    if (mode === 'screen') {
+      if (level === 'high') {
+        return SCREEN_HIGH
+      }
+
+      if (level === 'medium') {
+        return SCREEN_MEDIUM
+      }
+
+      return SCREEN_LOW
+    }
+
+    if (level === 'high') {
+      return CAMERA_HIGH
+    }
+
+    if (level === 'medium') {
+      return CAMERA_MEDIUM
+    }
+
+    return CAMERA_LOW
+  }
+
   function evaluate(
     stats: BroadcasterStats,
   ) {
@@ -203,35 +213,28 @@ export function createAdaptiveQualityController(
     const rtt =
       stats.rtt ?? 0
 
-    const bitrate =
-      stats.bitrate
-
     /*
-     * Screen sharing gets a little
-     * more bitrate because text and
-     * UI details need to remain sharp.
+     * IMPORTANT:
+     *
+     * Bitrate alone is NOT considered
+     * proof of a bad network.
+     *
+     * A screen can naturally use very
+     * little bitrate when nothing is
+     * changing.
      */
     const poorNetwork =
       packetLoss >= 0.08 ||
-      rtt >= 0.8 ||
-      (
-        bitrate > 0 &&
-        (
-          mode === 'screen'
-            ? bitrate < 500_000
-            : bitrate < 350_000
-        )
-      )
+      rtt >= 0.8
 
+    /*
+     * Good network is determined from
+     * packet loss + latency rather than
+     * requiring a specific video bitrate.
+     */
     const goodNetwork =
       packetLoss <= 0.02 &&
-      rtt < 0.3 &&
-      bitrate >=
-        (
-          mode === 'screen'
-            ? 1_000_000
-            : 700_000
-        )
+      rtt < 0.3
 
     if (poorNetwork) {
       badSamples++
