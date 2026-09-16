@@ -23,7 +23,7 @@ export interface ViewerRecoveryOptions {
   reconnect: () => void
 }
 
-const RETRY_DELAY_MS = 3000
+const RETRY_DELAY_MS = 8000
 
 let recoveryInProgress = false
 
