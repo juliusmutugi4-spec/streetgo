@@ -143,20 +143,14 @@ export function createAdaptiveQualityController(
       lastChangeAt =
         Date.now()
 
-      console.log(
-        'StreetGO Adaptive Quality:',
-        {
-          mode,
-          level:
-            state.level,
-          bitrate:
-            state.maxBitrate,
-          fps:
-            state.maxFramerate,
-          scaleDown:
-            state.scaleDown,
-        },
-      )
+console.log(
+  'STREETGO ADAPTIVE QUALITY:',
+  `mode=${mode}`,
+  `level=${state.level}`,
+  `maxBitrate=${state.maxBitrate}`,
+  `fps=${state.maxFramerate}`,
+  `scaleDown=${state.scaleDown}`,
+)
 
       onQualityChange?.(
         state,
