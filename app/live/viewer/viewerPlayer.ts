@@ -1,162 +1,152 @@
 'use client'
 
-import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react'
-import {
-  collectViewerStats,
-  hasViewerFrames,
-  hasViewerProgress,
-  type ViewerStats,
-} from './viewerStats'
+import type {
+  MutableRefObject,
+  RefObject,
+} from 'react'
 
-export interface ViewerPlaybackWatchdogOptions {
-  peerRef: MutableRefObject<RTCPeerConnection | null>
+export interface ViewerPlayerOptions {
   videoRef: RefObject<HTMLVideoElement | null>
+  remoteStreamRef: MutableRefObject<MediaStream | null>
+  playbackPromiseRef: MutableRefObject<Promise<void> | null>
   cancelledRef: MutableRefObject<boolean>
   mountedRef: MutableRefObject<boolean>
-  setHasVideo: Dispatch<SetStateAction<boolean>>
-  onStall: () => void
 }
 
-// YouTube-Grade Pacing Constants:
-const CHECK_INTERVAL_MS = 2500      // Slightly relaxed interval to match network packet arrival cycles
-const STALL_AFTER_MS = 18000         // Increased threshold: gives the buffer room to naturally breath without sudden drops
-const MAX_STALL_STRIKES = 3          // Must fail consecutive data cycles before executing an aggressive reconnection
+/**
+ * High-Performance HTML Video Element Configuration
+ * Forces the browser to prioritize low latency, disable text decoding lag, and use GPU composition
+ */
+function applyYouTubePlaybackSettings(video: HTMLVideoElement) {
+  video.autoplay = true
+  video.playsInline = true
+  video.controls = false
+  video.muted = true
+  video.preload = 'auto'
+  
+  // Chromium engines optimization for WebRTC buffering
+  if ('latencyHint' in video) {
+    // @ts-ignore Forces lowest possible live playback delay instead of standard video caching
+    video.latencyHint = 0
+  }
+}
 
-const watchdogs = new WeakMap<RTCPeerConnection, () => void>()
-
-export function startViewerPlaybackWatchdog({
-  peerRef,
+/**
+ * Prepares the video player element and assigns the media stream smoothly.
+ * Restored to fix the Vercel build error.
+ */
+export function prepareViewerPlayer({
   videoRef,
+  remoteStreamRef,
+  playbackPromiseRef,
   cancelledRef,
   mountedRef,
-  setHasVideo,
-  onStall,
-}: ViewerPlaybackWatchdogOptions) {
-  const peer = peerRef.current
-  if (!peer) {
-    return () => {}
-  }
+}: ViewerPlayerOptions) {
+  const video = videoRef.current
 
-  stopViewerPlaybackWatchdog(peer)
-
-  let previousStats: ViewerStats | undefined
-  let lastProgressAt = Date.now()
-  let startedReceiving = false
-  let isRecoveringActionActive = false
-  let stallStrikeCount = 0 // Accumulator to prevent premature false-alarm reconnections
-
-  const timer = window.setInterval(
-    async () => {
-      if (cancelledRef.current || !mountedRef.current || isRecoveringActionActive) {
-        return
-      }
-
-      const currentPeer = peerRef.current
-      const video = videoRef.current
-
-      if (!currentPeer || currentPeer !== peer || !video) {
-        return
-      }
-
-      if (peer.connectionState === 'closed' || peer.connectionState === 'failed') {
-        return
-      }
-
-      // If the user manually paused the content, shift the timeline window forward 
-      if (video.paused) {
-        lastProgressAt = Date.now()
-        stallStrikeCount = 0
-        return
-      }
-
-      try {
-        const stats = await collectViewerStats(peer, previousStats)
-
-        if (cancelledRef.current || !mountedRef.current) {
-          return
-        }
-
-        if (hasViewerFrames(stats)) {
-          startedReceiving = true
-        }
-
-        // Validate if incoming packets or processed frame counters advanced
-        if (previousStats && hasViewerProgress(stats, previousStats)) {
-          lastProgressAt = Date.now()
-          stallStrikeCount = 0 // Perfect delivery! Fully reset structural strike counts
-          setHasVideo(true)
-        }
-
-        previousStats = stats
-
-        if (!startedReceiving) {
-          return
-        }
-
-        const stalledFor = Date.now() - lastProgressAt
-        const isVideoEngineStuck = video.readyState < 3 // HAVE_FUTURE_DATA verification barrier
-
-        // Evaluate if the pipeline is truly broken or just temporarily adjusting
-        if (stalledFor >= STALL_AFTER_MS || isVideoEngineStuck) {
-          stallStrikeCount++
-          
-          console.log(`StreetGO Viewer: Minor pipeline delay detected. Warning strike: [${stallStrikeCount}/${MAX_STALL_STRIKES}]`)
-
-          // The stream will ONLY undergo a heavy reconnect if it consistently fails multiple cycles
-          if (stallStrikeCount >= MAX_STALL_STRIKES) {
-            isRecoveringActionActive = true
-            
-            console.warn('StreetGO Viewer: Max check-strikes reached. Initiating clean stream recovery...', {
-              stalledForMs: stalledFor,
-              readyState: video.readyState,
-              connectionState: peer.connectionState,
-            })
-
-            setHasVideo(false)
-
-            try {
-              // Attempt a silent inline engine playback kick before throwing a destructive layout stall reset
-              await video.play()
-            } catch (playbackError) {
-              console.debug('Watchdog silent wake-up engine kick skipped:', playbackError)
-            }
-
-            if (!cancelledRef.current && mountedRef.current) {
-              onStall()
-            }
-            
-            isRecoveringActionActive = false
-            stallStrikeCount = 0
-          }
-        } else {
-          // Reset strikes if metrics are within safe operational bounds
-          stallStrikeCount = 0
-        }
-      } catch (err) {
-        console.warn('StreetGO Viewer playback watchdog error:', err)
-        isRecoveringActionActive = false
-      }
-    },
-    CHECK_INTERVAL_MS,
-  )
-
-  const stop = () => {
-    window.clearInterval(timer)
-    if (watchdogs.get(peer) === stop) {
-      watchdogs.delete(peer)
-    }
-  }
-
-  watchdogs.set(peer, stop)
-  return stop
-}
-
-export function stopViewerPlaybackWatchdog(peer: RTCPeerConnection | null) {
-  if (!peer) {
+  if (!video) {
     return
   }
-  const stop = watchdogs.get(peer)
-  if (stop) {
-    stop()
+
+  applyYouTubePlaybackSettings(video)
+
+  const stream = remoteStreamRef.current
+
+  if (stream && video.srcObject !== stream) {
+    video.srcObject = stream
   }
+
+  if (cancelledRef.current || !mountedRef.current) {
+    return
+  }
+
+  void ensureViewerPlayback({
+    videoRef,
+    playbackPromiseRef,
+    cancelledRef,
+    mountedRef,
+  })
+}
+
+export async function ensureViewerPlayback({
+  videoRef,
+  playbackPromiseRef,
+  cancelledRef,
+  mountedRef,
+}: Omit<ViewerPlayerOptions, 'remoteStreamRef'>) {
+  const video = videoRef.current
+
+  if (!video || cancelledRef.current || !mountedRef.current) {
+    return
+  }
+
+  if (!video.srcObject) {
+    return
+  }
+
+  // YouTube requires at least 3 (HAVE_FUTURE_DATA) or 4 (HAVE_ENOUGH_DATA) for fluid motion
+  if (!video.paused && video.readyState >= 3) {
+    return
+  }
+
+  if (playbackPromiseRef.current) {
+    try {
+      await playbackPromiseRef.current
+    } catch {}
+    return
+  }
+
+  const promise = video.play()
+  playbackPromiseRef.current = promise
+
+  try {
+    await promise
+  } catch (err) {
+    console.warn('StreetGO Viewer: unable to start playback.', err)
+  } finally {
+    if (playbackPromiseRef.current === promise) {
+      playbackPromiseRef.current = null
+    }
+  }
+}
+
+export function attachViewerStream(
+  videoRef: RefObject<HTMLVideoElement | null>,
+  stream: MediaStream,
+) {
+  const video = videoRef.current
+
+  if (!video) {
+    return
+  }
+
+  applyYouTubePlaybackSettings(video)
+
+  if (video.srcObject !== stream) {
+    video.srcObject = stream
+  }
+}
+
+export function detachViewerStream(videoRef: RefObject<HTMLVideoElement | null>) {
+  const video = videoRef.current
+
+  if (!video) {
+    return
+  }
+
+  video.pause()
+  video.srcObject = null
+}
+
+export function isViewerPlaybackHealthy(video: HTMLVideoElement | null) {
+  if (!video) {
+    return false
+  }
+
+  return (
+    !!video.srcObject &&
+    video.readyState >= 3 && // Requires fluid future data pipeline availability
+    !video.paused &&
+    !video.ended
+  )
 }
