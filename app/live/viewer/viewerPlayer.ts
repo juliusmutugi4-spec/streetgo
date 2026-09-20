@@ -1,181 +1,162 @@
 'use client'
 
-import type {
-  MutableRefObject,
-  RefObject,
-} from 'react'
+import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react'
+import {
+  collectViewerStats,
+  hasViewerFrames,
+  hasViewerProgress,
+  type ViewerStats,
+} from './viewerStats'
 
-export interface ViewerPlayerOptions {
+export interface ViewerPlaybackWatchdogOptions {
+  peerRef: MutableRefObject<RTCPeerConnection | null>
   videoRef: RefObject<HTMLVideoElement | null>
-  remoteStreamRef: MutableRefObject<MediaStream | null>
-  playbackPromiseRef: MutableRefObject<Promise<void> | null>
   cancelledRef: MutableRefObject<boolean>
   mountedRef: MutableRefObject<boolean>
+  setHasVideo: Dispatch<SetStateAction<boolean>>
+  onStall: () => void
 }
 
-/**
- * High-Performance HTML Video Element Configuration
- * Forces the browser to prioritize low latency, disable text decoding lag, and use GPU composition
- */
-function applyYouTubePlaybackSettings(video: HTMLVideoElement) {
-  video.autoplay = true
-  video.playsInline = true
-  video.controls = false
-  video.muted = true
-  
-  // YouTube player level optimizations:
-  video.preload = 'auto'
-  
-  // Non-standard attribute for Chromium engines to optimize WebRTC buffering
-  // @ts-ignore
-  if ('latencyHint' in video) {
-    // @ts-ignore Forces lowest possible live playback delay instead of standard video caching
-    video.latencyHint = 0
-  }
-}
+// YouTube-Grade Pacing Constants:
+const CHECK_INTERVAL_MS = 2500      // Slightly relaxed interval to match network packet arrival cycles
+const STALL_AFTER_MS = 18000         // Increased threshold: gives the buffer room to naturally breath without sudden drops
+const MAX_STALL_STRIKES = 3          // Must fail consecutive data cycles before executing an aggressive reconnection
 
-export function prepareViewerPlayer({
+const watchdogs = new WeakMap<RTCPeerConnection, () => void>()
+
+export function startViewerPlaybackWatchdog({
+  peerRef,
   videoRef,
-  remoteStreamRef,
-  playbackPromiseRef,
   cancelledRef,
   mountedRef,
-}: ViewerPlayerOptions) {
-  const video = videoRef.current
-
-  if (!video) {
-    return
+  setHasVideo,
+  onStall,
+}: ViewerPlaybackWatchdogOptions) {
+  const peer = peerRef.current
+  if (!peer) {
+    return () => {}
   }
 
-  applyYouTubePlaybackSettings(video)
+  stopViewerPlaybackWatchdog(peer)
 
-  const stream = remoteStreamRef.current
+  let previousStats: ViewerStats | undefined
+  let lastProgressAt = Date.now()
+  let startedReceiving = false
+  let isRecoveringActionActive = false
+  let stallStrikeCount = 0 // Accumulator to prevent premature false-alarm reconnections
 
-  if (
-    stream &&
-    video.srcObject !== stream
-  ) {
-    video.srcObject = stream
-  }
+  const timer = window.setInterval(
+    async () => {
+      if (cancelledRef.current || !mountedRef.current || isRecoveringActionActive) {
+        return
+      }
 
-  if (
-    cancelledRef.current ||
-    !mountedRef.current
-  ) {
-    return
-  }
+      const currentPeer = peerRef.current
+      const video = videoRef.current
 
-  void ensureViewerPlayback({
-    videoRef,
-    playbackPromiseRef,
-    cancelledRef,
-    mountedRef,
-  })
-}
+      if (!currentPeer || currentPeer !== peer || !video) {
+        return
+      }
 
-export async function ensureViewerPlayback({
-  videoRef,
-  playbackPromiseRef,
-  cancelledRef,
-  mountedRef,
-}: Omit<
-  ViewerPlayerOptions,
-  'remoteStreamRef'
->) {
-  const video = videoRef.current
+      if (peer.connectionState === 'closed' || peer.connectionState === 'failed') {
+        return
+      }
 
-  if (
-    !video ||
-    cancelledRef.current ||
-    !mountedRef.current
-  ) {
-    return
-  }
+      // If the user manually paused the content, shift the timeline window forward 
+      if (video.paused) {
+        lastProgressAt = Date.now()
+        stallStrikeCount = 0
+        return
+      }
 
-  if (!video.srcObject) {
-    return
-  }
+      try {
+        const stats = await collectViewerStats(peer, previousStats)
 
-  // ReadyState 2 = HAVE_CURRENT_DATA. YouTube requires at least 3 (HAVE_FUTURE_DATA) or 4 (HAVE_ENOUGH_DATA) for fluid motion
-  if (
-    !video.paused &&
-    video.readyState >= 3
-  ) {
-    return
-  }
+        if (cancelledRef.current || !mountedRef.current) {
+          return
+        }
 
-  if (
-    playbackPromiseRef.current
-  ) {
-    try {
-      await playbackPromiseRef.current
-    } catch {}
+        if (hasViewerFrames(stats)) {
+          startedReceiving = true
+        }
 
-    return
-  }
+        // Validate if incoming packets or processed frame counters advanced
+        if (previousStats && hasViewerProgress(stats, previousStats)) {
+          lastProgressAt = Date.now()
+          stallStrikeCount = 0 // Perfect delivery! Fully reset structural strike counts
+          setHasVideo(true)
+        }
 
-  const promise = video.play()
+        previousStats = stats
 
-  playbackPromiseRef.current = promise
+        if (!startedReceiving) {
+          return
+        }
 
-  try {
-    await promise
-  } catch (err) {
-    console.warn(
-      'StreetGO Viewer: unable to start playback.',
-      err,
-    )
-  } finally {
-    if (
-      playbackPromiseRef.current ===
-      promise
-    ) {
-      playbackPromiseRef.current = null
+        const stalledFor = Date.now() - lastProgressAt
+        const isVideoEngineStuck = video.readyState < 3 // HAVE_FUTURE_DATA verification barrier
+
+        // Evaluate if the pipeline is truly broken or just temporarily adjusting
+        if (stalledFor >= STALL_AFTER_MS || isVideoEngineStuck) {
+          stallStrikeCount++
+          
+          console.log(`StreetGO Viewer: Minor pipeline delay detected. Warning strike: [${stallStrikeCount}/${MAX_STALL_STRIKES}]`)
+
+          // The stream will ONLY undergo a heavy reconnect if it consistently fails multiple cycles
+          if (stallStrikeCount >= MAX_STALL_STRIKES) {
+            isRecoveringActionActive = true
+            
+            console.warn('StreetGO Viewer: Max check-strikes reached. Initiating clean stream recovery...', {
+              stalledForMs: stalledFor,
+              readyState: video.readyState,
+              connectionState: peer.connectionState,
+            })
+
+            setHasVideo(false)
+
+            try {
+              // Attempt a silent inline engine playback kick before throwing a destructive layout stall reset
+              await video.play()
+            } catch (playbackError) {
+              console.debug('Watchdog silent wake-up engine kick skipped:', playbackError)
+            }
+
+            if (!cancelledRef.current && mountedRef.current) {
+              onStall()
+            }
+            
+            isRecoveringActionActive = false
+            stallStrikeCount = 0
+          }
+        } else {
+          // Reset strikes if metrics are within safe operational bounds
+          stallStrikeCount = 0
+        }
+      } catch (err) {
+        console.warn('StreetGO Viewer playback watchdog error:', err)
+        isRecoveringActionActive = false
+      }
+    },
+    CHECK_INTERVAL_MS,
+  )
+
+  const stop = () => {
+    window.clearInterval(timer)
+    if (watchdogs.get(peer) === stop) {
+      watchdogs.delete(peer)
     }
   }
+
+  watchdogs.set(peer, stop)
+  return stop
 }
 
-export function attachViewerStream(
-  videoRef: RefObject<HTMLVideoElement | null>,
-  stream: MediaStream,
-) {
-  const video = videoRef.current
-
-  if (!video) {
+export function stopViewerPlaybackWatchdog(peer: RTCPeerConnection | null) {
+  if (!peer) {
     return
   }
-
-  applyYouTubePlaybackSettings(video)
-
-  if (video.srcObject !== stream) {
-    video.srcObject = stream
+  const stop = watchdogs.get(peer)
+  if (stop) {
+    stop()
   }
-}
-
-export function detachViewerStream(
-  videoRef: RefObject<HTMLVideoElement | null>,
-) {
-  const video = videoRef.current
-
-  if (!video) {
-    return
-  }
-
-  video.pause()
-  video.srcObject = null
-}
-
-export function isViewerPlaybackHealthy(
-  video: HTMLVideoElement | null,
-) {
-  if (!video) {
-    return false
-  }
-
-  return (
-    !!video.srcObject &&
-    video.readyState >= 3 && // Raised standard from 2 to 3 to verify fluid future data pipeline availability
-    !video.paused &&
-    !video.ended
-  )
 }
