@@ -1,12 +1,6 @@
 'use client'
 
-import type {
-  Dispatch,
-  MutableRefObject,
-  RefObject,
-  SetStateAction,
-} from 'react'
-
+import type { Dispatch, MutableRefObject, RefObject, SetStateAction } from 'react'
 import {
   collectViewerStats,
   hasViewerFrames,
@@ -26,10 +20,7 @@ export interface ViewerPlaybackWatchdogOptions {
 const CHECK_INTERVAL_MS = 2000
 const STALL_AFTER_MS = 12000
 
-const watchdogs = new WeakMap<
-  RTCPeerConnection,
-  () => void
->()
+const watchdogs = new WeakMap<RTCPeerConnection, () => void>()
 
 export function startViewerPlaybackWatchdog({
   peerRef,
@@ -40,7 +31,6 @@ export function startViewerPlaybackWatchdog({
   onStall,
 }: ViewerPlaybackWatchdogOptions) {
   const peer = peerRef.current
-
   if (!peer) {
     return () => {}
   }
@@ -50,47 +40,36 @@ export function startViewerPlaybackWatchdog({
   let previousStats: ViewerStats | undefined
   let lastProgressAt = Date.now()
   let startedReceiving = false
-  let recovering = false
+  let isRecoveringActionActive = false
 
   const timer = window.setInterval(
     async () => {
-      if (
-        cancelledRef.current ||
-        !mountedRef.current ||
-        recovering
-      ) {
+      // 1. Guard immediate execution closures
+      if (cancelledRef.current || !mountedRef.current || isRecoveringActionActive) {
         return
       }
 
       const currentPeer = peerRef.current
       const video = videoRef.current
 
-      if (
-        !currentPeer ||
-        currentPeer !== peer ||
-        !video
-      ) {
+      if (!currentPeer || currentPeer !== peer || !video) {
         return
       }
 
-      if (
-        peer.connectionState === 'closed' ||
-        peer.connectionState === 'failed'
-      ) {
+      if (peer.connectionState === 'closed' || peer.connectionState === 'failed') {
+        return
+      }
+
+      // 2. YouTube-like behavior: If the user paused it, don't flag a progress stall
+      if (video.paused) {
+        lastProgressAt = Date.now() // Shift window forward smoothly
         return
       }
 
       try {
-        const stats =
-          await collectViewerStats(
-            peer,
-            previousStats,
-          )
+        const stats = await collectViewerStats(peer, previousStats)
 
-        if (
-          cancelledRef.current ||
-          !mountedRef.current
-        ) {
+        if (cancelledRef.current || !mountedRef.current) {
           return
         }
 
@@ -98,13 +77,8 @@ export function startViewerPlaybackWatchdog({
           startedReceiving = true
         }
 
-        if (
-          previousStats &&
-          hasViewerProgress(
-            stats,
-            previousStats,
-          )
-        ) {
+        // Check if data packets or rendering frames progressed
+        if (previousStats && hasViewerProgress(stats, previousStats)) {
           lastProgressAt = Date.now()
           setHasVideo(true)
         }
@@ -115,78 +89,58 @@ export function startViewerPlaybackWatchdog({
           return
         }
 
-        const stalledFor =
-          Date.now() - lastProgressAt
+        const stalledFor = Date.now() - lastProgressAt
+        const isVideoEngineStuck = video.readyState < 2 // HAVE_CURRENT_DATA or lower
 
-        const videoStopped =
-          video.paused ||
-          video.readyState < 2
-
-        if (
-          stalledFor >= STALL_AFTER_MS
-        ) {
-          recovering = true
-
-          console.warn(
-            'StreetGO Viewer: playback stalled. Reconnecting...',
-            {
-              stalledForMs: stalledFor,
-              readyState:
-                video.readyState,
-              paused: video.paused,
-              connectionState:
-                peer.connectionState,
-            },
-          )
+        if (stalledFor >= STALL_AFTER_MS || isVideoEngineStuck) {
+          isRecoveringActionActive = true
+          
+          console.warn('StreetGO Viewer: playback stalled. Reconnecting...', {
+            stalledForMs: stalledFor,
+            readyState: video.readyState,
+            connectionState: peer.connectionState,
+          })
 
           setHasVideo(false)
 
           try {
+            // Attempt an inline engine wake-up kick before hard component stalling
             await video.play()
-          } catch {}
+          } catch (playbackError) {
+            console.debug('Watchdog engine kick-start skipped:', playbackError)
+          }
 
-          if (
-            !cancelledRef.current &&
-            mountedRef.current
-          ) {
+          // Double check context hasn't changed during the microtask execution
+          if (!cancelledRef.current && mountedRef.current) {
             onStall()
           }
+          
+          isRecoveringActionActive = false
         }
       } catch (err) {
-        console.warn(
-          'StreetGO Viewer playback watchdog error:',
-          err,
-        )
+        console.warn('StreetGO Viewer playback watchdog error:', err)
+        isRecoveringActionActive = false
       }
     },
     CHECK_INTERVAL_MS,
   )
 
   const stop = () => {
-    recovering = true
     window.clearInterval(timer)
-
-    if (
-      watchdogs.get(peer) === stop
-    ) {
+    if (watchdogs.get(peer) === stop) {
       watchdogs.delete(peer)
     }
   }
 
   watchdogs.set(peer, stop)
-
   return stop
 }
 
-export function stopViewerPlaybackWatchdog(
-  peer: RTCPeerConnection | null,
-) {
+export function stopViewerPlaybackWatchdog(peer: RTCPeerConnection | null) {
   if (!peer) {
     return
   }
-
   const stop = watchdogs.get(peer)
-
   if (stop) {
     stop()
   }
