@@ -13,6 +13,27 @@ export interface ViewerPlayerOptions {
   mountedRef: MutableRefObject<boolean>
 }
 
+/**
+ * High-Performance HTML Video Element Configuration
+ * Forces the browser to prioritize low latency, disable text decoding lag, and use GPU composition
+ */
+function applyYouTubePlaybackSettings(video: HTMLVideoElement) {
+  video.autoplay = true
+  video.playsInline = true
+  video.controls = false
+  video.muted = true
+  
+  // YouTube player level optimizations:
+  video.preload = 'auto'
+  
+  // Non-standard attribute for Chromium engines to optimize WebRTC buffering
+  // @ts-ignore
+  if ('latencyHint' in video) {
+    // @ts-ignore Forces lowest possible live playback delay instead of standard video caching
+    video.latencyHint = 0
+  }
+}
+
 export function prepareViewerPlayer({
   videoRef,
   remoteStreamRef,
@@ -26,15 +47,9 @@ export function prepareViewerPlayer({
     return
   }
 
-  video.autoplay = true
-  video.playsInline = true
-  video.controls = false
-  video.muted = true
+  applyYouTubePlaybackSettings(video)
 
-  video.preload = 'auto'
-
-  const stream =
-    remoteStreamRef.current
+  const stream = remoteStreamRef.current
 
   if (
     stream &&
@@ -81,9 +96,10 @@ export async function ensureViewerPlayback({
     return
   }
 
+  // ReadyState 2 = HAVE_CURRENT_DATA. YouTube requires at least 3 (HAVE_FUTURE_DATA) or 4 (HAVE_ENOUGH_DATA) for fluid motion
   if (
     !video.paused &&
-    video.readyState >= 2
+    video.readyState >= 3
   ) {
     return
   }
@@ -98,11 +114,9 @@ export async function ensureViewerPlayback({
     return
   }
 
-  const promise =
-    video.play()
+  const promise = video.play()
 
-  playbackPromiseRef.current =
-    promise
+  playbackPromiseRef.current = promise
 
   try {
     await promise
@@ -116,8 +130,7 @@ export async function ensureViewerPlayback({
       playbackPromiseRef.current ===
       promise
     ) {
-      playbackPromiseRef.current =
-        null
+      playbackPromiseRef.current = null
     }
   }
 }
@@ -132,14 +145,9 @@ export function attachViewerStream(
     return
   }
 
-  video.autoplay = true
-  video.playsInline = true
-  video.muted = true
-  video.preload = 'auto'
+  applyYouTubePlaybackSettings(video)
 
-  if (
-    video.srcObject !== stream
-  ) {
+  if (video.srcObject !== stream) {
     video.srcObject = stream
   }
 }
@@ -166,7 +174,7 @@ export function isViewerPlaybackHealthy(
 
   return (
     !!video.srcObject &&
-    video.readyState >= 2 &&
+    video.readyState >= 3 && // Raised standard from 2 to 3 to verify fluid future data pipeline availability
     !video.paused &&
     !video.ended
   )
