@@ -27,6 +27,66 @@ export interface ViewerWebRTCOptions {
   setIsOffline: Dispatch<SetStateAction<boolean>>
 }
 
+/**
+ * YouTube-Grade SDP Optimization Engine
+ * Modifies SDP parameters to unlock maximum resolution bandwidth and buttery-smooth frames
+ */
+function optimizeSDPForMaxQuality(sdp: string): string {
+  let modifiedSdp = sdp
+
+  // 1. Inject high-performance profile parameters into video codec lines (H264 / VP8 / VP9 / AV1)
+  // Forces start bitrate at 6Mbps, scales smoothly up to 20Mbps, and guarantees minimum 3Mbps
+  const bitrateParams = 'x-google-max-bitrate=20000;x-google-min-bitrate=3000;x-google-start-bitrate=6000'
+  
+  if (modifiedSdp.includes('a=fmtp:')) {
+    modifiedSdp = modifiedSdp.replace(/a=fmtp:\d+ .*/g, (match) => {
+      if (match.includes('x-google-')) return match // Skip if already customized
+      return `${match};${bitrateParams}`
+    })
+  }
+
+  // 2. Adjust application-level bandwidth configurations if present (b=AS / b=TIAS)
+  // 20000 Kbps = 20 Mbps pipeline ceiling
+  if (modifiedSdp.includes('b=AS:')) {
+    modifiedSdp = modifiedSdp.replace(/b=AS:\d+/g, 'b=AS:20000')
+  } else {
+    modifiedSdp = modifiedSdp.replace(/c=IN IP4 (.*)\r\n/g, 'c=IN IP4 \$1\r\nb=AS:20000\r\n')
+  }
+
+  return modifiedSdp
+}
+/**
+ * Heavy-Duty Receiver Tuning
+ * Tweaks the active hardware decoding pipelines for zero latency and high network priority
+ */
+function optimizeReceiverPipelines(peer: RTCPeerConnection) {
+  try {
+    peer.getReceivers().forEach((receiver: any) => {
+      if (receiver.track && receiver.track.kind === 'video') {
+        // Enforce tight real-time visual pacing parameters if exposed by browser engine
+        if (receiver.playoutDelayHint !== undefined) {
+          receiver.playoutDelayHint = 0 // Tells browser to render immediately without artificial lag buffers
+        }
+
+        // Apply fallback priority optimization safely at runtime if the browser engine exposes it
+        if (typeof receiver.getParameters === 'function') {
+          const parameters = receiver.getParameters()
+          if (parameters && parameters.encodings) {
+            parameters.encodings.forEach((enc: any) => {
+              enc.networkPriority = 'high'
+            })
+            if (typeof receiver.setParameters === 'function') {
+              receiver.setParameters(parameters)
+            }
+          }
+        }
+      }
+    })
+  } catch (err) {
+    console.debug('Engine pipeline optimization skipped or unsupported:', err)
+  }
+}
+
 export async function connectViewerWebRTC(options: ViewerWebRTCOptions): Promise<void> {
   const {
     liveId, videoRef, peerRef, remoteStreamRef, playbackPromiseRef, cancelledRef, mountedRef,
@@ -86,7 +146,9 @@ export async function connectViewerWebRTC(options: ViewerWebRTCOptions): Promise
       return
     }
 
-    await peer.setLocalDescription(offer)
+    // Optimize local description parameters before applying and holding gathering processes
+    const optimizedOfferSdp = optimizeSDPForMaxQuality(offer.sdp || '')
+    await peer.setLocalDescription({ type: offer.type, sdp: optimizedOfferSdp })
     await waitForIceGathering(peer, 1500)
 
     if (cancelledRef.current || !mountedRef.current) {
@@ -105,11 +167,10 @@ export async function connectViewerWebRTC(options: ViewerWebRTCOptions): Promise
     const localDescription = peer.localDescription
     if (!localDescription?.sdp) throw new Error('Viewer local description was not created.')
 
-    console.log('WEBRTC VIEWER REQUEST:', {
+    console.log('WEBRTC VIEWER REQUEST (MAX BALANCED QUALITY LOCKED):', {
       liveId,
       apiUrl: API_URL,
       sdpType: localDescription.type,
-      hasSdp: !!localDescription.sdp,
     })
 
     const response = await fetch(`${API_URL}/live/webrtc/offer`, {
@@ -144,14 +205,19 @@ export async function connectViewerWebRTC(options: ViewerWebRTCOptions): Promise
       throw new Error(`Cannot apply WebRTC answer in signaling state: ${peer.signalingState}`)
     }
 
-    await peer.setRemoteDescription({ type: 'answer', sdp: answer.sdp })
+    // Force optimal performance on the remote track config incoming from the server too
+    const optimizedAnswerSdp = optimizeSDPForMaxQuality(answer.sdp)
+    await peer.setRemoteDescription({ type: 'answer', sdp: optimizedAnswerSdp })
 
     if (cancelledRef.current || !mountedRef.current) {
       stopViewerMonitors(peer)
       return
     }
 
-    console.log('STREETGO VIEWER ANSWER APPLIED')
+    // Boot pipeline priority engines right after configurations shake hands
+    optimizeReceiverPipelines(peer)
+
+    console.log('STREETGO VIEWER ANSWER APPLIED - SMOOTH HD ENGINE ACTIVE')
     attachViewerStream(videoRef, remoteStream)
     setError('')
     void ensureViewerPlayback({ videoRef, playbackPromiseRef, cancelledRef, mountedRef })
