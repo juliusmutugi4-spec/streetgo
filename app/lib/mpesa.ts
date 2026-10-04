@@ -1,53 +1,70 @@
-export async function getMpesaAccessToken(){
-
+export async function getMpesaAccessToken() {
   const consumerKey =
-    process.env.MPESA_CONSUMER_KEY!
-
+    process.env.MPESA_CONSUMER_KEY!;
 
   const consumerSecret =
-    process.env.MPESA_CONSUMER_SECRET!
+    process.env.MPESA_CONSUMER_SECRET!;
 
+  const auth = Buffer
+    .from(`${consumerKey}:${consumerSecret}`)
+    .toString("base64");
 
+  const response = await fetch(
+    "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+    }
+  );
 
-  const auth =
-    Buffer
-      .from(
-        `${consumerKey}:${consumerSecret}`
-      )
-      .toString("base64")
+  const data = await response.json();
 
-
-
-  const response =
-    await fetch(
-      "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-      {
-        method:"GET",
-
-        headers:{
-          Authorization:`Basic ${auth}`
-        }
-      }
-    )
-
-
-
-  const data =
-    await response.json()
-
-
-
-  if(!response.ok){
-
+  if (!response.ok) {
     throw new Error(
       data.errorMessage ||
       "Failed to get M-Pesa token"
-    )
-
+    );
   }
 
+  return data.access_token;
+}
 
 
-  return data.access_token
+// ======================================================
+// B2C ACCESS TOKEN
+// ======================================================
 
+export async function getB2CAccessToken() {
+  const consumerKey =
+    process.env.MPESA_B2C_CONSUMER_KEY!;
+
+  const consumerSecret =
+    process.env.MPESA_B2C_CONSUMER_SECRET!;
+
+  const auth = Buffer
+    .from(`${consumerKey}:${consumerSecret}`)
+    .toString("base64");
+
+  const response = await fetch(
+    "https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Basic ${auth}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.errorMessage ||
+      "Failed to get B2C M-Pesa token"
+    );
+  }
+
+  return data.access_token;
 }
