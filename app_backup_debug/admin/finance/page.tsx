@@ -881,14 +881,27 @@ setWithdrawalsUnlocked(nextState)
 </td>
 
 <td className="px-3 py-4">
-  <p className="text-xs font-semibold text-zinc-200">
-    {item.processed_by_username ||
-      "Unknown admin"}
-  </p>
+  {item.processed_by ? (
+    <>
+      <p className="text-xs font-semibold text-zinc-200">
+        {item.processed_by_username || "Unknown admin"}
+      </p>
 
-  <p className="mt-1 font-mono text-[9px] text-zinc-600">
-    {item.processed_by || "Unknown ID"}
-  </p>
+      <p className="mt-1 font-mono text-[9px] text-zinc-600">
+        {item.processed_by}
+      </p>
+    </>
+  ) : (
+    <>
+      <p className="text-xs font-semibold text-sky-400">
+        SYSTEM — PAID
+      </p>
+
+      <p className="mt-1 font-mono text-[9px] text-sky-500/60">
+        AUTOMATIC B2C
+      </p>
+    </>
+  )}
 </td>
 
 <td className="px-3 py-4">

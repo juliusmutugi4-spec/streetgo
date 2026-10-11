@@ -29,6 +29,17 @@ const loadSequence = useRef(0)
   const [withdrawals, setWithdrawals] =
     useState<any[]>([])
 
+/*
+=====================================================
+B2C PROCESSING WITHDRAWALS
+=====================================================
+*/
+
+const [processingWithdrawals, setProcessingWithdrawals] =
+  useState<any[]>([])
+
+
+
   /*
   =====================================================
   WITHDRAWAL HISTORY

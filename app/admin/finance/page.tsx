@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -91,6 +91,7 @@ const {
   withdrawalHistory,
   chartData,
   extraFinance,
+  processingWithdrawals,
   loading,
 } = useFinance(authorized)
 
@@ -621,7 +622,7 @@ async function handleWithdrawalLookup() {
       </p>
 
       <p className="mt-1 truncate font-mono text-xs text-[#141411]">
-        {withdrawalLookup.wallet_id || "—"}
+        {withdrawalLookup.wallet_id || "â€”"}
       </p>
     </div>
 
@@ -760,8 +761,8 @@ setWithdrawalsUnlocked(nextState)
         {updatingQueueLock
   ? "Updating..."
   : withdrawalsUnlocked
-    ? "🔓 Unlocked"
-    : "🔒 Locked"}
+    ? "ðŸ”“ Unlocked"
+    : "ðŸ”’ Locked"}
       </button>
     )}
 
@@ -869,14 +870,27 @@ setWithdrawalsUnlocked(nextState)
 </td>
 
 <td className="px-3 py-4">
-  <p className="text-xs font-semibold text-zinc-200">
-    {item.processed_by_username ||
-      "Unknown admin"}
-  </p>
+  {item.processed_by ? (
+    <>
+      <p className="text-xs font-semibold text-zinc-200">
+        {item.processed_by_username || "Unknown admin"}
+      </p>
 
-  <p className="mt-1 font-mono text-[9px] text-zinc-600">
-    {item.processed_by || "Unknown ID"}
-  </p>
+      <p className="mt-1 font-mono text-[9px] text-zinc-600">
+        {item.processed_by}
+      </p>
+    </>
+  ) : (
+    <>
+      <p className="text-xs font-semibold text-sky-400">
+        SYSTEM — PAID
+      </p>
+
+      <p className="mt-1 font-mono text-[9px] text-sky-500/60">
+        AUTOMATIC B2C
+      </p>
+    </>
+  )}
 </td>
 
 <td className="px-3 py-4">
@@ -897,6 +911,95 @@ setWithdrawalsUnlocked(nextState)
     </div>
   )}
 </section>
+
+
+{/* B2C Processing Withdrawals - Safaricom Portal Style */}
+{processingWithdrawals.length > 0 && (
+  <section 
+    aria-label="B2C Processing Withdrawals" 
+    className="rounded-none border-l-4 border-[#41B649] bg-white p-6 shadow-sm border-y border-r border-zinc-200"
+  >
+    <div className="mb-6 border-b border-zinc-100 pb-4">
+      <h2 className="text-base font-bold text-[#333333] tracking-tight">
+        M-PESA B2C Pending Transactions
+      </h2>
+      <p className="mt-1 text-xs text-zinc-500">
+        Automatic business-to-customer disbursements currently awaiting Safaricom gateway callback verification.
+      </p>
+    </div>
+
+    <div className="space-y-4">
+      {processingWithdrawals.map((item: any) => (
+        <div 
+          key={item.id} 
+          className="rounded-sm border border-zinc-200 bg-[#F9F9F9] p-4 hover:bg-zinc-50 transition-colors"
+        >
+          {/* Header Row */}
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <span className="inline-block bg-zinc-200 text-zinc-700 text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wider mb-1.5">
+                Receipt No.
+              </span>
+              <p className="font-mono text-sm font-bold text-[#333333]">
+                {item.withdrawal_reference || "N/A"}
+              </p>
+              <p className="mt-1 text-xs text-zinc-600">
+                Customer: <span className="font-medium text-zinc-900">{item.profiles?.username || "Unknown"}</span>
+              </p>
+            </div>
+            
+            <div className="text-right">
+              <p className="text-xs text-zinc-500 uppercase font-semibold tracking-wider">Amount</p>
+              <p className="text-lg font-extrabold text-[#333333]">
+                KES {Number(item.amount || 0).toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-700 border border-amber-200">
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Processing
+              </span>
+            </div>
+          </div>
+
+          {/* Details Grid */}
+          <div className="mt-4 grid grid-cols-1 gap-4 border-t border-zinc-200/60 pt-4 sm:grid-cols-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">M-PESA Mobile Number</p>
+              <p className="mt-1 font-mono text-xs font-semibold text-zinc-800">
+                {item.phone_number || "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Channel / Product</p>
+              <p className="mt-1 text-xs font-bold text-[#41B649] uppercase tracking-wide">
+                Daraja API B2C
+              </p>
+            </div>
+            {item.b2c_conversation_id && (
+              <div className="sm:col-span-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">Safaricom Originator ID</p>
+                <p className="mt-1 break-all font-mono text-xs text-zinc-600">
+                  {item.b2c_conversation_id}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* System Footer Status */}
+          <div className="mt-4 flex items-center gap-2 border-t border-dashed border-zinc-200 pt-3 text-xs text-zinc-500 bg-white -mx-4 -mb-4 p-3 rounded-b-sm">
+            <svg className="animate-spin h-3.5 w-3.5 text-zinc-400" xmlns="http://w3.org" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Awaiting Safaricom instantaneous HTTP POST callback handshake...</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </section>
+)}
+
+
+
 
           {/* Primary Splitting Workspace */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
@@ -990,3 +1093,4 @@ setWithdrawalsUnlocked(nextState)
     </main>
   )
 }
+

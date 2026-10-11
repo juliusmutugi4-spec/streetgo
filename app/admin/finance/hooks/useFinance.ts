@@ -29,6 +29,15 @@ const loadSequence = useRef(0)
   const [withdrawals, setWithdrawals] =
     useState<any[]>([])
 
+/*
+=====================================================
+B2C PROCESSING WITHDRAWALS
+=====================================================
+*/
+
+const [processingWithdrawals, setProcessingWithdrawals] =
+  useState<any[]>([])
+
   /*
   =====================================================
   WITHDRAWAL HISTORY
@@ -179,6 +188,45 @@ async function loadFinance() {
 
           return
         }
+
+/*
+=====================================================
+B2C PROCESSING WITHDRAWALS
+=====================================================
+*/
+
+const {
+  data: processingWithdrawalData,
+  error: processingWithdrawalError,
+} = await supabase
+  .from("withdrawal_requests")
+  .select(`
+    *,
+    profiles:user_id(
+      username
+    )
+  `)
+  .eq("status", "processing")
+  .order("created_at", {
+    ascending: false,
+  })
+
+if (processingWithdrawalError) {
+  console.error(
+    "B2C PROCESSING WITHDRAWALS LOAD ERROR:",
+    processingWithdrawalError
+  )
+
+  if (!cancelled) {
+    setProcessingWithdrawals([])
+  }
+} else {
+  setProcessingWithdrawals(
+    processingWithdrawalData || []
+  )
+}
+
+
 
         /*
         =====================================================
@@ -482,9 +530,21 @@ if (
     PENDING WITHDRAWALS
     */
 
+
+
+    
     withdrawals,
     setWithdrawals,
 
+
+/*
+=====================================================
+B2C PROCESSING WITHDRAWALS
+=====================================================
+*/
+
+processingWithdrawals,
+    
     /*
     COMPLETED / REJECTED HISTORY
     */
