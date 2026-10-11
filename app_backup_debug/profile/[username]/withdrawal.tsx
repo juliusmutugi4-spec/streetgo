@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { useState } from "react"
 import { supabase } from "../../lib/supabase"
@@ -68,13 +68,10 @@ export default function WithdrawModal({
       const {
         data: requestId,
         error: requestError,
-      } = await supabase.rpc(
-        "request_withdrawal",
-        {
-          p_user_id: userId,
-          p_amount: value,
-        }
-      )
+      } = await supabase.rpc("request_withdrawal", {
+        p_user_id: userId,
+        p_amount: value,
+      })
 
       if (requestError) {
         throw new Error(requestError.message)
@@ -119,6 +116,7 @@ export default function WithdrawModal({
         The withdrawal was already created successfully.
         Do not tell the user that the withdrawal failed.
         */
+
         alert(
           "Withdrawal submitted successfully, but we could not load the reference. Please check Withdrawal History."
         )
@@ -152,8 +150,166 @@ export default function WithdrawModal({
 
       setAmount("")
 
-      await onSuccess()
+      /*
+      =====================================================
+      START B2C PAYMENT
+      =====================================================
 
+      IMPORTANT:
+      We only send the withdrawal ID.
+
+      The server-side B2C route will read:
+        - amount
+        - phone_number
+        - withdrawal_reference
+
+      directly from withdrawal_requests.
+
+      This prevents the browser from changing the
+      payment amount or destination number.
+      =====================================================
+      */
+
+      try {
+        const b2cResponse = await fetch(
+          "/api/mpesa/b2c",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json",
+            },
+
+            body: JSON.stringify({
+              withdrawalId: withdrawal.id,
+            }),
+          }
+        )
+
+        const b2cData =
+          await b2cResponse.json()
+
+        console.log(
+          "===== STREETGO B2C RESPONSE ====="
+        )
+
+        console.log(
+          JSON.stringify(
+            b2cData,
+            null,
+            2
+          )
+        )
+
+        console.log(
+          "================================="
+        )
+
+        /*
+        ===================================================
+        B2C REQUEST FAILED
+        ===================================================
+        */
+
+        if (!b2cResponse.ok) {
+          console.error(
+            "B2C REQUEST FAILED:",
+            b2cData
+          )
+
+          /*
+          The withdrawal record already exists.
+
+          Do not delete it.
+
+          The user can still see the withdrawal in
+          their history and StreetGO Finance can review it.
+          */
+
+          alert(
+            b2cData?.error ||
+              "Withdrawal was created, but the M-Pesa payment request could not be started."
+          )
+
+          await onSuccess()
+
+          return
+        }
+
+        /*
+        ===================================================
+        B2C REQUEST ACCEPTED
+        ===================================================
+        */
+
+        console.log(
+          "B2C REQUEST ACCEPTED:",
+          b2cData
+        )
+
+        /*
+        Refresh the withdrawal so the UI can pick up
+        the processing status saved by the API.
+        */
+
+        const {
+          data: updatedWithdrawal,
+        } = await supabase
+          .from("withdrawal_requests")
+          .select(`
+            id,
+            withdrawal_reference,
+            amount,
+            phone_number,
+            status,
+            created_at
+          `)
+          .eq("id", withdrawal.id)
+          .single()
+
+        if (updatedWithdrawal) {
+          setSubmittedWithdrawal({
+            id: updatedWithdrawal.id,
+
+            withdrawal_reference:
+              updatedWithdrawal.withdrawal_reference,
+
+            amount:
+              Number(
+                updatedWithdrawal.amount
+              ),
+
+            phone_number:
+              updatedWithdrawal.phone_number,
+
+            status:
+              updatedWithdrawal.status,
+
+            created_at:
+              updatedWithdrawal.created_at,
+          })
+        }
+
+        await onSuccess()
+      } catch (b2cError: any) {
+        console.error(
+          "B2C START ERROR:",
+          b2cError
+        )
+
+        /*
+        The withdrawal has already been created.
+
+        We deliberately do NOT delete or reverse it here.
+        */
+
+        alert(
+          b2cError?.message ||
+            "Withdrawal was created, but the M-Pesa payment could not be started."
+        )
+
+        await onSuccess()
+      }
     } catch (error: any) {
       console.error(
         "WITHDRAWAL REQUEST ERROR:",
@@ -162,7 +318,7 @@ export default function WithdrawModal({
 
       alert(
         error?.message ||
-        "Unable to submit withdrawal request."
+          "Unable to submit withdrawal request."
       )
     } finally {
       setLoading(false)
@@ -191,13 +347,11 @@ export default function WithdrawModal({
 
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4">
-
         <div className="w-full max-w-md overflow-hidden rounded-xl border border-zinc-800 bg-[#0d0d11] shadow-2xl">
 
           {/* HEADER */}
 
           <div className="border-b border-zinc-800 p-5">
-
             <div className="flex items-center gap-2">
 
               <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
@@ -209,9 +363,8 @@ export default function WithdrawModal({
             </div>
 
             <p className="mt-1 text-xs text-zinc-500">
-              Your request is waiting for StreetGO Finance review.
+              Your M-Pesa withdrawal request has been submitted for processing.
             </p>
-
           </div>
 
           {/* BODY */}
@@ -300,9 +453,7 @@ export default function WithdrawModal({
             <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 p-3">
 
               <p className="text-[10px] leading-relaxed text-zinc-400">
-                StreetGO Finance will review your request.
-                Keep your withdrawal reference until the
-                transaction is completed.
+                Your withdrawal has been sent to the M-Pesa payment system. The final status will be updated when Safaricom sends the payment result.
               </p>
 
             </div>
@@ -327,7 +478,6 @@ export default function WithdrawModal({
           </div>
 
         </div>
-
       </div>
     )
   }
@@ -453,8 +603,7 @@ export default function WithdrawModal({
           <div className="rounded-lg border border-amber-500/10 bg-amber-500/5 p-3">
 
             <p className="text-[11px] leading-relaxed text-zinc-400">
-              Withdrawals are reviewed and paid manually by StreetGO Finance.
-              Your request will remain pending until it is processed.
+              Withdrawals are sent through the StreetGO M-Pesa payment system. Your request will remain in processing until Safaricom returns the final payment result.
             </p>
 
           </div>
@@ -481,7 +630,7 @@ export default function WithdrawModal({
             className="flex-1 rounded-lg bg-emerald-500 py-2.5 text-xs font-bold text-black hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading
-              ? "Submitting..."
+              ? "Processing..."
               : "Request Withdrawal"}
           </button>
 

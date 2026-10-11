@@ -14,13 +14,16 @@ export default function StreetGOIcon({
   return (
     <div
       className={`inline-flex items-center justify-center ${className}`}
-      style={{ width: size, height: showText ? size * 1.12 : size }}
+      style={{
+        width: showText ? size * 2.8 : size,
+        height: size,
+      }}
       aria-label="StreetGO"
     >
       <svg
-        viewBox="0 0 512 512"
-        width={size}
-        height={showText ? size * 1.12 : size}
+        viewBox="0 0 520 260"
+        width={showText ? size * 2.8 : size}
+        height={size}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         role="img"
@@ -29,255 +32,265 @@ export default function StreetGOIcon({
         <title id="streetgo-title">StreetGO</title>
 
         <defs>
-          {/* Green S */}
-          <linearGradient id="sgGreen" x1="130" y1="80" x2="350" y2="350">
-            <stop offset="0%" stopColor="#00ff9d" />
-            <stop offset="45%" stopColor="#00e879" />
-            <stop offset="100%" stopColor="#00a95c" />
+          {/* =========================================
+              TOP YELLOW / ORANGE
+          ========================================= */}
+
+          <linearGradient
+            id="streetgoYellow"
+            x1="60"
+            y1="35"
+            x2="260"
+            y2="150"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0%" stopColor="#FFE600" />
+            <stop offset="45%" stopColor="#FFB800" />
+            <stop offset="100%" stopColor="#FF6A00" />
           </linearGradient>
 
-          {/* White G */}
-          <linearGradient id="sgWhite" x1="300" y1="230" x2="410" y2="430">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="65%" stopColor="#eeeeee" />
-            <stop offset="100%" stopColor="#bdbdbd" />
+          {/* =========================================
+              BLUE / CYAN
+          ========================================= */}
+
+          <linearGradient
+            id="streetgoBlue"
+            x1="145"
+            y1="210"
+            x2="340"
+            y2="55"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0%" stopColor="#00D9FF" />
+            <stop offset="45%" stopColor="#009DFF" />
+            <stop offset="100%" stopColor="#1455FF" />
           </linearGradient>
 
-          {/* Red */}
-          <linearGradient id="sgRed" x1="420" y1="350" x2="470" y2="470">
-            <stop offset="0%" stopColor="#ff4b4b" />
-            <stop offset="100%" stopColor="#c40000" />
+          {/* =========================================
+              DARK INNER SHAPE
+          ========================================= */}
+
+          <linearGradient
+            id="streetgoDark"
+            x1="120"
+            y1="90"
+            x2="280"
+            y2="190"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0%" stopColor="#050505" />
+            <stop offset="100%" stopColor="#151515" />
           </linearGradient>
 
-          {/* Outer glow */}
-          <filter id="sgGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="5" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          {/* =========================================
+              PLAY BUTTON
+          ========================================= */}
+
+          <linearGradient
+            id="streetgoPlay"
+            x1="120"
+            y1="120"
+            x2="190"
+            y2="175"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop offset="0%" stopColor="#FFE600" />
+            <stop offset="100%" stopColor="#FF7900" />
+          </linearGradient>
+
+          {/* =========================================
+              SOFT LOGO SHADOW
+          ========================================= */}
+
+          <filter
+            id="streetgoShadow"
+            x="-30%"
+            y="-30%"
+            width="160%"
+            height="160%"
+          >
+            <feDropShadow
+              dx="0"
+              dy="7"
+              stdDeviation="7"
+              floodColor="#000000"
+              floodOpacity=".35"
+            />
           </filter>
 
-          {/* Letter glow */}
-          <filter id="letterGlow" x="-30%" y="-30%" width="160%" height="160%">
+          <filter
+            id="streetgoGlow"
+            x="-30%"
+            y="-30%"
+            width="160%"
+            height="160%"
+          >
             <feGaussianBlur
-              in="shadow"
-              stdDeviation="3"
+              stdDeviation="2"
               result="blur"
             />
+
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-
-          <linearGradient id="ringGradient" x1="80" y1="80" x2="430" y2="430">
-            <stop offset="0%" stopColor="#00ff9d" />
-            <stop offset="48%" stopColor="#00e879" />
-            <stop offset="78%" stopColor="#ff2424" />
-            <stop offset="100%" stopColor="#ff2424" />
-          </linearGradient>
         </defs>
 
-        {/* =========================
-            OUTER APP ICON
-        ========================= */}
+        {/* =====================================================
+            STREETGO ICON
+        ===================================================== */}
 
-        <rect
-          x="7"
-          y="7"
-          width="498"
-          height="498"
-          rx="74"
-          fill="#030506"
-          stroke="#7b1717"
-          strokeWidth="4"
-        />
+        <g
+          transform="translate(15 10)"
+          filter="url(#streetgoShadow)"
+        >
+          {/* -----------------------------------------------
+              YELLOW / ORANGE UPPER RIBBON
+          ------------------------------------------------ */}
 
-        {/* subtle inner border */}
-        <rect
-          x="16"
-          y="16"
-          width="480"
-          height="480"
-          rx="66"
-          stroke="#ff3030"
-          strokeOpacity=".22"
-          strokeWidth="2"
-        />
-
-        {/* =========================
-            MOTION LINES
-        ========================= */}
-
-        <g opacity=".9">
           <path
-            d="M68 212H190"
-            stroke="url(#sgGreen)"
-            strokeWidth="8"
-            strokeLinecap="round"
+            d="
+              M145 32
+              C92 32 54 57 48 91
+              C42 125 68 145 106 151
+              L174 162
+              C194 165 207 174 207 188
+              C207 202 194 211 171 211
+              H88
+              L55 235
+              H190
+              C239 235 269 210 269 175
+              C269 143 246 124 209 118
+              L135 107
+              C116 104 106 96 108 85
+              C110 73 125 66 145 66
+              H219
+              L250 32
+              Z
+            "
+            fill="url(#streetgoYellow)"
+            stroke="#0A0A0A"
+            strokeWidth="6"
+            strokeLinejoin="round"
           />
 
+          {/* -----------------------------------------------
+              BLUE LOWER / RIGHT RIBBON
+          ------------------------------------------------ */}
+
           <path
-            d="M54 238H169"
-            stroke="url(#sgGreen)"
+            d="
+              M253 28
+              L318 28
+              C340 28 356 38 364 52
+              L304 111
+              C290 125 281 139 281 157
+              C281 176 294 188 314 188
+              C336 188 352 174 352 154
+              C352 143 347 134 339 128
+              L374 94
+              C397 109 410 132 410 160
+              C410 208 372 239 319 239
+              C261 239 222 204 222 157
+              C222 125 234 101 253 80
+              L287 44
+              Z
+            "
+            fill="url(#streetgoBlue)"
+            stroke="#07101C"
+            strokeWidth="6"
+            strokeLinejoin="round"
+          />
+
+          {/* -----------------------------------------------
+              BLACK INNER CUT / S
+          ------------------------------------------------ */}
+
+          <path
+            d="
+              M247 57
+              C228 73 214 91 207 108
+              C225 112 242 120 254 132
+              C269 147 273 160 273 176
+              C273 194 260 208 239 216
+              C258 221 279 224 301 224
+              C329 224 351 213 365 197
+              C347 207 330 211 313 211
+              C289 211 273 199 273 180
+              C273 158 285 141 304 123
+              L347 81
+              L310 45
+              Z
+            "
+            fill="url(#streetgoDark)"
+          />
+
+          {/* -----------------------------------------------
+              PLAY TRIANGLE
+          ------------------------------------------------ */}
+
+          <path
+            d="
+              M126 101
+              L126 159
+              L174 130
+              Z
+            "
+            fill="url(#streetgoPlay)"
+            stroke="#080808"
+            strokeWidth="5"
+            strokeLinejoin="round"
+          />
+
+          {/* small highlight */}
+          <path
+            d="M72 87C78 63 103 48 132 45"
+            stroke="#FFF7A0"
             strokeWidth="5"
             strokeLinecap="round"
+            opacity=".65"
           />
 
+          {/* blue highlight */}
           <path
-            d="M73 264H152"
-            stroke="url(#sgGreen)"
-            strokeWidth="3"
+            d="M307 39C328 40 345 48 356 61"
+            stroke="#8CEEFF"
+            strokeWidth="5"
             strokeLinecap="round"
+            opacity=".7"
           />
         </g>
 
-        {/* =========================
-            MAIN CIRCLE
-        ========================= */}
-
-        <circle
-          cx="256"
-          cy="235"
-          r="164"
-          stroke="url(#ringGradient)"
-          strokeWidth="8"
-          opacity=".95"
-          filter="url(#sgGlow)"
-        />
-
-        <circle
-          cx="256"
-          cy="235"
-          r="151"
-          stroke="#ffffff"
-          strokeOpacity=".08"
-          strokeWidth="2"
-        />
-
-        {/* =========================
-            STREETGO S
-        ========================= */}
-
-        <path
-          d="
-            M363 111
-            H183
-            C139 111 113 137 113 169
-            C113 203 139 220 177 224
-            L290 236
-            C313 238 323 247 323 261
-            C323 277 309 286 285 286
-            H131
-            L105 324
-            H297
-            C348 324 382 297 382 257
-            C382 219 354 200 312 196
-            L201 185
-            C179 183 168 176 168 164
-            C168 151 181 144 203 144
-            H337
-            Z
-          "
-          fill="url(#sgGreen)"
-          stroke="#04140d"
-          strokeWidth="8"
-          strokeLinejoin="round"
-          filter="url(#sgGlow)"
-        />
-
-        {/* S highlight */}
-        <path
-          d="M190 126H350"
-          stroke="#ffffff"
-          strokeOpacity=".42"
-          strokeWidth="4"
-          strokeLinecap="round"
-        />
-
-        {/* =========================
-            G
-        ========================= */}
-
-        <path
-          d="
-            M286 293
-            C286 338 318 371 361 371
-            C391 371 414 360 431 342
-            L431 384
-            C410 402 383 412 349 412
-            C278 412 237 366 237 310
-            C237 294 241 279 247 266
-            H302
-            C292 274 286 282 286 293
-            Z
-          "
-          fill="url(#sgWhite)"
-          stroke="#171717"
-          strokeWidth="8"
-          strokeLinejoin="round"
-        />
-
-        <path
-          d="
-            M354 315
-            H438
-            V365
-            H401
-            V346
-            H354
-            Z
-          "
-          fill="url(#sgWhite)"
-          stroke="#171717"
-          strokeWidth="7"
-          strokeLinejoin="round"
-        />
-
-        {/* =========================
-            RED ACCENT
-        ========================= */}
-
-        <path
-          d="M417 405H451"
-          stroke="url(#sgRed)"
-          strokeWidth="7"
-          strokeLinecap="round"
-        />
-
-        {/* =========================
-            STREETGO TEXT
-        ========================= */}
+        {/* =====================================================
+            STREETGO WORDMARK
+        ===================================================== */}
 
         {showText && (
-          <g>
+          <g transform="translate(425 0)">
             <text
-              x="256"
-              y="451"
-              textAnchor="middle"
+              x="0"
+              y="125"
               fontFamily="Arial, Helvetica, sans-serif"
-              fontSize="38"
+              fontSize="54"
               fontWeight="900"
-              fontStyle="italic"
-              letterSpacing="6"
-              fill="#ffffff"
+              letterSpacing="-3"
             >
-              STREET
-              <tspan fill="#ff2525">GO</tspan>
+              <tspan fill="#FFFFFF">Street</tspan>
+              <tspan fill="#FF8A00">GO</tspan>
             </text>
 
             <text
-              x="256"
-              y="478"
-              textAnchor="middle"
+              x="3"
+              y="151"
               fontFamily="Arial, Helvetica, sans-serif"
-              fontSize="13"
+              fontSize="12"
               fontWeight="700"
-              letterSpacing="7"
-              fill="#00d982"
+              letterSpacing="3"
+              fill="#FFFFFF"
+              opacity=".9"
             >
-              CONNECT • SHARE • GROW
+              CONNECT • WATCH • EARN
             </text>
           </g>
         )}
