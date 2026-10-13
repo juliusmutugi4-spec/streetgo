@@ -293,7 +293,7 @@ export async function POST(req: NextRequest) {
 
     try {
       response = await fetch(
-        "https://sandbox.safaricom.co.ke/mpesa/b2c/v3/paymentrequest",
+        "https://api.safaricom.co.ke/mpesa/b2c/v3/paymentrequest",
         {
           method: "POST",
 
