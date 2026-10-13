@@ -145,10 +145,12 @@ export async function POST(req: NextRequest) {
         mpesa_message: resultDesc,
       }
 
-      if (transactionId) {
-        updateData.mpesa_receipt =
-          transactionId
-      }
+const mpesaReceipt =
+  transactionReceipt ?? transactionId
+
+if (mpesaReceipt) {
+  updateData.mpesa_receipt = mpesaReceipt
+}
 
       const { error } = await supabase
         .from("withdrawal_requests")
