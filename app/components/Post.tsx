@@ -41,6 +41,9 @@ interface PostProps {
     video_url?: string | null
     user_id: string
     created_at: string
+      is_for_sale?: boolean
+  item_name?: string | null
+  price?: number | null
     username?: string
     avatar_url?: string | null
 
@@ -1117,22 +1120,61 @@ return (
   }
 />
 
-<PostCardMedia
-  imageUrls={imageUrls}
-  currentImage={currentImage}
-  setCurrentImage={setCurrentImage}
-  setShowImageViewer={setShowImageViewer}
-  onOpenImageViewer={(index) => {
-    onOpenImageViewer?.(
-      imageUrls,
-      index,
-      username,
-      avatarUrl
-    )
-  }}
-  post={post}
-/>
 
+
+
+
+
+
+<div className="relative w-full">
+  {/* IMAGE */}
+  <PostCardMedia
+    imageUrls={imageUrls}
+    currentImage={currentImage}
+    setCurrentImage={setCurrentImage}
+    setShowImageViewer={setShowImageViewer}
+    onOpenImageViewer={(index) => {
+      onOpenImageViewer?.(imageUrls, index, username, avatarUrl)
+    }}
+    post={post}
+  />
+
+  {/* SELLING OVERLAY — ATTACHED TO IMAGE */}
+  {post.is_for_sale && (
+    <div className="absolute bottom-4 left-4 right-4 z-50">
+      <div className="rounded-2xl border border-white/10 bg-black/40 p-4 shadow-xl backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-4">
+          
+          {/* PRODUCT */}
+          <div className="min-w-0">
+            <span className="inline-flex items-center rounded-md bg-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-200">
+              For Sale
+            </span>
+            <p className="mt-1.5 truncate text-base font-bold text-white tracking-tight">
+              {post.item_name || "Item"}
+            </p>
+            <p className="mt-0.5 text-lg font-extrabold text-white">
+              KES {Number(post.price ?? 0).toLocaleString()}
+            </p>
+          </div>
+
+          {/* ORDER */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              // ORDER action later
+            }}
+            className="shrink-0 rounded-xl bg-white px-5 py-3 text-sm font-bold text-black shadow-md transition-all hover:bg-neutral-100 active:scale-95"
+          >
+            ORDER
+          </button>
+          
+        </div>
+      </div>
+    </div>
+  )}
+</div>
 
 {/*
 <div className="mt-4 rounded-xl border border-[#3e4042] bg-[#1c1d1e] overflow-hidden shadow-sm">

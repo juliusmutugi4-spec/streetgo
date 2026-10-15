@@ -34,6 +34,18 @@ export default function CreatePost({
   const [content, setContent] =
     useState('')
 
+
+    const [sellItem, setSellItem] =
+  useState(false)
+
+const [itemName, setItemName] =
+  useState('')
+
+const [price, setPrice] =
+  useState<number | null>(null)
+
+
+
   const [video, setVideo] =
     useState<File | null>(null)
 
@@ -46,6 +58,9 @@ export default function CreatePost({
 
   const [
     videoThumbnail,
+
+
+
     setVideoThumbnail,
   ] = useState<Blob | null>(null)
 
@@ -146,6 +161,9 @@ export default function CreatePost({
     if (!video) {
       setVideoThumbnail(null)
       setThumbnailPreview(null)
+      setSellItem(false)
+setItemName('')
+setPrice(null)
       setGeneratingThumbnail(false)
 
       return
@@ -320,7 +338,9 @@ export default function CreatePost({
 
           // Thumbnail generated locally
           videoThumbnail,
-
+sellItem,
+itemName,
+price,
           // =================================================
           // PROGRESS
           // =================================================
@@ -541,6 +561,63 @@ Hint: ${
           setVideo={setVideo}
           fileInputRef={fileInputRef}
         />
+
+<div className="mt-4 flex items-center justify-between rounded-xl border border-zinc-800 bg-black/30 px-4 py-3">
+  <div>
+    <p className="text-sm font-semibold text-white">
+      Sell this item
+    </p>
+    <p className="text-[10px] text-zinc-500">
+      Turn this post into a marketplace listing
+    </p>
+  </div>
+
+  <button
+    type="button"
+    onClick={() => setSellItem(prev => !prev)}
+    className={`relative h-6 w-11 rounded-full transition ${
+      sellItem
+        ? 'bg-cyan-500'
+        : 'bg-zinc-700'
+    }`}
+  >
+    <span
+      className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${
+        sellItem
+          ? 'left-6'
+          : 'left-1'
+      }`}
+    />
+  </button>
+</div>
+
+{sellItem && (
+  <div className="mt-3 grid gap-3 sm:grid-cols-2">
+    <input
+      type="text"
+      value={itemName}
+      onChange={(e) => setItemName(e.target.value)}
+      placeholder="Item name"
+      className="w-full rounded-xl border border-zinc-800 bg-black/40 px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-cyan-500/50"
+    />
+
+    <input
+      type="number"
+      min="0"
+      value={price ?? ''}
+      onChange={(e) =>
+        setPrice(
+          e.target.value
+            ? Number(e.target.value)
+            : null
+        )
+      }
+      placeholder="Price in KES"
+      className="w-full rounded-xl border border-zinc-800 bg-black/40 px-4 py-3 text-sm text-white outline-none placeholder:text-zinc-600 focus:border-cyan-500/50"
+    />
+  </div>
+)}
+
 
         {/* =================================================
             AUTOMATIC VIDEO THUMBNAIL

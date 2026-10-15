@@ -12,6 +12,11 @@ export interface Post {
   video_url: string | null
   thumbnail_url: string | null
   created_at: string
+
+  // Marketplace fields
+  is_for_sale: boolean
+  item_name: string | null
+  price: number | null
 }
 
 export interface UploadManagerProps {
@@ -21,6 +26,11 @@ export interface UploadManagerProps {
   video: File | null
   videoThumbnail?: Blob | null
   avatar_url?: string | null
+
+  sellItem?: boolean
+  itemName?: string
+  price?: number | null
+
   onProgress?: (
     progress: number,
     message: string,
@@ -216,19 +226,24 @@ async function savePostToDatabase(
   avatarUrl: string | null | undefined,
   imageUrls: string[],
   videoUrl: string | null,
-  thumbnailUrl: string | null
+  thumbnailUrl: string | null,
+  sellItem?: boolean,
+  itemName?: string,
+  price?: number | null
 ): Promise<Post> {
   const { error } = await supabase
     .from('posts')
-    .insert({
-      user_id: userId,
-      content,
-      avatar_url: avatarUrl,
-      image_urls: imageUrls,
-      video_url: videoUrl,
-      thumbnail_url: thumbnailUrl,
-    })
-
+.insert({
+  user_id: userId,
+  content,
+  avatar_url: avatarUrl,
+  image_urls: imageUrls,
+  video_url: videoUrl,
+  thumbnail_url: thumbnailUrl,
+  is_for_sale: sellItem ?? false,
+  item_name: itemName ?? null,
+  price: price ?? null,
+})
   if (error) {
     throw error
   }
@@ -263,6 +278,9 @@ export async function uploadPost({
   video,
   videoThumbnail,
   avatar_url,
+  sellItem,
+  itemName,
+  price,
   onProgress,
   onSuccess,
   onError,
@@ -402,16 +420,18 @@ export async function uploadPost({
       totalFiles
     )
 
-    const post =
-      await savePostToDatabase(
-        userId,
-        content,
-        avatar_url,
-        imageUrls,
-        videoUrl,
-        thumbnailUrl
-      )
-
+const post =
+  await savePostToDatabase(
+    userId,
+    content,
+    avatar_url,
+    imageUrls,
+    videoUrl,
+    thumbnailUrl,
+    sellItem,
+    itemName,
+    price
+  )
     onProgress?.(
       100,
       'Success',

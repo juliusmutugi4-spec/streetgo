@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       })
     )
 
-    const url = `${process.env.R2_PUBLIC_URL}/${fileName}`
+    const url = `${process.env.NEXT_PUBLIC_R2_PUBLIC_URL}/${fileName}`
 
     return NextResponse.json({
       success: true,
