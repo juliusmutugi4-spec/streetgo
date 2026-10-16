@@ -6,12 +6,18 @@ export type PostType = {
   content: string
   video_url?: string | null
   image_urls?: string[] | null
+  thumbnail_url?: string | null
+
+  // Marketplace
+  is_for_sale?: boolean
+  item_name?: string | null
+  price?: number | null
+
   user_id: string
   created_at: string
   username?: string
   avatar_url?: string | null
 }
-
 type Profile = {
   id: string
   username: string
@@ -92,6 +98,9 @@ async function fetchPostsFromSupabase(): Promise<PostType[]> {
   video_url,
   image_urls,
   thumbnail_url,
+  is_for_sale,
+  item_name,
+  price,
   user_id,
   created_at
 `)
