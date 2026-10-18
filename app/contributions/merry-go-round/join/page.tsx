@@ -7,7 +7,7 @@ import {
   Search,
   CheckCircle2,
 } from "lucide-react"
-import { supabase } from "@/app/lib/supabase"
+import { getSupabaseBrowser } from "@/app/lib/supabase-browser"
 
 type Group = {
   id: string
@@ -32,7 +32,7 @@ type Member = {
 
 export default function JoinMerryGoRoundPage() {
   const router = useRouter()
-
+const supabase = getSupabaseBrowser()
   const [groupCode, setGroupCode] = useState("")
   const [group, setGroup] = useState<Group | null>(null)
   const [members, setMembers] = useState<Member[]>([])
