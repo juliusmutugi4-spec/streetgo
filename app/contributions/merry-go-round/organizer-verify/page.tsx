@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/app/lib/supabase"
 
-export default function OrganizerVerifyPage() {
+function OrganizerVerifyContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -40,7 +40,6 @@ export default function OrganizerVerifyPage() {
       // DEMO VERIFICATION FOR NOW
       // Real Safaricom verification will replace this later.
 
-      // Get the currently logged-in user.
       const {
         data: { user },
         error: userError,
@@ -55,15 +54,12 @@ export default function OrganizerVerifyPage() {
         return
       }
 
-      // For now, use the authenticated user's profile name
-      // as the temporary verified display name.
       const displayName =
         user.user_metadata?.full_name ||
         user.user_metadata?.name ||
         user.email?.split("@")[0] ||
         "Organizer"
 
-      // Securely update the organizer's membership.
       const { data, error: verifyError } = await supabase.rpc(
         "verify_merry_go_round_member",
         {
@@ -78,10 +74,11 @@ export default function OrganizerVerifyPage() {
       }
 
       if (data !== true) {
-        throw new Error("Number verification could not be completed.")
+        throw new Error(
+          "Number verification could not be completed."
+        )
       }
 
-      // Verification succeeded in the database.
       router.push(
         `/contributions/merry-go-round/created?groupId=${encodeURIComponent(
           groupId
@@ -92,7 +89,11 @@ export default function OrganizerVerifyPage() {
     } catch (err: any) {
       console.error(
         "ORGANIZER VERIFICATION ERROR:",
-        JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+        JSON.stringify(
+          err,
+          Object.getOwnPropertyNames(err),
+          2
+        )
       )
 
       setError(
@@ -169,7 +170,9 @@ export default function OrganizerVerifyPage() {
             disabled={loading || code.length !== 6}
             className="mt-6 w-full rounded-2xl bg-cyan-400 px-5 py-4 font-black text-black transition disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {loading ? "VERIFYING..." : "VERIFY NUMBER"}
+            {loading
+              ? "VERIFYING..."
+              : "VERIFY NUMBER"}
           </button>
 
           <p className="mt-5 text-center text-xs leading-5 text-slate-500">
@@ -191,5 +194,39 @@ export default function OrganizerVerifyPage() {
 
       </div>
     </main>
+  )
+}
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-[#020617] text-white px-5 py-10">
+      <div className="mx-auto max-w-md">
+
+        <div className="rounded-3xl border border-cyan-500/20 bg-[#07111f] p-6 shadow-xl">
+
+          <p className="text-xs font-black tracking-[0.25em] text-cyan-400">
+            STREETGO CONTRIBUTIONS
+          </p>
+
+          <h1 className="mt-3 text-2xl font-black">
+            Loading...
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Preparing number verification.
+          </p>
+
+        </div>
+
+      </div>
+    </main>
+  )
+}
+
+export default function OrganizerVerifyPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <OrganizerVerifyContent />
+    </Suspense>
   )
 }
