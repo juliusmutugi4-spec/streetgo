@@ -71,3 +71,4 @@ export async function GET() {
     message: "StreetGO C2B confirmation endpoint is operational",
   })
 }
+
