@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function ContributionMemberAccountPage() {
+function ContributionMemberAccountContent() {
   const router = useRouter()
 const searchParams = useSearchParams()
 const groupId = searchParams.get("groupId")
@@ -118,5 +118,35 @@ router.push(
 
       </div>
     </main>
+  )
+}
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-[#020617] px-4 py-8 text-white">
+      <div className="mx-auto max-w-md">
+        <div className="rounded-3xl border border-blue-900/60 bg-[#071426] p-6">
+          <p className="text-xs font-black tracking-[0.2em] text-emerald-400">
+            STREETGO CONTRIBUTIONS
+          </p>
+
+          <h1 className="mt-3 text-2xl font-black">
+            Loading...
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Preparing your contribution membership.
+          </p>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+export default function ContributionMemberAccountPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ContributionMemberAccountContent />
+    </Suspense>
   )
 }
