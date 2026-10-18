@@ -37,6 +37,16 @@ type Group = {
   group_code?: string | null
 }
 
+type CurrentRound = {
+  id: string
+  round_number: number
+  status: "collecting" | "ready" | "processing" | "paid" | "failed"
+  recipient_member_id: string
+  target_amount: number
+  collected_amount: number
+}
+
+
 type Member = {
   id: string
   user_id: string
@@ -58,6 +68,8 @@ type PaymentSummary = {
   paid_members: number
   my_status: string
   my_receipt: string | null
+  my_credit: number
+  total_funds_received: number
 }
 
 type MemberPaymentStatus = {
@@ -85,13 +97,15 @@ function GroupDashboardContent() {
   const [members, setMembers] =
     useState<Member[]>([])
 
-  const [paymentSummary, setPaymentSummary] =
-    useState<PaymentSummary>({
-      pool_collected: 0,
-      paid_members: 0,
-      my_status: "due",
-      my_receipt: null,
-    })
+const [paymentSummary, setPaymentSummary] =
+  useState<PaymentSummary>({
+    pool_collected: 0,
+    paid_members: 0,
+    my_status: "due",
+    my_receipt: null,
+    my_credit: 0,
+    total_funds_received: 0,
+  })
 
   const [memberPaymentStatuses, setMemberPaymentStatuses] =
     useState<MemberPaymentStatus[]>([])
@@ -346,12 +360,14 @@ function GroupDashboardContent() {
           summaryData[0]
         )
       } else {
-        setPaymentSummary({
-          pool_collected: 0,
-          paid_members: 0,
-          my_status: "due",
-          my_receipt: null,
-        })
+setPaymentSummary({
+  pool_collected: 0,
+  paid_members: 0,
+  my_status: "due",
+  my_receipt: null,
+  my_credit: 0,
+  total_funds_received: 0,
+})
       }
 
       /*
@@ -763,6 +779,32 @@ function GroupDashboardContent() {
                 </div>
               </div>
             </div>
+
+
+<div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+  <div className="flex items-center justify-between text-sm">
+    <span className="text-white/50">
+      StreetGO credits available
+    </span>
+
+    <span className="font-semibold text-white">
+      KES {Number(paymentSummary.my_credit || 0).toLocaleString()}
+    </span>
+  </div>
+
+  <div className="flex items-center justify-between text-sm">
+    <span className="text-white/50">
+      Total funds received
+    </span>
+
+    <span className="font-semibold text-white">
+      KES {Number(
+        paymentSummary.total_funds_received || 0
+      ).toLocaleString()}
+    </span>
+  </div>
+</div>
+
 
             <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/10">
               <div
