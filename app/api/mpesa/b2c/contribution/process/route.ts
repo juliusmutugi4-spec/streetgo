@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const payout = disbursement[0]
+    const payoutId = disbursement
 
     // 3. Send the payout through the dedicated contribution B2C route.
     const origin =
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          disbursementId: payout.id,
+          disbursementId: payoutId,
         }),
         cache: "no-store",
       }
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       roundId,
-      disbursementId: payout.id,
+      disbursementId: payoutId,
       payout: result,
     })
   } catch (error) {
