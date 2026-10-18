@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Safaricom expects 12-digit format: 2547XXXXXXXX
-    let phoneNumber = String(payout.phone_number).replace(/\D/g, "")
+    let phoneNumber = String(payout.payout_phone_number).replace(/\D/g, "")
 
     if (phoneNumber.startsWith("0")) {
       phoneNumber = `254${phoneNumber.slice(1)}`
@@ -120,13 +120,13 @@ export async function POST(request: NextRequest) {
       InitiatorName: initiatorName,
       SecurityCredential: securityCredential,
       CommandID: "BusinessPayment",
-      Amount: Number(payout.amount),
+      Amount: Number(payout.payout_amount),
       PartyA: shortcode,
       PartyB: phoneNumber,
       Remarks: `StreetGO contribution round payout`,
       QueueTimeOutURL: timeoutUrl,
       ResultURL: resultUrl,
-      Occasion: `Round ${payout.round_id}`,
+      Occasion: `Round ${payout.payout_round_id}`,
     }
 
     const b2cResponse = await fetch(
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
           failure_reason: "Safaricom rejected B2C request",
           updated_at: new Date().toISOString(),
         })
-        .eq("id", payout.disbursement_id)
+        .eq("id", payout.payout_disbursement_id)
 
       return NextResponse.json(
         {
@@ -184,13 +184,13 @@ export async function POST(request: NextRequest) {
             : null,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", payout.disbursement_id)
+      .eq("id", payout.payout_disbursement_id)
 
     return NextResponse.json({
       success: true,
-      disbursementId: payout.disbursement_id,
-      roundId: payout.round_id,
-      amount: payout.amount,
+disbursementId: payout.payout_disbursement_id,
+roundId: payout.payout_round_id,
+amount: payout.payout_amount,
       message: "Contribution B2C request accepted by Safaricom",
       safaricom: b2cData,
     })
