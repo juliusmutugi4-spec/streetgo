@@ -1,10 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { Suspense, useMemo, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { supabase } from "@/app/lib/supabase"
 
-export default function ReviewMerryGoRoundPage() {
+function ReviewMerryGoRoundContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -124,13 +124,13 @@ export default function ReviewMerryGoRoundPage() {
       }
 
       // 6. Open the created screen
-router.push(
-  `/contributions/merry-go-round/created?groupNumber=${encodeURIComponent(
-    groupNumber
-  )}&groupId=${encodeURIComponent(
-    group.id
-  )}&phone=${encodeURIComponent(phone)}`
-)
+      router.push(
+        `/contributions/merry-go-round/created?groupNumber=${encodeURIComponent(
+          groupNumber
+        )}&groupId=${encodeURIComponent(
+          group.id
+        )}&phone=${encodeURIComponent(phone)}`
+      )
     } catch (err: any) {
       console.error(
         "CREATE MERRY-GO-ROUND ERROR:",
@@ -374,5 +374,37 @@ router.push(
 
       </div>
     </main>
+  )
+}
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-[#020617] px-4 py-8 text-white">
+      <div className="mx-auto max-w-md">
+        <div className="rounded-3xl border border-blue-900/60 bg-[#071426] p-6">
+
+          <p className="text-xs font-black tracking-[0.2em] text-emerald-400">
+            STREETGO CONTRIBUTIONS
+          </p>
+
+          <h1 className="mt-3 text-2xl font-black">
+            Loading...
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Preparing your Merry-Go-Round review.
+          </p>
+
+        </div>
+      </div>
+    </main>
+  )
+}
+
+export default function ReviewMerryGoRoundPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <ReviewMerryGoRoundContent />
+    </Suspense>
   )
 }
