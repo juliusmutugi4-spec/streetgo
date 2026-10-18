@@ -19,12 +19,34 @@ export async function getMpesaAccessToken() {
     }
   );
 
-  const data = await response.json();
+  const raw = await response.text();
+
+  console.log("📡 MPESA OAUTH STATUS:", response.status);
+  console.log("📡 MPESA OAUTH RAW RESPONSE:", raw);
+
+  let data: any = {};
+
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    throw new Error(
+      `M-PESA OAuth returned non-JSON response: ${
+        raw || "EMPTY RESPONSE"
+      }`
+    );
+  }
 
   if (!response.ok) {
     throw new Error(
       data.errorMessage ||
-      "Failed to get M-Pesa token"
+        data.error_description ||
+        "Failed to get M-Pesa token"
+    );
+  }
+
+  if (!data.access_token) {
+    throw new Error(
+      "M-Pesa OAuth response did not contain an access token."
     );
   }
 
@@ -62,7 +84,7 @@ export async function getB2CAccessToken() {
   if (!response.ok) {
     throw new Error(
       data.errorMessage ||
-      "Failed to get B2C M-Pesa token"
+        "Failed to get B2C M-Pesa token"
     );
   }
 
