@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import axios from "axios"
 import { createClient } from "@supabase/supabase-js"
+import { getMpesaAccessToken } from "@/app/lib/mpesa"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -271,7 +272,7 @@ export async function POST(req: Request) {
      * --------------------------------------------------
      */
 
-    const token = await getAccessToken()
+    const token = await getMpesaAccessToken()
 
     /*
      * --------------------------------------------------
