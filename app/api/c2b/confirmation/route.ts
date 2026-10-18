@@ -18,6 +18,54 @@ export async function POST(req: Request) {
     const firstName = String(body.FirstName || "")
     const middleName = String(body.MiddleName || "")
     const lastName = String(body.LastName || "")
+    const receipt = String(body.TransID || "")
+    const amount = Number(body.TransAmount || 0)
+
+    console.log("💰 C2B PAYMENT:", {
+      msisdn,
+      accountNumber,
+      receipt,
+      amount,
+      firstName,
+      middleName,
+      lastName,
+    })
+
+    // --------------------------------------------------
+    // 1. If this is a StreetGO contribution payment,
+    //    complete it automatically.
+    // --------------------------------------------------
+
+    if (accountNumber && receipt && amount > 0) {
+      const { data, error } = await supabase.rpc(
+        "complete_merry_go_round_manual_payment",
+        {
+          p_member_code: accountNumber,
+          p_mpesa_receipt: receipt,
+          p_amount: amount,
+          p_msisdn: msisdn || null,
+          p_first_name: firstName,
+          p_middle_name: middleName,
+          p_last_name: lastName,
+        }
+      )
+
+      if (error) {
+        console.error(
+          "❌ CONTRIBUTION PAYMENT ERROR:",
+          error
+        )
+      } else {
+        console.log(
+          "✅ STREETGO CONTRIBUTION COMPLETED:",
+          data
+        )
+      }
+    }
+
+    // --------------------------------------------------
+    // 2. Existing member verification
+    // --------------------------------------------------
 
     if (accountNumber && firstName) {
       const { data, error } = await supabase.rpc(
@@ -48,6 +96,10 @@ export async function POST(req: Request) {
       )
     }
 
+    // --------------------------------------------------
+    // 3. Always acknowledge the C2B transaction
+    // --------------------------------------------------
+
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: "Success",
@@ -71,4 +123,3 @@ export async function GET() {
     message: "StreetGO C2B confirmation endpoint is operational",
   })
 }
-
