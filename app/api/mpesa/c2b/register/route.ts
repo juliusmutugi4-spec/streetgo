@@ -17,9 +17,9 @@ export async function POST() {
           ShortCode: process.env.MPESA_SHORTCODE,
           ResponseType: "Completed",
           ConfirmationURL:
-            "https://streetgo.app/api/mpesa/c2b/confirmation",
+            "https://streetgo.app/api/c2b/confirmation",
           ValidationURL:
-            "https://streetgo.app/api/mpesa/c2b/validation",
+            "https://streetgo.app/api/c2b/validation",
         }),
       }
     )
@@ -56,3 +56,4 @@ export async function GET() {
     message: "StreetGO C2B registration endpoint is operational",
   })
 }
+
