@@ -1,33 +1,57 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
-import { Check, Copy, ArrowRight, ShieldCheck } from "lucide-react"
-import { useState } from "react"
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation"
 
-export default function MerryGoRoundCreatedPage() {
+import {
+  Check,
+  Copy,
+  ArrowRight,
+  ShieldCheck,
+} from "lucide-react"
+
+import {
+  Suspense,
+  useState,
+} from "react"
+
+function MerryGoRoundCreatedContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const [copied, setCopied] = useState(false)
 
-  const groupNumber = searchParams.get("groupNumber") || ""
-  const groupId = searchParams.get("groupId") || ""
-  const phone = searchParams.get("phone") || ""
+  const groupNumber =
+    searchParams.get("groupNumber") || ""
 
-  const verified = searchParams.get("verified") === "1"
+  const groupId =
+    searchParams.get("groupId") || ""
+
+  const phone =
+    searchParams.get("phone") || ""
+
+  const verified =
+    searchParams.get("verified") === "1"
 
   const copyGroupNumber = async () => {
     if (!groupNumber) return
 
     try {
-      await navigator.clipboard.writeText(groupNumber)
+      await navigator.clipboard.writeText(
+        groupNumber
+      )
+
       setCopied(true)
 
       setTimeout(() => {
         setCopied(false)
       }, 2000)
     } catch {
-      console.error("Could not copy group number")
+      console.error(
+        "Could not copy group number"
+      )
     }
   }
 
@@ -37,20 +61,20 @@ export default function MerryGoRoundCreatedPage() {
       return
     }
 
-    // Organizer must verify their Safaricom number first.
     if (!verified) {
       router.push(
         `/contributions/merry-go-round/organizer-verify?groupId=${encodeURIComponent(
           groupId
         )}&groupNumber=${encodeURIComponent(
           groupNumber
-        )}&phone=${encodeURIComponent(phone)}`
+        )}&phone=${encodeURIComponent(
+          phone
+        )}`
       )
 
       return
     }
 
-    // Verified organizer can open the group.
     router.push(
       `/contributions/merry-go-round/group?groupId=${encodeURIComponent(
         groupId
@@ -81,13 +105,14 @@ export default function MerryGoRoundCreatedPage() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-slate-400">
-            Your Merry-Go-Round has been created successfully.
-            You can now invite your members.
+            Your Merry-Go-Round has been created
+            successfully. You can now invite your
+            members.
           </p>
 
         </div>
 
-        {/* Real Group Number */}
+        {/* Group Number */}
         <div className="mt-8 rounded-3xl border border-emerald-400/30 bg-emerald-400/[0.06] p-6">
 
           <p className="text-center text-xs font-black uppercase tracking-wider text-emerald-400">
@@ -97,7 +122,8 @@ export default function MerryGoRoundCreatedPage() {
           <div className="mt-4 rounded-2xl border border-white/10 bg-[#020617] p-5 text-center">
 
             <p className="break-all text-2xl font-black tracking-widest text-white">
-              {groupNumber || "GROUP NUMBER UNAVAILABLE"}
+              {groupNumber ||
+                "GROUP NUMBER UNAVAILABLE"}
             </p>
 
           </div>
@@ -116,8 +142,8 @@ export default function MerryGoRoundCreatedPage() {
           </button>
 
           <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-            Share this number only with the people you
-            want to join your group.
+            Share this number only with the people
+            you want to join your group.
           </p>
 
         </div>
@@ -174,9 +200,10 @@ export default function MerryGoRoundCreatedPage() {
 
           {!verified && (
             <p className="mt-4 text-xs leading-5 text-slate-400">
-              This protects the contribution group and ensures that
-              future M-PESA contribution and payout transactions are
-              connected to the correct organizer.
+              This protects the contribution group
+              and ensures that future M-PESA
+              contribution and payout transactions
+              are connected to the correct organizer.
             </p>
           )}
 
@@ -192,11 +219,13 @@ export default function MerryGoRoundCreatedPage() {
           <div className="mt-4 space-y-3 text-xs leading-5 text-slate-400">
 
             <p>
-              1. Member opens StreetGO Contributions.
+              1. Member opens StreetGO
+              Contributions.
             </p>
 
             <p>
-              2. Member selects JOIN WITH INVITATION.
+              2. Member selects JOIN WITH
+              INVITATION.
             </p>
 
             <p>
@@ -204,7 +233,8 @@ export default function MerryGoRoundCreatedPage() {
             </p>
 
             <p>
-              4. StreetGO verifies the member's account.
+              4. StreetGO verifies the member&apos;s
+              account.
             </p>
 
             <p>
@@ -224,8 +254,8 @@ export default function MerryGoRoundCreatedPage() {
 
           <p className="mt-2 text-xs leading-5 text-emerald-100/70">
             This group has been saved to StreetGO.
-            Its membership and contribution records will
-            be linked to this group.
+            Its membership and contribution records
+            will be linked to this group.
           </p>
 
         </div>
@@ -257,5 +287,29 @@ export default function MerryGoRoundCreatedPage() {
 
       </div>
     </main>
+  )
+}
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-[#020617] px-4 py-8 text-white">
+      <div className="mx-auto max-w-md text-center">
+        <div className="mt-20">
+          <div className="mx-auto h-12 w-12 animate-pulse rounded-full bg-emerald-400/20" />
+
+          <p className="mt-5 text-sm font-bold text-slate-400">
+            Loading contribution group...
+          </p>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+export default function MerryGoRoundCreatedPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <MerryGoRoundCreatedContent />
+    </Suspense>
   )
 }
