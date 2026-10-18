@@ -51,20 +51,21 @@ const supabase = getSupabaseBrowser()
 
     try {
       // Make sure user is authenticated
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser()
+const {
+  data: { session },
+  error: sessionError,
+} = await supabase.auth.getSession()
 
-      if (userError) {
-        throw userError
-      }
+if (sessionError) {
+  throw sessionError
+}
 
-      if (!user) {
-        router.push("/login")
-        return
-      }
+if (!session?.user) {
+  router.push("/login")
+  return
+}
 
+const user = session.user
       // Find the real group
       const {
         data: groupData,
