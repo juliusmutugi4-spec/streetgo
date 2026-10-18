@@ -14,15 +14,17 @@ export async function POST(req: Request) {
     console.log(JSON.stringify(body, null, 2))
 
     const msisdn = String(body.MSISDN || "")
+    const accountNumber = String(body.BillRefNumber || "")
     const firstName = String(body.FirstName || "")
     const middleName = String(body.MiddleName || "")
     const lastName = String(body.LastName || "")
 
-    if (msisdn && firstName) {
+    if (accountNumber && firstName) {
       const { data, error } = await supabase.rpc(
         "verify_member_from_c2b",
         {
           p_msisdn: msisdn,
+          p_account_number: accountNumber,
           p_first_name: firstName,
           p_middle_name: middleName,
           p_last_name: lastName,
