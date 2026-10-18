@@ -144,20 +144,70 @@ export async function POST(req: Request) {
           JSON.stringify(contribution, null, 2),
         );
 
-        const { data: completed, error } = await supabase.rpc(
-          "complete_merry_go_round_payment",
-          {
-            p_checkout_request_id: checkoutRequestId,
-
-            p_mpesa_receipt: receipt,
-
-            p_amount: amount,
-          },
-        );
+const { data: completed, error } = await supabase.rpc(
+  "finalize_merry_go_round_payment",
+  {
+    p_checkout_request_id: checkoutRequestId,
+    p_mpesa_receipt: receipt,
+    p_amount: amount,
+  },
+);
         if (error) {
           console.error("❌ CONTRIBUTION COMPLETION ERROR:", error);
         } else {
           console.log("✅ STREETGO CONTRIBUTION COMPLETED:", completed);
+
+
+// ---------------------------------------------
+// AUTOMATIC CONTRIBUTION B2C PAYOUT
+// ---------------------------------------------
+
+const roundResult = Array.isArray(completed)
+  ? completed[0]
+  : completed;
+
+if (roundResult?.round_status === "ready" && roundResult?.round_id) {
+  try {
+    const origin =
+      req.headers.get("origin") ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "https://streetgo.app";
+
+    const payoutResponse = await fetch(
+      `${origin}/api/mpesa/b2c/contribution/process`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roundId: roundResult.round_id,
+        }),
+        cache: "no-store",
+      }
+    );
+
+    const payoutResult = await payoutResponse.json();
+
+    if (!payoutResponse.ok) {
+      console.error(
+        "❌ AUTOMATIC CONTRIBUTION B2C FAILED:",
+        payoutResult
+      );
+    } else {
+      console.log(
+        "💸 AUTOMATIC CONTRIBUTION B2C STARTED:",
+        payoutResult
+      );
+    }
+  } catch (payoutError) {
+    console.error(
+      "❌ AUTOMATIC CONTRIBUTION B2C ERROR:",
+      payoutError
+    );
+  }
+}
+
 
           // ---------------------------------------------
           // VERIFY THE CONTRIBUTION MEMBER'S PHONE
