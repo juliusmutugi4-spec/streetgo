@@ -60,6 +60,53 @@ export async function POST(req: Request) {
           "✅ STREETGO CONTRIBUTION COMPLETED:",
           data
         )
+
+
+const roundResult = Array.isArray(data) ? data[0] : data
+
+if (roundResult?.round_status === "ready" && roundResult?.round_id) {
+  try {
+    const origin =
+      req.headers.get("origin") ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "https://streetgo.app"
+
+    const payoutResponse = await fetch(
+      `${origin}/api/mpesa/b2c/contribution/process`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roundId: roundResult.round_id,
+        }),
+        cache: "no-store",
+      }
+    )
+
+    const payoutResult = await payoutResponse.json()
+
+    if (!payoutResponse.ok) {
+      console.error(
+        "❌ AUTOMATIC CONTRIBUTION B2C FAILED:",
+        payoutResult
+      )
+    } else {
+      console.log(
+        "💸 AUTOMATIC CONTRIBUTION B2C STARTED:",
+        payoutResult
+      )
+    }
+  } catch (payoutError) {
+    console.error(
+      "❌ AUTOMATIC CONTRIBUTION B2C ERROR:",
+      payoutError
+    )
+  }
+}
+
+
       }
     }
 
