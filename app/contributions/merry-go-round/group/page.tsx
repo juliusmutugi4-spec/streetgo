@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/app/lib/supabase"
 
@@ -34,7 +34,7 @@ type Member = {
   mpesa_middle_name: string | null
   mpesa_last_name: string | null
 }
-export default function MerryGoRoundGroupPage() {
+function MerryGoRoundGroupContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -705,5 +705,35 @@ export default function MerryGoRoundGroupPage() {
 
       </div>
     </main>
+  )
+}
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-[#020617] px-4 py-10 text-white">
+      <div className="mx-auto max-w-md">
+        <div className="rounded-3xl border border-blue-900/60 bg-[#071426] p-6">
+          <p className="text-xs font-black tracking-[0.2em] text-emerald-400">
+            STREETGO CONTRIBUTIONS
+          </p>
+
+          <h1 className="mt-3 text-2xl font-black">
+            Loading group...
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Please wait while StreetGO loads your Merry-Go-Round.
+          </p>
+        </div>
+      </div>
+    </main>
+  )
+}
+
+export default function MerryGoRoundGroupPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <MerryGoRoundGroupContent />
+    </Suspense>
   )
 }
