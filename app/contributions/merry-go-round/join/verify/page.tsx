@@ -1,15 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-export default function VerifySafaricomPage() {
+function VerifySafaricomContent() {
   const router = useRouter()
-const searchParams = useSearchParams()
+  const searchParams = useSearchParams()
 
-const groupId = searchParams.get("groupId")
-const groupNumber = searchParams.get("groupNumber")
-const phone = searchParams.get("phone")
+  const groupId = searchParams.get("groupId")
+  const groupNumber = searchParams.get("groupNumber")
+  const phone = searchParams.get("phone")
+
   const [code, setCode] = useState("")
   const [loading, setLoading] = useState(false)
 
@@ -25,21 +26,21 @@ const phone = searchParams.get("phone")
     // Real OTP verification will be connected later.
     console.log("Verification code:", code)
 
-setTimeout(() => {
-  if (!groupId || !groupNumber || !phone) {
-    alert("Contribution group information is missing")
-    setLoading(false)
-    return
-  }
+    setTimeout(() => {
+      if (!groupId || !groupNumber || !phone) {
+        alert("Contribution group information is missing")
+        setLoading(false)
+        return
+      }
 
-  router.push(
-    `/contributions/merry-go-round/join/success?groupId=${encodeURIComponent(
-      groupId
-    )}&groupNumber=${encodeURIComponent(
-      groupNumber
-    )}&phone=${encodeURIComponent(phone)}`
-  )
-}, 700)
+      router.push(
+        `/contributions/merry-go-round/join/success?groupId=${encodeURIComponent(
+          groupId
+        )}&groupNumber=${encodeURIComponent(
+          groupNumber
+        )}&phone=${encodeURIComponent(phone)}`
+      )
+    }, 700)
   }
 
   return (
@@ -47,6 +48,7 @@ setTimeout(() => {
       <div className="mx-auto max-w-md">
 
         <button
+          type="button"
           onClick={() => router.back()}
           className="mb-8 text-sm font-bold text-blue-300"
         >
@@ -109,7 +111,9 @@ setTimeout(() => {
           <button
             type="button"
             className="mt-4 w-full py-3 text-xs font-bold text-blue-300"
-            onClick={() => alert("A new code will be requested later.")}
+            onClick={() =>
+              alert("A new code will be requested later.")
+            }
           >
             RESEND CODE
           </button>
@@ -125,5 +129,37 @@ setTimeout(() => {
 
       </div>
     </main>
+  )
+}
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-[#020617] px-4 py-8 text-white">
+      <div className="mx-auto max-w-md">
+        <div className="rounded-3xl border border-blue-900/60 bg-[#071426] p-6">
+
+          <p className="text-xs font-black tracking-[0.2em] text-emerald-400">
+            STREETGO CONTRIBUTIONS
+          </p>
+
+          <h1 className="mt-3 text-2xl font-black">
+            Loading...
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Preparing number verification.
+          </p>
+
+        </div>
+      </div>
+    </main>
+  )
+}
+
+export default function VerifySafaricomPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <VerifySafaricomContent />
+    </Suspense>
   )
 }
