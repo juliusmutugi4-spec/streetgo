@@ -49,8 +49,11 @@ export async function POST(request: NextRequest) {
     const initiatorName = process.env.MPESA_B2C_INITIATOR_NAME
     const securityCredential = process.env.MPESA_B2C_SECURITY_CREDENTIAL
     const shortcode = process.env.MPESA_B2C_SHORTCODE
-    const resultUrl = process.env.MPESA_B2C_RESULT_URL
-    const timeoutUrl = process.env.MPESA_B2C_TIMEOUT_URL
+const resultUrl =
+  process.env.MPESA_CONTRIBUTION_B2C_RESULT_URL
+
+const timeoutUrl =
+  process.env.MPESA_CONTRIBUTION_B2C_TIMEOUT_URL
 
     if (
       !consumerKey ||
