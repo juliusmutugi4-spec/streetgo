@@ -9,7 +9,7 @@ import {
 
 import { useRouter, useSearchParams } from "next/navigation"
 
-import { createClient } from "@supabase/supabase-js"
+import { getSupabaseBrowser } from "@/app/lib/supabase-browser"
 
 import {
   ArrowLeft,
@@ -23,11 +23,6 @@ import {
   Copy,
   RefreshCw,
 } from "lucide-react"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 type Group = {
   id: string
@@ -76,6 +71,7 @@ type MemberPaymentStatus = {
 function GroupDashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const supabase = getSupabaseBrowser()
 
   const groupIdFromUrl =
     searchParams.get("groupId")
