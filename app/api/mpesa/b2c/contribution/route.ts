@@ -129,18 +129,40 @@ export async function POST(request: NextRequest) {
       Occasion: `Round ${payout.payout_round_id}`,
     }
 
-    const b2cResponse = await fetch(
-      "https://api.safaricom.co.ke/mpesa/b2c/v3/paymentrequest",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-        cache: "no-store",
-      }
-    )
+let b2cResponse: Response
+
+try {
+  b2cResponse = await fetch(
+    "https://api.safaricom.co.ke/mpesa/b2c/v3/paymentrequest",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    }
+  )
+} catch (error) {
+  console.error("Contribution B2C network error:", error)
+
+  await supabase
+    .from("contribution_disbursements")
+    .update({
+      status: "failed",
+      failure_reason: "Unable to connect to Safaricom B2C",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", payout.payout_disbursement_id)
+
+  return NextResponse.json(
+    {
+      error: "Unable to connect to Safaricom B2C",
+    },
+    { status: 502 }
+  )
+}
 
     const b2cText = await b2cResponse.text()
 
