@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/app/lib/supabase"
 
-export default function JoinSuccessPage() {
+function JoinSuccessContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -45,14 +45,19 @@ export default function JoinSuccessPage() {
       )
 
       if (joinError) {
-        console.error("JOIN MERRY-GO-ROUND ERROR:", joinError)
+        console.error(
+          "JOIN MERRY-GO-ROUND ERROR:",
+          joinError
+        )
         throw joinError
       }
 
       const result = Array.isArray(data) ? data[0] : data
 
       if (!result?.group_id || !result?.member_number) {
-        throw new Error("The group membership could not be created.")
+        throw new Error(
+          "The group membership could not be created."
+        )
       }
 
       router.push(
@@ -63,7 +68,11 @@ export default function JoinSuccessPage() {
     } catch (err: any) {
       console.error(
         "JOIN GROUP ERROR:",
-        JSON.stringify(err, Object.getOwnPropertyNames(err), 2)
+        JSON.stringify(
+          err,
+          Object.getOwnPropertyNames(err),
+          2
+        )
       )
 
       setError(
@@ -172,7 +181,9 @@ export default function JoinSuccessPage() {
             onClick={joinGroup}
             className="mt-6 w-full rounded-2xl bg-emerald-400 px-5 py-4 text-sm font-black text-[#03130d] transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "JOINING GROUP..." : "JOIN GROUP"}
+            {loading
+              ? "JOINING GROUP..."
+              : "JOIN GROUP"}
           </button>
 
           <button
@@ -188,5 +199,37 @@ export default function JoinSuccessPage() {
 
       </div>
     </main>
+  )
+}
+
+function LoadingState() {
+  return (
+    <main className="min-h-screen bg-[#020617] px-4 py-8 text-white">
+      <div className="mx-auto max-w-md">
+        <div className="rounded-3xl border border-blue-900/60 bg-[#071426] p-6">
+
+          <p className="text-xs font-black tracking-[0.2em] text-emerald-400">
+            STREETGO CONTRIBUTIONS
+          </p>
+
+          <h1 className="mt-3 text-2xl font-black">
+            Loading...
+          </h1>
+
+          <p className="mt-2 text-sm text-slate-400">
+            Preparing your contribution group.
+          </p>
+
+        </div>
+      </div>
+    </main>
+  )
+}
+
+export default function JoinSuccessPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <JoinSuccessContent />
+    </Suspense>
   )
 }
