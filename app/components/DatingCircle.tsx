@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { supabase } from "../lib/supabase"
 
 export default function DatingCircle() {
   const router = useRouter()
@@ -22,108 +21,23 @@ export default function DatingCircle() {
 
   const isMoved = useRef(false)
 
-  async function openDating() {
+  // =========================================================
+  // OPEN STREETGO CONTRIBUTIONS
+  // =========================================================
+
+  function openContributions() {
     // Don't open after dragging
     if (isMoved.current) {
       isMoved.current = false
       return
     }
 
-    // Prevent double-click / duplicate requests
+    // Prevent double-click / duplicate navigation
     if (loading) return
 
     setLoading(true)
 
-    try {
-      // Use the existing browser session.
-      // This avoids an unnecessary auth-server getUser() request.
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession()
-
-      if (sessionError) {
-        console.error(
-          "Dating auth session error:",
-          sessionError
-        )
-
-        setLoading(false)
-        return
-      }
-
-      const user = session?.user
-
-      if (!user) {
-        router.push("/login")
-        return
-      }
-
-      // Check whether the user has completed dating setup
-      const {
-        data: profile,
-        error: profileError,
-      } = await supabase
-        .from("profiles")
-        .select("dating_active")
-        .eq("id", user.id)
-        .maybeSingle()
-
-if (profileError) {
-  console.error(
-    "========== DATING PROFILE ERROR =========="
-  )
-
-  console.error(
-    "message:",
-    profileError.message
-  )
-
-  console.error(
-    "details:",
-    profileError.details
-  )
-
-  console.error(
-    "hint:",
-    profileError.hint
-  )
-
-  console.error(
-    "code:",
-    profileError.code
-  )
-
-  console.error(
-    "full:",
-    JSON.stringify(
-      profileError,
-      null,
-      2
-    )
-  )
-
-  console.error(
-    "=========================================="
-  )
-
-  return
-}
-      if (!profile?.dating_active) {
-        router.push("/dating/setup")
-        return
-      }
-
-      // Dating is active
-      router.push("/dating")
-    } catch (error) {
-      console.error(
-        "Failed to open Dating:",
-        error
-      )
-
-      setLoading(false)
-    }
+    router.push("/contributions")
   }
 
   // =========================================================
@@ -255,14 +169,14 @@ if (profileError) {
         )}
 
         {/* =====================================================
-            DATING BUTTON
+            STREETGO CONTRIBUTIONS BUTTON
         ===================================================== */}
 
         <button
           type="button"
           onMouseDown={startDrag}
           onTouchStart={startTouch}
-          onClick={openDating}
+          onClick={openContributions}
           disabled={loading}
           className={`
             flex
@@ -293,7 +207,7 @@ if (profileError) {
                 : "cursor-grab active:cursor-grabbing hover:scale-105 hover:shadow-[0_0_25px_rgba(245,158,11,0.8)] active:scale-95"
             }
           `}
-          aria-label="Open Dating Network"
+          aria-label="Open StreetGO Contributions"
         >
           <span
             className={
@@ -305,6 +219,7 @@ if (profileError) {
             ✨
           </span>
         </button>
+
       </div>
     </div>
   )
