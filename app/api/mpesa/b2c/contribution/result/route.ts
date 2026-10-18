@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       await supabase
         .from("contribution_disbursements")
         .select(
-          "id, round_id, amount, status"
+          "id, group_id, round_id, amount, status"
         )
         .eq(
           "originator_conversation_id",
@@ -133,17 +133,50 @@ export async function POST(request: NextRequest) {
         )
 
         return NextResponse.json(
-          { error: "Payout succeeded but round update failed" },
+          {
+            error:
+              "Payout succeeded but round update failed",
+          },
           { status: 500 }
         )
       }
+
+      // Automatically prepare the next Merry-Go-Round round
+      const { data: nextRound, error: nextRoundError } =
+        await supabase.rpc(
+          "prepare_merry_go_round_round",
+          {
+            p_group_id: disbursement.group_id,
+          }
+        )
+
+      if (nextRoundError) {
+        console.error(
+          "Failed to prepare next contribution round:",
+          nextRoundError
+        )
+
+        return NextResponse.json({
+          success: true,
+          status: "paid",
+          nextRoundCreated: false,
+          warning:
+            "Payout succeeded but next round preparation failed",
+        })
+      }
+
+      console.log(
+        "NEXT CONTRIBUTION ROUND PREPARED:",
+        nextRound
+      )
 
       console.log(
         "CONTRIBUTION PAYOUT PAID:",
         {
           disbursementId: disbursement.id,
           roundId: disbursement.round_id,
-          amount: transactionAmount ?? disbursement.amount,
+          amount:
+            transactionAmount ?? disbursement.amount,
           receipt: transactionReceipt,
           transactionId,
         }
@@ -152,6 +185,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         status: "paid",
+        nextRoundCreated: true,
+        nextRound,
       })
     }
 
@@ -177,7 +212,10 @@ export async function POST(request: NextRequest) {
       )
 
       return NextResponse.json(
-        { error: "Failed to record payout failure" },
+        {
+          error:
+            "Failed to record payout failure",
+        },
         { status: 500 }
       )
     }
@@ -204,7 +242,10 @@ export async function POST(request: NextRequest) {
     )
 
     return NextResponse.json(
-      { error: "Result callback processing failed" },
+      {
+        error:
+          "Result callback processing failed",
+      },
       { status: 500 }
     )
   }
