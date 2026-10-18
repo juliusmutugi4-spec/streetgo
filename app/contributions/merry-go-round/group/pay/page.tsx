@@ -136,80 +136,113 @@ function ContributionPayContent() {
       setLoading(false);
     }
   }
+async function requestMpesaPayment() {
+  try {
+    setPaying(true)
+    setError("")
+    setMessage("")
 
-  async function requestMpesaPayment() {
-    try {
-      setPaying(true);
-      setError("");
-      setMessage("");
+    if (!groupId) {
+      throw new Error("Contribution group was not specified.")
+    }
 
-      if (!group) {
-        throw new Error("Contribution group is not loaded.");
-      }
+    if (!group) {
+      throw new Error("Contribution group is not loaded.")
+    }
 
-      if (!member) {
-        throw new Error("Your membership could not be found.");
-      }
+    if (!member) {
+      throw new Error("Your membership could not be found.")
+    }
 
-      if (!groupId) {
-        throw new Error("Contribution group was not specified.");
-      }
+    // First let the secure database function decide whether
+    // this contribution can be covered by StreetGO credit.
+    setMessage("Checking your StreetGO contribution credit...")
 
-      const cleanPhone = phoneNumber.replace(/\s+/g, "").replace(/^\+/, "");
+    const { data: paymentData, error: paymentError } =
+      await supabase.rpc("create_merry_go_round_payment", {
+        p_group_id: groupId,
+      })
 
-      if (!/^07\d{8}$/.test(cleanPhone) && !/^2547\d{8}$/.test(cleanPhone)) {
-        throw new Error(
-          "Enter a valid Safaricom number, for example 0712345678.",
-        );
-      }
+    if (paymentError) {
+      throw new Error(
+        paymentError.message ||
+          "Unable to create your contribution payment."
+      )
+    }
 
-      let paymentPhone = cleanPhone;
+    const payment =
+      Array.isArray(paymentData)
+        ? paymentData[0]
+        : paymentData
 
-      if (/^07\d{8}$/.test(paymentPhone)) {
-        paymentPhone = "254" + paymentPhone.substring(1);
-      }
+    if (!payment) {
+      throw new Error(
+        "StreetGO did not return a payment instruction."
+      )
+    }
 
-      if (paymentPhone !== member.phone_number) {
-        setSavingPhone(true);
+    console.log(
+      "STREETGO CONTRIBUTION PAYMENT:",
+      payment
+    )
 
-        const { error: phoneError } = await supabase.rpc(
-          "set_contribution_member_phone",
-          {
-            p_phone_number: paymentPhone,
-          },
-        );
+    const amountToPay = Number(payment.amount || 0)
 
-        setSavingPhone(false);
+    // -----------------------------------------
+    // FULL CREDIT PAYMENT
+    // -----------------------------------------
+    if (amountToPay <= 0) {
+      setMessage(
+        "Your StreetGO credit covered this contribution. No M-PESA payment is required."
+      )
 
-        if (phoneError) {
-          throw new Error(phoneError.message);
-        }
+      setPaying(false)
 
-        setMember({
-          ...member,
-          phone_number: paymentPhone,
-          phone_verified: false,
-        });
-      }
+      // Give the database/UI a moment to settle,
+      // then return to the group.
+      setTimeout(() => {
+        router.push(
+          `/contributions/merry-go-round/group?groupId=${encodeURIComponent(
+            group.id
+          )}`
+        )
+      }, 1200)
 
-      /*
-       * Get the current authenticated session.
-       * The STK API uses this token to securely identify
-       * the logged-in StreetGO member.
-       */
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      return
+    }
 
-      if (!session?.access_token) {
-        throw new Error(
-          "Your StreetGO session has expired. Please log in again.",
-        );
-      }
+    // -----------------------------------------
+    // M-PESA REQUIRED
+    // -----------------------------------------
+    if (!member.phone_number) {
+      throw new Error(
+        "Your Safaricom phone number is not available. Please verify your number first."
+      )
+    }
 
-      setMessage("Creating your contribution payment...");
+    if (!member.phone_verified) {
+      throw new Error(
+        "Your Safaricom number has not been verified yet."
+      )
+    }
 
-      const response = await fetch("/api/mpesa/stk/contribution", {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session?.access_token) {
+      throw new Error(
+        "Your StreetGO session has expired. Please log in again."
+      )
+    }
+
+    setMessage(
+      `Requesting M-PESA payment of KES ${amountToPay.toLocaleString()}...`
+    )
+
+    const response = await fetch(
+      "/api/mpesa/stk/contribution",
+      {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -217,42 +250,53 @@ function ContributionPayContent() {
         },
         body: JSON.stringify({
           groupId,
-          phone: paymentPhone,
+          phone: member.phone_number,
+          transactionId: payment.transaction_id,
+          amount: amountToPay,
         }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            data?.message ||
-            "StreetGO could not start the M-PESA payment.",
-        );
       }
+    )
 
-      if (!data) {
-        throw new Error(
-          "StreetGO received an empty response from the payment service.",
-        );
-      }
+    const data = await response.json().catch(() => null)
 
-      console.log("STREETGO CONTRIBUTION STK RESPONSE:", data);
-
-      setMessage(
-        "M-PESA request sent. Check your Safaricom phone and enter your M-PESA PIN to approve the contribution.",
-      );
-    } catch (err: any) {
-      console.error("CONTRIBUTION STK PUSH ERROR:", err);
-
-      setError(err?.message || "Unable to start the M-PESA payment.");
-
-      setMessage("");
-    } finally {
-      setPaying(false);
+    if (!response.ok) {
+      throw new Error(
+        data?.error ||
+          data?.message ||
+          "StreetGO could not start the M-PESA payment."
+      )
     }
-  }
 
+    if (!data) {
+      throw new Error(
+        "StreetGO received an empty response from the payment service."
+      )
+    }
+
+    console.log(
+      "STREETGO CONTRIBUTION STK RESPONSE:",
+      data
+    )
+
+    setMessage(
+      `M-PESA request sent for KES ${amountToPay.toLocaleString()}. Check your Safaricom phone and enter your M-PESA PIN to approve the contribution.`
+    )
+  } catch (err: any) {
+    console.error(
+      "CONTRIBUTION PAYMENT ERROR:",
+      err
+    )
+
+    setError(
+      err?.message ||
+        "Unable to start the contribution payment."
+    )
+
+    setMessage("")
+  } finally {
+    setPaying(false)
+  }
+}
   if (loading) {
     return (
       <main className="min-h-screen bg-[#020617] px-4 py-10 text-white">
