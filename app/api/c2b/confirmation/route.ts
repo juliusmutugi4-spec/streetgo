@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    console.log("?? STREETGO C2B CONFIRMATION:")
+    console.log("STREETGO C2B CONFIRMATION:")
     console.log(JSON.stringify(body, null, 2))
 
     const msisdn = String(body.MSISDN || "")
@@ -21,66 +21,55 @@ export async function POST(req: Request) {
     const amount = Number(body.TransAmount || 0)
     const receipt = String(body.TransID || "")
 
-    // --------------------------------------------------
-    // 1. FUNDRAISING PAYMENT
-    // --------------------------------------------------
-
+    // FUNDRAISING PAYMENT
     if (
-      accountNumber.startsWith("FUND-") &&
+      accountNumber.toUpperCase().startsWith("FUND-") &&
       receipt &&
       amount > 0
     ) {
-      console.log(
-        "?? FUNDRAISING C2B PAYMENT:",
-        {
-          accountNumber,
-          amount,
-          receipt,
-          msisdn,
-        }
-      )
+      console.log("FUNDRAISING C2B PAYMENT:", {
+        accountNumber,
+        amount,
+        receipt,
+        msisdn,
+      })
 
-      const { data, error } = await supabase.rpc(
-        "complete_fundraising_c2b_payment",
-        {
-          p_reference: accountNumber,
-          p_mpesa_receipt: receipt,
-          p_amount: amount,
-          p_msisdn: msisdn,
-          p_first_name: firstName,
-          p_middle_name: middleName,
-          p_last_name: lastName,
-        }
-      )
+      const { data: fundraisingData, error: fundraisingError } =
+        await supabase.rpc(
+          "complete_fundraising_c2b_payment",
+          {
+            p_reference: accountNumber,
+            p_mpesa_receipt: receipt,
+            p_amount: amount,
+            p_msisdn: msisdn,
+            p_first_name: firstName,
+            p_middle_name: middleName,
+            p_last_name: lastName,
+          }
+        )
 
-      if (error) {
+      if (fundraisingError) {
         console.error(
-          "? FUNDRAISING PAYMENT ERROR:",
-          error
+          "FUNDRAISING PAYMENT ERROR:",
+          fundraisingError
         )
       } else {
         console.log(
-          "? FUNDRAISING PAYMENT COMPLETED:",
-          data
+          "FUNDRAISING PAYMENT COMPLETED:",
+          fundraisingData
         )
       }
 
-      // IMPORTANT:
-      // Do not send fundraising payments
-      // through the Merry-Go-Round functions.
       return NextResponse.json({
         ResultCode: 0,
         ResultDesc: "Success",
       })
     }
 
-    // --------------------------------------------------
-    // 2. EXISTING MERRY-GO-ROUND PAYMENT
-    // --------------------------------------------------
-
+    // MERRY-GO-ROUND PAYMENT
     if (!accountNumber || !firstName) {
       console.log(
-        "?? C2B payment did not contain enough identity information."
+        "C2B payment did not contain enough identity information."
       )
 
       return NextResponse.json({
@@ -105,48 +94,44 @@ export async function POST(req: Request) {
 
     if (paymentError) {
       console.error(
-        "? CONTRIBUTION PAYMENT ERROR:",
+        "CONTRIBUTION PAYMENT ERROR:",
         paymentError
       )
     } else {
       console.log(
-        "? CONTRIBUTION PAYMENT COMPLETED:",
+        "CONTRIBUTION PAYMENT COMPLETED:",
         paymentData
       )
     }
 
-    // --------------------------------------------------
-    // 3. VERIFY MERRY-GO-ROUND MEMBER
-    // --------------------------------------------------
-
-    const { data: verificationData, error: verificationError } =
-      await supabase.rpc(
-        "verify_member_from_c2b",
-        {
-          p_msisdn: msisdn,
-          p_account_number: accountNumber,
-          p_first_name: firstName,
-          p_middle_name: middleName,
-          p_last_name: lastName,
-        }
-      )
+    // VERIFY MEMBER
+    const {
+      data: verificationData,
+      error: verificationError,
+    } = await supabase.rpc(
+      "verify_member_from_c2b",
+      {
+        p_msisdn: msisdn,
+        p_account_number: accountNumber,
+        p_first_name: firstName,
+        p_middle_name: middleName,
+        p_last_name: lastName,
+      }
+    )
 
     if (verificationError) {
       console.error(
-        "? MEMBER VERIFICATION ERROR:",
+        "MEMBER VERIFICATION ERROR:",
         verificationError
       )
     } else {
       console.log(
-        "? STREETGO MEMBER VERIFIED:",
+        "STREETGO MEMBER VERIFIED:",
         verificationData
       )
     }
 
-    // --------------------------------------------------
-    // 4. AUTOMATIC MERRY-GO-ROUND PAYOUT
-    // --------------------------------------------------
-
+    // AUTOMATIC MERRY-GO-ROUND PAYOUT
     const paymentRow =
       Array.isArray(paymentData)
         ? paymentData[0]
@@ -157,7 +142,7 @@ export async function POST(req: Request) {
       paymentRow?.round_status === "ready"
     ) {
       console.log(
-        "?? ROUND READY — STARTING AUTOMATIC B2C PAYOUT:",
+        "ROUND READY - STARTING AUTOMATIC B2C PAYOUT:",
         paymentRow.round_id
       )
 
@@ -184,12 +169,12 @@ export async function POST(req: Request) {
 
       if (!processResponse.ok) {
         console.error(
-          "? AUTOMATIC CONTRIBUTION PAYOUT FAILED:",
+          "AUTOMATIC CONTRIBUTION PAYOUT FAILED:",
           processResult
         )
       } else {
         console.log(
-          "? AUTOMATIC CONTRIBUTION PAYOUT STARTED:",
+          "AUTOMATIC CONTRIBUTION PAYOUT STARTED:",
           processResult
         )
       }
@@ -201,11 +186,10 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error(
-      "? C2B CONFIRMATION ERROR:",
+      "C2B CONFIRMATION ERROR:",
       error
     )
 
-    // Always acknowledge Safaricom.
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: "Success",
