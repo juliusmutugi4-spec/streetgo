@@ -83,12 +83,14 @@ export async function POST(req: Request) {
     }
 
     // Verify the original contribution is actually paid.
-    const { data: contribution, error: contributionError } =
-      await supabase
-        .from("fundraising_contributions")
-        .select("id, amount, payment_status, mpesa_receipt")
-        .eq("id", contributionId)
-        .single()
+    const {
+      data: contribution,
+      error: contributionError,
+    } = await supabase
+      .from("fundraising_contributions")
+      .select("id, amount, payment_status, mpesa_receipt")
+      .eq("id", contributionId)
+      .single()
 
     if (contributionError || !contribution) {
       return NextResponse.json(
@@ -122,7 +124,7 @@ export async function POST(req: Request) {
     }
 
     // ==================================================
-    // PHONE → B2C
+    // PHONE -> B2C
     // ==================================================
 
     if (payout.destination_type === "phone") {
@@ -133,6 +135,20 @@ export async function POST(req: Request) {
           {
             success: false,
             error: "Invalid fundraiser phone number",
+          },
+          { status: 400 }
+        )
+      }
+
+      // Safaricom B2C minimum.
+      if (Number(payout.amount) < 10) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Fundraising B2C payout must be at least KES 10",
+            payoutId: payout.id,
+            amount: Number(payout.amount),
           },
           { status: 400 }
         )
@@ -155,7 +171,8 @@ export async function POST(req: Request) {
         return NextResponse.json(
           {
             success: false,
-            error: "Fundraising B2C callback URLs are not configured",
+            error:
+              "Fundraising B2C callback URLs are not configured",
           },
           { status: 500 }
         )
@@ -196,19 +213,33 @@ export async function POST(req: Request) {
         )
       )
 
-      // Mark processing BEFORE calling Safaricom.
-      const { error: processingError } =
-        await supabase
-          .from("fundraising_payouts")
-          .update({
-            status: "processing",
-            provider_originator_conversation_id:
-              originatorConversationId,
-            payout_started_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", payout.id)
-          .eq("status", "pending")
+      // ==================================================
+      // ATOMIC PAYOUT RESERVATION
+      // ==================================================
+      //
+      // Only the request that successfully changes
+      // pending -> processing is allowed to call Safaricom.
+      //
+      // This prevents two simultaneous requests from
+      // sending the same payout twice.
+      // ==================================================
+
+      const {
+        data: reservedPayout,
+        error: processingError,
+      } = await supabase
+        .from("fundraising_payouts")
+        .update({
+          status: "processing",
+          provider_originator_conversation_id:
+            originatorConversationId,
+          payout_started_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", payout.id)
+        .eq("status", "pending")
+        .select("id")
+        .maybeSingle()
 
       if (processingError) {
         console.error(
@@ -224,6 +255,22 @@ export async function POST(req: Request) {
           { status: 500 }
         )
       }
+
+      if (!reservedPayout) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Payout is already being processed or has already been completed",
+            payoutId: payout.id,
+          },
+          { status: 409 }
+        )
+      }
+
+      // ==================================================
+      // SEND TO SAFARICOM
+      // ==================================================
 
       try {
         const response = await axios.post(
@@ -262,7 +309,9 @@ export async function POST(req: Request) {
       } catch (error: any) {
         console.error(
           "FUNDRAISING B2C PAYOUT REQUEST FAILED:",
-          error?.response?.data || error?.message || error
+          error?.response?.data ||
+            error?.message ||
+            error
         )
 
         await supabase
@@ -276,6 +325,7 @@ export async function POST(req: Request) {
             updated_at: new Date().toISOString(),
           })
           .eq("id", payout.id)
+          .eq("status", "processing")
 
         return NextResponse.json(
           {
@@ -346,7 +396,9 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error(
       "FUNDRAISING PAYOUT ERROR:",
-      error?.response?.data || error?.message || error
+      error?.response?.data ||
+        error?.message ||
+        error
     )
 
     return NextResponse.json(
