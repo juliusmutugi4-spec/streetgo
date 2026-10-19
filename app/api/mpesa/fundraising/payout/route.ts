@@ -40,59 +40,93 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    const { campaignId, amount } = body
+    const contributionId = String(body.contributionId || "")
 
-    if (!campaignId || !amount || Number(amount) <= 0) {
+    if (!contributionId) {
       return NextResponse.json(
         {
           success: false,
-          error: "campaignId and a valid amount are required",
+          error: "contributionId is required",
         },
         { status: 400 }
       )
     }
 
-    /*
-     * Load campaign
-     */
-    const { data: campaign, error: campaignError } = await supabase
-      .from("fundraising_campaigns")
-      .select("*")
-      .eq("id", campaignId)
-      .single()
+    // Load exactly one payout.
+    const { data: payout, error: payoutError } =
+      await supabase
+        .from("fundraising_payouts")
+        .select("*")
+        .eq("contribution_id", contributionId)
+        .single()
 
-    if (campaignError || !campaign) {
+    if (payoutError || !payout) {
       return NextResponse.json(
         {
           success: false,
-          error: "Fundraising campaign not found",
+          error: "Fundraising payout not found",
         },
         { status: 404 }
       )
     }
 
-    /*
-     * Only completed payments should ever reach payout.
-     */
-    if (campaign.status === "cancelled") {
+    // Never send a payout that is not pending.
+    if (payout.status !== "pending") {
       return NextResponse.json(
         {
           success: false,
-          error: "This campaign has been cancelled",
+          error: `Payout is already ${payout.status}`,
+          payoutId: payout.id,
+        },
+        { status: 409 }
+      )
+    }
+
+    // Verify the original contribution is actually paid.
+    const { data: contribution, error: contributionError } =
+      await supabase
+        .from("fundraising_contributions")
+        .select("id, amount, payment_status, mpesa_receipt")
+        .eq("id", contributionId)
+        .single()
+
+    if (contributionError || !contribution) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Contribution not found",
+        },
+        { status: 404 }
+      )
+    }
+
+    if (contribution.payment_status !== "paid") {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Contribution has not been paid",
         },
         { status: 400 }
       )
     }
 
-    const destinationType = campaign.destination_type
+    // Make sure payout amount matches the paid contribution.
+    if (Number(payout.amount) !== Number(contribution.amount)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Payout amount does not match contribution amount",
+        },
+        { status: 400 }
+      )
+    }
 
-    /*
-     * PHONE DESTINATION
-     *
-     * This is the first payout rail we will implement.
-     */
-    if (destinationType === "phone") {
-      const phone = formatPhone(campaign.destination_phone)
+    // ==================================================
+    // PHONE → B2C
+    // ==================================================
+
+    if (payout.destination_type === "phone") {
+      const phone = formatPhone(payout.destination_phone)
 
       if (!/^2547\d{8}$/.test(phone)) {
         return NextResponse.json(
@@ -130,29 +164,30 @@ export async function POST(req: Request) {
       const accessToken = await getAccessToken()
 
       const originatorConversationId =
-        `FUND-${campaign.id.slice(0, 8)}-${Date.now()}`
+        `FUND-${payout.id.slice(0, 8)}-${Date.now()}`
 
       const payload = {
         OriginatorConversationID: originatorConversationId,
         InitiatorName: initiatorName,
         SecurityCredential: securityCredential,
         CommandID: "BusinessPayment",
-        Amount: Number(amount),
+        Amount: Number(payout.amount),
         PartyA: shortcode,
         PartyB: phone,
-        Remarks: `StreetGO fundraising payout`,
+        Remarks: "StreetGO fundraising payout",
         QueueTimeOutURL: timeoutUrl,
         ResultURL: resultUrl,
-        Occasion: `Fund ${campaign.slug}`,
+        Occasion: `Fundraising ${payout.campaign_id}`,
       }
 
       console.log(
         "FUNDRAISING B2C PAYOUT REQUEST:",
         JSON.stringify(
           {
-            campaignId,
-            amount: Number(amount),
-            destinationType,
+            contributionId,
+            payoutId: payout.id,
+            amount: Number(payout.amount),
+            destinationType: payout.destination_type,
             phone,
             originatorConversationId,
           },
@@ -161,78 +196,140 @@ export async function POST(req: Request) {
         )
       )
 
-      const response = await axios.post(
-        "https://api.safaricom.co.ke/mpesa/b2c/v3/paymentrequest",
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
+      // Mark processing BEFORE calling Safaricom.
+      const { error: processingError } =
+        await supabase
+          .from("fundraising_payouts")
+          .update({
+            status: "processing",
+            provider_originator_conversation_id:
+              originatorConversationId,
+            payout_started_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", payout.id)
+          .eq("status", "pending")
+
+      if (processingError) {
+        console.error(
+          "FUNDRAISING PAYOUT STATUS ERROR:",
+          processingError
+        )
+
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Could not reserve payout",
           },
-        }
-      )
+          { status: 500 }
+        )
+      }
 
-      console.log(
-        "FUNDRAISING B2C PAYOUT RESPONSE:",
-        JSON.stringify(response.data, null, 2)
-      )
+      try {
+        const response = await axios.post(
+          "https://api.safaricom.co.ke/mpesa/b2c/v3/paymentrequest",
+          payload,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+          }
+        )
 
-      return NextResponse.json({
-        success: true,
-        destinationType: "phone",
-        amount: Number(amount),
-        phone,
-        originatorConversationId,
-        response: response.data,
-      })
+        console.log(
+          "FUNDRAISING B2C PAYOUT RESPONSE:",
+          JSON.stringify(response.data, null, 2)
+        )
+
+        await supabase
+          .from("fundraising_payouts")
+          .update({
+            provider_conversation_id:
+              response.data.ConversationID || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", payout.id)
+
+        return NextResponse.json({
+          success: true,
+          payoutId: payout.id,
+          contributionId,
+          destinationType: "phone",
+          amount: Number(payout.amount),
+          response: response.data,
+        })
+      } catch (error: any) {
+        console.error(
+          "FUNDRAISING B2C PAYOUT REQUEST FAILED:",
+          error?.response?.data || error?.message || error
+        )
+
+        await supabase
+          .from("fundraising_payouts")
+          .update({
+            status: "failed",
+            failure_reason:
+              error?.response?.data?.errorMessage ||
+              error?.message ||
+              "Safaricom payout request failed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", payout.id)
+
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              error?.response?.data?.errorMessage ||
+              error?.message ||
+              "Safaricom payout request failed",
+          },
+          { status: 500 }
+        )
+      }
     }
 
-    /*
-     * PAYBILL
-     *
-     * We deliberately do NOT send anything yet.
-     * Business Pay Bill requires its own Safaricom API
-     * permission and request structure.
-     */
-    if (destinationType === "paybill") {
+    // ==================================================
+    // PAYBILL
+    // ==================================================
+
+    if (payout.destination_type === "paybill") {
       return NextResponse.json(
         {
           success: false,
           error:
-            "Fundraising PayBill payout is not enabled yet. Business Pay Bill API must be configured first.",
+            "Fundraising PayBill payout is not enabled yet.",
         },
         { status: 501 }
       )
     }
 
-    /*
-     * TILL
-     *
-     * We deliberately do NOT send anything yet.
-     * Business Buy Goods requires its own Safaricom API
-     * permission and request structure.
-     */
-    if (destinationType === "till") {
+    // ==================================================
+    // TILL
+    // ==================================================
+
+    if (payout.destination_type === "till") {
       return NextResponse.json(
         {
           success: false,
           error:
-            "Fundraising Till payout is not enabled yet. Business Buy Goods API must be configured first.",
+            "Fundraising Till payout is not enabled yet.",
         },
         { status: 501 }
       )
     }
 
-    /*
-     * BANK
-     *
-     * Bank payout will be added separately.
-     */
-    if (destinationType === "bank") {
+    // ==================================================
+    // BANK
+    // ==================================================
+
+    if (payout.destination_type === "bank") {
       return NextResponse.json(
         {
           success: false,
-          error: "Fundraising bank payout is not enabled yet.",
+          error:
+            "Fundraising bank payout is not enabled yet.",
         },
         { status: 501 }
       )
@@ -241,7 +338,8 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         success: false,
-        error: `Unsupported fundraising destination: ${destinationType}`,
+        error:
+          `Unsupported destination type: ${payout.destination_type}`,
       },
       { status: 400 }
     )
