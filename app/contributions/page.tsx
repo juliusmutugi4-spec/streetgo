@@ -95,45 +95,67 @@ export default function ContributionsPage() {
       </header>
 
       <section className="mx-auto max-w-xl px-4 py-6">
-        {/* Welcome / Balance Area Banner */}
-        <div className="mb-6 rounded-2xl border border-white/5 bg-gradient-to-br from-white/[0.04] to-transparent p-5">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-            Chama Dashboard
-          </span>
-          <h2 className="mt-1 text-2xl font-black tracking-tight"> My Contributions </h2>
-          <p className="mt-1.5 text-xs text-slate-400 leading-relaxed">
-            Manage your mobile-first merry-go-rounds, secure group payouts, and member status in one place.
-          </p>
-        </div>
+{/* Welcome Area Header */}
+<div className="mb-6">
+  <div className="flex items-center gap-2">
+    <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500">
+      Dashboard
+    </span>
+    <span className="h-1 w-1 rounded-full bg-slate-700" />
+    <span className="text-[10px] text-slate-500">Contributions</span>
+  </div>
+  <h2 className="mt-1 text-xl font-bold tracking-tight text-slate-100">
+    My Contributions
+  </h2>
+  <p className="mt-1 text-xs text-slate-400">
+    Manage your group merry-go-rounds, secure payouts, and member status.
+  </p>
+</div>
 
-        {/* Safaricom-Inspired Quick Action Grid */}
-        <div className="mb-8 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => router.push("/contributions/merry-go-round")}
-            className="flex flex-col items-start justify-between rounded-2xl bg-emerald-400 p-4 text-left transition active:scale-[0.98] hover:bg-emerald-300"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#02130b]/10 text-[#02130b]">
-              <Plus size={20} strokeWidth={2.5} />
-            </div>
-            <div className="mt-6">
-              <p className="text-[11px] font-extrabold uppercase tracking-wider text-[#02130b]/60">Start New</p>
-              <p className="text-sm font-black text-[#02130b]">Create Chama</p>
-            </div>
-          </button>
+{/* Professional Micro-Action Grid */}
+<div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+  {/* Create Chama */}
+  <button 
+    onClick={() => router.push("/contributions/merry-go-round")} 
+    className="group flex flex-col justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-3 text-left transition-all duration-200 active:scale-[0.99] hover:bg-emerald-500/[0.08] hover:border-emerald-500/30"
+  >
+    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 transition-colors group-hover:bg-emerald-500/20">
+      <Plus size={16} strokeWidth={2.5} />
+    </div>
+    <div className="mt-4">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-500/80">Start New</p>
+      <p className="text-xs font-semibold text-slate-200 mt-0.5">Create Chama</p>
+    </div>
+  </button>
 
-          <button
-            onClick={() => router.push("/contributions/merry-go-round/join")}
-            className="flex flex-col items-start justify-between rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-left transition active:scale-[0.98] hover:bg-white/[0.06] hover:border-white/10"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-400/10 text-emerald-400">
-              <UserPlus size={18} />
-            </div>
-            <div className="mt-6">
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Have a Link?</p>
-              <p className="text-sm font-bold text-slate-200">Join Group</p>
-            </div>
-          </button>
-        </div>
+  {/* Join Group */}
+  <button 
+    onClick={() => router.push("/contributions/merry-go-round/join")} 
+    className="group flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-900/40 p-3 text-left transition-all duration-200 active:scale-[0.99] hover:bg-slate-900/80 hover:border-slate-700"
+  >
+    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-slate-400 transition-colors group-hover:bg-slate-700 group-hover:text-slate-300">
+      <UserPlus size={15} />
+    </div>
+    <div className="mt-4">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Have a Link?</p>
+      <p className="text-xs font-semibold text-slate-300 mt-0.5">Join Group</p>
+    </div>
+  </button>
+
+  {/* Fundraiser */}
+  <button 
+    onClick={() => router.push("/fund")} 
+    className="group flex flex-col justify-between rounded-xl border border-slate-800 bg-slate-900/40 p-3 text-left transition-all duration-200 active:scale-[0.99] hover:bg-slate-900/80 hover:border-slate-700 sm:col-span-1 col-span-2"
+  >
+    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 text-slate-400 transition-colors group-hover:bg-slate-700 group-hover:text-slate-300">
+      <CircleDot size={15} />
+    </div>
+    <div className="mt-4">
+      <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Raise Money</p>
+      <p className="text-xs font-semibold text-slate-300 mt-0.5">Fundraiser</p>
+    </div>
+  </button>
+</div>
 
         {/* Section Divider Line */}
         <div className="mb-6 h-[1px] w-full bg-white/5" />
