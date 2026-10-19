@@ -74,14 +74,18 @@ export async function POST(req: Request) {
      * --------------------------------------------------
      */
 
-    const { data: campaign, error: campaignError } =
-      await supabase
-        .from("fundraising_campaigns")
-        .select(
-          "id, title, status, destination_type"
-        )
-        .eq("id", campaignId)
-        .maybeSingle()
+const { data: campaign, error: campaignError } =
+  await supabase
+    .from("fundraising_campaigns")
+    .select("id, status")
+    .eq("id", campaignId)
+    .single()
+
+console.log("FUNDRAISER VERIFY:", {
+  campaignId,
+  campaign,
+  campaignError,
+})
 
     if (campaignError) {
       console.error(

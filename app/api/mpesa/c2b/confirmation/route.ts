@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    console.log("📥 STREETGO C2B CONFIRMATION:")
+    console.log("STREETGO C2B CONFIRMATION:")
     console.log(JSON.stringify(body, null, 2))
 
     const msisdn = String(body.MSISDN || "")
@@ -21,9 +21,198 @@ export async function POST(req: Request) {
     const amount = Number(body.TransAmount || 0)
     const receipt = String(body.TransID || "")
 
+    // ==================================================
+    // 1. FUNDRAISING PAYMENT
+    // ==================================================
+
+    if (
+      accountNumber.toUpperCase().startsWith("FUND-") &&
+      receipt &&
+      amount > 0
+    ) {
+      console.log("FUNDRAISING C2B PAYMENT:", {
+        accountNumber,
+        amount,
+        receipt,
+        msisdn,
+      })
+
+      const { data: fundraisingData, error: fundraisingError } =
+        await supabase.rpc(
+          "complete_fundraising_c2b_payment",
+          {
+            p_reference: accountNumber,
+            p_mpesa_receipt: receipt,
+            p_amount: amount,
+            p_msisdn: msisdn,
+            p_first_name: firstName,
+            p_middle_name: middleName,
+            p_last_name: lastName,
+          }
+        )
+
+      if (fundraisingError) {
+        console.error(
+          "FUNDRAISING PAYMENT ERROR:",
+          fundraisingError
+        )
+
+        return NextResponse.json({
+          ResultCode: 0,
+          ResultDesc: "Success",
+        })
+      }
+
+      console.log(
+        "FUNDRAISING PAYMENT COMPLETED:",
+        fundraisingData
+      )
+
+      const fundraisingResult =
+        Array.isArray(fundraisingData)
+          ? fundraisingData[0]
+          : fundraisingData
+
+      // ==================================================
+      // CREATE FUNDRAISING PAYOUT RECORD
+      // ==================================================
+
+      if (
+        fundraisingResult?.success &&
+        fundraisingResult?.contribution_id
+      ) {
+        const contributionId =
+          fundraisingResult.contribution_id
+
+        const campaignId =
+          fundraisingResult.campaign_id
+
+        console.log(
+          "CREATING FUNDRAISING PAYOUT RECORD:",
+          {
+            contributionId,
+            campaignId,
+            amount,
+          }
+        )
+
+        /*
+         * Load the campaign destination.
+         *
+         * We snapshot the destination into the payout record
+         * so that changing the campaign later cannot redirect
+         * an already-paid contribution.
+         */
+        const { data: campaign, error: campaignError } =
+          await supabase
+            .from("fundraising_campaigns")
+            .select(
+              `
+                id,
+                destination_type,
+                destination_phone,
+                destination_paybill,
+                destination_account,
+                destination_till,
+                destination_bank_name,
+                destination_bank_account
+              `
+            )
+            .eq("id", campaignId)
+            .single()
+
+        if (campaignError || !campaign) {
+          console.error(
+            "FUNDRAISING CAMPAIGN LOAD ERROR:",
+            campaignError
+          )
+        } else {
+          /*
+           * One contribution can only have one payout.
+           *
+           * The database UNIQUE constraint on contribution_id
+           * prevents duplicate payout records.
+           */
+          const { data: payoutData, error: payoutError } =
+            await supabase
+              .from("fundraising_payouts")
+              .upsert(
+                {
+                  contribution_id: contributionId,
+                  campaign_id: campaign.id,
+                  amount,
+
+                  destination_type:
+                    campaign.destination_type,
+
+                  destination_phone:
+                    campaign.destination_phone,
+
+                  destination_paybill:
+                    campaign.destination_paybill,
+
+                  destination_account:
+                    campaign.destination_account,
+
+                  destination_till:
+                    campaign.destination_till,
+
+                  destination_bank_name:
+                    campaign.destination_bank_name,
+
+                  destination_bank_account:
+                    campaign.destination_bank_account,
+
+                  status: "pending",
+                  updated_at: new Date().toISOString(),
+                },
+                {
+                  onConflict: "contribution_id",
+                  ignoreDuplicates: true,
+                }
+              )
+              .select()
+              .maybeSingle()
+
+          if (payoutError) {
+            console.error(
+              "FUNDRAISING PAYOUT RECORD ERROR:",
+              payoutError
+            )
+          } else {
+            console.log(
+              "FUNDRAISING PAYOUT RECORD READY:",
+              payoutData
+            )
+          }
+        }
+      }
+
+      /*
+       * IMPORTANT:
+       *
+       * We do NOT send the fundraiser money here yet.
+       *
+       * The contribution has been successfully received and
+       * the payout has been recorded as PENDING.
+       *
+       * The separate fundraising payout router will handle
+       * the actual disbursement.
+       */
+
+      return NextResponse.json({
+        ResultCode: 0,
+        ResultDesc: "Success",
+      })
+    }
+
+    // ==================================================
+    // 2. EXISTING MERRY-GO-ROUND PAYMENT
+    // ==================================================
+
     if (!accountNumber || !firstName) {
       console.log(
-        "ℹ️ C2B payment did not contain enough identity information."
+        "C2B payment did not contain enough identity information."
       )
 
       return NextResponse.json({
@@ -32,7 +221,6 @@ export async function POST(req: Request) {
       })
     }
 
-    // 1. Complete the contribution payment.
     const { data: paymentData, error: paymentError } =
       await supabase.rpc(
         "complete_merry_go_round_manual_payment",
@@ -49,43 +237,50 @@ export async function POST(req: Request) {
 
     if (paymentError) {
       console.error(
-        "❌ CONTRIBUTION PAYMENT ERROR:",
+        "CONTRIBUTION PAYMENT ERROR:",
         paymentError
       )
     } else {
       console.log(
-        "✅ CONTRIBUTION PAYMENT COMPLETED:",
+        "CONTRIBUTION PAYMENT COMPLETED:",
         paymentData
       )
     }
 
-    // 2. Verify the member identity.
-    const { data: verificationData, error: verificationError } =
-      await supabase.rpc(
-        "verify_member_from_c2b",
-        {
-          p_msisdn: msisdn,
-          p_account_number: accountNumber,
-          p_first_name: firstName,
-          p_middle_name: middleName,
-          p_last_name: lastName,
-        }
-      )
+    // ==================================================
+    // 3. VERIFY MERRY-GO-ROUND MEMBER
+    // ==================================================
+
+    const {
+      data: verificationData,
+      error: verificationError,
+    } = await supabase.rpc(
+      "verify_member_from_c2b",
+      {
+        p_msisdn: msisdn,
+        p_account_number: accountNumber,
+        p_first_name: firstName,
+        p_middle_name: middleName,
+        p_last_name: lastName,
+      }
+    )
 
     if (verificationError) {
       console.error(
-        "❌ MEMBER VERIFICATION ERROR:",
+        "MEMBER VERIFICATION ERROR:",
         verificationError
       )
     } else {
       console.log(
-        "✅ STREETGO MEMBER VERIFIED:",
+        "STREETGO MEMBER VERIFIED:",
         verificationData
       )
     }
 
-    // 3. If this payment completed the round,
-    // automatically start the B2C payout.
+    // ==================================================
+    // 4. AUTOMATIC MERRY-GO-ROUND PAYOUT
+    // ==================================================
+
     const paymentRow =
       Array.isArray(paymentData)
         ? paymentData[0]
@@ -96,7 +291,7 @@ export async function POST(req: Request) {
       paymentRow?.round_status === "ready"
     ) {
       console.log(
-        "🚀 ROUND READY — STARTING AUTOMATIC B2C PAYOUT:",
+        "ROUND READY - STARTING AUTOMATIC B2C PAYOUT:",
         paymentRow.round_id
       )
 
@@ -123,12 +318,12 @@ export async function POST(req: Request) {
 
       if (!processResponse.ok) {
         console.error(
-          "❌ AUTOMATIC CONTRIBUTION PAYOUT FAILED:",
+          "AUTOMATIC CONTRIBUTION PAYOUT FAILED:",
           processResult
         )
       } else {
         console.log(
-          "✅ AUTOMATIC CONTRIBUTION PAYOUT STARTED:",
+          "AUTOMATIC CONTRIBUTION PAYOUT STARTED:",
           processResult
         )
       }
@@ -140,11 +335,14 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error(
-      "❌ C2B CONFIRMATION ERROR:",
+      "C2B CONFIRMATION ERROR:",
       error
     )
 
-    // Always acknowledge Safaricom.
+    /*
+     * Always acknowledge Safaricom so that the
+     * confirmation request is not repeatedly retried.
+     */
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: "Success",
