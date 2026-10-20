@@ -194,7 +194,12 @@ if (!payout) {
 
       const originatorConversationId =
         `FUND-${payout.id.slice(0, 8)}-${Date.now()}`
-
+console.log("B2C INITIATOR CHECK:", {
+  present: Boolean(initiatorName),
+  length: initiatorName?.length,
+  first: initiatorName?.slice(0, 2),
+  last: initiatorName?.slice(-2),
+})
       const payload = {
         OriginatorConversationID: originatorConversationId,
         InitiatorName: initiatorName,
