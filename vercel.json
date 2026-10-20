@@ -1,8 +1,1 @@
-{
-  "crons": [
-    {
-      "path": "/api/mpesa/fundraising/payout/process",
-      "schedule": "* * * * *"
-    }
-  ]
-}
+{}
