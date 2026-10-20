@@ -13,6 +13,7 @@ interface Campaign {
   destination_type: string
   status: string
   created_at: string
+  organizer_id: string
 }
 
 interface Contribution {
@@ -42,6 +43,8 @@ export default function FundraiserDashboard() {
   const [error, setError] = useState("")
 
   useEffect(() => {
+    let mounted = true
+
     async function loadDashboard() {
       try {
         setLoading(true)
@@ -51,16 +54,31 @@ export default function FundraiserDashboard() {
           data: { user },
         } = await supabase.auth.getUser()
 
+        console.log("CURRENT LOGGED-IN USER:", user?.id)
+
         if (!user) {
-          setError(
-            "Please log in to view your fundraiser dashboard."
-          )
+          if (mounted) {
+            setCampaigns([])
+            setContributions([])
+            setError(
+              "Please log in to view your fundraiser dashboard."
+            )
+          }
           return
         }
 
         /*
-         * Load campaigns belonging to this organizer.
+         * ============================================================
+         * LOAD ONLY THIS USER'S CAMPAIGNS
+         * ============================================================
+         *
+         * The database RLS also enforces:
+         *
+         * organizer_id = auth.uid()
+         *
+         * The frontend filter below provides an additional safeguard.
          */
+
         const {
           data: campaignData,
           error: campaignError,
@@ -75,7 +93,8 @@ export default function FundraiserDashboard() {
               raised_amount,
               destination_type,
               status,
-              created_at
+              created_at,
+              organizer_id
             `
           )
           .eq("organizer_id", user.id)
@@ -87,34 +106,67 @@ export default function FundraiserDashboard() {
             campaignError
           )
 
-          setError("Unable to load your campaigns.")
+          if (mounted) {
+            setCampaigns([])
+            setContributions([])
+            setError("Unable to load your campaigns.")
+          }
+
           return
         }
 
-        const loadedCampaigns: Campaign[] =
-          campaignData || []
+        /*
+         * ============================================================
+         * EXTRA FRONTEND OWNERSHIP CHECK
+         * ============================================================
+         *
+         * Even though Supabase already filters by organizer_id,
+         * we verify the returned records again before displaying them.
+         */
 
-        setCampaigns(loadedCampaigns)
+        const loadedCampaigns: Campaign[] =
+          (campaignData || []) as Campaign[]
+
+        const ownCampaigns = loadedCampaigns.filter(
+          (campaign) =>
+            campaign.organizer_id === user.id
+        )
+
+        console.log(
+          "MY FUNDRAISER CAMPAIGNS:",
+          ownCampaigns
+        )
+
+        if (!mounted) {
+          return
+        }
+
+        setCampaigns(ownCampaigns)
 
         /*
-         * No campaigns means there is nothing else to load.
+         * No campaigns belonging to this user.
          */
-        if (loadedCampaigns.length === 0) {
+        if (ownCampaigns.length === 0) {
           setContributions([])
           return
         }
 
         /*
-         * Get campaign IDs belonging to this organizer.
+         * ============================================================
+         * ONLY USE IDS OF THIS USER'S CAMPAIGNS
+         * ============================================================
          */
-        const campaignIds = loadedCampaigns.map(
-          (campaign: Campaign) => campaign.id
+
+        const campaignIds = ownCampaigns.map(
+          (campaign) => campaign.id
         )
 
         /*
-         * Load contributions belonging only to the
-         * organizer's campaigns.
+         * ============================================================
+         * LOAD CONTRIBUTIONS ONLY FOR OWN CAMPAIGNS
+         * ============================================================
          */
+
         const {
           data: contributionData,
           error: contributionError,
@@ -142,43 +194,84 @@ export default function FundraiserDashboard() {
             contributionError
           )
 
-          setError(
-            "Campaigns loaded, but contributions could not be loaded."
-          )
+          if (mounted) {
+            setContributions([])
+            setError(
+              "Campaigns loaded, but contributions could not be loaded."
+            )
+          }
 
           return
         }
 
         const loadedContributions: Contribution[] =
-          contributionData || []
+          (contributionData || []) as Contribution[]
 
-        setContributions(loadedContributions)
+        /*
+         * Extra safety:
+         *
+         * Only keep contributions whose campaign belongs to
+         * the campaigns already confirmed as belonging to this user.
+         */
+
+        const ownCampaignIdSet = new Set(
+          campaignIds
+        )
+
+        const ownContributions =
+          loadedContributions.filter(
+            (contribution) =>
+              ownCampaignIdSet.has(
+                contribution.campaign_id
+              )
+          )
+
+        if (mounted) {
+          setContributions(ownContributions)
+        }
       } catch (err) {
         console.error(
           "FUNDRAISER DASHBOARD ERROR:",
           err
         )
 
-        setError("Something went wrong.")
+        if (mounted) {
+          setCampaigns([])
+          setContributions([])
+          setError("Something went wrong.")
+        }
       } finally {
-        setLoading(false)
+        if (mounted) {
+          setLoading(false)
+        }
       }
     }
 
     loadDashboard()
+
+    return () => {
+      mounted = false
+    }
   }, [supabase])
 
   /*
-   * Build statistics for each campaign.
+   * ================================================================
+   * BUILD CAMPAIGN STATISTICS
+   * ================================================================
    */
+
   const campaignStats = useMemo(() => {
-    const stats: Record<string, CampaignStats> = {}
+    const stats: Record<
+      string,
+      CampaignStats
+    > = {}
 
     for (const campaign of campaigns) {
       const campaignContributions =
         contributions.filter(
-          (contribution: Contribution) =>
-            contribution.campaign_id === campaign.id
+          (contribution) =>
+            contribution.campaign_id ===
+            campaign.id
         )
 
       /*
@@ -187,77 +280,72 @@ export default function FundraiserDashboard() {
        * Only confirmed M-PESA payments count as
        * actual contributors.
        */
+
       const paidContributions =
         campaignContributions.filter(
-          (contribution: Contribution) =>
+          (contribution) =>
             contribution.payment_status === "paid"
         )
 
       /*
        * PROCESSING CONTRIBUTIONS
        *
-       * These payments have been initiated but
-       * Safaricom has not yet confirmed them.
+       * Payment started but Safaricom has not
+       * confirmed it yet.
        */
+
       const processingContributions =
         campaignContributions.filter(
-          (contribution: Contribution) =>
-            contribution.payment_status === "processing"
+          (contribution) =>
+            contribution.payment_status ===
+            "processing"
         )
 
       /*
-       * Total money currently waiting for
-       * M-PESA confirmation.
+       * Money currently waiting for M-PESA confirmation.
        */
+
       const pendingAmount =
         processingContributions.reduce(
           (
-            total: number,
-            contribution: Contribution
+            total,
+            contribution
           ) =>
             total +
-            Number(contribution.amount || 0),
+            Number(
+              contribution.amount || 0
+            ),
           0
         )
 
       /*
-       * Show BOTH paid and processing contributions
-       * in the recent-contributions section.
-       *
-       * Newest contribution appears first.
+       * Show both PAID and PROCESSING.
        */
+
       const recentContributions =
         [...campaignContributions]
           .filter(
-            (contribution: Contribution) =>
-              contribution.payment_status === "paid" ||
-              contribution.payment_status === "processing"
+            (contribution) =>
+              contribution.payment_status ===
+                "paid" ||
+              contribution.payment_status ===
+                "processing"
           )
           .sort(
-            (
-              a: Contribution,
-              b: Contribution
-            ) =>
-              new Date(b.created_at).getTime() -
-              new Date(a.created_at).getTime()
+            (a, b) =>
+              new Date(
+                b.created_at
+              ).getTime() -
+              new Date(
+                a.created_at
+              ).getTime()
           )
           .slice(0, 5)
 
       stats[campaign.id] = {
-        /*
-         * IMPORTANT:
-         * Only PAID contributions count as contributors.
-         */
-        contributors: paidContributions.length,
-
-        /*
-         * Recent list contains both PAID and PROCESSING.
-         */
+        contributors:
+          paidContributions.length,
         recentContributions,
-
-        /*
-         * Processing money is displayed separately.
-         */
         pendingAmount,
       }
     }
@@ -266,24 +354,19 @@ export default function FundraiserDashboard() {
   }, [campaigns, contributions])
 
   function formatMoney(value: number) {
-    return `KSh ${value.toLocaleString("en-KE", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2,
-    })}`
+    return `KSh ${value.toLocaleString(
+      "en-KE",
+      {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      }
+    )}`
   }
 
   function formatContributionTime(
     paidAt: string | null,
     createdAt: string
   ) {
-    /*
-     * For PAID:
-     * use paid_at.
-     *
-     * For PROCESSING:
-     * paid_at is normally null,
-     * so created_at is used.
-     */
     const date = new Date(
       paidAt || createdAt
     )
@@ -292,10 +375,13 @@ export default function FundraiserDashboard() {
       return "Unknown time"
     }
 
-    return date.toLocaleString("en-KE", {
-      dateStyle: "medium",
-      timeStyle: "short",
-    })
+    return date.toLocaleString(
+      "en-KE",
+      {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }
+    )
   }
 
   function getContributorName(
@@ -315,7 +401,10 @@ export default function FundraiserDashboard() {
     <main className="min-h-screen bg-[#020617] p-6 text-white">
       <div className="mx-auto max-w-7xl">
 
-        {/* HEADER */}
+        {/* ============================================================
+            HEADER
+        ============================================================ */}
+
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wider text-blue-400">
@@ -340,21 +429,30 @@ export default function FundraiserDashboard() {
           </Link>
         </div>
 
-        {/* LOADING */}
+        {/* ============================================================
+            LOADING
+        ============================================================ */}
+
         {loading && (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-white/60">
             Loading your fundraiser dashboard...
           </div>
         )}
 
-        {/* ERROR */}
+        {/* ============================================================
+            ERROR
+        ============================================================ */}
+
         {error && (
           <div className="mt-8 rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-300">
             {error}
           </div>
         )}
 
-        {/* EMPTY STATE */}
+        {/* ============================================================
+            EMPTY STATE
+        ============================================================ */}
+
         {!loading &&
           !error &&
           campaigns.length === 0 && (
@@ -379,37 +477,51 @@ export default function FundraiserDashboard() {
               >
                 Create Fundraiser
               </Link>
+
             </div>
           )}
 
-        {/* CAMPAIGNS */}
+        {/* ============================================================
+            OWN CAMPAIGNS ONLY
+        ============================================================ */}
+
         {!loading &&
           !error &&
           campaigns.length > 0 && (
             <div className="mt-8 space-y-6">
 
               {campaigns.map(
-                (campaign: Campaign) => {
-                  const target = Number(
-                    campaign.target_amount || 0
-                  )
+                (campaign) => {
 
-                  const raised = Number(
-                    campaign.raised_amount || 0
-                  )
+                  const target =
+                    Number(
+                      campaign.target_amount ||
+                        0
+                    )
+
+                  const raised =
+                    Number(
+                      campaign.raised_amount ||
+                        0
+                    )
 
                   const progress =
                     target > 0
                       ? Math.min(
-                          (raised / target) * 100,
+                          (raised /
+                            target) *
+                            100,
                           100
                         )
                       : 0
 
                   const stats =
-                    campaignStats[campaign.id] || {
+                    campaignStats[
+                      campaign.id
+                    ] || {
                       contributors: 0,
-                      recentContributions: [],
+                      recentContributions:
+                        [],
                       pendingAmount: 0,
                     }
 
@@ -419,7 +531,10 @@ export default function FundraiserDashboard() {
                       className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]"
                     >
 
-                      {/* CAMPAIGN HEADER */}
+                      {/* ==================================================
+                          CAMPAIGN HEADER
+                      ================================================== */}
+
                       <div className="border-b border-white/10 p-6">
 
                         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -446,7 +561,8 @@ export default function FundraiserDashboard() {
                             </div>
 
                             <p className="mt-2 text-sm text-white/40">
-                              /fund/{campaign.slug}
+                              /fund/
+                              {campaign.slug}
                             </p>
 
                           </div>
@@ -468,7 +584,9 @@ export default function FundraiserDashboard() {
                                   `${window.location.origin}/fund/${campaign.slug}`
 
                                 navigator.clipboard
-                                  .writeText(url)
+                                  .writeText(
+                                    url
+                                  )
                                   .then(() => {
                                     alert(
                                       "Public fundraiser link copied."
@@ -491,38 +609,37 @@ export default function FundraiserDashboard() {
 
                       </div>
 
-                      {/* FINANCIAL SUMMARY */}
+                      {/* ==================================================
+                          FINANCIAL SUMMARY
+                      ================================================== */}
+
                       <div className="grid gap-px border-b border-white/10 bg-white/10 sm:grid-cols-2 lg:grid-cols-4">
 
-                        {/* RAISED */}
                         <div className="bg-[#020617] p-5">
-
                           <p className="text-xs uppercase tracking-wide text-white/40">
                             Raised
                           </p>
 
                           <p className="mt-2 text-2xl font-bold">
-                            {formatMoney(raised)}
+                            {formatMoney(
+                              raised
+                            )}
                           </p>
-
                         </div>
 
-                        {/* TARGET */}
                         <div className="bg-[#020617] p-5">
-
                           <p className="text-xs uppercase tracking-wide text-white/40">
                             Target
                           </p>
 
                           <p className="mt-2 text-2xl font-bold">
-                            {formatMoney(target)}
+                            {formatMoney(
+                              target
+                            )}
                           </p>
-
                         </div>
 
-                        {/* CONTRIBUTORS */}
                         <div className="bg-[#020617] p-5">
-
                           <p className="text-xs uppercase tracking-wide text-white/40">
                             Contributors
                           </p>
@@ -534,12 +651,9 @@ export default function FundraiserDashboard() {
                           <p className="mt-1 text-xs text-white/40">
                             Paid contributions
                           </p>
-
                         </div>
 
-                        {/* PROCESSING */}
                         <div className="bg-[#020617] p-5">
-
                           <p className="text-xs uppercase tracking-wide text-white/40">
                             Processing
                           </p>
@@ -553,12 +667,14 @@ export default function FundraiserDashboard() {
                           <p className="mt-1 text-xs text-white/40">
                             Waiting for M-PESA confirmation
                           </p>
-
                         </div>
 
                       </div>
 
-                      {/* PROGRESS */}
+                      {/* ==================================================
+                          PROGRESS
+                      ================================================== */}
+
                       <div className="p-6">
 
                         <div className="flex items-center justify-between text-sm">
@@ -568,7 +684,10 @@ export default function FundraiserDashboard() {
                           </span>
 
                           <span className="font-semibold text-blue-400">
-                            {progress.toFixed(1)}%
+                            {progress.toFixed(
+                              1
+                            )}
+                            %
                           </span>
 
                         </div>
@@ -604,7 +723,10 @@ export default function FundraiserDashboard() {
 
                       </div>
 
-                      {/* RECENT CONTRIBUTORS */}
+                      {/* ==================================================
+                          RECENT CONTRIBUTIONS
+                      ================================================== */}
+
                       <div className="border-t border-white/10">
 
                         <div className="flex items-center justify-between p-6">
@@ -632,15 +754,18 @@ export default function FundraiserDashboard() {
 
                         {stats.recentContributions.length ===
                         0 ? (
+
                           <div className="border-t border-white/10 p-6 text-sm text-white/50">
                             No contributions yet.
                           </div>
+
                         ) : (
+
                           <div className="divide-y divide-white/10 border-t border-white/10">
 
                             {stats.recentContributions.map(
                               (
-                                contribution: Contribution
+                                contribution
                               ) => {
 
                                 const isPaid =
@@ -653,11 +778,14 @@ export default function FundraiserDashboard() {
 
                                 return (
                                   <div
-                                    key={contribution.id}
+                                    key={
+                                      contribution.id
+                                    }
                                     className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between"
                                   >
 
                                     {/* CONTRIBUTOR */}
+
                                     <div className="flex items-center gap-3">
 
                                       <div
@@ -670,7 +798,9 @@ export default function FundraiserDashboard() {
                                         {getContributorName(
                                           contribution
                                         )
-                                          .charAt(0)
+                                          .charAt(
+                                            0
+                                          )
                                           .toUpperCase()}
                                       </div>
 
@@ -694,6 +824,7 @@ export default function FundraiserDashboard() {
                                     </div>
 
                                     {/* AMOUNT + STATUS */}
+
                                     <div className="text-left sm:text-right">
 
                                       <p className="font-semibold">
@@ -721,7 +852,6 @@ export default function FundraiserDashboard() {
                                           : contribution.payment_status}
                                       </p>
 
-                                      {/* M-PESA RECEIPT FOR PAID PAYMENTS */}
                                       {isPaid &&
                                         contribution.mpesa_receipt && (
                                           <p className="mt-1 text-[11px] text-white/30">
@@ -732,7 +862,6 @@ export default function FundraiserDashboard() {
                                           </p>
                                         )}
 
-                                      {/* PROCESSING MESSAGE */}
                                       {isProcessing && (
                                         <p className="mt-1 text-[11px] text-yellow-400/60">
                                           Waiting for M-PESA confirmation
@@ -747,11 +876,15 @@ export default function FundraiserDashboard() {
                             )}
 
                           </div>
+
                         )}
 
                       </div>
 
-                      {/* ACTIONS */}
+                      {/* ==================================================
+                          ACTIONS
+                      ================================================== */}
+
                       <div className="grid gap-3 border-t border-white/10 p-6 sm:grid-cols-2 lg:grid-cols-4">
 
                         <Link
