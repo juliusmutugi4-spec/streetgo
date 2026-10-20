@@ -149,9 +149,10 @@ export async function POST(req: Request) {
         id,
         group_id,
         member_id,
-        member_code,
-        amount,
-        status,
+member_code,
+payment_code,
+amount,
+status,
         checkout_request_id,
         merchant_request_id,
         phone_number
@@ -307,28 +308,37 @@ export async function POST(req: Request) {
 
     const amount = Number(transaction.amount)
 
-    const memberCode = String(
-      transaction.member_code || ""
-    )
+const memberCode = String(
+  transaction.member_code || ""
+)
 
-    if (!transaction.id) {
-      throw new Error(
-        "Contribution transaction ID is missing."
-      )
-    }
+const paymentCode = String(
+  transaction.payment_code || ""
+)
 
-    if (!amount || amount < 1) {
-      throw new Error(
-        "Invalid contribution amount."
-      )
-    }
+if (!transaction.id) {
+  throw new Error(
+    "Contribution transaction ID is missing."
+  )
+}
 
-    if (!memberCode) {
-      throw new Error(
-        "Member code is missing."
-      )
-    }
+if (!amount || amount < 1) {
+  throw new Error(
+    "Invalid contribution amount."
+  )
+}
 
+if (!memberCode) {
+  throw new Error(
+    "Member code is missing."
+  )
+}
+
+if (!paymentCode) {
+  throw new Error(
+    "M-PESA payment code is missing."
+  )
+}
     /*
      * --------------------------------------------------
      * Format Safaricom number
@@ -464,11 +474,10 @@ export async function POST(req: Request) {
           CallBackURL:
             callbackUrl,
 
-          AccountReference:
-            memberCode,
+AccountReference: paymentCode,
 
-          TransactionDesc:
-            "StreetGO Contribution",
+TransactionDesc:
+  `StreetGO Contribution ${paymentCode}`,
         },
         {
           headers: {
