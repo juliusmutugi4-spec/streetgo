@@ -35,10 +35,37 @@ type Props = {
 }
 
 // Payment UI badge configuration matrix
-const PAYMENT_STATES: Record<string, { label: string; cls: string; icon: any }> = {
-  paid: { label: "Paid", cls: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20", icon: CheckCircle2 },
-  processing: { label: "Processing", cls: "text-amber-400 bg-amber-500/10 border-amber-500/20", icon: Clock3 },
-  due: { label: "Due", cls: "text-slate-400 bg-slate-800 border-slate-700/60", icon: AlertCircle },
+const PAYMENT_STATES: Record<
+  string,
+  {
+    label: string
+    cls: string
+    icon: typeof CheckCircle2
+  }
+> = {
+  paid: {
+    label: "Paid",
+    cls: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    icon: CheckCircle2,
+  },
+
+  processing: {
+    label: "Processing",
+    cls: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    icon: Clock3,
+  },
+
+  pending: {
+    label: "Pending",
+    cls: "text-amber-400 bg-amber-500/10 border-amber-500/20",
+    icon: Clock3,
+  },
+
+  due: {
+    label: "Due",
+    cls: "text-slate-400 bg-slate-800 border-slate-700/60",
+    icon: AlertCircle,
+  },
 }
 
 export default function MembersList({
@@ -50,39 +77,74 @@ export default function MembersList({
 }: Props) {
   return (
     <section className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-4">
-      
       {/* Header Area */}
       <div className="flex items-center justify-between border-b border-slate-800/60 pb-3 mb-4">
         <div>
           <h2 className="text-sm font-bold text-white flex items-center gap-2">
             Group Roster
           </h2>
-          <p className="text-[11px] text-slate-500">Active Merry-Go-Round contributors</p>
+
+          <p className="text-[11px] text-slate-500">
+            Active Merry-Go-Round contributors
+          </p>
         </div>
+
         <span className="rounded-md bg-slate-900 border border-slate-800 px-2 py-1 text-[11px] font-semibold text-slate-400">
           {members.length} / {memberLimit}
         </span>
       </div>
 
-      {/* Dynamic Members List stack */}
+      {/* Dynamic Members List */}
       <div className="space-y-2">
         {members.map((member) => {
           const isMe = member.user_id === currentUserId
-          const name = [member.mpesa_first_name, member.mpesa_middle_name, member.mpesa_last_name].filter(Boolean).join(" ") ||
-            member.display_name || (isMe ? "You" : member.role === "organizer" ? "Organizer" : `Member #${member.member_number}`)
-          
-          const maskedPhone = member.phone_number ? `${member.phone_number.slice(0, 4)}****${member.phone_number.slice(-2)}` : null
-          const paymentState = PAYMENT_STATES[memberPaymentStatuses.find(p => p.member_id === member.id)?.payment_status || "due"]
+
+          const name =
+            [
+              member.mpesa_first_name,
+              member.mpesa_middle_name,
+              member.mpesa_last_name,
+            ]
+              .filter(Boolean)
+              .join(" ") ||
+            member.display_name ||
+            (isMe
+              ? "You"
+              : member.role === "organizer"
+                ? "Organizer"
+                : `Member #${member.member_number}`)
+
+          const maskedPhone = member.phone_number
+            ? `${member.phone_number.slice(0, 4)}****${member.phone_number.slice(-2)}`
+            : null
+
+          /*
+           * Get the member's payment status.
+           *
+           * If there is no payment record yet, default to "due".
+           * If the database ever returns an unexpected status,
+           * also safely fall back to "due" instead of crashing.
+           */
+          const rawPaymentStatus =
+            memberPaymentStatuses.find(
+              (payment) => payment.member_id === member.id
+            )?.payment_status
+
+          const paymentState =
+            PAYMENT_STATES[rawPaymentStatus ?? "due"] ?? PAYMENT_STATES.due
+
           const Icon = paymentState.icon
 
           return (
             <div
               key={member.id}
               className={`flex items-center justify-between gap-3 rounded-xl border p-3 transition ${
-                isMe ? "border-emerald-500/20 bg-emerald-500/[0.02]" : "border-slate-800/80 bg-slate-900/30"
+                isMe
+                  ? "border-emerald-500/20 bg-emerald-500/[0.02]"
+                  : "border-slate-800/80 bg-slate-900/30"
               }`}
             >
-              {/* Profile Details Grouping */}
+              {/* Profile Details */}
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-bold text-slate-400">
                   #{member.member_number}
@@ -91,21 +153,44 @@ export default function MembersList({
                 <div className="min-w-0 space-y-0.5">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
                     <span className="truncate">{name}</span>
-                    {isMe && <span className="rounded bg-emerald-500/10 px-1 text-[9px] font-medium text-emerald-400">You</span>}
-                    {member.role === "organizer" && <span className="rounded bg-purple-500/10 px-1 text-[9px] font-medium text-purple-400">Host</span>}
+
+                    {isMe && (
+                      <span className="rounded bg-emerald-500/10 px-1 text-[9px] font-medium text-emerald-400">
+                        You
+                      </span>
+                    )}
+
+                    {member.role === "organizer" && (
+                      <span className="rounded bg-purple-500/10 px-1 text-[9px] font-medium text-purple-400">
+                        Host
+                      </span>
+                    )}
                   </div>
 
                   <p className="text-[10px] text-slate-500 flex items-center gap-1.5">
                     {maskedPhone && <span>{maskedPhone}</span>}
-                    {maskedPhone && <span className="text-slate-700">•</span>}
-                    <span>ID: {member.member_code || "Pending"}</span>
+
+                    {maskedPhone && (
+                      <span className="text-slate-700">•</span>
+                    )}
+
+                    <span>
+                      ID: {member.member_code || "Pending"}
+                    </span>
                   </p>
                 </div>
               </div>
 
-              {/* Status pill container */}
-              <div className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${paymentState.cls}`}>
-                <Icon size={11} className="shrink-0" />
+              {/* Payment Status */}
+              <div
+                className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${paymentState.cls}`}
+              >
+                <Icon
+                  size={11}
+                  className="shrink-0"
+                  aria-hidden="true"
+                />
+
                 <span>{paymentState.label}</span>
               </div>
             </div>
@@ -113,12 +198,14 @@ export default function MembersList({
         })}
       </div>
 
-      {/* Empty Slot Call-To-Action Footers */}
+      {/* Empty Slot Footer */}
       {slotsRemaining > 0 && (
         <div className="mt-3 rounded-xl border border-dashed border-slate-800 bg-slate-900/10 p-3 text-center">
           <p className="text-xs font-medium text-slate-400">
-            {slotsRemaining} {slotsRemaining === 1 ? "slot" : "slots"} open
+            {slotsRemaining}{" "}
+            {slotsRemaining === 1 ? "slot" : "slots"} open
           </p>
+
           <p className="text-[10px] text-slate-500 mt-0.5">
             Share group number to invite extra contributors.
           </p>
