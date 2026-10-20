@@ -184,6 +184,64 @@ export async function POST(req: Request) {
               "FUNDRAISING PAYOUT RECORD READY:",
               payoutData
             )
+
+// ==================================================
+// AUTOMATIC FUNDRAISING PAYOUT
+// ==================================================
+
+if (
+  campaign.destination_type === "phone" &&
+  amount >= 10
+) {
+  try {
+    const origin =
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "https://streetgo.app"
+
+    console.log(
+      "STARTING AUTOMATIC FUNDRAISING PAYOUT:",
+      {
+        contributionId,
+        amount,
+      }
+    )
+
+    const payoutResponse = await fetch(
+      `${origin}/api/mpesa/fundraising/payout`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contributionId,
+        }),
+        cache: "no-store",
+      }
+    )
+
+    const payoutResult =
+      await payoutResponse.json()
+
+    if (!payoutResponse.ok) {
+      console.error(
+        "AUTOMATIC FUNDRAISING PAYOUT FAILED:",
+        payoutResult
+      )
+    } else {
+      console.log(
+        "AUTOMATIC FUNDRAISING PAYOUT STARTED:",
+        payoutResult
+      )
+    }
+  } catch (error) {
+    console.error(
+      "AUTOMATIC FUNDRAISING PAYOUT ERROR:",
+      error
+    )
+  }
+}
+
           }
         }
       }
