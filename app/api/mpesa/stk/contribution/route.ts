@@ -8,38 +8,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-async function getAccessToken() {
-  const consumerKey = process.env.MPESA_CONSUMER_KEY
-  const consumerSecret = process.env.MPESA_CONSUMER_SECRET
-
-  if (!consumerKey || !consumerSecret) {
-    throw new Error(
-      "Missing MPESA_CONSUMER_KEY or MPESA_CONSUMER_SECRET"
-    )
-  }
-
-  const auth = Buffer.from(
-    `${consumerKey}:${consumerSecret}`
-  ).toString("base64")
-
-  const { data } = await axios.get(
-    "https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials",
-    {
-      headers: {
-        Authorization: `Basic ${auth}`,
-      },
-    }
-  )
-
-  if (!data?.access_token) {
-    throw new Error(
-      "Safaricom did not return an access token"
-    )
-  }
-
-  return data.access_token
-}
-
 function formatPhone(phone: string) {
   const clean = String(phone).replace(/\D/g, "")
 
@@ -66,6 +34,9 @@ export async function POST(req: Request) {
 
     const groupId = String(body.groupId || "")
     const phone = String(body.phone || "")
+    const requestedTransactionId = String(
+      body.transactionId || ""
+    )
 
     if (!groupId) {
       return NextResponse.json(
@@ -87,9 +58,19 @@ export async function POST(req: Request) {
       )
     }
 
+    if (!requestedTransactionId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Payment transaction ID is required.",
+        },
+        { status: 400 }
+      )
+    }
+
     /*
      * --------------------------------------------------
-     * Authenticate the StreetGO user
+     * Authenticate StreetGO user
      * --------------------------------------------------
      */
 
@@ -139,45 +120,200 @@ export async function POST(req: Request) {
 
     /*
      * --------------------------------------------------
-     * Create secure pending contribution
-     * --------------------------------------------------
+     * IMPORTANT
      *
-     * The database decides:
-     * - member
-     * - member code
-     * - contribution amount
+     * The frontend has ALREADY created the pending
+     * transaction.
+     *
+     * We must NOT call create_merry_go_round_payment
+     * again here.
+     *
+     * We use the transaction ID supplied by the frontend.
+     * --------------------------------------------------
      */
 
-    const { data: paymentData, error: paymentError } =
-      await userSupabase.rpc(
-        "create_merry_go_round_payment",
-        {
-          p_group_id: groupId,
-        }
-      )
+    transactionId = requestedTransactionId
 
-    if (paymentError) {
-      throw new Error(paymentError.message)
-    }
+    /*
+     * --------------------------------------------------
+     * Load the existing transaction
+     * --------------------------------------------------
+     */
 
-    if (!paymentData || paymentData.length === 0) {
+    const {
+      data: transaction,
+      error: transactionError,
+    } = await supabase
+      .from("contribution_transactions")
+      .select(`
+        id,
+        group_id,
+        member_id,
+        member_code,
+        amount,
+        status,
+        checkout_request_id,
+        merchant_request_id,
+        phone_number
+      `)
+      .eq("id", transactionId)
+      .eq("group_id", groupId)
+      .maybeSingle()
+
+    if (transactionError) {
       throw new Error(
-        "Unable to create contribution payment."
+        transactionError.message
       )
     }
 
-    const payment = paymentData[0]
+    if (!transaction) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "The payment transaction could not be found.",
+        },
+        { status: 404 }
+      )
+    }
 
-    transactionId = payment.transaction_id
+    /*
+     * --------------------------------------------------
+     * Security check
+     *
+     * Make sure this transaction belongs to the
+     * currently logged-in StreetGO user.
+     * --------------------------------------------------
+     */
 
-    const amount = Number(payment.amount)
+    const {
+      data: member,
+      error: memberError,
+    } = await supabase
+      .from("contribution_members")
+      .select(`
+        id,
+        user_id,
+        group_id
+      `)
+      .eq("id", transaction.member_id)
+      .eq("group_id", groupId)
+      .maybeSingle()
+
+    if (memberError) {
+      throw new Error(
+        memberError.message
+      )
+    }
+
+    if (!member) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Payment member could not be verified.",
+        },
+        { status: 403 }
+      )
+    }
+
+    if (member.user_id !== user.id) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "You are not authorized to use this payment transaction.",
+        },
+        { status: 403 }
+      )
+    }
+
+    /*
+     * --------------------------------------------------
+     * Idempotency protection
+     *
+     * If an STK request was already sent successfully,
+     * do NOT send another one.
+     * --------------------------------------------------
+     */
+
+    if (
+      transaction.status === "processing" &&
+      transaction.checkout_request_id
+    ) {
+      return NextResponse.json({
+        success: true,
+        transactionId: transaction.id,
+        memberCode: transaction.member_code,
+        amount: Number(transaction.amount),
+        CheckoutRequestID:
+          transaction.checkout_request_id,
+        MerchantRequestID:
+          transaction.merchant_request_id,
+        message:
+          "M-PESA payment request is already in progress.",
+      })
+    }
+
+    /*
+     * Do not allow a transaction that has already
+     * completed.
+     */
+
+    if (transaction.status === "paid") {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This contribution has already been paid.",
+        },
+        { status: 400 }
+      )
+    }
+
+    if (
+      transaction.status === "cancelled"
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This payment transaction has been cancelled.",
+        },
+        { status: 400 }
+      )
+    }
+
+    /*
+     * A failed transaction should not normally be
+     * reused.
+     */
+
+    if (transaction.status === "failed") {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "This payment attempt has failed. Please start a new payment.",
+        },
+        { status: 400 }
+      )
+    }
+
+    /*
+     * --------------------------------------------------
+     * Payment values
+     * --------------------------------------------------
+     */
+
+    const amount = Number(transaction.amount)
+
     const memberCode = String(
-      payment.member_code || ""
+      transaction.member_code || ""
     )
 
-    if (!transactionId) {
+    if (!transaction.id) {
       throw new Error(
-        "Contribution transaction was not created."
+        "Contribution transaction ID is missing."
       )
     }
 
@@ -199,9 +335,14 @@ export async function POST(req: Request) {
      * --------------------------------------------------
      */
 
-    const formattedPhone = formatPhone(phone)
+    const formattedPhone =
+      formatPhone(phone)
 
-    if (!/^2547\d{8}$/.test(formattedPhone)) {
+    if (
+      !/^2547\d{8}$/.test(
+        formattedPhone
+      )
+    ) {
       throw new Error(
         "Invalid Kenyan Safaricom phone number."
       )
@@ -250,11 +391,21 @@ export async function POST(req: Request) {
 
     const timestamp =
       date.getFullYear().toString() +
-      String(date.getMonth() + 1).padStart(2, "0") +
-      String(date.getDate()).padStart(2, "0") +
-      String(date.getHours()).padStart(2, "0") +
-      String(date.getMinutes()).padStart(2, "0") +
-      String(date.getSeconds()).padStart(2, "0")
+      String(
+        date.getMonth() + 1
+      ).padStart(2, "0") +
+      String(
+        date.getDate()
+      ).padStart(2, "0") +
+      String(
+        date.getHours()
+      ).padStart(2, "0") +
+      String(
+        date.getMinutes()
+      ).padStart(2, "0") +
+      String(
+        date.getSeconds()
+      ).padStart(2, "0")
 
     /*
      * --------------------------------------------------
@@ -262,9 +413,10 @@ export async function POST(req: Request) {
      * --------------------------------------------------
      */
 
-    const password = Buffer.from(
-      `${shortcode}${passkey}${timestamp}`
-    ).toString("base64")
+    const password =
+      Buffer.from(
+        `${shortcode}${passkey}${timestamp}`
+      ).toString("base64")
 
     /*
      * --------------------------------------------------
@@ -272,7 +424,8 @@ export async function POST(req: Request) {
      * --------------------------------------------------
      */
 
-    const token = await getMpesaAccessToken()
+    const token =
+      await getMpesaAccessToken()
 
     /*
      * --------------------------------------------------
@@ -280,79 +433,102 @@ export async function POST(req: Request) {
      * --------------------------------------------------
      */
 
-    const { data } = await axios.post(
-      "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
-      {
-        BusinessShortCode: shortcode,
-        Password: password,
-        Timestamp: timestamp,
+    const { data } =
+      await axios.post(
+        "https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest",
+        {
+          BusinessShortCode:
+            shortcode,
 
-        TransactionType:
-          "CustomerPayBillOnline",
+          Password:
+            password,
 
-        Amount: Math.floor(amount),
+          Timestamp:
+            timestamp,
 
-        PartyA: formattedPhone,
-        PartyB: shortcode,
+          TransactionType:
+            "CustomerPayBillOnline",
 
-        PhoneNumber: formattedPhone,
+          Amount:
+            Math.floor(amount),
 
-        CallBackURL: callbackUrl,
+          PartyA:
+            formattedPhone,
 
-        /*
-         * IMPORTANT:
-         * The member code identifies the
-         * contribution member.
-         */
-        AccountReference: memberCode,
+          PartyB:
+            shortcode,
 
-        TransactionDesc:
-          "StreetGO Contribution",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+          PhoneNumber:
+            formattedPhone,
+
+          CallBackURL:
+            callbackUrl,
+
+          AccountReference:
+            memberCode,
+
+          TransactionDesc:
+            "StreetGO Contribution",
         },
-      }
-    )
+        {
+          headers: {
+            Authorization:
+              `Bearer ${token}`,
+
+            "Content-Type":
+              "application/json",
+          },
+        }
+      )
 
     console.log(
       "================================="
     )
+
     console.log(
       "STREETGO CONTRIBUTION STK RESPONSE"
     )
+
     console.log(data)
+
     console.log(
       "================================="
     )
 
     /*
      * --------------------------------------------------
-     * Save Safaricom request IDs
+     * Safaricom accepted the STK request
      * --------------------------------------------------
      */
 
     if (data?.CheckoutRequestID) {
-      const { error: updateError } =
-        await supabase
-          .from(
-            "contribution_transactions"
-          )
-          .update({
-            checkout_request_id:
-              data.CheckoutRequestID,
-            merchant_request_id:
-              data.MerchantRequestID || null,
-            phone_number:
-              formattedPhone,
-            status:
-              "processing",
-            updated_at:
-              new Date().toISOString(),
-          })
-          .eq("id", transactionId)
+      const {
+        error: updateError,
+      } = await supabase
+        .from(
+          "contribution_transactions"
+        )
+        .update({
+          checkout_request_id:
+            data.CheckoutRequestID,
+
+          merchant_request_id:
+            data.MerchantRequestID ||
+            null,
+
+          phone_number:
+            formattedPhone,
+
+          status:
+            "processing",
+
+          updated_at:
+            new Date().toISOString(),
+        })
+        .eq(
+          "id",
+          transactionId
+        )
 
       if (updateError) {
         console.error(
@@ -362,33 +538,46 @@ export async function POST(req: Request) {
       }
     }
 
+    /*
+     * --------------------------------------------------
+     * Return successful STK response
+     * --------------------------------------------------
+     */
+
     return NextResponse.json({
       success: true,
+
       transactionId,
+
       memberCode,
+
       amount,
+
       ...data,
     })
   } catch (error: any) {
     const details =
-      error.response?.data ||
-      error.message ||
+      error?.response?.data ||
+      error?.message ||
       "Unknown contribution STK error"
 
     console.error(
       "================================="
     )
+
     console.error(
       "STREETGO CONTRIBUTION STK ERROR"
     )
+
     console.error(details)
+
     console.error(
       "================================="
     )
 
     /*
-     * Mark the pending transaction failed
-     * if something went wrong.
+     * Mark ONLY the transaction we were
+     * given as failed.
      */
 
     if (transactionId) {
@@ -398,14 +587,19 @@ export async function POST(req: Request) {
         )
         .update({
           status: "failed",
+
           failure_reason:
             typeof details === "string"
               ? details
               : JSON.stringify(details),
+
           updated_at:
             new Date().toISOString(),
         })
-        .eq("id", transactionId)
+        .eq(
+          "id",
+          transactionId
+        )
     }
 
     return NextResponse.json(
