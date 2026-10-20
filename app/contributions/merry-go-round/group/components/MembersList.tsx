@@ -1,6 +1,11 @@
 "use client"
 
-import { CheckCircle2, Clock3, AlertCircle } from "lucide-react"
+import {
+  CheckCircle2,
+  Clock3,
+  AlertCircle,
+  XCircle,
+} from "lucide-react"
 
 type Member = {
   id: string
@@ -21,7 +26,7 @@ type Member = {
 type MemberPaymentStatus = {
   member_id: string
   member_number: number
-  payment_status: string
+  payment_status: string | null
   mpesa_receipt: string | null
   paid_at: string | null
 }
@@ -34,15 +39,20 @@ type Props = {
   slotsRemaining: number
 }
 
-// Payment UI badge configuration matrix
-const PAYMENT_STATES: Record<
-  string,
-  {
-    label: string
-    cls: string
-    icon: typeof CheckCircle2
-  }
-> = {
+type PaymentState = {
+  label: string
+  cls: string
+  icon: typeof CheckCircle2
+}
+
+/*
+ * Safe payment-state configuration.
+ *
+ * IMPORTANT:
+ * We do not directly use database status as a key.
+ * Unknown/null statuses are safely converted to "due".
+ */
+const PAYMENT_STATES: Record<string, PaymentState> = {
   paid: {
     label: "Paid",
     cls: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
@@ -66,6 +76,34 @@ const PAYMENT_STATES: Record<
     cls: "text-slate-400 bg-slate-800 border-slate-700/60",
     icon: AlertCircle,
   },
+
+  failed: {
+    label: "Failed",
+    cls: "text-red-400 bg-red-500/10 border-red-500/20",
+    icon: XCircle,
+  },
+
+  cancelled: {
+    label: "Cancelled",
+    cls: "text-slate-400 bg-slate-800 border-slate-700/60",
+    icon: XCircle,
+  },
+}
+
+/**
+ * Converts any database payment status into a safe UI state.
+ *
+ * This prevents:
+ *   Cannot read properties of undefined (reading 'icon')
+ *
+ * from crashing the entire group page.
+ */
+function getPaymentState(status: string | null | undefined): PaymentState {
+  const normalizedStatus = String(status || "")
+    .trim()
+    .toLowerCase()
+
+  return PAYMENT_STATES[normalizedStatus] || PAYMENT_STATES.due
 }
 
 export default function MembersList({
@@ -77,10 +115,11 @@ export default function MembersList({
 }: Props) {
   return (
     <section className="mt-5 rounded-2xl border border-slate-800 bg-slate-950 p-4">
-      {/* Header Area */}
-      <div className="flex items-center justify-between border-b border-slate-800/60 pb-3 mb-4">
+
+      {/* Header */}
+      <div className="mb-4 flex items-center justify-between border-b border-slate-800/60 pb-3">
         <div>
-          <h2 className="text-sm font-bold text-white flex items-center gap-2">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-white">
             Group Roster
           </h2>
 
@@ -89,24 +128,32 @@ export default function MembersList({
           </p>
         </div>
 
-        <span className="rounded-md bg-slate-900 border border-slate-800 px-2 py-1 text-[11px] font-semibold text-slate-400">
+        <span className="rounded-md border border-slate-800 bg-slate-900 px-2 py-1 text-[11px] font-semibold text-slate-400">
           {members.length} / {memberLimit}
         </span>
       </div>
 
-      {/* Dynamic Members List */}
+      {/* Members */}
       <div className="space-y-2">
         {members.map((member) => {
           const isMe = member.user_id === currentUserId
 
+          /*
+           * Prefer the actual M-PESA name.
+           * Fall back to StreetGO display name.
+           * Finally use a safe member label.
+           */
+          const mpesaName = [
+            member.mpesa_first_name,
+            member.mpesa_middle_name,
+            member.mpesa_last_name,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .trim()
+
           const name =
-            [
-              member.mpesa_first_name,
-              member.mpesa_middle_name,
-              member.mpesa_last_name,
-            ]
-              .filter(Boolean)
-              .join(" ") ||
+            mpesaName ||
             member.display_name ||
             (isMe
               ? "You"
@@ -114,24 +161,43 @@ export default function MembersList({
                 ? "Organizer"
                 : `Member #${member.member_number}`)
 
+          /*
+           * Mask the phone number.
+           *
+           * Example:
+           * 254793397916
+           * becomes:
+           * 2547****16
+           */
           const maskedPhone = member.phone_number
             ? `${member.phone_number.slice(0, 4)}****${member.phone_number.slice(-2)}`
             : null
 
           /*
-           * Get the member's payment status.
-           *
-           * If there is no payment record yet, default to "due".
-           * If the database ever returns an unexpected status,
-           * also safely fall back to "due" instead of crashing.
+           * Find payment status for this member.
            */
-          const rawPaymentStatus =
-            memberPaymentStatuses.find(
-              (payment) => payment.member_id === member.id
-            )?.payment_status
+          const paymentRecord = memberPaymentStatuses.find(
+            (payment) => payment.member_id === member.id
+          )
 
-          const paymentState =
-            PAYMENT_STATES[rawPaymentStatus ?? "due"] ?? PAYMENT_STATES.due
+          /*
+           * IMPORTANT:
+           * Never access PAYMENT_STATES[...] directly.
+           *
+           * getPaymentState() guarantees that we always receive
+           * a valid state, even if the database contains:
+           *
+           * null
+           * pending
+           * processing
+           * paid
+           * failed
+           * cancelled
+           * or an unexpected value.
+           */
+          const paymentState = getPaymentState(
+            paymentRecord?.payment_status
+          )
 
           const Icon = paymentState.icon
 
@@ -144,15 +210,21 @@ export default function MembersList({
                   : "border-slate-800/80 bg-slate-900/30"
               }`}
             >
-              {/* Profile Details */}
+              {/* Member information */}
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-bold text-slate-400">
+
+                {/* Member number */}
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-800 bg-slate-900 text-[11px] font-bold text-slate-400">
                   #{member.member_number}
                 </span>
 
                 <div className="min-w-0 space-y-0.5">
+
+                  {/* Name + badges */}
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
-                    <span className="truncate">{name}</span>
+                    <span className="truncate">
+                      {name}
+                    </span>
 
                     {isMe && (
                       <span className="rounded bg-emerald-500/10 px-1 text-[9px] font-medium text-emerald-400">
@@ -167,11 +239,16 @@ export default function MembersList({
                     )}
                   </div>
 
-                  <p className="text-[10px] text-slate-500 flex items-center gap-1.5">
-                    {maskedPhone && <span>{maskedPhone}</span>}
+                  {/* Phone + member code */}
+                  <p className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                    {maskedPhone && (
+                      <span>{maskedPhone}</span>
+                    )}
 
                     {maskedPhone && (
-                      <span className="text-slate-700">•</span>
+                      <span className="text-slate-700">
+                        •
+                      </span>
                     )}
 
                     <span>
@@ -181,9 +258,9 @@ export default function MembersList({
                 </div>
               </div>
 
-              {/* Payment Status */}
+              {/* Payment status */}
               <div
-                className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${paymentState.cls}`}
+                className={`flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${paymentState.cls}`}
               >
                 <Icon
                   size={11}
@@ -191,14 +268,16 @@ export default function MembersList({
                   aria-hidden="true"
                 />
 
-                <span>{paymentState.label}</span>
+                <span>
+                  {paymentState.label}
+                </span>
               </div>
             </div>
           )
         })}
       </div>
 
-      {/* Empty Slot Footer */}
+      {/* Empty slots */}
       {slotsRemaining > 0 && (
         <div className="mt-3 rounded-xl border border-dashed border-slate-800 bg-slate-900/10 p-3 text-center">
           <p className="text-xs font-medium text-slate-400">
@@ -206,7 +285,7 @@ export default function MembersList({
             {slotsRemaining === 1 ? "slot" : "slots"} open
           </p>
 
-          <p className="text-[10px] text-slate-500 mt-0.5">
+          <p className="mt-0.5 text-[10px] text-slate-500">
             Share group number to invite extra contributors.
           </p>
         </div>
