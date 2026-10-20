@@ -1,357 +1,223 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { getSupabaseBrowser } from "@/app/lib/supabase-browser"
 
-type DestinationType = "phone" | "paybill" | "till" | "bank"
+interface Campaign {
+  id: string
+  title: string
+  slug: string
+  target_amount: number
+  raised_amount: number
+  destination_type: string
+  status: string
+  created_at: string
+  organizer_id: string
+}
 
-export default function FundPage() {
+export default function MyFundraisersPage() {
   const router = useRouter()
   const supabase = getSupabaseBrowser()
 
-  const [title, setTitle] = useState("")
-  const [description, setDescription] = useState("")
-  const [targetAmount, setTargetAmount] = useState("")
-  const [destinationType, setDestinationType] =
-    useState<DestinationType>("phone")
-
-  const [phone, setPhone] = useState("")
-  const [paybill, setPaybill] = useState("")
-  const [account, setAccount] = useState("")
-  const [till, setTill] = useState("")
-  const [bankName, setBankName] = useState("")
-  const [bankAccount, setBankAccount] = useState("")
-
-  const [loading, setLoading] = useState(false)
+  const [campaigns, setCampaigns] = useState<Campaign[]>([])
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
-  function createSlug(text: string) {
-    return (
-      text
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") +
-      "-" +
-      Math.random().toString(36).slice(2, 8)
-    )
-  }
+  useEffect(() => {
+    let mounted = true
 
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    setError("")
+    async function loadCampaigns() {
+      try {
+        setLoading(true)
+        setError("")
 
-    if (!title.trim()) {
-      setError("Enter a fundraiser title.")
-      return
-    }
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
-    if (!targetAmount || Number(targetAmount) <= 0) {
-      setError("Enter a valid target amount.")
-      return
-    }
+        if (!user) {
+          router.push("/login")
+          return
+        }
 
-    setLoading(true)
+        const { data, error: campaignError } = await supabase
+          .from("fundraising_campaigns")
+          .select(`
+            id,
+            title,
+            slug,
+            target_amount,
+            raised_amount,
+            destination_type,
+            status,
+            created_at,
+            organizer_id
+          `)
+          .eq("organizer_id", user.id)
+          .order("created_at", { ascending: false })
 
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+        if (campaignError) {
+          console.error("MY FUNDRAISERS ERROR:", campaignError)
+          if (mounted) setError("Unable to load your fundraisers.")
+          return
+        }
 
-      if (!session?.user) {
-        router.push("/login")
-        return
+        // Extra frontend ownership check.
+        const ownCampaigns = ((data || []) as Campaign[]).filter(
+          (campaign) => campaign.organizer_id === user.id
+        )
+
+        if (mounted) setCampaigns(ownCampaigns)
+      } catch (err) {
+        console.error("MY FUNDRAISERS ERROR:", err)
+        if (mounted) setError("Something went wrong.")
+      } finally {
+        if (mounted) setLoading(false)
       }
-
-      const slug = createSlug(title)
-
-      const { data, error: insertError } = await supabase
-        .from("fundraising_campaigns")
-        .insert({
-          organizer_id: session.user.id,
-          title: title.trim(),
-          description: description.trim() || null,
-          target_amount: Number(targetAmount),
-          slug,
-
-          destination_type: destinationType,
-
-          destination_phone:
-            destinationType === "phone" ? phone.trim() || null : null,
-
-          destination_paybill:
-            destinationType === "paybill" ? paybill.trim() || null : null,
-
-          destination_account:
-            destinationType === "paybill" ? account.trim() || null : null,
-
-          destination_till:
-            destinationType === "till" ? till.trim() || null : null,
-
-          destination_bank_name:
-            destinationType === "bank" ? bankName.trim() || null : null,
-
-          destination_bank_account:
-            destinationType === "bank"
-              ? bankAccount.trim() || null
-              : null,
-        })
-        .select("id, slug")
-        .single()
-
-      if (insertError) {
-        throw insertError
-      }
-
-      router.push("/fund/dashboard")
-    } catch (err: any) {
-      console.error("FUNDRAISER CREATE ERROR:", err)
-
-      setError(
-        err?.message ||
-          err?.details ||
-          "Could not create fundraiser. Please try again."
-      )
-    } finally {
-      setLoading(false)
     }
+
+    loadCampaigns()
+
+    return () => {
+      mounted = false
+    }
+  }, [router, supabase])
+
+  function formatMoney(value: number) {
+    return `KSh ${Number(value || 0).toLocaleString("en-KE", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    })}`
   }
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white px-4 py-10">
-      <div className="mx-auto w-full max-w-2xl">
-        <div className="mb-8">
-          <p className="text-sm font-semibold text-blue-400">
-            STREETGO FUND
-          </p>
+    <main className="min-h-screen bg-[#020617] px-4 py-8 text-white">
+      <div className="mx-auto w-full max-w-5xl">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-wider text-blue-400">
+              STREETGO FUND
+            </p>
+            <h1 className="mt-2 text-3xl font-bold">My Fundraisers</h1>
+            <p className="mt-2 text-white/60">
+              View and manage the fundraisers you have created.
+            </p>
+          </div>
 
-          <h1 className="mt-2 text-3xl font-bold">
-            Create a fundraiser
-          </h1>
-
-          <p className="mt-2 text-white/60">
-            Create your campaign and share one StreetGO link with
-            contributors.
-          </p>
+          <div className="flex gap-3">
+            <Link
+              href="/contributions"
+              className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium hover:bg-white/10"
+            >
+              Back
+            </Link>
+            <Link
+              href="/fund/create"
+              className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold hover:bg-blue-500"
+            >
+              + Create New Fundraiser
+            </Link>
+          </div>
         </div>
 
-        <form
-          onSubmit={handleCreate}
-          className="space-y-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6"
-        >
-          {/* TITLE */}
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Fundraiser title
-            </label>
-
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Help John with hospital bills"
-              className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-blue-500"
-            />
+        {loading && (
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center text-white/60">
+            Loading your fundraisers...
           </div>
+        )}
 
-          {/* DESCRIPTION */}
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Description
-            </label>
-
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Tell people what this fundraiser is about..."
-              rows={4}
-              className="w-full resize-none rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-blue-500"
-            />
+        {error && (
+          <div className="mt-8 rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-red-300">
+            {error}
           </div>
+        )}
 
-          {/* TARGET AMOUNT */}
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Target amount
-            </label>
-
-            <div className="flex items-center rounded-xl border border-white/10 bg-black/30">
-              <span className="px-4 text-white/50">
-                KES
-              </span>
-
-              <input
-                type="number"
-                min="1"
-                value={targetAmount}
-                onChange={(e) => setTargetAmount(e.target.value)}
-                placeholder="100000"
-                className="w-full bg-transparent px-2 py-3 outline-none"
-              />
-            </div>
+        {!loading && !error && campaigns.length === 0 && (
+          <div className="mt-8 rounded-2xl border border-white/10 bg-white/[0.03] p-10 text-center">
+            <div className="text-5xl">❤️</div>
+            <h2 className="mt-4 text-xl font-semibold">No fundraisers yet</h2>
+            <p className="mx-auto mt-2 max-w-md text-white/60">
+              Create your first fundraiser and it will appear here. You will not
+              need to create it again to view it.
+            </p>
+            <Link
+              href="/fund/create"
+              className="mt-6 inline-block rounded-xl bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-500"
+            >
+              Create New Fundraiser
+            </Link>
           </div>
+        )}
 
-          {/* DESTINATION */}
-          <div>
-            <label className="mb-3 block text-sm font-medium">
-              Where should the fundraiser money go?
-            </label>
+        {!loading && !error && campaigns.length > 0 && (
+          <div className="mt-8 space-y-4">
+            {campaigns.map((campaign) => {
+              const target = Number(campaign.target_amount || 0)
+              const raised = Number(campaign.raised_amount || 0)
+              const progress =
+                target > 0 ? Math.min((raised / target) * 100, 100) : 0
 
-            <div className="grid grid-cols-2 gap-3">
-              {/* PHONE - ENABLED */}
-              <button
-                type="button"
-                onClick={() => setDestinationType("phone")}
-                className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
-                  destinationType === "phone"
-                    ? "border-blue-500 bg-blue-500/10 text-blue-300"
-                    : "border-white/10 bg-black/20 text-white/70"
-                }`}
-              >
-                Phone Number
-              </button>
+              return (
+                <section
+                  key={campaign.id}
+                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6"
+                >
+                  <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <h2 className="truncate text-xl font-bold">
+                          {campaign.title}
+                        </h2>
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                            campaign.status === "active"
+                              ? "bg-green-500/10 text-green-300"
+                              : "bg-white/10 text-white/60"
+                          }`}
+                        >
+                          {campaign.status}
+                        </span>
+                      </div>
 
-              {/* PAYBILL - DISABLED */}
-              <button
-                type="button"
-                disabled
-                className="cursor-not-allowed rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/30 opacity-50"
-              >
-                PayBill
-              </button>
+                      <p className="mt-2 text-sm text-white/40">
+                        {formatMoney(raised)} raised of {formatMoney(target)}
+                      </p>
 
-              {/* TILL - DISABLED */}
-              <button
-                type="button"
-                disabled
-                className="cursor-not-allowed rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/30 opacity-50"
-              >
-                Till Number
-              </button>
+                      <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10">
+                        <div
+                          className="h-full rounded-full bg-blue-500"
+                          style={{ width: `${progress}%` }}
+                        />
+                      </div>
 
-              {/* BANK - DISABLED */}
-              <button
-                type="button"
-                disabled
-                className="cursor-not-allowed rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/30 opacity-50"
-              >
-                Bank
-              </button>
-            </div>
+                      <p className="mt-2 text-xs text-white/40">
+                        {progress.toFixed(1)}% funded
+                      </p>
+                    </div>
+
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      <Link
+                        href={`/fund/${campaign.slug}`}
+                        target="_blank"
+                        className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium hover:bg-white/10"
+                      >
+                        Public Page
+                      </Link>
+                      <Link
+                        href="/fund/dashboard"
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold hover:bg-blue-500"
+                      >
+                        Manage
+                      </Link>
+                    </div>
+                  </div>
+                </section>
+              )
+            })}
           </div>
-
-          {/* PHONE */}
-          {destinationType === "phone" && (
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Recipient phone number
-              </label>
-
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="07XXXXXXXX"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-blue-500"
-              />
-            </div>
-          )}
-
-          {/* PAYBILL */}
-          {destinationType === "paybill" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  PayBill number
-                </label>
-
-                <input
-                  value={paybill}
-                  onChange={(e) => setPaybill(e.target.value)}
-                  placeholder="PayBill number"
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Account / Reference
-                </label>
-
-                <input
-                  value={account}
-                  onChange={(e) => setAccount(e.target.value)}
-                  placeholder="Account number"
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* TILL */}
-          {destinationType === "till" && (
-            <div>
-              <label className="mb-2 block text-sm font-medium">
-                Till number
-              </label>
-
-              <input
-                value={till}
-                onChange={(e) => setTill(e.target.value)}
-                placeholder="Till number"
-                className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-blue-500"
-              />
-            </div>
-          )}
-
-          {/* BANK */}
-          {destinationType === "bank" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Bank name
-                </label>
-
-                <input
-                  value={bankName}
-                  onChange={(e) => setBankName(e.target.value)}
-                  placeholder="Bank name"
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium">
-                  Account number
-                </label>
-
-                <input
-                  value={bankAccount}
-                  onChange={(e) => setBankAccount(e.target.value)}
-                  placeholder="Bank account"
-                  className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 outline-none focus:border-blue-500"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ERROR */}
-          {error && (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-              {error}
-            </div>
-          )}
-
-          {/* SUBMIT */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-blue-600 px-5 py-3 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading
-              ? "Creating fundraiser..."
-              : "Create Fundraiser"}
-          </button>
-        </form>
+        )}
       </div>
     </main>
   )
