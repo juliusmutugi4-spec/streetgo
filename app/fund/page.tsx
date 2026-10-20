@@ -74,38 +74,49 @@ export default function FundPage() {
           description: description.trim() || null,
           target_amount: Number(targetAmount),
           slug,
+
           destination_type: destinationType,
+
           destination_phone:
             destinationType === "phone" ? phone.trim() || null : null,
+
           destination_paybill:
             destinationType === "paybill" ? paybill.trim() || null : null,
+
           destination_account:
             destinationType === "paybill" ? account.trim() || null : null,
+
           destination_till:
             destinationType === "till" ? till.trim() || null : null,
+
           destination_bank_name:
             destinationType === "bank" ? bankName.trim() || null : null,
+
           destination_bank_account:
-            destinationType === "bank" ? bankAccount.trim() || null : null,
+            destinationType === "bank"
+              ? bankAccount.trim() || null
+              : null,
         })
         .select("id, slug")
         .single()
 
-      if (insertError) throw insertError
+      if (insertError) {
+        throw insertError
+      }
 
-      router.push(`/fund/${data.slug}`)
-} catch (err: any) {
-  console.error("FUNDRAISER CREATE ERROR:", err)
+      router.push("/fund/dashboard")
+    } catch (err: any) {
+      console.error("FUNDRAISER CREATE ERROR:", err)
 
-  setError(
-    err?.message ||
-      err?.details ||
-      "Could not create fundraiser. Please try again."
-  )
-} finally {
-  setLoading(false)
-}
-}
+      setError(
+        err?.message ||
+          err?.details ||
+          "Could not create fundraiser. Please try again."
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[#020617] text-white px-4 py-10">
@@ -120,7 +131,8 @@ export default function FundPage() {
           </h1>
 
           <p className="mt-2 text-white/60">
-            Create your campaign and share one StreetGO link with contributors.
+            Create your campaign and share one StreetGO link with
+            contributors.
           </p>
         </div>
 
@@ -128,6 +140,7 @@ export default function FundPage() {
           onSubmit={handleCreate}
           className="space-y-6 rounded-2xl border border-white/10 bg-white/[0.03] p-6"
         >
+          {/* TITLE */}
           <div>
             <label className="mb-2 block text-sm font-medium">
               Fundraiser title
@@ -141,6 +154,7 @@ export default function FundPage() {
             />
           </div>
 
+          {/* DESCRIPTION */}
           <div>
             <label className="mb-2 block text-sm font-medium">
               Description
@@ -155,13 +169,16 @@ export default function FundPage() {
             />
           </div>
 
+          {/* TARGET AMOUNT */}
           <div>
             <label className="mb-2 block text-sm font-medium">
               Target amount
             </label>
 
             <div className="flex items-center rounded-xl border border-white/10 bg-black/30">
-              <span className="px-4 text-white/50">KES</span>
+              <span className="px-4 text-white/50">
+                KES
+              </span>
 
               <input
                 type="number"
@@ -174,36 +191,56 @@ export default function FundPage() {
             </div>
           </div>
 
+          {/* DESTINATION */}
           <div>
             <label className="mb-3 block text-sm font-medium">
               Where should the fundraiser money go?
             </label>
 
             <div className="grid grid-cols-2 gap-3">
-              {[
-                ["phone", "Phone Number"],
-                ["paybill", "PayBill"],
-                ["till", "Till Number"],
-                ["bank", "Bank"],
-              ].map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  onClick={() =>
-                    setDestinationType(value as DestinationType)
-                  }
-                  className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
-                    destinationType === value
-                      ? "border-blue-500 bg-blue-500/10 text-blue-300"
-                      : "border-white/10 bg-black/20 text-white/70"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+              {/* PHONE - ENABLED */}
+              <button
+                type="button"
+                onClick={() => setDestinationType("phone")}
+                className={`rounded-xl border px-4 py-3 text-left text-sm transition ${
+                  destinationType === "phone"
+                    ? "border-blue-500 bg-blue-500/10 text-blue-300"
+                    : "border-white/10 bg-black/20 text-white/70"
+                }`}
+              >
+                Phone Number
+              </button>
+
+              {/* PAYBILL - DISABLED */}
+              <button
+                type="button"
+                disabled
+                className="cursor-not-allowed rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/30 opacity-50"
+              >
+                PayBill
+              </button>
+
+              {/* TILL - DISABLED */}
+              <button
+                type="button"
+                disabled
+                className="cursor-not-allowed rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/30 opacity-50"
+              >
+                Till Number
+              </button>
+
+              {/* BANK - DISABLED */}
+              <button
+                type="button"
+                disabled
+                className="cursor-not-allowed rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-left text-sm text-white/30 opacity-50"
+              >
+                Bank
+              </button>
             </div>
           </div>
 
+          {/* PHONE */}
           {destinationType === "phone" && (
             <div>
               <label className="mb-2 block text-sm font-medium">
@@ -219,6 +256,7 @@ export default function FundPage() {
             </div>
           )}
 
+          {/* PAYBILL */}
           {destinationType === "paybill" && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -249,6 +287,7 @@ export default function FundPage() {
             </div>
           )}
 
+          {/* TILL */}
           {destinationType === "till" && (
             <div>
               <label className="mb-2 block text-sm font-medium">
@@ -264,6 +303,7 @@ export default function FundPage() {
             </div>
           )}
 
+          {/* BANK */}
           {destinationType === "bank" && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -294,18 +334,22 @@ export default function FundPage() {
             </div>
           )}
 
+          {/* ERROR */}
           {error && (
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
               {error}
             </div>
           )}
 
+          {/* SUBMIT */}
           <button
             type="submit"
             disabled={loading}
             className="w-full rounded-xl bg-blue-600 px-5 py-3 font-semibold transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Creating fundraiser..." : "Create Fundraiser"}
+            {loading
+              ? "Creating fundraiser..."
+              : "Create Fundraiser"}
           </button>
         </form>
       </div>
