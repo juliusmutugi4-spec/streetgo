@@ -60,15 +60,27 @@ export async function POST(req: Request) {
         .eq("contribution_id", contributionId)
         .single()
 
-    if (payoutError || !payout) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Fundraising payout not found",
-        },
-        { status: 404 }
-      )
-    }
+if (payoutError) {
+  console.error("FUNDRAISING PAYOUT LOOKUP ERROR:", payoutError)
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Could not load fundraising payout",
+    },
+    { status: 500 }
+  )
+}
+
+if (!payout) {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Fundraising payout not found",
+    },
+    { status: 404 }
+  )
+}
 
     // Never send a payout that is not pending.
     if (payout.status !== "pending") {
