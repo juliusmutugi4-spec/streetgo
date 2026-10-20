@@ -96,13 +96,6 @@ export async function POST(req: Request) {
           }
         )
 
-        /*
-         * Load the campaign destination.
-         *
-         * We snapshot the destination into the payout record
-         * so that changing the campaign later cannot redirect
-         * an already-paid contribution.
-         */
         const { data: campaign, error: campaignError } =
           await supabase
             .from("fundraising_campaigns")
@@ -127,12 +120,6 @@ export async function POST(req: Request) {
             campaignError
           )
         } else {
-          /*
-           * One contribution can only have one payout.
-           *
-           * The database UNIQUE constraint on contribution_id
-           * prevents duplicate payout records.
-           */
           const { data: payoutData, error: payoutError } =
             await supabase
               .from("fundraising_payouts")
@@ -184,23 +171,9 @@ export async function POST(req: Request) {
               "FUNDRAISING PAYOUT RECORD READY:",
               payoutData
             )
-
-
           }
         }
       }
-
-      /*
-       * IMPORTANT:
-       *
-       * We do NOT send the fundraiser money here yet.
-       *
-       * The contribution has been successfully received and
-       * the payout has been recorded as PENDING.
-       *
-       * The separate fundraising payout router will handle
-       * the actual disbursement.
-       */
 
       return NextResponse.json({
         ResultCode: 0,
@@ -209,10 +182,10 @@ export async function POST(req: Request) {
     }
 
     // ==================================================
-    // 2. EXISTING MERRY-GO-ROUND PAYMENT
+    // 2. VALIDATE MERRY-GO-ROUND PAYMENT
     // ==================================================
 
-    if (!accountNumber || !firstName) {
+    if (!accountNumber || !firstName || !receipt || amount <= 0) {
       console.log(
         "C2B payment did not contain enough identity information."
       )
@@ -223,19 +196,111 @@ export async function POST(req: Request) {
       })
     }
 
-    const { data: paymentData, error: paymentError } =
-      await supabase.rpc(
-        "complete_merry_go_round_manual_payment",
-        {
-          p_member_code: accountNumber,
-          p_mpesa_receipt: receipt,
-          p_amount: amount,
-          p_msisdn: msisdn,
-          p_first_name: firstName,
-          p_middle_name: middleName,
-          p_last_name: lastName,
-        }
+    // ==================================================
+    // 3. RESOLVE M-PESA PAYMENT CODE
+    //
+    // Example:
+    //
+    // 44897
+    //   ↓
+    // contribution_members.payment_code
+    //   ↓
+    // SG-MGR-5352242
+    //
+    // Also supports old member_code payments.
+    // ==================================================
+
+    let memberData: {
+      member_code: string
+      payment_code: string | null
+    } | null = null
+
+    // First try the NEW payment_code
+    const {
+      data: paymentCodeMember,
+      error: paymentCodeError,
+    } = await supabase
+      .from("contribution_members")
+      .select("member_code, payment_code")
+      .eq("payment_code", accountNumber)
+      .eq("status", "active")
+      .maybeSingle()
+
+    if (paymentCodeError) {
+      console.error(
+        "PAYMENT CODE LOOKUP ERROR:",
+        paymentCodeError
       )
+    }
+
+    if (paymentCodeMember) {
+      memberData = paymentCodeMember
+    }
+
+    // If not found, support the OLD member_code format
+    if (!memberData) {
+      const {
+        data: oldMember,
+        error: oldMemberError,
+      } = await supabase
+        .from("contribution_members")
+        .select("member_code, payment_code")
+        .eq("member_code", accountNumber)
+        .eq("status", "active")
+        .maybeSingle()
+
+      if (oldMemberError) {
+        console.error(
+          "MEMBER CODE LOOKUP ERROR:",
+          oldMemberError
+        )
+      }
+
+      if (oldMember) {
+        memberData = oldMember
+      }
+    }
+
+    if (!memberData?.member_code) {
+      console.error(
+        "NO ACTIVE STREETGO MEMBER FOUND FOR M-PESA ACCOUNT:",
+        accountNumber
+      )
+
+      return NextResponse.json({
+        ResultCode: 0,
+        ResultDesc: "Success",
+      })
+    }
+
+    console.log(
+      "STREETGO M-PESA ACCOUNT RESOLVED:",
+      {
+        mpesaAccount: accountNumber,
+        paymentCode: memberData.payment_code,
+        memberCode: memberData.member_code,
+      }
+    )
+
+    // ==================================================
+    // 4. COMPLETE MERRY-GO-ROUND PAYMENT
+    // ==================================================
+
+    const {
+      data: paymentData,
+      error: paymentError,
+    } = await supabase.rpc(
+      "complete_merry_go_round_manual_payment",
+      {
+        p_member_code: memberData.member_code,
+        p_mpesa_receipt: receipt,
+        p_amount: amount,
+        p_msisdn: msisdn,
+        p_first_name: firstName,
+        p_middle_name: middleName,
+        p_last_name: lastName,
+      }
+    )
 
     if (paymentError) {
       console.error(
@@ -250,7 +315,7 @@ export async function POST(req: Request) {
     }
 
     // ==================================================
-    // 3. VERIFY MERRY-GO-ROUND MEMBER
+    // 5. VERIFY MERRY-GO-ROUND MEMBER
     // ==================================================
 
     const {
@@ -280,7 +345,7 @@ export async function POST(req: Request) {
     }
 
     // ==================================================
-    // 4. AUTOMATIC MERRY-GO-ROUND PAYOUT
+    // 6. AUTOMATIC MERRY-GO-ROUND PAYOUT
     // ==================================================
 
     const paymentRow =
