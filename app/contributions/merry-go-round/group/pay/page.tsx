@@ -211,21 +211,59 @@ async function requestMpesaPayment() {
       return
     }
 
-    // -----------------------------------------
-    // M-PESA REQUIRED
-    // -----------------------------------------
-    if (!member.phone_number) {
-      throw new Error(
-        "Your Safaricom phone number is not available. Please verify your number first."
-      )
-    }
+// -----------------------------------------
+// M-PESA REQUIRED
+// -----------------------------------------
 
-    if (!member.phone_verified) {
-      throw new Error(
-        "Your Safaricom number has not been verified yet."
-      )
-    }
+const enteredPhone = phoneNumber.replace(/\D/g, "");
 
+let normalizedPhone = enteredPhone;
+
+if (/^07\d{8}$/.test(normalizedPhone)) {
+  normalizedPhone = `254${normalizedPhone.substring(1)}`;
+}
+
+if (!/^2547\d{8}$/.test(normalizedPhone)) {
+  throw new Error(
+    "Enter a valid Safaricom number, for example 0712345678."
+  );
+}
+
+// Save the number before the first STK request.
+// It remains unverified until the payment verification
+// callback confirms that the STK was approved from this number.
+if (
+  !member.phone_number ||
+  member.phone_number.replace(/\D/g, "") !== normalizedPhone
+) {
+  setSavingPhone(true);
+
+  const { error: phoneError } = await supabase.rpc(
+    "set_contribution_member_phone",
+    {
+      p_phone_number: normalizedPhone,
+    }
+  );
+
+  setSavingPhone(false);
+
+  if (phoneError) {
+    throw new Error(
+      phoneError.message ||
+        "Unable to save your Safaricom number."
+    );
+  }
+
+  setMember((current) =>
+    current
+      ? {
+          ...current,
+          phone_number: normalizedPhone,
+          phone_verified: false,
+        }
+      : current
+  );
+}
     const {
       data: { session },
     } = await supabase.auth.getSession()
@@ -248,12 +286,12 @@ async function requestMpesaPayment() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({
-          groupId,
-          phone: member.phone_number,
-          transactionId: payment.transaction_id,
-          amount: amountToPay,
-        }),
+body: JSON.stringify({
+  groupId,
+  phone: normalizedPhone,
+  transactionId: payment.transaction_id,
+  amount: amountToPay,
+}),
       }
     )
 
