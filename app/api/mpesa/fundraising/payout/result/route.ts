@@ -10,16 +10,30 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
 
-    console.log("FUNDRAISING B2C RESULT:", JSON.stringify(body))
+    console.log(
+      "FUNDRAISING B2C RESULT:",
+      JSON.stringify(body, null, 2)
+    )
 
     const result = body?.Result
 
+    // Safaricom expects a successful acknowledgement.
+    // We acknowledge even when the payload is unexpected so
+    // Safaricom does not repeatedly retry the callback.
     if (!result) {
+      console.warn(
+        "FUNDRAISING B2C RESULT: Missing Result object"
+      )
+
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
+
+    // --------------------------------------------------
+    // SAFARICOM IDENTIFIERS
+    // --------------------------------------------------
 
     const originatorConversationId =
       result.OriginatorConversationID || null
@@ -28,6 +42,16 @@ export async function POST(req: Request) {
       result.ConversationID || null
 
     const resultCode = Number(result.ResultCode)
+
+    console.log("FUNDRAISING B2C CALLBACK IDENTIFIERS:", {
+      originatorConversationId,
+      conversationId,
+      resultCode,
+    })
+
+    // --------------------------------------------------
+    // RESULT PARAMETERS
+    // --------------------------------------------------
 
     const resultParameters =
       result.ResultParameters?.ResultParameter || []
@@ -42,6 +66,15 @@ export async function POST(req: Request) {
 
     const failureReason =
       result.ResultDesc || "Fundraising payout failed"
+
+    console.log("FUNDRAISING B2C CALLBACK DETAILS:", {
+      transactionId,
+      failureReason,
+    })
+
+    // --------------------------------------------------
+    // FIND PAYOUT
+    // --------------------------------------------------
 
     let query = supabase
       .from("fundraising_payouts")
@@ -59,14 +92,20 @@ export async function POST(req: Request) {
         conversationId
       )
     } else {
+      console.error(
+        "FUNDRAISING PAYOUT CALLBACK: No conversation identifiers"
+      )
+
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
 
-    const { data: payout, error: payoutError } =
-      await query.maybeSingle()
+    const {
+      data: payout,
+      error: payoutError,
+    } = await query.maybeSingle()
 
     if (payoutError) {
       console.error(
@@ -76,7 +115,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
 
@@ -85,75 +124,170 @@ export async function POST(req: Request) {
         "FUNDRAISING PAYOUT NOT FOUND:",
         {
           originatorConversationId,
-          conversationId
+          conversationId,
         }
       )
 
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
+
+    console.log(
+      "FUNDRAISING PAYOUT FOUND:",
+      {
+        payoutId: payout.id,
+        status: payout.status,
+      }
+    )
+
+    // --------------------------------------------------
+    // ALREADY PAID
+    // --------------------------------------------------
 
     if (payout.status === "paid") {
+      console.log(
+        "FUNDRAISING PAYOUT ALREADY PAID:",
+        payout.id
+      )
+
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Already processed"
+        ResultDesc: "Already processed",
       })
     }
 
+    // --------------------------------------------------
+    // SUCCESS
+    // --------------------------------------------------
+
     if (resultCode === 0) {
-      const { error } = await supabase
-        .from("fundraising_payouts")
-        .update({
-          status: "paid",
-          provider_conversation_id: conversationId,
-          provider_transaction_id: transactionId,
-          payout_paid_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          failure_reason: null
-        })
-        .eq("id", payout.id)
+      const { data: updatedPayout, error } =
+        await supabase
+          .from("fundraising_payouts")
+          .update({
+            status: "paid",
+            provider_conversation_id:
+              conversationId,
+            provider_transaction_id:
+              transactionId,
+            payout_paid_at:
+              new Date().toISOString(),
+            updated_at:
+              new Date().toISOString(),
+            failure_reason: null,
+          })
+          .eq("id", payout.id)
+          .eq("status", "processing")
+          .select("id,status")
+          .maybeSingle()
 
       if (error) {
         console.error(
           "FUNDRAISING PAYOUT SUCCESS UPDATE ERROR:",
           error
         )
+
+        return NextResponse.json({
+          ResultCode: 0,
+          ResultDesc: "Accepted",
+        })
+      }
+
+      // If no row was updated, another callback/request
+      // already changed the payout state.
+      if (!updatedPayout) {
+        console.warn(
+          "FUNDRAISING PAYOUT SUCCESS UPDATE SKIPPED:",
+          {
+            payoutId: payout.id,
+            currentStatus: payout.status,
+          }
+        )
+
+        return NextResponse.json({
+          ResultCode: 0,
+          ResultDesc: "Accepted",
+        })
       }
 
       console.log(
         "FUNDRAISING PAYOUT COMPLETED:",
-        payout.id
+        {
+          payoutId: payout.id,
+          conversationId,
+          transactionId,
+        }
       )
-    } else {
-      const { error } = await supabase
-        .from("fundraising_payouts")
-        .update({
-          status: "failed",
-          provider_conversation_id: conversationId,
-          failure_reason: failureReason,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", payout.id)
+    }
+
+    // --------------------------------------------------
+    // FAILURE
+    // --------------------------------------------------
+
+    else {
+      const { data: updatedPayout, error } =
+        await supabase
+          .from("fundraising_payouts")
+          .update({
+            status: "failed",
+            provider_conversation_id:
+              conversationId,
+            failure_reason:
+              failureReason,
+            updated_at:
+              new Date().toISOString(),
+          })
+          .eq("id", payout.id)
+          .eq("status", "processing")
+          .select("id,status")
+          .maybeSingle()
 
       if (error) {
         console.error(
           "FUNDRAISING PAYOUT FAILURE UPDATE ERROR:",
           error
         )
+
+        return NextResponse.json({
+          ResultCode: 0,
+          ResultDesc: "Accepted",
+        })
+      }
+
+      if (!updatedPayout) {
+        console.warn(
+          "FUNDRAISING PAYOUT FAILURE UPDATE SKIPPED:",
+          {
+            payoutId: payout.id,
+            currentStatus: payout.status,
+          }
+        )
+
+        return NextResponse.json({
+          ResultCode: 0,
+          ResultDesc: "Accepted",
+        })
       }
 
       console.log(
         "FUNDRAISING PAYOUT FAILED:",
-        payout.id,
-        failureReason
+        {
+          payoutId: payout.id,
+          resultCode,
+          failureReason,
+        }
       )
     }
 
+    // --------------------------------------------------
+    // ACKNOWLEDGE SAFARICOM
+    // --------------------------------------------------
+
     return NextResponse.json({
       ResultCode: 0,
-      ResultDesc: "Accepted"
+      ResultDesc: "Accepted",
     })
   } catch (error) {
     console.error(
@@ -161,9 +295,10 @@ export async function POST(req: Request) {
       error
     )
 
+    // Always acknowledge Safaricom.
     return NextResponse.json({
       ResultCode: 0,
-      ResultDesc: "Accepted"
+      ResultDesc: "Accepted",
     })
   }
 }
@@ -171,6 +306,6 @@ export async function POST(req: Request) {
 export async function GET() {
   return NextResponse.json({
     ok: true,
-    route: "fundraising payout result"
+    route: "fundraising payout result",
   })
 }
