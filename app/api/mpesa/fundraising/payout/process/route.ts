@@ -8,14 +8,18 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-export async function POST(request: NextRequest) {
+async function processPayouts(request: NextRequest) {
   try {
     const cronSecret = process.env.CRON_SECRET
 
     if (!cronSecret) {
       console.error("CRON_SECRET is not configured")
+
       return NextResponse.json(
-        { success: false, error: "Processor not configured" },
+        {
+          success: false,
+          error: "Processor not configured",
+        },
         { status: 500 }
       )
     }
@@ -29,7 +33,10 @@ export async function POST(request: NextRequest) {
 
     if (!authorized) {
       return NextResponse.json(
-        { success: false, error: "Unauthorized" },
+        {
+          success: false,
+          error: "Unauthorized",
+        },
         { status: 401 }
       )
     }
@@ -37,7 +44,9 @@ export async function POST(request: NextRequest) {
     // Pick up only payouts that are ready for processing.
     const { data: payouts, error } = await supabase
       .from("fundraising_payouts")
-      .select("id, contribution_id, amount, destination_type, status")
+      .select(
+        "id, contribution_id, amount, destination_type, status"
+      )
       .eq("status", "pending")
       .eq("destination_type", "phone")
       .gte("amount", 10)
@@ -45,7 +54,10 @@ export async function POST(request: NextRequest) {
       .limit(10)
 
     if (error) {
-      console.error("Failed to load pending payouts:", error)
+      console.error(
+        "Failed to load pending payouts:",
+        error
+      )
 
       return NextResponse.json(
         {
@@ -65,17 +77,21 @@ export async function POST(request: NextRequest) {
     }
 
     const origin =
-      process.env.NEXT_PUBLIC_SITE_URL || "https://streetgo.app"
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "https://streetgo.app"
 
     const results = []
 
     for (const payout of payouts) {
       try {
-        console.log("PROCESSING FUNDRAISING PAYOUT:", {
-          payoutId: payout.id,
-          contributionId: payout.contribution_id,
-          amount: payout.amount,
-        })
+        console.log(
+          "PROCESSING FUNDRAISING PAYOUT:",
+          {
+            payoutId: payout.id,
+            contributionId: payout.contribution_id,
+            amount: payout.amount,
+          }
+        )
 
         const response = await fetch(
           `${origin}/api/mpesa/fundraising/payout`,
@@ -91,7 +107,9 @@ export async function POST(request: NextRequest) {
           }
         )
 
-        const result = await response.json().catch(() => null)
+        const result = await response
+          .json()
+          .catch(() => null)
 
         results.push({
           payoutId: payout.id,
@@ -101,16 +119,22 @@ export async function POST(request: NextRequest) {
           result,
         })
 
-        console.log("FUNDRAISING PAYOUT PROCESS RESULT:", {
-          payoutId: payout.id,
-          responseStatus: response.status,
-          result,
-        })
+        console.log(
+          "FUNDRAISING PAYOUT PROCESS RESULT:",
+          {
+            payoutId: payout.id,
+            responseStatus: response.status,
+            result,
+          }
+        )
       } catch (error) {
-        console.error("FUNDRAISING PAYOUT PROCESS ERROR:", {
-          payoutId: payout.id,
-          error,
-        })
+        console.error(
+          "FUNDRAISING PAYOUT PROCESS ERROR:",
+          {
+            payoutId: payout.id,
+            error,
+          }
+        )
 
         results.push({
           payoutId: payout.id,
@@ -128,7 +152,10 @@ export async function POST(request: NextRequest) {
       results,
     })
   } catch (error) {
-    console.error("FUNDRAISING PAYOUT PROCESSOR ERROR:", error)
+    console.error(
+      "FUNDRAISING PAYOUT PROCESSOR ERROR:",
+      error
+    )
 
     return NextResponse.json(
       {
@@ -138,4 +165,12 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
+}
+
+export async function POST(request: NextRequest) {
+  return processPayouts(request)
+}
+
+export async function GET(request: NextRequest) {
+  return processPayouts(request)
 }
