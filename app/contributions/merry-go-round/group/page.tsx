@@ -41,6 +41,7 @@ type Member = {
   user_id: string;
   member_number: number;
   member_code: string | null;
+  payment_code: string | null
   role: "organizer" | "member";
   status: "active" | "left" | "removed";
   display_name: string | null;
@@ -229,8 +230,9 @@ function GroupDashboardContent() {
           id,
           user_id,
           member_number,
-          member_code,
-          role,
+member_code,
+payment_code,
+role,
           status,
           display_name,
           phone_number,

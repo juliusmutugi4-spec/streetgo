@@ -12,6 +12,7 @@ type Member = {
   user_id: string
   member_number: number
   member_code: string | null
+payment_code: string | null
   role: "organizer" | "member"
   status: "active" | "left" | "removed"
   display_name: string | null
@@ -239,23 +240,27 @@ export default function MembersList({
                     )}
                   </div>
 
-                  {/* Phone + member code */}
-                  <p className="flex items-center gap-1.5 text-[10px] text-slate-500">
-                    {maskedPhone && (
-                      <span>{maskedPhone}</span>
-                    )}
+                 {/* Phone + member code */}
+<p className="flex items-center gap-1.5 text-[10px] text-slate-500">
+  {maskedPhone && (
+    <span>{maskedPhone}</span>
+  )}
 
-                    {maskedPhone && (
-                      <span className="text-slate-700">
-                        •
-                      </span>
-                    )}
+  {maskedPhone && (
+    <span className="text-slate-700">•</span>
+  )}
 
-                    <span>
-                      ID: {member.member_code || "Pending"}
-                    </span>
-                  </p>
-                </div>
+  <span>
+    ID: {member.member_code || "Pending"}
+  </span>
+</p>
+
+{/* M-PESA Account Number */}
+{member.payment_code && (
+  <p className="mt-1 text-[10px] font-semibold text-emerald-400">
+    M-PESA Account: {member.payment_code}
+  </p>
+)}              </div>
               </div>
 
               {/* Payment status */}
