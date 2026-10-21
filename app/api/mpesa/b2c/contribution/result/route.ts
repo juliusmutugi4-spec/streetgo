@@ -55,6 +55,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    /*
+      ------------------------------------------------------------
+      FIND DISBURSEMENT
+      ------------------------------------------------------------
+    */
+
     const { data: disbursement, error: lookupError } =
       await supabase
         .from("contribution_disbursements")
@@ -91,18 +97,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Safaricom success
+
+    /*
+      ============================================================
+      SUCCESS
+      ============================================================
+    */
+
     if (resultCode === 0) {
-      const { error: updateError } = await supabase
-        .from("contribution_disbursements")
-        .update({
-          status: "paid",
-          mpesa_transaction_id: transactionId,
-          paid_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", disbursement.id)
-        .neq("status", "paid")
+
+      /*
+        ----------------------------------------------------------
+        1. MARK DISBURSEMENT PAID
+
+        The .neq("status", "paid") makes this idempotent.
+        Safaricom can send the same callback again safely.
+        ----------------------------------------------------------
+      */
+
+      const { error: updateError } =
+        await supabase
+          .from("contribution_disbursements")
+          .update({
+            status: "paid",
+            mpesa_transaction_id: transactionId,
+            paid_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", disbursement.id)
+          .neq("status", "paid")
 
       if (updateError) {
         console.error(
@@ -116,45 +139,126 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      const { error: roundError } = await supabase
-        .from("contribution_rounds")
-        .update({
-          status: "paid",
-          paid_at: new Date().toISOString(),
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", disbursement.round_id)
 
-      if (roundError) {
+      /*
+        ----------------------------------------------------------
+        2. MARK THIS ROUND PAID
+
+        Only the exact round belonging to this disbursement
+        is changed.
+        ----------------------------------------------------------
+      */
+
+      const { data: currentRound, error: roundLookupError } =
+        await supabase
+          .from("contribution_rounds")
+          .select(
+            "id, group_id, round_number, status"
+          )
+          .eq("id", disbursement.round_id)
+          .maybeSingle()
+
+      if (roundLookupError) {
         console.error(
-          "Failed to mark contribution round paid:",
-          roundError
+          "Failed to load contribution round:",
+          roundLookupError
         )
 
         return NextResponse.json(
           {
             error:
-              "Payout succeeded but round update failed",
+              "Payout succeeded but round lookup failed",
           },
           { status: 500 }
         )
       }
 
-      // Automatically prepare the next Merry-Go-Round round
-      const { data: nextRound, error: nextRoundError } =
-        await supabase.rpc(
-          "prepare_merry_go_round_round",
-          {
-            p_group_id: disbursement.group_id,
-          }
+      if (!currentRound) {
+        console.error(
+          "Contribution round not found:",
+          disbursement.round_id
         )
+
+        return NextResponse.json(
+          {
+            error:
+              "Payout succeeded but round was not found",
+          },
+          { status: 500 }
+        )
+      }
+
+
+      /*
+        ----------------------------------------------------------
+        3. ONLY CHANGE ROUND IF IT IS NOT ALREADY PAID
+        ----------------------------------------------------------
+      */
+
+      if (currentRound.status !== "paid") {
+
+        const { error: roundError } =
+          await supabase
+            .from("contribution_rounds")
+            .update({
+              status: "paid",
+              paid_at: new Date().toISOString(),
+              completed_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", disbursement.round_id)
+
+        if (roundError) {
+          console.error(
+            "Failed to mark contribution round paid:",
+            roundError
+          )
+
+          return NextResponse.json(
+            {
+              error:
+                "Payout succeeded but round update failed",
+            },
+            { status: 500 }
+          )
+        }
+      }
+
+
+      /*
+        ----------------------------------------------------------
+        4. PREPARE NEXT ROUND
+       
+        Our corrected SQL function will:
+       
+        - ignore paid round
+        - ignore ready round
+        - ignore processing round
+        - find collecting round if one exists
+        - otherwise create the next round
+        ----------------------------------------------------------
+      */
+
+      const {
+        data: nextRound,
+        error: nextRoundError,
+      } = await supabase.rpc(
+        "prepare_merry_go_round_round",
+        {
+          p_group_id: disbursement.group_id,
+        }
+      )
 
       if (nextRoundError) {
         console.error(
           "Failed to prepare next contribution round:",
           nextRoundError
         )
+
+        /*
+          The money has already been paid successfully.
+          Do NOT report the B2C payout as failed.
+        */
 
         return NextResponse.json({
           success: true,
@@ -165,10 +269,43 @@ export async function POST(request: NextRequest) {
         })
       }
 
-      console.log(
-        "NEXT CONTRIBUTION ROUND PREPARED:",
-        nextRound
-      )
+
+      /*
+        ----------------------------------------------------------
+        5. VERIFY THE NEXT ROUND
+        ----------------------------------------------------------
+      */
+
+      const { data: preparedRound, error: preparedLookupError } =
+        await supabase
+          .from("contribution_rounds")
+          .select(
+            "id, group_id, round_number, recipient_member_id, target_amount, collected_amount, status"
+          )
+          .eq("id", nextRound)
+          .maybeSingle()
+
+      if (preparedLookupError) {
+        console.error(
+          "Failed to verify prepared contribution round:",
+          preparedLookupError
+        )
+
+        return NextResponse.json({
+          success: true,
+          status: "paid",
+          nextRoundCreated: false,
+          warning:
+            "Payout succeeded but next round verification failed",
+        })
+      }
+
+
+      /*
+        ----------------------------------------------------------
+        6. LOG COMPLETE LIFECYCLE
+        ----------------------------------------------------------
+      */
 
       console.log(
         "CONTRIBUTION PAYOUT PAID:",
@@ -182,28 +319,47 @@ export async function POST(request: NextRequest) {
         }
       )
 
+      console.log(
+        "NEXT CONTRIBUTION ROUND PREPARED:",
+        preparedRound
+      )
+
+
+      /*
+        ----------------------------------------------------------
+        7. SUCCESS RESPONSE
+        ----------------------------------------------------------
+      */
+
       return NextResponse.json({
         success: true,
         status: "paid",
         nextRoundCreated: true,
-        nextRound,
+        nextRound: preparedRound,
       })
     }
 
-    // Safaricom failure
+
+    /*
+      ============================================================
+      SAFARICOM FAILURE
+      ============================================================
+    */
+
     const failureReason =
       result.ResultDesc ||
       `Safaricom B2C failed with ResultCode ${resultCode}`
 
-    const { error: failedError } = await supabase
-      .from("contribution_disbursements")
-      .update({
-        status: "failed",
-        failure_reason: failureReason,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", disbursement.id)
-      .neq("status", "paid")
+    const { error: failedError } =
+      await supabase
+        .from("contribution_disbursements")
+        .update({
+          status: "failed",
+          failure_reason: failureReason,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", disbursement.id)
+        .neq("status", "paid")
 
     if (failedError) {
       console.error(
@@ -220,6 +376,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+
     console.log(
       "CONTRIBUTION PAYOUT FAILED:",
       {
@@ -235,7 +392,9 @@ export async function POST(request: NextRequest) {
       status: "failed",
       resultCode,
     })
+
   } catch (error) {
+
     console.error(
       "Contribution B2C ResultURL error:",
       error
