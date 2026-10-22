@@ -19,54 +19,54 @@ export default function CurrentMember({ member }: Props) {
   }
 
   return (
-    <section className="mt-5 rounded-3xl border border-emerald-400/10 bg-emerald-400/[0.03] p-5">
-      <div className="flex items-start gap-3">
-        <ShieldCheck
-          size={20}
-          className="mt-0.5 text-emerald-400"
-        />
+    <section className="mt-5 space-y-3">
+      {/* Header section with icon alignment */}
+      <div className="flex items-center gap-2 pb-2 border-b border-slate-800/60">
+        <ShieldCheck size={14} className="text-emerald-400" />
+        <h2 className="text-sm font-bold text-white">
+          Your Membership
+        </h2>
+      </div>
+
+      {/* Grid listing structural key-values under simple typography */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-xs">
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            MEMBER NUMBER
+          </div>
+          <div className="mt-0.5 font-semibold text-slate-200">
+            #{member.member_number}
+          </div>
+        </div>
 
         <div>
-          <div className="text-sm font-black">
-            Your membership
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            MEMBER CODE
           </div>
+          <div className="mt-0.5 font-mono font-semibold text-emerald-400">
+            {member.member_code || "Pending"}
+          </div>
+        </div>
 
-          <div className="mt-2 grid gap-2 text-xs text-white/50 sm:grid-cols-2">
-            <div>
-              Member number:{" "}
-              <span className="font-black text-white/80">
-                #{member.member_number}
-              </span>
-            </div>
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            PHONE NUMBER
+          </div>
+          <div className="mt-0.5 font-semibold text-slate-200">
+            {member.phone_number || "Not provided"}
+          </div>
+        </div>
 
-            <div>
-              Member code:{" "}
-              <span className="font-mono font-black text-emerald-300">
-                {member.member_code || "Pending"}
-              </span>
-            </div>
-
-            <div>
-              Phone:{" "}
-              <span className="font-black text-white/80">
-                {member.phone_number || "Not provided"}
-              </span>
-            </div>
-
-            <div>
-              Verification:{" "}
-              <span
-                className={
-                  member.phone_verified
-                    ? "font-black text-emerald-400"
-                    : "font-black text-amber-400"
-                }
-              >
-                {member.phone_verified
-                  ? "VERIFIED"
-                  : "NOT VERIFIED"}
-              </span>
-            </div>
+        <div>
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            STATUS VERIFICATION
+          </div>
+          <div
+            className={`mt-0.5 font-bold text-[11px] ${
+              member.phone_verified ? "text-emerald-400" : "text-amber-400"
+            }`}
+          >
+            {member.phone_verified ? "VERIFIED" : "NOT VERIFIED"}
           </div>
         </div>
       </div>

@@ -14,9 +14,12 @@ export default function GroupState({
   if (loading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="flex items-center gap-3 text-sm font-bold text-white/50">
-          <Loader2 className="animate-spin" size={20} />
-          Loading contribution group...
+        {/* Clean, minimalist green layout without container backgrounds */}
+        <div className="flex flex-col items-center gap-2 text-center">
+          <Loader2 className="animate-spin text-emerald-400" size={24} />
+          <p className="text-xs font-semibold text-slate-400">
+            Loading contribution group...
+          </p>
         </div>
       </div>
     )
@@ -25,17 +28,13 @@ export default function GroupState({
   if (error) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center">
-        <div className="max-w-md rounded-3xl border border-red-400/20 bg-red-400/[0.04] p-6 text-center">
-          <AlertCircle
-            size={28}
-            className="mx-auto text-red-400"
-          />
-
-          <div className="mt-3 text-sm font-black">
+        {/* Plain text-only alert without card box elements */}
+        <div className="flex flex-col items-center max-w-xs text-center">
+          <AlertCircle size={20} className="text-red-400" />
+          <h2 className="mt-2 text-xs font-bold text-white">
             Unable to load group
-          </div>
-
-          <p className="mt-2 text-xs leading-6 text-white/50">
+          </h2>
+          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
             {error}
           </p>
         </div>

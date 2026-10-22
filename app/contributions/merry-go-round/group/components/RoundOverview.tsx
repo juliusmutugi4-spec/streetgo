@@ -14,48 +14,46 @@ export default function RoundOverview({
   recipientName,
 }: Props) {
   return (
-    <section className="mt-5 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
-      <h2 className="text-lg font-black">
-        Round overview
+    <section className="mt-5 space-y-4">
+      {/* Header without a box container */}
+      <h2 className="text-sm font-bold text-white">
+        Round Overview
       </h2>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Grid items arranged via minimalist spacing layout */}
+      <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
         <div>
-          <div className="text-[10px] font-black tracking-widest text-white/30">
+          <div className="text-[10px] font-bold tracking-wider text-slate-500">
             TARGET
           </div>
-
-          <div className="mt-1 text-lg font-black">
+          <div className="mt-0.5 text-sm font-semibold text-white">
             KES {targetPool.toLocaleString()}
           </div>
         </div>
 
         <div>
-          <div className="text-[10px] font-black tracking-widest text-white/30">
+          <div className="text-[10px] font-bold tracking-wider text-slate-500">
             COLLECTED
           </div>
-
-          <div className="mt-1 text-lg font-black text-emerald-400">
+          <div className="mt-0.5 text-sm font-semibold text-emerald-400">
             KES {pool.toLocaleString()}
           </div>
         </div>
 
         <div>
-          <div className="text-[10px] font-black tracking-widest text-white/30">
+          <div className="text-[10px] font-bold tracking-wider text-slate-500">
             REMAINING
           </div>
-
-          <div className="mt-1 text-lg font-black">
+          <div className="mt-0.5 text-sm font-semibold text-white">
             KES {remaining.toLocaleString()}
           </div>
         </div>
 
         <div>
-          <div className="text-[10px] font-black tracking-widest text-white/30">
+          <div className="text-[10px] font-bold tracking-wider text-slate-500">
             RECIPIENT
           </div>
-
-          <div className="mt-1 truncate text-lg font-black">
+          <div className="mt-0.5 truncate text-sm font-semibold text-white">
             {recipientName}
           </div>
         </div>
