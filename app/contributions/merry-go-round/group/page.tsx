@@ -63,12 +63,13 @@ type PaymentSummary = {
 };
 
 type MemberPaymentStatus = {
-  member_id: string;
-  member_number: number;
-  payment_status: string;
-  mpesa_receipt: string | null;
-  paid_at: string | null;
-};
+  member_id: string
+  member_number: number
+  payment_status: string
+  amount_paid: number
+  mpesa_receipt: string | null
+  paid_at: string | null
+}
 
 function GroupDashboardContent() {
   const router = useRouter();
@@ -82,7 +83,8 @@ function GroupDashboardContent() {
   const [group, setGroup] = useState<Group | null>(null);
 
   const [members, setMembers] = useState<Member[]>([]);
-
+const [currentRound, setCurrentRound] =
+  useState<CurrentRound | null>(null);
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary>({
     pool_collected: 0,
     paid_members: 0,
@@ -261,7 +263,44 @@ role,
 
       setGroup(groupData);
       setMembers(memberData || []);
+/*
+ * ---------------------------------------------
+ * Load current Merry-Go-Round round
+ * ---------------------------------------------
+ */
+const { data: roundData, error: roundError } =
+  await supabase
+    .from("contribution_rounds")
+    .select(
+      `
+        id,
+        round_number,
+        status,
+        recipient_member_id,
+        target_amount,
+        collected_amount
+      `
+    )
+    .eq("group_id", resolvedGroupId)
+    .in("status", [
+      "collecting",
+      "ready",
+      "processing",
+    ])
+    .order("round_number", {
+      ascending: false,
+    })
+    .limit(1)
+    .maybeSingle();
 
+if (roundError) {
+  throw roundError;
+}
+
+setCurrentRound(roundData || null);
+console.log("CURRENT ROUND:", roundData);
+console.log("RECIPIENT MEMBER ID:", roundData?.recipient_member_id);
+console.log("ACTIVE MEMBERS:", memberData);
       /*
        * ---------------------------------------------
        * Load secure payment summary
@@ -365,21 +404,31 @@ role,
 
   const myMember = members.find((member) => member.user_id === currentUserId);
 
-  const recipientMember = members.find((member) => member.member_number === 1);
+const recipientMember = currentRound?.recipient_member_id
+  ? members.find(
+      (member) =>
+        member.id === currentRound.recipient_member_id
+    )
+  : null;
 
-  const recipientName = recipientMember
-    ? [
-        recipientMember.mpesa_first_name,
-        recipientMember.mpesa_middle_name,
-        recipientMember.mpesa_last_name,
-      ]
-        .filter(Boolean)
-        .join(" ") ||
-      recipientMember.display_name ||
-      (recipientMember.role === "organizer"
-        ? "Organizer"
-        : `Member #${recipientMember.member_number}`)
-    : "Pending";
+const recipientName = recipientMember
+  ? [
+      recipientMember.mpesa_first_name,
+      recipientMember.mpesa_middle_name,
+      recipientMember.mpesa_last_name,
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    recipientMember.display_name ||
+    (recipientMember.role === "organizer"
+      ? "Organizer"
+      : `Member #${recipientMember.member_number}`)
+  : "Pending";
+
+const nextRecipientAmount = Number(
+  currentRound?.target_amount ||
+    contributionAmount * memberLimit
+);
 
   const frequencyLabel = group?.frequency === "weekly" ? "Weekly" : "Monthly";
 
@@ -491,13 +540,16 @@ role,
           frequencyLabel={frequencyLabel}
           formattedStartDate={formattedStartDate}
         />
-        <MembersList
-          members={members}
-          memberPaymentStatuses={memberPaymentStatuses}
-          currentUserId={currentUserId}
-          memberLimit={memberLimit}
-          slotsRemaining={slotsRemaining}
-        />
+<MembersList
+  members={members}
+  memberPaymentStatuses={memberPaymentStatuses}
+  currentUserId={currentUserId}
+  memberLimit={group.member_limit}
+  slotsRemaining={slotsRemaining}
+  contributionAmount={Number(group.contribution_amount || 0)}
+  nextRecipient={recipientMember}
+  nextRecipientAmount={nextRecipientAmount}
+/>
 
         <CurrentMember member={myMember} />
         <RoundOverview
