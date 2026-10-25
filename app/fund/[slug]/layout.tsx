@@ -100,9 +100,8 @@ export async function generateMetadata({
     `👥 ${contributorCount} contributor${
       contributorCount === 1 ? "" : "s"
     }`;
-
-  const displayDescription =
-    `${description} ${progressDescription}`;
+const displayDescription =
+  `${progressDescription} • ${description}`;
 
   // --------------------------------------------------
   // 6. URLS
