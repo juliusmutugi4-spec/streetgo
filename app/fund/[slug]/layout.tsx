@@ -24,7 +24,9 @@ export async function generateMetadata({
     .eq("slug", slug)
     .maybeSingle()
 
-  const title = campaign?.title || "Support This Fundraiser"
+  const rawTitle = campaign?.title || "Support This Fundraiser"
+
+  const cleanTitle = rawTitle.replace(/^❤️\s*/u, "").trim()
 
   const description =
     campaign?.description ||
@@ -39,7 +41,7 @@ export async function generateMetadata({
   return {
     metadataBase: new URL(baseUrl),
 
-    title: `❤️ ${title} | StreetGO Fund`,
+    title: `❤️ ${cleanTitle} | StreetGO Fund`,
 
     description,
 
@@ -51,21 +53,21 @@ export async function generateMetadata({
       type: "website",
       url: fundraiserUrl,
       siteName: "StreetGO Fund",
-      title: `❤️ ${title}`,
+      title: `❤️ ${cleanTitle}`,
       description,
       images: [
         {
           url: imageUrl,
           width: 1200,
           height: 630,
-          alt: title,
+          alt: cleanTitle,
         },
       ],
     },
 
     twitter: {
       card: "summary_large_image",
-      title: `❤️ ${title}`,
+      title: `❤️ ${cleanTitle}`,
       description,
       images: [imageUrl],
     },
