@@ -1,15 +1,11 @@
 import { redirect } from "next/navigation"
 
-type Props = {
-  params: Promise<{
-    slug: string
-  }>
-}
-
-export default async function FundraiserSharePage({
+export default async function SharePage({
   params,
-}: Props) {
+}: {
+  params: Promise<{ slug: string }>
+}) {
   const { slug } = await params
 
-  redirect(`/fund/${slug}`)
+  redirect(`/fund/${encodeURIComponent(slug)}`)
 }
