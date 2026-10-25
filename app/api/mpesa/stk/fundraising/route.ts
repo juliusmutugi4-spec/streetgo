@@ -121,7 +121,66 @@ console.log("FUNDRAISER VERIFY:", {
         { status: 400 }
       )
     }
+/*
+ * --------------------------------------------------
+ * Load current Fundraiser platform fee
+ * --------------------------------------------------
+ */
 
+const { data: feeSetting, error: feeError } =
+  await supabase
+    .from("platform_fee_settings")
+    .select("percentage")
+    .eq("fee_type", "fundraiser")
+    .eq("active", true)
+    .single()
+
+if (feeError || !feeSetting) {
+  console.error(
+    "FUNDRAISER FEE LOOKUP ERROR:",
+    feeError
+  )
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Unable to determine fundraiser payment fee.",
+    },
+    { status: 500 }
+  )
+}
+
+const beneficiaryAmount = Math.floor(amount)
+
+const feePercentage =
+  Number(feeSetting.percentage || 0)
+
+const calculatedFee =
+  beneficiaryAmount * (feePercentage / 100)
+
+/*
+ * M-PESA STK accepts whole KES amounts.
+ * Round the customer charge upward so the
+ * fundraiser still receives the full requested amount.
+ */
+const grossAmount =
+  Math.ceil(
+    beneficiaryAmount + calculatedFee
+  )
+
+const feeAmount =
+  grossAmount - beneficiaryAmount
+
+console.log(
+  "FUNDRAISER PAYMENT FEE:",
+  {
+    beneficiaryAmount,
+    feePercentage,
+    calculatedFee,
+    grossAmount,
+    feeAmount,
+  }
+)
     /*
      * --------------------------------------------------
      * Create pending fundraising contribution
@@ -131,17 +190,30 @@ console.log("FUNDRAISER VERIFY:", {
     const { data: contribution, error: contributionError } =
       await supabase
         .from("fundraising_contributions")
-        .insert({
-          campaign_id: campaignId,
-          amount: Math.floor(amount),
-          contributor_name:
-            contributorName || null,
-          contributor_phone:
-            formattedPhone,
-          message: message || null,
-          payment_method: "mpesa",
-          payment_status: "pending",
-        })
+.insert({
+  campaign_id: campaignId,
+
+  // Amount intended for the fundraiser
+  amount: beneficiaryAmount,
+
+  // Fee snapshot for this payment
+  fee_percentage: feePercentage,
+  fee_amount: feeAmount,
+  gross_amount: grossAmount,
+  beneficiary_amount: beneficiaryAmount,
+
+  contributor_name:
+    contributorName || null,
+
+  contributor_phone:
+    formattedPhone,
+
+  message:
+    message || null,
+
+  payment_method: "mpesa",
+  payment_status: "pending",
+})
         .select("id")
         .single()
 
@@ -248,7 +320,7 @@ console.log("FUNDRAISER VERIFY:", {
         TransactionType:
           "CustomerPayBillOnline",
 
-        Amount: Math.floor(amount),
+        Amount: grossAmount,
 
         PartyA: formattedPhone,
         PartyB: shortcode,
@@ -330,7 +402,13 @@ console.log("FUNDRAISER VERIFY:", {
       contributionId:
         contribution.id,
 
-      amount: Math.floor(amount),
+      amount: beneficiaryAmount,
+
+chargedAmount: grossAmount,
+
+feeAmount,
+
+feePercentage,
 
       phone:
         formattedPhone,

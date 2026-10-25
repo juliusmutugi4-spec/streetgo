@@ -15,6 +15,8 @@ import TransactionsTable from "./components/TransactionsTable"
 import WithdrawalTable from "./components/WithdrawalTable"
 import WithdrawalDrawer from "./components/WithdrawalDrawer"
 import FinanceOperationsPanel from "./components/FinanceOperationsPanel"
+import PlatformFeeControl from "./components/PlatformFeeControl"
+import PlatformRevenueDashboard from "./components/PlatformRevenueDashboard"
 import {
   copyReference,
   getWalletByTransaction,
@@ -32,6 +34,11 @@ export default function FinancePage() {
   const [authorized, setAuthorized] = useState(false)
   const [adminId, setAdminId] = useState("")
   const [adminRole, setAdminRole] = useState("")
+
+
+
+
+
 const [withdrawalsUnlocked, setWithdrawalsUnlocked] =
   useState(false)
 
@@ -166,6 +173,7 @@ setAuthorized(true)
 
     verifyFinanceAccess()
   }, [router])
+
 
 
 // ======================================================
@@ -346,6 +354,8 @@ async function handleWithdrawalLookup() {
 
 
   // 4. Gatekeeper Middleware Screens
+
+
   if (!authorized) {
     return (
       <main className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-3 antialiased">
@@ -437,6 +447,10 @@ async function handleWithdrawalLookup() {
           <section aria-label="High-level Metrics Summary">
             <FinanceCards summary={summary} extraFinance={extraFinance} />
           </section>
+<PlatformRevenueDashboard />
+
+<PlatformFeeControl />
+
 
 {/* Withdrawal Reference Tracker */}
 <section

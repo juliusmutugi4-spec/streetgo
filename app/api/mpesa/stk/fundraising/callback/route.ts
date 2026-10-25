@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
@@ -14,14 +15,21 @@ export async function POST(req: Request) {
     if (!callback) {
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
 
-    const checkoutRequestId = callback.CheckoutRequestID
-    const merchantRequestId = callback.MerchantRequestID
-    const resultCode = callback.ResultCode
-    const resultDesc = callback.ResultDesc
+    const checkoutRequestId =
+      callback.CheckoutRequestID
+
+    const merchantRequestId =
+      callback.MerchantRequestID
+
+    const resultCode =
+      callback.ResultCode
+
+    const resultDesc =
+      callback.ResultDesc
 
     console.log(
       "FUNDRAISING STK CALLBACK:",
@@ -31,18 +39,32 @@ export async function POST(req: Request) {
     if (!checkoutRequestId) {
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
 
-    const { data: contribution, error: findError } = await supabase
+    // --------------------------------------------------
+    // FIND CONTRIBUTION
+    // --------------------------------------------------
+
+    const {
+      data: contribution,
+      error: findError,
+    } = await supabase
       .from("fundraising_contributions")
       .select("*")
-      .eq("checkout_request_id", checkoutRequestId)
+      .eq(
+        "checkout_request_id",
+        checkoutRequestId
+      )
       .maybeSingle()
 
     if (findError) {
-      console.error("Contribution lookup error:", findError)
+      console.error(
+        "Contribution lookup error:",
+        findError
+      )
+
       throw findError
     }
 
@@ -54,7 +76,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
 
@@ -63,15 +85,28 @@ export async function POST(req: Request) {
     // --------------------------------------------------
 
     if (resultCode !== 0) {
-      await supabase
+      const {
+        error: failedUpdateError,
+      } = await supabase
         .from("fundraising_contributions")
         .update({
           payment_status: "failed",
-          merchant_request_id: merchantRequestId ?? null,
-          updated_at: new Date().toISOString()
+          merchant_request_id:
+            merchantRequestId ?? null,
+          updated_at:
+            new Date().toISOString(),
         })
         .eq("id", contribution.id)
         .neq("payment_status", "paid")
+
+      if (failedUpdateError) {
+        console.error(
+          "Failed payment update error:",
+          failedUpdateError
+        )
+
+        throw failedUpdateError
+      }
 
       console.log(
         "Fundraising payment failed:",
@@ -82,7 +117,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
 
@@ -93,24 +128,94 @@ export async function POST(req: Request) {
     const items =
       callback.CallbackMetadata?.Item ?? []
 
-    const getMetadataValue = (name: string) =>
-      items.find((item: any) => item.Name === name)?.Value ?? null
+    const getMetadataValue = (
+      name: string
+    ) =>
+      items.find(
+        (item: any) =>
+          item.Name === name
+      )?.Value ?? null
 
     const mpesaReceipt =
-      getMetadataValue("MpesaReceiptNumber")
+      getMetadataValue(
+        "MpesaReceiptNumber"
+      )
+
+    /*
+     * Amount actually charged by M-PESA.
+     *
+     * For example:
+     *
+     * Fundraiser amount: KES 50
+     * Fee: 2.5%
+     * Customer charged: KES 52
+     *
+     * Therefore paidAmount = 52.
+     */
 
     const paidAmount =
-      Number(getMetadataValue("Amount")) ||
-      Number(contribution.amount)
+      Number(
+        getMetadataValue("Amount")
+      ) ||
+      Number(
+        contribution.gross_amount
+      ) ||
+      Number(
+        contribution.amount
+      )
+
+    /*
+     * Amount that belongs to the fundraiser.
+     */
+
+    const beneficiaryAmount =
+      Number(
+        contribution.beneficiary_amount
+      ) ||
+      Number(
+        contribution.amount
+      )
+
+    /*
+     * StreetGO platform revenue.
+     */
+
+    const feeAmount =
+      Number(
+        contribution.fee_amount
+      ) ||
+      Math.max(
+        paidAmount -
+          beneficiaryAmount,
+        0
+      )
 
     const phoneNumber =
-      getMetadataValue("PhoneNumber")
+      getMetadataValue(
+        "PhoneNumber"
+      )
 
     const transactionDate =
-      getMetadataValue("TransactionDate")
+      getMetadataValue(
+        "TransactionDate"
+      )
 
-    // Prevent duplicate callback from increasing raised amount twice
-    if (contribution.payment_status === "paid") {
+    // --------------------------------------------------
+    // DUPLICATE CALLBACK PROTECTION
+    // --------------------------------------------------
+
+    /*
+     * Fast protection against a callback that
+     * arrives after the contribution is already paid.
+     *
+     * The database function also has its own
+     * row-lock/idempotency protection.
+     */
+
+    if (
+      contribution.payment_status ===
+      "paid"
+    ) {
       console.log(
         "Fundraising contribution already paid:",
         contribution.id
@@ -118,115 +223,107 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         ResultCode: 0,
-        ResultDesc: "Accepted"
-      })
-    }
-
-    // Mark contribution paid
-    const { data: updatedContribution, error: updateError } =
-      await supabase
-        .from("fundraising_contributions")
-        .update({
-          payment_status: "paid",
-          mpesa_receipt: mpesaReceipt,
-          merchant_request_id: merchantRequestId ?? null,
-          paid_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", contribution.id)
-        .neq("payment_status", "paid")
-        .select("id")
-        .maybeSingle()
-
-    if (updateError) {
-      console.error(
-        "Contribution update error:",
-        updateError
-      )
-      throw updateError
-    }
-
-    // Another callback may have completed it first
-    if (!updatedContribution) {
-      return NextResponse.json({
-        ResultCode: 0,
-        ResultDesc: "Accepted"
+        ResultDesc: "Accepted",
       })
     }
 
     // --------------------------------------------------
-    // UPDATE FUNDRAISING TOTAL
+    // ATOMIC FUNDRAISER PAYMENT FINALIZATION
     // --------------------------------------------------
 
-    const { data: campaign, error: campaignError } =
-      await supabase
-        .from("fundraising_campaigns")
-        .select("raised_amount")
-        .eq("id", contribution.campaign_id)
-        .single()
+    /*
+     * This single database function handles:
+     *
+     * 1. Contribution → PAID
+     * 2. Fundraiser raised_amount → + beneficiary amount
+     * 3. StreetGO revenue ledger → + fee
+     *
+     * All three operations happen inside one
+     * PostgreSQL transaction.
+     */
 
-    if (campaignError) {
-      console.error(
-        "Campaign lookup error:",
-        campaignError
-      )
-      throw campaignError
-    }
-
-    const newRaisedAmount =
-      Number(campaign.raised_amount || 0) + paidAmount
-
-    const { error: raisedError } =
-      await supabase
-        .from("fundraising_campaigns")
-        .update({
-          raised_amount: newRaisedAmount,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", contribution.campaign_id)
-
-    if (raisedError) {
-      console.error(
-        "Raised amount update error:",
-        raisedError
-      )
-      throw raisedError
-    }
-
-    console.log(
-      "FUNDRAISING PAYMENT SUCCESS:",
+    const {
+      data: finalization,
+      error: finalizationError,
+    } = await supabase.rpc(
+      "finalize_fundraiser_payment",
       {
-        contributionId: contribution.id,
-        campaignId: contribution.campaign_id,
-        amount: paidAmount,
-        receipt: mpesaReceipt,
-        phone: phoneNumber,
-        transactionDate
+        p_contribution_id:
+          contribution.id,
+
+        p_mpesa_receipt:
+          mpesaReceipt,
+
+        p_merchant_request_id:
+          merchantRequestId ?? null,
+
+        p_paid_amount:
+          paidAmount,
+
+        p_phone:
+          phoneNumber
+            ? String(phoneNumber)
+            : null,
+
+        p_transaction_date:
+          transactionDate
+            ? String(transactionDate)
+            : null,
       }
     )
 
+    if (finalizationError) {
+      console.error(
+        "FUNDRAISER PAYMENT FINALIZATION ERROR:",
+        finalizationError
+      )
+
+      throw finalizationError
+    }
+
+    // --------------------------------------------------
+    // SUCCESS LOG
+    // --------------------------------------------------
+
+    console.log(
+      "FUNDRAISING PAYMENT SUCCESS:",
+      finalization
+    )
+
+    // --------------------------------------------------
+    // ACKNOWLEDGE SAFARICOM
+    // --------------------------------------------------
+
     return NextResponse.json({
       ResultCode: 0,
-      ResultDesc: "Accepted"
+      ResultDesc: "Accepted",
     })
-
   } catch (error) {
     console.error(
       "FUNDRAISING CALLBACK ERROR:",
       error
     )
 
-    // Safaricom expects a response from the callback
+    /*
+     * Safaricom expects a response from the
+     * callback endpoint.
+     */
+
     return NextResponse.json({
       ResultCode: 0,
-      ResultDesc: "Accepted"
+      ResultDesc: "Accepted",
     })
   }
 }
 
+// --------------------------------------------------
+// HEALTH CHECK
+// --------------------------------------------------
+
 export async function GET() {
   return NextResponse.json({
     success: true,
-    message: "StreetGO fundraising STK callback is operational"
+    message:
+      "StreetGO fundraising STK callback is operational",
   })
 }
