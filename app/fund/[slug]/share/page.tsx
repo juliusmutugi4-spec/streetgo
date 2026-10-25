@@ -1,19 +1,21 @@
 "use client"
 
-import { useEffect } from "react"
+import { use, useEffect } from "react"
 
 type Props = {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 export default function SharePage({ params }: Props) {
-  useEffect(() => {
-    const destination = `/fund/${encodeURIComponent(params.slug)}`
+  const { slug } = use(params)
 
-    window.location.replace(destination)
-  }, [params.slug])
+  useEffect(() => {
+    if (!slug) return
+
+    window.location.replace(`/fund/${encodeURIComponent(slug)}`)
+  }, [slug])
 
   return (
     <main
@@ -28,21 +30,11 @@ export default function SharePage({ params }: Props) {
       }}
     >
       <div style={{ textAlign: "center" }}>
-        <div
-          style={{
-            fontSize: "28px",
-            marginBottom: "12px",
-          }}
-        >
+        <div style={{ fontSize: "28px", marginBottom: "12px" }}>
           ❤️
         </div>
 
-        <div
-          style={{
-            fontSize: "18px",
-            fontWeight: 600,
-          }}
-        >
+        <div style={{ fontSize: "18px", fontWeight: 600 }}>
           Opening fundraiser...
         </div>
       </div>
