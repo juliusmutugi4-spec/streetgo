@@ -2,11 +2,14 @@ import { ImageResponse } from "next/og"
 import { createClient } from "@supabase/supabase-js"
 
 export const runtime = "edge"
+
 export const alt = "StreetGO Fundraiser"
+
 export const size = {
   width: 1200,
   height: 630,
 }
+
 export const contentType = "image/png"
 
 type Props = {
@@ -23,37 +26,94 @@ export default async function Image({ params }: Props) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   )
 
+  // --------------------------------------------------
+  // LOAD FUNDRAISER
+  // --------------------------------------------------
+
   const { data: campaign } = await supabase
     .from("fundraising_campaigns")
     .select(
-      "title, description, target_amount, raised_amount, cover_image_url"
+      "id, title, description, target_amount, raised_amount, cover_image_url"
     )
     .eq("slug", slug)
     .maybeSingle()
 
-  const title = campaign?.title || "Support This Fundraiser"
+  const title =
+    campaign?.title || "Support This Fundraiser"
 
   const description =
     campaign?.description ||
     "Help make a difference through StreetGO Fund."
 
-  const target = Number(campaign?.target_amount || 0)
-  const raised = Number(campaign?.raised_amount || 0)
+  const target = Number(
+    campaign?.target_amount || 0
+  )
+
+  const raised = Number(
+    campaign?.raised_amount || 0
+  )
+
+  // --------------------------------------------------
+  // CALCULATE PERCENTAGE
+  // --------------------------------------------------
 
   const percentage =
     target > 0
-      ? Math.min(Math.round((raised / target) * 100), 100)
+      ? Math.min(
+          Math.round((raised / target) * 100),
+          100
+        )
       : 0
+
+  // --------------------------------------------------
+  // COUNT SUCCESSFUL CONTRIBUTORS
+  // --------------------------------------------------
+
+  let contributorCount = 0
+
+  if (campaign?.id) {
+    const { count } = await supabase
+      .from("fundraising_contributions")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .eq("campaign_id", campaign.id)
+      .eq("payment_status", "paid")
+
+    contributorCount = count ?? 0
+  }
+
+  // --------------------------------------------------
+  // FORMAT MONEY
+  // --------------------------------------------------
+
+  const raisedFormatted =
+    raised.toLocaleString("en-KE")
+
+  const targetFormatted =
+    target.toLocaleString("en-KE")
+
+  // --------------------------------------------------
+  // COVER IMAGE
+  // --------------------------------------------------
 
   let imageUrl: string | null = null
 
   if (campaign?.cover_image_url) {
     const { data } = await supabase.storage
       .from("fundraiser-images")
-      .createSignedUrl(campaign.cover_image_url, 60 * 60)
+      .createSignedUrl(
+        campaign.cover_image_url,
+        60 * 60
+      )
 
     imageUrl = data?.signedUrl || null
   }
+
+  // --------------------------------------------------
+  // GENERATE IMAGE
+  // --------------------------------------------------
 
   return new ImageResponse(
     (
@@ -69,6 +129,7 @@ export default async function Image({ params }: Props) {
           overflow: "hidden",
         }}
       >
+        {/* COVER IMAGE */}
         {imageUrl && (
           <img
             src={imageUrl}
@@ -83,18 +144,18 @@ export default async function Image({ params }: Props) {
           />
         )}
 
-        {/* Dark overlay */}
+        {/* DARK OVERLAY */}
         <div
           style={{
             position: "absolute",
             inset: 0,
             display: "flex",
             background:
-              "linear-gradient(90deg, rgba(2,6,23,0.96) 0%, rgba(2,6,23,0.82) 48%, rgba(2,6,23,0.35) 100%)",
+              "linear-gradient(90deg, rgba(2,6,23,0.97) 0%, rgba(2,6,23,0.86) 50%, rgba(2,6,23,0.42) 100%)",
           }}
         />
 
-        {/* Content */}
+        {/* CONTENT */}
         <div
           style={{
             position: "relative",
@@ -103,10 +164,10 @@ export default async function Image({ params }: Props) {
             flexDirection: "column",
             justifyContent: "center",
             width: "100%",
-            padding: "55px 70px",
+            padding: "50px 70px",
           }}
         >
-          {/* Brand */}
+          {/* BRAND */}
           <div
             style={{
               display: "flex",
@@ -115,13 +176,13 @@ export default async function Image({ params }: Props) {
               fontWeight: 700,
               letterSpacing: 4,
               color: "#60a5fa",
-              marginBottom: 24,
+              marginBottom: 20,
             }}
           >
             STREETGO FUND
           </div>
 
-          {/* Title */}
+          {/* TITLE */}
           <div
             style={{
               display: "flex",
@@ -129,95 +190,133 @@ export default async function Image({ params }: Props) {
               fontWeight: 800,
               lineHeight: 1.08,
               maxWidth: 850,
-              marginBottom: 20,
+              marginBottom: 18,
             }}
           >
             {title}
           </div>
 
-          {/* Description */}
+          {/* DESCRIPTION */}
           <div
             style={{
               display: "flex",
-              fontSize: 25,
-              lineHeight: 1.35,
+              fontSize: 24,
+              lineHeight: 1.3,
               color: "rgba(255,255,255,0.78)",
-              maxWidth: 780,
-              marginBottom: 38,
+              maxWidth: 820,
+              marginBottom: 28,
             }}
           >
-            {description.length > 150
-              ? `${description.slice(0, 150)}...`
+            {description.length > 125
+              ? `${description.slice(0, 125)}...`
               : description}
           </div>
 
-          {/* Progress */}
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              width: 760,
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 12,
-                fontSize: 22,
-              }}
-            >
-              <span>
-                KES {raised.toLocaleString()} raised
-              </span>
-
-              <span style={{ color: "#cbd5e1" }}>
-                {percentage}% funded
-              </span>
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                width: "100%",
-                height: 18,
-                borderRadius: 999,
-                background: "rgba(255,255,255,0.18)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  width: `${percentage}%`,
-                  height: "100%",
-                  borderRadius: 999,
-                  background: "#2563eb",
-                }}
-              />
-            </div>
-
-            <div
-              style={{
-                display: "flex",
-                marginTop: 12,
-                fontSize: 19,
-                color: "rgba(255,255,255,0.55)",
-              }}
-            >
-              Target: KES {target.toLocaleString()}
-            </div>
-          </div>
-
-          {/* Bottom */}
+          {/* STATS ROW */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              marginTop: 38,
+              gap: 28,
+              marginBottom: 18,
+              fontSize: 23,
+              fontWeight: 700,
+            }}
+          >
+            {/* PERCENTAGE */}
+            <div
+              style={{
+                display: "flex",
+                color: "#60a5fa",
+              }}
+            >
+              📊 {percentage}% funded
+            </div>
+
+            {/* CONTRIBUTORS */}
+            <div
+              style={{
+                display: "flex",
+                color: "#e2e8f0",
+              }}
+            >
+              👥 {contributorCount} contributor
+              {contributorCount === 1 ? "" : "s"}
+            </div>
+          </div>
+
+          {/* MONEY */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: 800,
+              marginBottom: 12,
+              fontSize: 23,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                fontWeight: 700,
+              }}
+            >
+              💰 KES {raisedFormatted} raised
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                color: "rgba(255,255,255,0.65)",
+              }}
+            >
+              Goal KES {targetFormatted}
+            </div>
+          </div>
+
+          {/* PROGRESS BAR */}
+          <div
+            style={{
+              display: "flex",
+              width: 800,
+              height: 20,
+              borderRadius: 999,
+              background: "rgba(255,255,255,0.18)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                width: `${percentage}%`,
+                height: "100%",
+                borderRadius: 999,
+                background: "#2563eb",
+              }}
+            />
+          </div>
+
+          {/* TARGET */}
+          <div
+            style={{
+              display: "flex",
+              marginTop: 10,
+              fontSize: 18,
+              color: "rgba(255,255,255,0.5)",
+            }}
+          >
+            KES {raisedFormatted} of KES {targetFormatted}
+          </div>
+
+          {/* BOTTOM CTA */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginTop: 28,
               fontSize: 21,
-              color: "rgba(255,255,255,0.65)",
+              color: "rgba(255,255,255,0.7)",
             }}
           >
             Tap to contribute securely with M-PESA
