@@ -60,6 +60,9 @@ type PaymentSummary = {
   my_receipt: string | null;
   my_credit: number;
   total_funds_received: number;
+  required_amount: number;
+  round_paid: number;
+  amount_to_pay: number;
 };
 
 type MemberPaymentStatus = {
@@ -85,14 +88,17 @@ function GroupDashboardContent() {
   const [members, setMembers] = useState<Member[]>([]);
 const [currentRound, setCurrentRound] =
   useState<CurrentRound | null>(null);
-  const [paymentSummary, setPaymentSummary] = useState<PaymentSummary>({
-    pool_collected: 0,
-    paid_members: 0,
-    my_status: "due",
-    my_receipt: null,
-    my_credit: 0,
-    total_funds_received: 0,
-  });
+const [paymentSummary, setPaymentSummary] = useState<PaymentSummary>({
+  pool_collected: 0,
+  paid_members: 0,
+  my_status: "due",
+  my_receipt: null,
+  my_credit: 0,
+  total_funds_received: 0,
+  required_amount: 0,
+  round_paid: 0,
+  amount_to_pay: 0,
+});
 
   const [memberPaymentStatuses, setMemberPaymentStatuses] = useState<
     MemberPaymentStatus[]
@@ -321,14 +327,17 @@ console.log("ACTIVE MEMBERS:", memberData);
       if (summaryData && summaryData.length > 0) {
         setPaymentSummary(summaryData[0]);
       } else {
-        setPaymentSummary({
-          pool_collected: 0,
-          paid_members: 0,
-          my_status: "due",
-          my_receipt: null,
-          my_credit: 0,
-          total_funds_received: 0,
-        });
+setPaymentSummary({
+  pool_collected: 0,
+  paid_members: 0,
+  my_status: "due",
+  my_receipt: null,
+  my_credit: 0,
+  total_funds_received: 0,
+  required_amount: Number(groupData.contribution_amount || 0),
+  round_paid: 0,
+  amount_to_pay: Number(groupData.contribution_amount || 0),
+});
       }
 
       /*
@@ -396,7 +405,13 @@ console.log("ACTIVE MEMBERS:", memberData);
   const remaining = Math.max(targetPool - pool, 0);
 
   const myPaymentStatus = paymentSummary.my_status || "due";
-
+const amountToPay = Math.max(
+  Number(
+    paymentSummary.amount_to_pay ??
+      contributionAmount
+  ),
+  0
+)
   const slotsRemaining = Math.max(memberLimit - members.length, 0);
 
   const progressPercent =
@@ -529,12 +544,13 @@ const nextRecipientAmount = Number(
         {/* YOUR PAYMENT */}
         {/* ----------------------------------------- */}
 
-        <YourPayment
-          myPaymentStatus={myPaymentStatus}
-          receipt={paymentSummary.my_receipt}
-          contributionAmount={contributionAmount}
-          groupId={group.id}
-        />
+<YourPayment
+  myPaymentStatus={myPaymentStatus}
+  receipt={paymentSummary.my_receipt}
+  contributionAmount={contributionAmount}
+  amountToPay={amountToPay}
+  groupId={group.id}
+/>
         <GroupInfo
           group={group}
           frequencyLabel={frequencyLabel}

@@ -7,10 +7,19 @@ type Props = {
   myPaymentStatus: string
   receipt: string | null
   contributionAmount: number
+  amountToPay: number
   groupId: string
 }
 
-const STATUS_CONFIG: Record<string, { title: string; desc: string; icon: any; iconCls: string }> = {
+const STATUS_CONFIG: Record<
+  string,
+  {
+    title: string
+    desc: string
+    icon: any
+    iconCls: string
+  }
+> = {
   paid: {
     title: "Contribution Confirmed",
     desc: "Payment settled successfully.",
@@ -35,40 +44,73 @@ export default function YourPayment({
   myPaymentStatus,
   receipt,
   contributionAmount,
+  amountToPay,
   groupId,
 }: Props) {
   const router = useRouter()
-  
-  const state = STATUS_CONFIG[myPaymentStatus] || STATUS_CONFIG.due
+
+  const state =
+    STATUS_CONFIG[myPaymentStatus] || STATUS_CONFIG.due
+
   const StatusIcon = state.icon
-  const isProcessing = myPaymentStatus === "processing"
-  const isPaid = myPaymentStatus === "paid"
+
+  const isProcessing =
+    myPaymentStatus === "processing"
+
+  const isPaid =
+    myPaymentStatus === "paid"
 
   return (
     <section className="mt-5 space-y-3">
-      {/* Dynamic text layouts without card wrappers */}
-      <div className="flex gap-2.5 items-start py-1">
-        <StatusIcon size={16} className={`shrink-0 mt-0.5 ${state.iconCls}`} />
-        
-        <div className="space-y-0.5 min-w-0">
-          <h3 className="text-xs font-bold text-white">{state.title}</h3>
+
+      {/* STATUS */}
+      <div className="flex items-start gap-2.5 py-1">
+
+        <StatusIcon
+          size={16}
+          className={`mt-0.5 shrink-0 ${state.iconCls}`}
+        />
+
+        <div className="min-w-0 space-y-0.5">
+
+          <h3 className="text-xs font-bold text-white">
+            {state.title}
+          </h3>
+
           <p className="text-[11px] leading-relaxed text-slate-500">
-            {isPaid && receipt ? `Receipt: ${receipt}` : state.desc}
+            {isPaid && receipt
+              ? `Receipt: ${receipt}`
+              : state.desc}
           </p>
+
         </div>
       </div>
 
-      {/* Clean button alignment */}
+      {/* PAYMENT BUTTON */}
       {!isPaid && (
         <button
           type="button"
-          onClick={() => router.push(`/contributions/merry-go-round/group/pay?groupId=${encodeURIComponent(groupId)}`)}
-          disabled={isProcessing}
+          onClick={() =>
+            router.push(
+              `/contributions/merry-go-round/group/pay?groupId=${encodeURIComponent(
+                groupId
+              )}`
+            )
+          }
+          disabled={
+            isProcessing ||
+            amountToPay <= 0
+          }
           className="w-full rounded-xl bg-emerald-400 py-2.5 text-xs font-bold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-900 disabled:text-slate-600 disabled:border disabled:border-slate-800"
         >
-          {isProcessing ? "Processing Confirmation..." : `Pay KES ${contributionAmount.toLocaleString()}`}
+          {isProcessing
+            ? "Processing Confirmation..."
+            : amountToPay > 0
+              ? `Pay KES ${amountToPay.toLocaleString()}`
+              : "Contribution Covered"}
         </button>
       )}
+
     </section>
   )
 }
