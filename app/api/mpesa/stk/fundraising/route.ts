@@ -121,55 +121,104 @@ console.log("FUNDRAISER VERIFY:", {
         { status: 400 }
       )
     }
-/*
- * --------------------------------------------------
- * Load current Fundraiser platform fee
- * --------------------------------------------------
- */
+// --------------------------------------------------
+// Load current Fundraiser platform fee
+// --------------------------------------------------
 
-const { data: feeSetting, error: feeError } =
-  await supabase
-    .from("platform_fee_settings")
-    .select("percentage")
-    .eq("fee_type", "fundraiser")
-    .eq("active", true)
-    .single()
+const {
+  data: feeSetting,
+  error: feeError,
+} = await supabase
+  .from("platform_fee_settings")
+  .select("percentage, active")
+  .eq("fee_type", "fundraiser")
+  .eq("active", true)
+  .maybeSingle()
 
-if (feeError || !feeSetting) {
+if (feeError) {
   console.error(
-    "FUNDRAISER FEE LOOKUP ERROR:",
-    feeError
+    "FUNDRAISER FEE DATABASE ERROR:",
+    {
+      message: feeError.message,
+      code: feeError.code,
+      details: feeError.details,
+      hint: feeError.hint,
+    }
   )
 
   return NextResponse.json(
     {
       success: false,
-      error: "Unable to determine fundraiser payment fee.",
+      error:
+        "Unable to read fundraiser payment fee.",
     },
     { status: 500 }
   )
 }
 
-const beneficiaryAmount = Math.floor(amount)
+if (!feeSetting) {
+  console.error(
+    "FUNDRAISER FEE NOT FOUND",
+  )
+
+  return NextResponse.json(
+    {
+      success: false,
+      error:
+        "Fundraiser payment fee is not configured.",
+    },
+    { status: 500 }
+  )
+}
+// --------------------------------------------------
+// Calculate Fundraiser Fee
+// --------------------------------------------------
 
 const feePercentage =
   Number(feeSetting.percentage || 0)
 
+const beneficiaryAmount =
+  Math.floor(amount)
+
 const calculatedFee =
-  beneficiaryAmount * (feePercentage / 100)
+  beneficiaryAmount *
+  (feePercentage / 100)
 
 /*
  * M-PESA STK accepts whole KES amounts.
- * Round the customer charge upward so the
- * fundraiser still receives the full requested amount.
+ *
+ * Example:
+ * Beneficiary = KES 10
+ * Fee = 2.5%
+ * Calculated fee = KES 0.25
+ * Customer charge = KES 11
+ *
+ * The fundraiser still receives the full
+ * requested KES 10.
  */
+
 const grossAmount =
   Math.ceil(
-    beneficiaryAmount + calculatedFee
+    beneficiaryAmount +
+    calculatedFee
   )
 
 const feeAmount =
-  grossAmount - beneficiaryAmount
+  grossAmount -
+  beneficiaryAmount
+
+console.log(
+  "FUNDRAISER PAYMENT FEE:",
+  {
+    beneficiaryAmount,
+    feePercentage,
+    calculatedFee,
+    grossAmount,
+    feeAmount,
+  }
+)
+
+
 
 console.log(
   "FUNDRAISER PAYMENT FEE:",
