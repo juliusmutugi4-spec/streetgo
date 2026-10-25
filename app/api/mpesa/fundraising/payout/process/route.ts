@@ -68,6 +68,15 @@ async function processPayouts(request: NextRequest) {
       )
     }
 
+console.log(
+  "FUNDRAISING PAYOUT CRON CHECK:",
+  {
+    count: payouts?.length ?? 0,
+    payouts: payouts ?? [],
+  }
+)
+
+
     if (!payouts || payouts.length === 0) {
       return NextResponse.json({
         success: true,
