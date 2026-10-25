@@ -1102,7 +1102,7 @@ export default function DashboardContent() {
               <button
                 type="button"
                 onClick={() => {
-                  const url = `${window.location.origin}/fund/${campaign.slug}`
+                  const url = `${window.location.origin}/fund/${campaign.slug}/share`
 
                   navigator.clipboard
                     .writeText(url)
