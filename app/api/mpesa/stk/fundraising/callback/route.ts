@@ -1,4 +1,3 @@
-
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
@@ -144,13 +143,13 @@ export async function POST(req: Request) {
     /*
      * Amount actually charged by M-PESA.
      *
-     * For example:
+     * Example:
      *
-     * Fundraiser amount: KES 50
-     * Fee: 2.5%
-     * Customer charged: KES 52
+     * Fundraiser amount: KES 10
+     * Fee: 56%
+     * Customer charged: KES 16
      *
-     * Therefore paidAmount = 52.
+     * Therefore paidAmount = 16.
      */
 
     const paidAmount =
@@ -164,32 +163,6 @@ export async function POST(req: Request) {
         contribution.amount
       )
 
-    /*
-     * Amount that belongs to the fundraiser.
-     */
-
-    const beneficiaryAmount =
-      Number(
-        contribution.beneficiary_amount
-      ) ||
-      Number(
-        contribution.amount
-      )
-
-    /*
-     * StreetGO platform revenue.
-     */
-
-    const feeAmount =
-      Number(
-        contribution.fee_amount
-      ) ||
-      Math.max(
-        paidAmount -
-          beneficiaryAmount,
-        0
-      )
-
     const phoneNumber =
       getMetadataValue(
         "PhoneNumber"
@@ -201,45 +174,28 @@ export async function POST(req: Request) {
       )
 
     // --------------------------------------------------
-    // DUPLICATE CALLBACK PROTECTION
-    // --------------------------------------------------
-
-    /*
-     * Fast protection against a callback that
-     * arrives after the contribution is already paid.
-     *
-     * The database function also has its own
-     * row-lock/idempotency protection.
-     */
-
-    if (
-      contribution.payment_status ===
-      "paid"
-    ) {
-      console.log(
-        "Fundraising contribution already paid:",
-        contribution.id
-      )
-
-      return NextResponse.json({
-        ResultCode: 0,
-        ResultDesc: "Accepted",
-      })
-    }
-
-    // --------------------------------------------------
     // ATOMIC FUNDRAISER PAYMENT FINALIZATION
     // --------------------------------------------------
 
     /*
-     * This single database function handles:
+     * IMPORTANT:
      *
-     * 1. Contribution → PAID
-     * 2. Fundraiser raised_amount → + beneficiary amount
-     * 3. StreetGO revenue ledger → + fee
+     * Do NOT return early when the contribution is
+     * already marked as paid.
      *
-     * All three operations happen inside one
-     * PostgreSQL transaction.
+     * finalize_fundraiser_payment() handles both:
+     *
+     * 1. New payment:
+     *    - mark contribution paid
+     *    - increase fundraiser total
+     *    - create revenue ledger
+     *
+     * 2. Already-paid payment:
+     *    - do NOT increase fundraiser total again
+     *    - create missing revenue ledger if necessary
+     *
+     * The PostgreSQL function is therefore the single
+     * source of truth for payment finalization.
      */
 
     const {
@@ -252,10 +208,14 @@ export async function POST(req: Request) {
           contribution.id,
 
         p_mpesa_receipt:
-          mpesaReceipt,
+          mpesaReceipt
+            ? String(mpesaReceipt)
+            : null,
 
         p_merchant_request_id:
-          merchantRequestId ?? null,
+          merchantRequestId
+            ? String(merchantRequestId)
+            : null,
 
         p_paid_amount:
           paidAmount,
@@ -287,7 +247,18 @@ export async function POST(req: Request) {
 
     console.log(
       "FUNDRAISING PAYMENT SUCCESS:",
-      finalization
+      {
+        contributionId:
+          contribution.id,
+
+        checkoutRequestId,
+
+        mpesaReceipt,
+
+        paidAmount,
+
+        finalization,
+      }
     )
 
     // --------------------------------------------------
@@ -298,6 +269,7 @@ export async function POST(req: Request) {
       ResultCode: 0,
       ResultDesc: "Accepted",
     })
+
   } catch (error) {
     console.error(
       "FUNDRAISING CALLBACK ERROR:",
@@ -305,8 +277,7 @@ export async function POST(req: Request) {
     )
 
     /*
-     * Safaricom expects a response from the
-     * callback endpoint.
+     * Safaricom expects an acknowledgement.
      */
 
     return NextResponse.json({
