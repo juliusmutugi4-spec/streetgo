@@ -17,6 +17,7 @@ import WithdrawalDrawer from "./components/WithdrawalDrawer"
 import FinanceOperationsPanel from "./components/FinanceOperationsPanel"
 import PlatformFeeControl from "./components/PlatformFeeControl"
 import PlatformRevenueDashboard from "./components/PlatformRevenueDashboard"
+import MerryGoRoundPayouts from "./components/MerryGoRoundPayouts"
 import {
   copyReference,
   getWalletByTransaction,
@@ -35,7 +36,9 @@ export default function FinancePage() {
   const [adminId, setAdminId] = useState("")
   const [adminRole, setAdminRole] = useState("")
 
-
+const [merryGoRounds, setMerryGoRounds] = useState<any[]>([])
+const [merryGoRoundsLoading, setMerryGoRoundsLoading] = useState(false)
+const [merryGoRoundsError, setMerryGoRoundsError] = useState("")
 
 
 
@@ -450,7 +453,10 @@ async function handleWithdrawalLookup() {
 <PlatformRevenueDashboard />
 
 <PlatformFeeControl />
-
+<MerryGoRoundPayouts
+  adminId={adminId}
+  adminRole={adminRole}
+/>
 
 {/* Withdrawal Reference Tracker */}
 <section
