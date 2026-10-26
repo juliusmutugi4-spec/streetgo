@@ -145,18 +145,21 @@ export async function POST(req: Request) {
       error: transactionError,
     } = await supabase
       .from("contribution_transactions")
-      .select(`
-        id,
-        group_id,
-        member_id,
-member_code,
-payment_code,
-amount,
-status,
-        checkout_request_id,
-        merchant_request_id,
-        phone_number
-      `)
+.select(`
+  id,
+  group_id,
+  member_id,
+  member_code,
+  payment_code,
+  amount,
+  fee_percentage,
+  fee_amount,
+  gross_amount,
+  status,
+  checkout_request_id,
+  merchant_request_id,
+  phone_number
+`)
       .eq("id", transactionId)
       .eq("group_id", groupId)
       .maybeSingle()
@@ -306,7 +309,8 @@ status,
      * --------------------------------------------------
      */
 
-    const amount = Number(transaction.amount)
+const amount = Number(transaction.amount)
+const grossAmount = Number(transaction.gross_amount)
 
 const memberCode = String(
   transaction.member_code || ""
@@ -327,6 +331,14 @@ if (!amount || amount < 1) {
     "Invalid contribution amount."
   )
 }
+
+if (!grossAmount || grossAmount < amount) {
+  throw new Error(
+    "Invalid gross contribution amount."
+  )
+}
+
+
 
 if (!memberCode) {
   throw new Error(
@@ -459,8 +471,8 @@ if (!paymentCode) {
           TransactionType:
             "CustomerPayBillOnline",
 
-          Amount:
-            Math.floor(amount),
+Amount:
+  Math.floor(grossAmount),
 
           PartyA:
             formattedPhone,
