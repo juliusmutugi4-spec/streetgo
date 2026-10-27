@@ -139,7 +139,26 @@ export async function POST(request: NextRequest) {
         )
       }
 
+// Mark the Express payout job as paid.
+// This is bookkeeping only and must never make a successful
+// M-PESA payout look like a failed payout.
+const { error: expressJobError } = await supabase
+  .from("contribution_payout_jobs")
+  .update({
+    status: "paid",
+    completed_at: new Date().toISOString(),
+    last_error: null,
+    updated_at: new Date().toISOString(),
+  })
+  .eq("disbursement_id", disbursement.id)
+  .in("status", ["processing", "submitted"])
 
+if (expressJobError) {
+  console.error(
+    "EXPRESS JOB FINALIZATION ERROR:",
+    expressJobError
+  )
+}
       /*
         ----------------------------------------------------------
         2. MARK THIS ROUND PAID
