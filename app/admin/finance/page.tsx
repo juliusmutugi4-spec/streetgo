@@ -18,6 +18,7 @@ import FinanceOperationsPanel from "./components/FinanceOperationsPanel"
 import PlatformFeeControl from "./components/PlatformFeeControl"
 import PlatformRevenueDashboard from "./components/PlatformRevenueDashboard"
 import MerryGoRoundPayouts from "./components/MerryGoRoundPayouts"
+import UnverifiedMembers from "./components/UnverifiedMembers"
 import {
   copyReference,
   getWalletByTransaction,
@@ -453,6 +454,7 @@ async function handleWithdrawalLookup() {
 <PlatformRevenueDashboard />
 
 <PlatformFeeControl />
+<UnverifiedMembers adminId={adminId} />
 <MerryGoRoundPayouts
   adminId={adminId}
   adminRole={adminRole}

@@ -45,7 +45,15 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Load rounds that are fully collected and ready for payout.
+    /*
+     * Load rounds that are either:
+     *
+     * 1. READY with no payout created yet
+     * 2. PROCESSING with a payout already created
+     *
+     * This is important because once create_merry_go_round_disbursement()
+     * creates a disbursement, the round may move from READY -> PROCESSING.
+     */
     const { data: rounds, error: roundsError } = await supabase
       .from("contribution_rounds")
       .select(`
@@ -68,7 +76,7 @@ export async function GET(request: NextRequest) {
           status
         )
       `)
-      .eq("status", "ready")
+      .in("status", ["ready", "processing"])
       .order("updated_at", { ascending: false })
 
     if (roundsError) {
@@ -86,10 +94,11 @@ export async function GET(request: NextRequest) {
     const eligibleRounds = []
 
     for (const round of rounds || []) {
-      if (
-        Number(round.collected_amount || 0) <
-        Number(round.target_amount || 0)
-      ) {
+      const targetAmount = Number(round.target_amount || 0)
+      const collectedAmount = Number(round.collected_amount || 0)
+
+      // Only fully collected rounds can enter the payout queue.
+      if (collectedAmount < targetAmount) {
         continue
       }
 
@@ -98,9 +107,22 @@ export async function GET(request: NextRequest) {
         error: disbursementError,
       } = await supabase
         .from("contribution_disbursements")
-        .select(
-          "id, amount, deduction_amount, net_amount, status, created_at"
-        )
+        .select(`
+          id,
+          amount,
+          deduction_amount,
+          net_amount,
+          phone_number,
+          status,
+          originator_conversation_id,
+          conversation_id,
+          mpesa_transaction_id,
+          failure_reason,
+          requested_at,
+          paid_at,
+          created_at,
+          updated_at
+        `)
         .eq("round_id", round.id)
         .maybeSingle()
 
@@ -113,22 +135,109 @@ export async function GET(request: NextRequest) {
         continue
       }
 
-      // Never present an already-created payout as a new payout.
-      if (existingDisbursement) {
+      /*
+       * READY + no disbursement:
+       * This is a brand-new payout awaiting admin approval.
+       */
+      if (round.status === "ready" && !existingDisbursement) {
+        eligibleRounds.push({
+          id: round.id,
+          groupId: round.group_id,
+          recipientMemberId: round.recipient_member_id,
+
+          targetAmount,
+          collectedAmount,
+
+          status: round.status,
+          payoutQueueStatus: "awaiting_approval",
+
+          updatedAt: round.updated_at,
+
+          group: round.contribution_groups,
+          member: round.contribution_members,
+
+          disbursement: null,
+        })
+
         continue
       }
 
-      eligibleRounds.push({
-        id: round.id,
-        groupId: round.group_id,
-        recipientMemberId: round.recipient_member_id,
-        targetAmount: Number(round.target_amount || 0),
-        collectedAmount: Number(round.collected_amount || 0),
-        status: round.status,
-        updatedAt: round.updated_at,
-        group: round.contribution_groups,
-        member: round.contribution_members,
-      })
+      /*
+       * PROCESSING + existing disbursement:
+       * The payout has already been created and must remain visible
+       * to finance/admin so it can be monitored or continued.
+       */
+      if (
+        round.status === "processing" &&
+        existingDisbursement
+      ) {
+        eligibleRounds.push({
+          id: round.id,
+          groupId: round.group_id,
+          recipientMemberId: round.recipient_member_id,
+
+          targetAmount,
+          collectedAmount,
+
+          status: round.status,
+          payoutQueueStatus:
+            existingDisbursement.status === "pending"
+              ? "awaiting_b2c"
+              : existingDisbursement.status === "processing"
+                ? "processing"
+                : existingDisbursement.status === "failed"
+                  ? "failed"
+                  : existingDisbursement.status,
+
+          updatedAt: round.updated_at,
+
+          group: round.contribution_groups,
+          member: round.contribution_members,
+
+          disbursement: {
+            id: existingDisbursement.id,
+            grossAmount: Number(
+              existingDisbursement.amount || 0
+            ),
+            deductionAmount: Number(
+              existingDisbursement.deduction_amount || 0
+            ),
+            netAmount:
+              existingDisbursement.net_amount === null
+                ? null
+                : Number(existingDisbursement.net_amount),
+
+            phoneNumber:
+              existingDisbursement.phone_number,
+
+            status: existingDisbursement.status,
+
+            originatorConversationId:
+              existingDisbursement.originator_conversation_id,
+
+            conversationId:
+              existingDisbursement.conversation_id,
+
+            mpesaTransactionId:
+              existingDisbursement.mpesa_transaction_id,
+
+            failureReason:
+              existingDisbursement.failure_reason,
+
+            requestedAt:
+              existingDisbursement.requested_at,
+
+            paidAt:
+              existingDisbursement.paid_at,
+
+            createdAt:
+              existingDisbursement.created_at,
+
+            updatedAt:
+              existingDisbursement.updated_at,
+          },
+        })
+      }
     }
 
     return NextResponse.json({
@@ -153,7 +262,6 @@ export async function GET(request: NextRequest) {
     )
   }
 }
-
 export async function POST(request: NextRequest) {
   try {
     const adminId = request.headers.get("x-admin-id")
