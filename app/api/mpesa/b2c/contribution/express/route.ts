@@ -21,7 +21,24 @@ export async function POST(request: NextRequest) {
      * It simply takes the claimed job and submits its existing
      * disbursement through the existing B2C route.
      */
+const authHeader = request.headers.get("authorization")
+const expectedSecret = process.env.EXPRESS_PAYOUT_SECRET
 
+if (!expectedSecret) {
+  console.error("EXPRESS_PAYOUT_SECRET is not configured")
+
+  return NextResponse.json(
+    { error: "Express payout worker is not configured" },
+    { status: 500 }
+  )
+}
+
+if (authHeader !== `Bearer ${expectedSecret}`) {
+  return NextResponse.json(
+    { error: "Unauthorized" },
+    { status: 401 }
+  )
+}
     const body = await request.json().catch(() => ({}))
     const jobId = body?.jobId
 
