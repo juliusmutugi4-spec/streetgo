@@ -1,4 +1,5 @@
-﻿import { NextResponse } from "next/server"
+﻿
+import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(
@@ -345,7 +346,25 @@ export async function POST(req: Request) {
     }
 
     // ==================================================
-    // 6. AUTOMATIC MERRY-GO-ROUND PAYOUT
+    // 6. QUEUE EXPRESS MERRY-GO-ROUND PAYOUT
+    //
+    // IMPORTANT:
+    // Do NOT call the old /process endpoint here.
+    //
+    // The C2B confirmation endpoint must remain fast
+    // and non-blocking. When a round becomes ready,
+    // we only create an Express payout job.
+    //
+    // The Express worker will later:
+    //   1. Claim the job
+    //   2. Create the disbursement
+    //   3. Apply the payout deduction
+    //   4. Submit the B2C request
+    //   5. Wait for the Safaricom callback
+    //   6. Mark the job paid
+    //
+    // This prevents the C2B confirmation endpoint from
+    // waiting for B2C processing.
     // ==================================================
 
     const paymentRow =
@@ -358,48 +377,45 @@ export async function POST(req: Request) {
       paymentRow?.round_status === "ready"
     ) {
       console.log(
-        "ROUND READY - STARTING AUTOMATIC B2C PAYOUT:",
+        "ROUND READY - QUEUING EXPRESS PAYOUT:",
         paymentRow.round_id
       )
 
-      const origin =
-        process.env.NEXT_PUBLIC_SITE_URL ||
-        "https://streetgo.app"
-
-      const processResponse = await fetch(
-        `${origin}/api/mpesa/b2c/contribution/process`,
+      const {
+        data: jobId,
+        error: queueError,
+      } = await supabase.rpc(
+        "enqueue_ready_contribution_payout",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            roundId: paymentRow.round_id,
-          }),
-          cache: "no-store",
+          p_round_id: paymentRow.round_id,
         }
       )
 
-      const processResult =
-        await processResponse.json()
-
-      if (!processResponse.ok) {
+      if (queueError) {
         console.error(
-          "AUTOMATIC CONTRIBUTION PAYOUT FAILED:",
-          processResult
+          "EXPRESS PAYOUT QUEUE FAILED:",
+          queueError
         )
       } else {
         console.log(
-          "AUTOMATIC CONTRIBUTION PAYOUT STARTED:",
-          processResult
+          "EXPRESS PAYOUT QUEUED:",
+          {
+            roundId: paymentRow.round_id,
+            jobId,
+          }
         )
       }
     }
+
+    // ==================================================
+    // 7. ACKNOWLEDGE SAFARICOM
+    // ==================================================
 
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: "Success",
     })
+
   } catch (error) {
     console.error(
       "C2B CONFIRMATION ERROR:",
@@ -410,6 +426,7 @@ export async function POST(req: Request) {
      * Always acknowledge Safaricom so that the
      * confirmation request is not repeatedly retried.
      */
+
     return NextResponse.json({
       ResultCode: 0,
       ResultDesc: "Success",
