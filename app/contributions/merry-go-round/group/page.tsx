@@ -24,6 +24,9 @@ type Group = {
   frequency: "weekly" | "monthly";
   start_date: string;
   status: string;
+  progression_status?: "forming" | "verified" | "pro" | "elite" | null;
+  expansion_enabled?: boolean;
+  approved_member_limit?: number | null;
   group_code?: string | null;
 };
 
@@ -394,13 +397,26 @@ setPaymentSummary({
 
   const contributionAmount = Number(group?.contribution_amount || 0);
 
-  const memberLimit = Number(group?.member_limit || 0);
+  // Admin-approved capacity controls how many members the group may hold.
+  // The original member_limit remains the group's base/original capacity.
+  const originalMemberLimit = Number(group?.member_limit || 0);
+
+  const approvedMemberLimit = Math.max(
+    Number(group?.approved_member_limit ?? originalMemberLimit),
+    originalMemberLimit
+  );
 
   const paidMembers = Number(paymentSummary.paid_members) || 0;
 
   const pool = Number(paymentSummary.pool_collected) || 0;
 
-  const targetPool = contributionAmount * memberLimit;
+  // IMPORTANT:
+  // Expansion must NOT change the target of the current round.
+  // A round already has its own target_amount.
+  const targetPool = Math.max(
+    Number(currentRound?.target_amount ?? contributionAmount * members.length),
+    0
+  );
 
   const remaining = Math.max(targetPool - pool, 0);
 
@@ -412,7 +428,10 @@ const amountToPay = Math.max(
   ),
   0
 )
-  const slotsRemaining = Math.max(memberLimit - members.length, 0);
+  const slotsRemaining = Math.max(
+    approvedMemberLimit - members.length,
+    0
+  );
 
   const progressPercent =
     targetPool > 0 ? Math.min((pool / targetPool) * 100, 100) : 0;
@@ -441,8 +460,8 @@ const recipientName = recipientMember
   : "Pending";
 
 const nextRecipientAmount = Number(
-  currentRound?.target_amount ||
-    contributionAmount * memberLimit
+  currentRound?.target_amount ??
+    contributionAmount * members.length
 );
 
   const frequencyLabel = group?.frequency === "weekly" ? "Weekly" : "Monthly";
@@ -536,7 +555,7 @@ const nextRecipientAmount = Number(
           targetPool={targetPool}
           progressPercent={progressPercent}
           paidMembers={paidMembers}
-          memberLimit={memberLimit}
+          memberLimit={approvedMemberLimit}
           slotsRemaining={slotsRemaining}
          
         />
@@ -560,7 +579,7 @@ const nextRecipientAmount = Number(
   members={members}
   memberPaymentStatuses={memberPaymentStatuses}
   currentUserId={currentUserId}
-  memberLimit={group.member_limit}
+  memberLimit={approvedMemberLimit}
   slotsRemaining={slotsRemaining}
   contributionAmount={Number(group.contribution_amount || 0)}
   nextRecipient={recipientMember}
