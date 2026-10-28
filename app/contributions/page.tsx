@@ -9,6 +9,7 @@ type Group = {
   id: string
   name: string
   status: string
+  progression_status: "forming" | "verified" | "pro" | "elite"
 }
 
 export default function ContributionsPage() {
@@ -55,7 +56,7 @@ export default function ContributionsPage() {
 
       const { data, error } = await supabase
         .from("contribution_groups")
-        .select("id, name, status")
+        .select("id, name, status, progression_status")
         .in("id", groupIds)
         .in("status", ["forming", "active"])
         .order("created_at", { ascending: false })
@@ -212,14 +213,20 @@ export default function ContributionsPage() {
                     {group.name}
                   </span>
                   
-                  {/* Status Indicator Tag */}
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
-                    group.status === "active" 
-                      ? "bg-emerald-500/10 text-emerald-400" 
-                      : "bg-amber-500/10 text-amber-400"
-                  }`}>
+                  {/* Admin Progression Status */}
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
+                      group.progression_status === "elite"
+                        ? "bg-purple-500/10 text-purple-300"
+                        : group.progression_status === "pro"
+                          ? "bg-blue-500/10 text-blue-300"
+                          : group.progression_status === "verified"
+                            ? "bg-emerald-500/10 text-emerald-400"
+                            : "bg-amber-500/10 text-amber-400"
+                    }`}
+                  >
                     <CircleDot size={8} />
-                    {group.status}
+                    {group.progression_status}
                   </span>
                 </div>
                 
