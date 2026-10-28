@@ -76,7 +76,7 @@ export default function ContributionsPage() {
         <div className="mx-auto flex h-16 max-w-xl items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.back()}
+              onClick={() => router.replace("/")}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 transition active:scale-95 hover:bg-white/10"
             >
               <ArrowLeft size={18} className="text-slate-300" />

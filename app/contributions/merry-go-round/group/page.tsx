@@ -515,7 +515,7 @@ const nextRecipientAmount = Number(
 
         <GroupActions
           refreshing={refreshing}
-          onBack={() => router.back()}
+          onBack={() => router.replace("/contributions")}
           onRefresh={handleRefresh}
         />
 

@@ -14,6 +14,7 @@ type Group = {
   group_number: string
   name: string
   member_limit: number
+  approved_member_limit: number | null
   contribution_amount: number
   frequency: "weekly" | "monthly"
   start_date: string
@@ -77,6 +78,7 @@ const user = session.user
           group_number,
           name,
           member_limit,
+          approved_member_limit,
           contribution_amount,
           frequency,
           start_date,
@@ -124,13 +126,17 @@ const user = session.user
 
       const activeMembers = memberData || []
 
-      // Check if group is full
-      if (
-        activeMembers.length >=
+      const approvedMemberLimit =
+        groupData.approved_member_limit ??
         groupData.member_limit
-      ) {
+
+      // Check if group is full against the Admin-approved limit
+      if (activeMembers.length >= approvedMemberLimit) {
         setError(
-          "This Merry-Go-Round is already full."
+          groupData.approved_member_limit != null &&
+            groupData.approved_member_limit > groupData.member_limit
+            ? "This group has reached the member limit approved by StreetGO Admin. Please contact the organizer for further expansion approval."
+            : "This Merry-Go-Round is already full."
         )
         return
       }
@@ -170,14 +176,25 @@ const user = session.user
     }
   }
 
+  const approvedMemberLimit =
+    group?.approved_member_limit ??
+    group?.member_limit ??
+    0
+
   const remainingSlots =
     group
-      ? group.member_limit - members.length
+      ? approvedMemberLimit - members.length
       : 0
 
   const pool =
     group
-      ? group.member_limit *
+      ? members.length *
+        Number(group.contribution_amount)
+      : 0
+
+  const maximumPool =
+    group
+      ? approvedMemberLimit *
         Number(group.contribution_amount)
       : 0
 
@@ -332,7 +349,7 @@ const user = session.user
                     </p>
 
                     <p className="mt-1 text-xl font-black">
-                      {members.length} / {group.member_limit}
+                      {members.length} / {approvedMemberLimit}
                     </p>
                   </div>
 
@@ -361,11 +378,21 @@ const user = session.user
 
                   <div>
                     <p className="text-xs text-slate-500">
-                      Pool
+                      Current Pool
                     </p>
 
                     <p className="mt-1 text-xl font-black text-emerald-400">
                       KES {pool.toLocaleString()}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-500">
+                      Maximum Pool
+                    </p>
+
+                    <p className="mt-1 text-xl font-black text-blue-300">
+                      KES {maximumPool.toLocaleString()}
                     </p>
                   </div>
 

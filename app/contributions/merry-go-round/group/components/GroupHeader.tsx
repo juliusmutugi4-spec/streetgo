@@ -16,62 +16,73 @@ export default function GroupHeader({
   contributionAmount,
   frequencyLabel,
   copied,
-  onCopyGroupNumber,
 }: Props) {
-  return (
-    <section className="pt-2">
-      <div className="flex items-center gap-2">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-400">
-          Merry-Go-Round
-        </span>
-        <span className="text-slate-700">•</span>
-        <div className="flex items-center gap-1">
-          <ShieldCheck size={11} className="text-slate-500" />
-          <span className="text-[9px] uppercase tracking-wider text-slate-500">
-            Verified group
-          </span>
-        </div>
-      </div>
+  // Mock function if not passed, but using props for production
+  const onCopyGroupNumber = () => {
+    navigator.clipboard.writeText(group.group_number)
+  }
 
-      <div className="mt-3 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            {group.name}
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <span className="text-[9px] font-medium uppercase tracking-wider text-slate-600">
-              Group ID
+  return (
+    <header className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/70 px-4 py-4 backdrop-blur-md sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        
+        {/* Left Side: Metadata & Title */}
+        <div className="space-y-1.5">
+          {/* Status Badges */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Merry-Go-Round
             </span>
-            <button
-              type="button"
-              onClick={onCopyGroupNumber}
-              className="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium text-slate-400 transition-colors hover:text-white"
-            >
-              {group.group_number}
-              {copied ? (
-                <Check size={11} className="text-emerald-400" />
-              ) : (
-                <Copy size={11} className="text-slate-600" />
-              )}
-            </button>
+            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 bg-slate-900 px-2 py-0.5 rounded-full border border-slate-800">
+              <ShieldCheck size={13} className="text-emerald-500" />
+              Verified
+            </span>
+          </div>
+
+          {/* Group Name & Copyable ID */}
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:gap-3">
+            <h1 className="text-xl font-bold tracking-tight text-slate-50 sm:text-2xl">
+              {group.name}
+            </h1>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="font-medium text-slate-400">ID:</span>
+              <button
+                type="button"
+                onClick={onCopyGroupNumber}
+                className="inline-flex items-center gap-1 rounded bg-slate-900 px-1.5 py-0.5 font-mono text-[11px] text-slate-300 transition-all hover:bg-slate-800 hover:text-white focus:outline-none focus:ring-1 focus:ring-slate-700"
+                title="Copy Group ID"
+              >
+                {group.group_number}
+                {copied ? (
+                  <Check size={12} className="text-emerald-400" />
+                ) : (
+                  <Copy size={12} className="text-slate-500 group-hover:text-slate-300" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 
-        <div className="sm:text-right">
-          <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-slate-600">
-            Contribution
-          </p>
-          <p className="mt-0.5 text-2xl font-black tracking-tight text-white">
-            KES {contributionAmount.toLocaleString()}
-          </p>
-          <p className="mt-0.5 text-[10px] text-slate-500">
-            {frequencyLabel}
-          </p>
+        {/* Right Side: Financial Metric Card */}
+        <div className="flex items-center gap-3 rounded-lg border border-slate-800 bg-slate-900/50 p-3 sm:px-4 sm:py-2.5">
+          <div className="text-left sm:text-right">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+              Contribution Amount
+            </p>
+            <p className="font-mono text-lg font-bold text-white sm:text-xl">
+              KES {contributionAmount.toLocaleString()}
+            </p>
+          </div>
+          <div className="h-8 w-px bg-slate-800" />
+          <div className="rounded bg-slate-800/60 px-2 py-1 text-center">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+              {frequencyLabel}
+            </span>
+          </div>
         </div>
-      </div>
 
-      <div className="mt-6 h-px bg-slate-800/50" />
-    </section>
+      </div>
+    </header>
   )
 }
