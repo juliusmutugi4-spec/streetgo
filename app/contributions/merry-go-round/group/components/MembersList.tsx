@@ -39,6 +39,10 @@ type Props = {
   contributionAmount: number
   nextRecipient?: Member | null
   nextRecipientAmount: number
+
+  // When this member joined after the current round was created,
+  // they belong to the next round.
+  currentRoundCreatedAt?: string | null
 }
 
 export default function MembersList({
@@ -50,6 +54,7 @@ export default function MembersList({
   contributionAmount,
   nextRecipient,
   nextRecipientAmount,
+  currentRoundCreatedAt,
 }: Props) {
   // Memoize payment mapping to eliminate O(N^2) lookups on re-renders
   const paymentMap = useMemo(() => {
@@ -60,10 +65,15 @@ export default function MembersList({
 
   // Extract full display name logic cleanly
   const getFullName = (m: Member) => {
-    const fullMpesaName = [m.mpesa_first_name, m.mpesa_middle_name, m.mpesa_last_name]
+    const fullMpesaName = [
+      m.mpesa_first_name,
+      m.mpesa_middle_name,
+      m.mpesa_last_name,
+    ]
       .filter(Boolean)
       .join(" ")
       .trim()
+
     return fullMpesaName || m.display_name || `Member #${m.member_number}`
   }
 
@@ -73,24 +83,29 @@ export default function MembersList({
       <div className="flex items-center justify-between border-b border-slate-800/60 pb-3">
         <div>
           <h2 className="text-sm font-bold text-white">Group Roster</h2>
-          <p className="text-[11px] text-slate-500">Active Chamas & Merry-Go-Round contributors</p>
+          <p className="text-[11px] text-slate-500">
+            Active Chamas & Merry-Go-Round contributors
+          </p>
         </div>
-        <span className="text-[11px] font-semibold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+
+        <span className="rounded border border-slate-800 bg-slate-900 px-2 py-0.5 text-[11px] font-semibold text-slate-400">
           {members.length} / {memberLimit}
         </span>
       </div>
 
       {/* Next Recipient Stage */}
       {nextRecipient && (
-        <div className="rounded-lg bg-gradient-to-r from-emerald-950/20 to-transparent border border-emerald-500/10 p-4 shadow-sm">
+        <div className="rounded-lg border border-emerald-500/10 bg-gradient-to-r from-emerald-950/20 to-transparent p-4 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="min-w-0">
-              <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-emerald-400 border border-emerald-500/20">
+              <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.08em] text-emerald-400">
                 Next Recipient
               </span>
+
               <p className="mt-2 truncate text-sm font-black text-white">
                 {getFullName(nextRecipient)}
               </p>
+
               <p className="mt-0.5 text-[10px] text-slate-500">
                 Position #{nextRecipient.member_number}
               </p>
@@ -100,7 +115,8 @@ export default function MembersList({
               <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500">
                 Payout Value
               </p>
-              <p className="mt-0.5 text-base font-black text-emerald-400 tracking-tight">
+
+              <p className="mt-0.5 text-base font-black tracking-tight text-emerald-400">
                 KES{" "}
                 {nextRecipientAmount.toLocaleString("en-KE", {
                   minimumFractionDigits: 0,
@@ -113,7 +129,7 @@ export default function MembersList({
       )}
 
       {/* Roster Section Split */}
-      <div className="pt-2 border-b border-slate-800/40 pb-1.5">
+      <div className="border-b border-slate-800/40 pb-1.5 pt-2">
         <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
           Members Allocation
         </p>
@@ -124,6 +140,24 @@ export default function MembersList({
         {members.map((member) => {
           const isMe = member.user_id === currentUserId
           const name = getFullName(member)
+
+          /*
+           * IMPORTANT:
+           *
+           * A member who joined AFTER the current round was created
+           * is NOT part of the current round.
+           *
+           * Example:
+           *
+           * Round 11 created: 27 Oct
+           * Member #6 joined: 28 Oct
+           *
+           * Therefore Member #6 waits for Round 12.
+           */
+          const isWaitingNextRound =
+            !!currentRoundCreatedAt &&
+            new Date(member.joined_at).getTime() >
+              new Date(currentRoundCreatedAt).getTime()
 
           // Format telephone accurately (e.g. +2547****12)
           const maskedPhone = member.phone_number
@@ -138,26 +172,31 @@ export default function MembersList({
           return (
             <div
               key={member.id}
-              className="flex items-center justify-between gap-4 py-3 transition-colors duration-150 hover:bg-slate-950/40 px-1 rounded-sm"
+              className="flex items-center justify-between gap-4 rounded-sm px-1 py-3 transition-colors duration-150 hover:bg-slate-950/40"
             >
               {/* Profile Meta Frame */}
               <div className="flex min-w-0 items-start gap-3">
                 <div className="mt-0.5 shrink-0">
-                  <ProfessionalMemberBadge member={member} nextRecipient={nextRecipient} />
+                  <ProfessionalMemberBadge
+                    member={member}
+                    nextRecipient={nextRecipient}
+                  />
                 </div>
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-white">
-                    <span className="truncate">{isMe ? "You" : name}</span>
+                    <span className="truncate">
+                      {isMe ? "You" : name}
+                    </span>
 
                     {isMe && (
-                      <span className="rounded bg-emerald-500/15 px-1 py-0.2 text-[9px] font-medium text-emerald-400 border border-emerald-500/10">
+                      <span className="rounded border border-emerald-500/10 bg-emerald-500/15 px-1 py-0.2 text-[9px] font-medium text-emerald-400">
                         You
                       </span>
                     )}
 
                     {member.role === "organizer" && (
-                      <span className="rounded bg-purple-500/15 px-1 py-0.2 text-[9px] font-medium text-purple-400 border border-purple-500/10">
+                      <span className="rounded border border-purple-500/10 bg-purple-500/15 px-1 py-0.2 text-[9px] font-medium text-purple-400">
                         Host
                       </span>
                     )}
@@ -166,27 +205,50 @@ export default function MembersList({
                   {/* Operational Telemetry Subtext */}
                   <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[10px] text-slate-500">
                     {maskedPhone && <span>{maskedPhone}</span>}
-                    {maskedPhone && <span className="text-slate-700 select-none">•</span>}
-                    <span>ID: {member.member_code || "Pending Verification"}</span>
+
+                    {maskedPhone && (
+                      <span className="select-none text-slate-700">
+                        •
+                      </span>
+                    )}
+
+                    <span>
+                      ID: {member.member_code || "Pending Verification"}
+                    </span>
                   </div>
 
                   {member.payment_code && (
-                    <p className="mt-1 text-[10px] font-mono text-slate-400 bg-slate-900/60 inline-block px-1.5 py-0.5 rounded border border-slate-800/40">
-                      Acc: <span className="text-slate-300 font-bold">{member.payment_code}</span>
+                    <p className="mt-1 inline-block rounded border border-slate-800/40 bg-slate-900/60 px-1.5 py-0.5 font-mono text-[10px] text-slate-400">
+                      Acc:{" "}
+                      <span className="font-bold text-slate-300">
+                        {member.payment_code}
+                      </span>
                     </p>
                   )}
                 </div>
               </div>
 
-              {/* Payment Settlement Component */}
+              {/* Payment / Next-Round Status */}
               <div className="shrink-0">
-                <PaymentStatus
-                  amountPaid={amountPaid}
-                  requiredAmount={contributionAmount}
-                  paymentStatus={paymentRecord?.payment_status}
-                  mpesaReceipt={paymentRecord?.mpesa_receipt}
-                  paidAt={paymentRecord?.paid_at}
-                />
+                {isWaitingNextRound ? (
+                  <div className="text-right">
+                    <div className="text-sm font-black tracking-wide text-sky-400">
+                      WAITING NEXT ROUND
+                    </div>
+
+                    <div className="mt-1 text-[10px] font-semibold text-slate-500">
+                      Contribution applies to next round
+                    </div>
+                  </div>
+                ) : (
+                  <PaymentStatus
+                    amountPaid={amountPaid}
+                    requiredAmount={contributionAmount}
+                    paymentStatus={paymentRecord?.payment_status}
+                    mpesaReceipt={paymentRecord?.mpesa_receipt}
+                    paidAt={paymentRecord?.paid_at}
+                  />
+                )}
               </div>
             </div>
           )
@@ -195,12 +257,17 @@ export default function MembersList({
 
       {/* Dynamic Call To Action For Remaining Slots */}
       {slotsRemaining > 0 && (
-        <div className="rounded-lg border border-dashed border-slate-800 p-4 text-center bg-slate-950/20">
+        <div className="rounded-lg border border-dashed border-slate-800 bg-slate-950/20 p-4 text-center">
           <p className="text-xs font-semibold text-slate-300">
-            {slotsRemaining} Open {slotsRemaining === 1 ? "Contributor Slot" : "Contributor Slots"}
+            {slotsRemaining} Open{" "}
+            {slotsRemaining === 1
+              ? "Contributor Slot"
+              : "Contributor Slots"}
           </p>
-          <p className="mt-1 text-[10px] text-slate-500 max-w-[280px] mx-auto leading-relaxed">
-            Share this Chama link or group number to invite extra verified contributors.
+
+          <p className="mx-auto mt-1 max-w-[280px] text-[10px] leading-relaxed text-slate-500">
+            Share this Chama link or group number to invite extra verified
+            contributors.
           </p>
         </div>
       )}

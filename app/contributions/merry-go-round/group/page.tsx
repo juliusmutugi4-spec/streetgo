@@ -37,6 +37,7 @@ type CurrentRound = {
   recipient_member_id: string;
   target_amount: number;
   collected_amount: number;
+  created_at: string;
 };
 
 type Member = {
@@ -287,7 +288,8 @@ const { data: roundData, error: roundError } =
         status,
         recipient_member_id,
         target_amount,
-        collected_amount
+        collected_amount,
+        created_at
       `
     )
     .eq("group_id", resolvedGroupId)
@@ -584,6 +586,7 @@ const nextRecipientAmount = Number(
   contributionAmount={Number(group.contribution_amount || 0)}
   nextRecipient={recipientMember}
   nextRecipientAmount={nextRecipientAmount}
+  currentRoundCreatedAt={currentRound?.created_at ?? null}
 />
 
         <CurrentMember member={myMember} />
