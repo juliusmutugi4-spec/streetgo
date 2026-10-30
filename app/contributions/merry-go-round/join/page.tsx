@@ -1,13 +1,23 @@
+
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import {
+  useState,
+} from "react"
+
+import {
+  useRouter,
+} from "next/navigation"
+
 import {
   ArrowLeft,
   Search,
   CheckCircle2,
 } from "lucide-react"
-import { getSupabaseBrowser } from "@/app/lib/supabase-browser"
+
+import {
+  getSupabaseBrowser,
+} from "@/app/lib/supabase-browser"
 
 type Group = {
   id: string
@@ -33,17 +43,21 @@ type Member = {
 
 export default function JoinMerryGoRoundPage() {
   const router = useRouter()
-const supabase = getSupabaseBrowser()
-  const [groupCode, setGroupCode] = useState("")
+  const supabase = getSupabaseBrowser()
+
+  const [groupNumber, setGroupNumber] = useState("")
   const [group, setGroup] = useState<Group | null>(null)
   const [members, setMembers] = useState<Member[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   const findGroup = async () => {
-    const code = groupCode.trim().toUpperCase()
+    const code = groupNumber.trim().toUpperCase()
 
-    if (!code) return
+    if (!code) {
+      setError("Please enter a group number.")
+      return
+    }
 
     setLoading(true)
     setError("")
@@ -51,23 +65,37 @@ const supabase = getSupabaseBrowser()
     setMembers([])
 
     try {
-      // Make sure user is authenticated
-const {
-  data: { session },
-  error: sessionError,
-} = await supabase.auth.getSession()
+      /*
+       * ----------------------------------------------------------
+       * 1. MAKE SURE USER IS AUTHENTICATED
+       * ----------------------------------------------------------
+       */
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
 
-if (sessionError) {
-  throw sessionError
-}
+      if (sessionError) {
+        throw sessionError
+      }
 
-if (!session?.user) {
-  router.push("/login")
-  return
-}
+      if (!session?.user) {
+        router.push("/login")
+        return
+      }
 
-const user = session.user
-      // Find the real group
+      const user = session.user
+
+      /*
+       * ----------------------------------------------------------
+       * 2. FIND GROUP BY PUBLIC GROUP NUMBER
+       * ----------------------------------------------------------
+       *
+       * group_number is the public identifier shared by
+       * organizers with members.
+       *
+       * We intentionally do NOT use group_code here.
+       */
       const {
         data: groupData,
         error: groupError,
@@ -99,7 +127,11 @@ const user = session.user
         return
       }
 
-      // Get current real members
+      /*
+       * ----------------------------------------------------------
+       * 3. LOAD CURRENT ACTIVE MEMBERS
+       * ----------------------------------------------------------
+       */
       const {
         data: memberData,
         error: memberError,
@@ -126,22 +158,37 @@ const user = session.user
 
       const activeMembers = memberData || []
 
+      /*
+       * ----------------------------------------------------------
+       * 4. DETERMINE APPROVED MEMBER LIMIT
+       * ----------------------------------------------------------
+       */
       const approvedMemberLimit =
         groupData.approved_member_limit ??
         groupData.member_limit
 
-      // Check if group is full against the Admin-approved limit
+      /*
+       * ----------------------------------------------------------
+       * 5. CHECK GROUP CAPACITY
+       * ----------------------------------------------------------
+       */
       if (activeMembers.length >= approvedMemberLimit) {
         setError(
           groupData.approved_member_limit != null &&
-            groupData.approved_member_limit > groupData.member_limit
+            groupData.approved_member_limit >
+              groupData.member_limit
             ? "This group has reached the member limit approved by StreetGO Admin. Please contact the organizer for further expansion approval."
             : "This Merry-Go-Round is already full."
         )
+
         return
       }
 
-      // Check whether this user is already a member
+      /*
+       * ----------------------------------------------------------
+       * 6. CHECK WHETHER CURRENT USER IS ALREADY A MEMBER
+       * ----------------------------------------------------------
+       */
       const alreadyMember = activeMembers.some(
         (member: Member) =>
           member.user_id === user.id
@@ -151,11 +198,18 @@ const user = session.user
         setError(
           "You are already a member of this Merry-Go-Round."
         )
+
         return
       }
 
+      /*
+       * ----------------------------------------------------------
+       * 7. SHOW GROUP
+       * ----------------------------------------------------------
+       */
       setGroup(groupData)
       setMembers(activeMembers)
+
     } catch (err: any) {
       console.error(
         "FIND MERRY-GO-ROUND ERROR:",
@@ -203,10 +257,10 @@ const user = session.user
 
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-[#020617]/95 backdrop-blur-xl">
-
         <div className="mx-auto flex h-16 max-w-2xl items-center px-4">
 
           <button
+            type="button"
             onClick={() => router.back()}
             className="mr-3 rounded-full p-2 hover:bg-white/10"
           >
@@ -224,7 +278,6 @@ const user = session.user
           </div>
 
         </div>
-
       </header>
 
       <section className="mx-auto max-w-2xl px-5 py-10">
@@ -243,8 +296,8 @@ const user = session.user
               </h2>
 
               <p className="mt-2 text-sm leading-6 text-slate-400">
-                Enter the special number given to you by
-                the organizer.
+                Enter the special group number given to
+                you by the organizer.
               </p>
 
             </div>
@@ -257,9 +310,9 @@ const user = session.user
 
               <input
                 type="text"
-                value={groupCode}
+                value={groupNumber}
                 onChange={(e) =>
-                  setGroupCode(
+                  setGroupNumber(
                     e.target.value.toUpperCase()
                   )
                 }
@@ -268,9 +321,15 @@ const user = session.user
                     findGroup()
                   }
                 }}
-                placeholder="4995"
+                placeholder="SG-MGR-983415"
+                autoComplete="off"
+                spellCheck={false}
                 className="w-full rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-4 font-mono text-lg tracking-wider text-white outline-none placeholder:text-slate-600 focus:border-emerald-400"
               />
+
+              <p className="mt-2 text-xs text-slate-500">
+                Example: SG-MGR-983415
+              </p>
 
               {error && (
                 <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4">
@@ -289,7 +348,7 @@ const user = session.user
               <button
                 type="button"
                 disabled={
-                  !groupCode.trim() ||
+                  !groupNumber.trim() ||
                   loading
                 }
                 onClick={findGroup}
@@ -327,11 +386,9 @@ const user = session.user
               </p>
 
               <div className="mt-3 inline-flex rounded-full border border-blue-900/60 bg-blue-950/30 px-3 py-1">
-
                 <span className="font-mono text-[11px] font-black tracking-wider text-blue-300">
                   {group.group_number}
                 </span>
-
               </div>
 
             </div>
@@ -349,7 +406,8 @@ const user = session.user
                     </p>
 
                     <p className="mt-1 text-xl font-black">
-                      {members.length} / {approvedMemberLimit}
+                      {members.length} /{" "}
+                      {approvedMemberLimit}
                     </p>
                   </div>
 
@@ -382,7 +440,8 @@ const user = session.user
                     </p>
 
                     <p className="mt-1 text-xl font-black text-emerald-400">
-                      KES {pool.toLocaleString()}
+                      KES{" "}
+                      {pool.toLocaleString()}
                     </p>
                   </div>
 
@@ -392,7 +451,8 @@ const user = session.user
                     </p>
 
                     <p className="mt-1 text-xl font-black text-blue-300">
-                      KES {maximumPool.toLocaleString()}
+                      KES{" "}
+                      {maximumPool.toLocaleString()}
                     </p>
                   </div>
 
@@ -505,6 +565,7 @@ const user = session.user
                   setGroup(null)
                   setMembers([])
                   setError("")
+                  setGroupNumber("")
                 }}
                 className="w-full rounded-2xl border border-white/10 px-5 py-4 font-bold text-slate-300 hover:bg-white/[0.05]"
               >

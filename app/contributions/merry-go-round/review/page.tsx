@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Suspense, useMemo, useState } from "react"
@@ -34,166 +35,207 @@ function ReviewMerryGoRoundContent() {
     () => members * amount,
     [members, amount]
   )
-const createGroup = async () => {
-  if (creating) return
 
-  setCreating(true)
-  setError("")
+  const createGroup = async () => {
+    if (creating) return
 
-  try {
-    // 1. Validate organizer Safaricom number
-    if (!phone || !/^07\d{8}$/.test(phone)) {
-      setError("Please provide a valid Safaricom number.")
-      setCreating(false)
-      return
-    }
+    setCreating(true)
+    setError("")
 
-    // 2. Make sure the user is logged in
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
+    try {
+      // 1. Validate organizer Safaricom number
+      if (!phone || !/^07\d{8}$/.test(phone)) {
+        setError("Please provide a valid Safaricom number.")
+        setCreating(false)
+        return
+      }
 
-    if (userError) {
-      throw userError
-    }
+      // 2. Make sure the user is logged in
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser()
 
-    if (!user) {
-      router.push("/login")
-      return
-    }
+      if (userError) {
+        throw userError
+      }
 
-    // 3. Generate a unique StreetGO group number
-    const groupNumber =
-      `SG-MGR-${Math.floor(100000 + Math.random() * 900000)}`
+      if (!user) {
+        router.push("/login")
+        return
+      }
 
-    // 4. Create the group
-    const {
-      data: group,
-      error: insertError,
-    } = await supabase
-      .from("contribution_groups")
-      .insert({
-        group_number: groupNumber,
-        name: groupName.trim(),
-        organizer_id: user.id,
-        member_limit: members,
-        contribution_amount: amount,
-        frequency,
-        start_date: startDate,
-        status: "forming",
-      })
-      .select("id, group_number")
-      .single()
+      // 3. Generate a unique StreetGO group number
+      const groupNumber =
+        `SG-MGR-${Math.floor(100000 + Math.random() * 900000)}`
 
-    if (insertError) {
-      throw insertError
-    }
+      // 4. Generate the group code
+      //
+      // Example:
+      // SG-MGR-898652
+      // group_code = 8652
+      //
+      // The group number remains the full unique identifier.
+      // The group code is the shorter code used internally
+      // by the Merry-Go-Round system.
+      const groupCode = groupNumber.slice(-4)
 
-    if (!group) {
-      throw new Error("Group was created but no group record was returned.")
-    }
+      if (!/^\d{4}$/.test(groupCode)) {
+        throw new Error(
+          "Unable to generate a valid Merry-Go-Round group code."
+        )
+      }
 
-    // 5. Generate a unique 5-digit M-PESA payment code
-    const {
-      data: paymentCode,
-      error: paymentCodeError,
-    } = await supabase.rpc("generate_contribution_payment_code")
-
-    if (paymentCodeError) {
-      // Remove the group if payment-code generation fails
-      await supabase
+      // 5. Create the group
+      const {
+        data: group,
+        error: insertError,
+      } = await supabase
         .from("contribution_groups")
-        .delete()
-        .eq("id", group.id)
+        .insert({
+          group_number: groupNumber,
+          group_code: groupCode,
+          name: groupName.trim(),
+          organizer_id: user.id,
+          member_limit: members,
+          contribution_amount: amount,
+          frequency,
+          start_date: startDate,
+          status: "forming",
+        })
+        .select("id, group_number, group_code")
+        .single()
 
-      throw paymentCodeError
-    }
+      if (insertError) {
+        throw insertError
+      }
 
-    if (!paymentCode) {
-      // Remove the group if no payment code was generated
-      await supabase
-        .from("contribution_groups")
-        .delete()
-        .eq("id", group.id)
+      if (!group) {
+        throw new Error(
+          "Group was created but no group record was returned."
+        )
+      }
 
-      throw new Error("Unable to generate organizer payment code.")
-    }
+      // 6. Verify that the group code was actually saved
+      if (!group.group_code) {
+        // Remove the incomplete group
+        await supabase
+          .from("contribution_groups")
+          .delete()
+          .eq("id", group.id)
 
-    // 6. Automatically make the organizer Member #1
-    //
-    // Use the group number as the base for the internal member code.
-    // Example:
-    // SG-MGR-898652 + 1
-    // = SG-MGR-8986521
-    const memberCode = `${group.group_number}1`
+        throw new Error(
+          "The group was created but StreetGO could not save its group code."
+        )
+      }
 
-    const { error: memberError } = await supabase
-      .from("contribution_members")
-      .insert({
-        group_id: group.id,
-        user_id: user.id,
-        member_number: 1,
-        member_code: memberCode,
-        payment_code: String(paymentCode),
-        role: "organizer",
-        status: "active",
-
-        // Organizer identity
-        phone_number: phone,
-        phone_verified: false,
-
-        // Use the name available on the StreetGO account
-        display_name:
-          user.user_metadata?.full_name ||
-          user.user_metadata?.name ||
-          "Organizer",
-      })
-
-    if (memberError) {
-      // If member creation fails, remove the group
-      // so we don't leave an incomplete group behind.
-      await supabase
-        .from("contribution_groups")
-        .delete()
-        .eq("id", group.id)
-
-      throw memberError
-    }
-
-    // 7. Open the created screen
-    router.push(
-      `/contributions/merry-go-round/created?groupNumber=${encodeURIComponent(
-        groupNumber
-      )}&groupId=${encodeURIComponent(
-        group.id
-      )}&phone=${encodeURIComponent(phone)}`
-    )
-  } catch (err: any) {
-    console.error(
-      "CREATE MERRY-GO-ROUND ERROR:",
-      JSON.stringify(
-        err,
-        Object.getOwnPropertyNames(err),
-        2
+      // 7. Generate a unique 5-digit M-PESA payment code
+      const {
+        data: paymentCode,
+        error: paymentCodeError,
+      } = await supabase.rpc(
+        "generate_contribution_payment_code"
       )
-    )
 
-    console.error("ERROR MESSAGE:", err?.message)
-    console.error("ERROR CODE:", err?.code)
-    console.error("ERROR DETAILS:", err?.details)
-    console.error("ERROR HINT:", err?.hint)
+      if (paymentCodeError) {
+        // Remove the group if payment-code generation fails
+        await supabase
+          .from("contribution_groups")
+          .delete()
+          .eq("id", group.id)
 
-    setError(
-      err?.message ||
-        err?.details ||
-        err?.hint ||
-        "Unable to create the group."
-    )
+        throw paymentCodeError
+      }
 
-    setCreating(false)
+      if (!paymentCode) {
+        // Remove the group if no payment code was generated
+        await supabase
+          .from("contribution_groups")
+          .delete()
+          .eq("id", group.id)
+
+        throw new Error(
+          "Unable to generate organizer payment code."
+        )
+      }
+
+      // 8. Automatically make the organizer Member #1
+      //
+      // Use the group number as the base for the internal member code.
+      //
+      // Example:
+      // SG-MGR-898652 + 1
+      // = SG-MGR-8986521
+      const memberCode = `${group.group_number}1`
+
+      const { error: memberError } = await supabase
+        .from("contribution_members")
+        .insert({
+          group_id: group.id,
+          user_id: user.id,
+          member_number: 1,
+          member_code: memberCode,
+          payment_code: String(paymentCode),
+          role: "organizer",
+          status: "active",
+
+          // Organizer identity
+          phone_number: phone,
+          phone_verified: false,
+
+          // Use the name available on the StreetGO account
+          display_name:
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            "Organizer",
+        })
+
+      if (memberError) {
+        // If member creation fails, remove the group
+        // so we don't leave an incomplete group behind.
+        await supabase
+          .from("contribution_groups")
+          .delete()
+          .eq("id", group.id)
+
+        throw memberError
+      }
+
+      // 9. Open the created screen
+      router.push(
+        `/contributions/merry-go-round/created?groupNumber=${encodeURIComponent(
+          group.group_number
+        )}&groupCode=${encodeURIComponent(
+          group.group_code
+        )}&groupId=${encodeURIComponent(
+          group.id
+        )}&phone=${encodeURIComponent(phone)}`
+      )
+    } catch (err: any) {
+      console.error(
+        "CREATE MERRY-GO-ROUND ERROR:",
+        JSON.stringify(
+          err,
+          Object.getOwnPropertyNames(err),
+          2
+        )
+      )
+
+      console.error("ERROR MESSAGE:", err?.message)
+      console.error("ERROR CODE:", err?.code)
+      console.error("ERROR DETAILS:", err?.details)
+      console.error("ERROR HINT:", err?.hint)
+
+      setError(
+        err?.message ||
+          err?.details ||
+          err?.hint ||
+          "Unable to create the group."
+      )
+
+      setCreating(false)
+    }
   }
-}
 
   return (
     <main className="min-h-screen bg-[#020617] px-4 py-8 text-white">
@@ -345,7 +387,7 @@ const createGroup = async () => {
             </p>
 
             <p>
-              • The group receives a unique number that members can use to join.
+              • The group receives a unique number and group code that members can use to join.
             </p>
 
           </div>
