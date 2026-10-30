@@ -43,7 +43,7 @@ function ContributionPayContent() {
 
   const [loading, setLoading] = useState(true)
   const [paying, setPaying] = useState(false)
-
+const [paymentSuccess, setPaymentSuccess] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
@@ -147,6 +147,100 @@ function ContributionPayContent() {
       setLoading(false)
     }
   }
+
+
+
+
+async function waitForPaymentConfirmation(
+  transactionId: string,
+  accessToken: string,
+  amount: number
+) {
+  const maxAttempts = 30
+  const intervalMs = 2000
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    try {
+      const response = await fetch(
+        `/api/mpesa/stk/contribution/status?transactionId=${encodeURIComponent(
+          transactionId
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          cache: "no-store",
+        }
+      )
+
+      const data = await response.json().catch(() => null)
+
+      if (response.ok && data?.success) {
+        if (data.status === "paid") {
+          setPaymentSuccess(true)
+          setPaying(false)
+
+          setSummary((current) =>
+            current
+              ? {
+                  ...current,
+                  amount_to_pay: 0,
+                  my_status: "paid",
+                }
+              : current
+          )
+
+          setMessage(
+            `Payment successful. KES ${amount.toLocaleString()} received.`
+          )
+
+          setTimeout(() => {
+            router.push(
+              `/contributions/merry-go-round/group?groupId=${groupId}`
+            )
+          }, 1200)
+
+          return
+        }
+
+        if (
+          data.status === "failed" ||
+          data.status === "cancelled"
+        ) {
+          setPaying(false)
+          setError(
+            data.resultDesc ||
+              "The M-PESA payment was not completed."
+          )
+          return
+        }
+      }
+    } catch (error) {
+      console.error(
+        "PAYMENT STATUS CHECK ERROR:",
+        error
+      )
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, intervalMs)
+    )
+  }
+
+  setPaying(false)
+  setError(
+    "We could not confirm the payment yet. Please check your M-PESA messages before trying again."
+  )
+}
+
+
+
+
+
+
+
+
 
   async function requestMpesaPayment() {
     try {
@@ -318,9 +412,17 @@ function ContributionPayContent() {
         )
       }
 
-      setMessage(
-        `M-PESA request sent for KES ${amountToPay.toLocaleString()}. Check your phone and enter your M-PESA PIN.`
-      )
+setMessage(
+  `M-PESA request sent for KES ${amountToPay.toLocaleString()}. Check your phone and enter your M-PESA PIN.`
+)
+
+await waitForPaymentConfirmation(
+  payment.transaction_id,
+  session.access_token,
+  amountToPay
+)
+
+return
 
       /*
        * Refresh the displayed summary.
@@ -420,33 +522,53 @@ function ContributionPayContent() {
     <main className="min-h-screen bg-[#020617] px-4 py-8 text-white">
 
       {/* M-PESA PROCESSING OVERLAY */}
-      {paying && (
+      {(paying || paymentSuccess) && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#020617]/95 backdrop-blur-md">
           <div className="flex w-full max-w-xs flex-col items-center text-center">
 
-            <div className="relative flex h-16 w-16 items-center justify-center">
-              <div className="absolute inset-0 rounded-full border border-slate-800" />
+<div className="relative flex h-16 w-16 items-center justify-center">
+{paymentSuccess ? (
+  <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-400/10">
+    <div className="absolute inset-0 animate-ping rounded-full border border-emerald-400/20" />
 
-              <Loader2
-                size={34}
-                strokeWidth={2}
-                className="animate-spin text-emerald-400"
-              />
+    <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-emerald-400/10">
+      <CheckCircle2
+        size={38}
+        strokeWidth={2.5}
+        className="text-emerald-400"
+      />
+    </div>
+  </div>
+) : (
+    <>
+      <div className="absolute inset-0 rounded-full border border-slate-800" />
 
-              <span className="absolute h-1.5 w-1.5 rounded-full bg-emerald-400" />
-            </div>
+      <Loader2
+        size={34}
+        strokeWidth={2}
+        className="animate-spin text-emerald-400"
+      />
+
+      <span className="absolute h-1.5 w-1.5 rounded-full bg-emerald-400" />
+    </>
+  )}
+</div>
 
             <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.2em] text-emerald-400">
               M-PESA
             </p>
 
-            <h2 className="mt-2 text-base font-bold text-white">
-              Processing Payment
-            </h2>
+<h2 className="mt-2 text-base font-bold text-white">
+  {paymentSuccess
+    ? "✓ 🎉 Payment Successful"
+    : "Processing Payment"}
+</h2>
 
-            <p className="mt-2 max-w-[230px] text-[11px] leading-5 text-slate-500">
-              Check your phone for the M-PESA STK prompt and enter your PIN.
-            </p>
+<p className="mt-2 max-w-[230px] text-[11px] leading-5 text-slate-500">
+  {paymentSuccess
+    ? "Your contribution has been received. Returning to your group..."
+    : "Check your phone for the M-PESA STK prompt and enter your PIN."}
+</p>
 
             <p className="mt-5 text-xl font-bold text-emerald-400">
               KES {amountToPay.toLocaleString()}
