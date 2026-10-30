@@ -78,8 +78,7 @@ export async function GET(req: Request) {
           amount,
           status,
           mpesa_receipt,
-          result_code,
-          result_desc
+          failure_reason
         `)
         .eq("id", transactionId)
         .maybeSingle()
@@ -129,8 +128,8 @@ export async function GET(req: Request) {
       status: transaction.status,
       amount: Number(transaction.amount || 0),
       mpesaReceipt: transaction.mpesa_receipt || null,
-      resultCode: transaction.result_code ?? null,
-      resultDesc: transaction.result_desc ?? null,
+      resultCode: null,
+      resultDesc: transaction.failure_reason || null,
     })
   } catch (error: any) {
     console.error(
