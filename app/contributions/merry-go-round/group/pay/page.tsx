@@ -156,8 +156,8 @@ async function waitForPaymentConfirmation(
   accessToken: string,
   amount: number
 ) {
-  const maxAttempts = 30
-  const intervalMs = 2000
+const maxAttempts = 150
+const intervalMs = 2000
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     try {
@@ -175,7 +175,11 @@ async function waitForPaymentConfirmation(
       )
 
       const data = await response.json().catch(() => null)
-
+console.log("STREETGO PAYMENT STATUS:", {
+  transactionId,
+  httpStatus: response.status,
+  data,
+})
       if (response.ok && data?.success) {
         if (data.status === "paid") {
           setPaymentSuccess(true)
