@@ -278,6 +278,47 @@ export default function AdminGroupsPage() {
 
   function getStatusStyles(status: string) {
     switch (status.toLowerCase()) {
+      // ---------------------------------------------------------
+      // OPERATIONAL GROUP LIFECYCLE
+      // ---------------------------------------------------------
+      case 'forming':
+        return {
+          label: 'FORMING',
+          className:
+            'border-amber-500/20 bg-amber-500/10 text-amber-400',
+        }
+
+      case 'formed':
+        return {
+          label: 'FORMED',
+          className:
+            'border-pink-700/30 bg-pink-900/30 text-pink-400',
+        }
+
+      case 'active':
+        return {
+          label: 'ACTIVE',
+          className:
+            'border-emerald-500/20 bg-emerald-500/10 text-emerald-400',
+        }
+
+      case 'completed':
+        return {
+          label: 'COMPLETED',
+          className:
+            'border-zinc-500/20 bg-zinc-500/10 text-zinc-400',
+        }
+
+      case 'cancelled':
+        return {
+          label: 'CANCELLED',
+          className:
+            'border-red-500/20 bg-red-500/10 text-red-400',
+        }
+
+      // ---------------------------------------------------------
+      // ADMIN PROGRESSION
+      // ---------------------------------------------------------
       case 'verified':
         return {
           label: 'VERIFIED',
@@ -301,9 +342,9 @@ export default function AdminGroupsPage() {
 
       default:
         return {
-          label: 'FORMING',
+          label: status.toUpperCase(),
           className:
-            'border-amber-500/20 bg-amber-500/10 text-amber-400',
+            'border-zinc-500/20 bg-zinc-500/10 text-zinc-400',
         }
     }
   }
