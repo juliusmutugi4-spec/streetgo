@@ -150,6 +150,7 @@ const { data: completed, error } = await supabase.rpc(
     p_checkout_request_id: checkoutRequestId,
     p_mpesa_receipt: receipt,
     p_amount: amount,
+    p_phone: phone,
   },
 );
         if (error) {

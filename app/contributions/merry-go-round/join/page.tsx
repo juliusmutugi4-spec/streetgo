@@ -1,4 +1,3 @@
-
 "use client"
 
 import {
@@ -12,7 +11,6 @@ import {
 import {
   ArrowLeft,
   Search,
-  CheckCircle2,
 } from "lucide-react"
 
 import {
@@ -28,17 +26,24 @@ type Group = {
   contribution_amount: number
   frequency: "weekly" | "monthly"
   start_date: string
-  status: "forming" | "active" | "completed" | "cancelled"
+  status:
+    | "forming"
+    | "formed"
+    | "active"
+    | "completed"
+    | "cancelled"
+  active_member_count: number
+  remaining_slots: number
 }
 
 type Member = {
-  id: string
-  user_id: string
   member_number: number
-  member_code: string | null
   display_name: string | null
-  phone_verified: boolean
-  status: "active" | "left" | "removed"
+}
+
+type DiscoveryResponse = {
+  group: Group
+  members: Member[]
 }
 
 export default function JoinMerryGoRoundPage() {
@@ -70,6 +75,7 @@ export default function JoinMerryGoRoundPage() {
        * 1. MAKE SURE USER IS AUTHENTICATED
        * ----------------------------------------------------------
        */
+
       const {
         data: { session },
         error: sessionError,
@@ -84,99 +90,81 @@ export default function JoinMerryGoRoundPage() {
         return
       }
 
-      const user = session.user
-
       /*
        * ----------------------------------------------------------
-       * 2. FIND GROUP BY PUBLIC GROUP NUMBER
+       * 2. DISCOVER GROUP THROUGH SECURE RPC
        * ----------------------------------------------------------
        *
-       * group_number is the public identifier shared by
-       * organizers with members.
+       * We intentionally do NOT query contribution_groups
+       * directly.
        *
-       * We intentionally do NOT use group_code here.
+       * Prospective members are not yet members of the group,
+       * therefore normal RLS correctly blocks direct access to
+       * formed/active groups.
+       *
+       * The SECURITY DEFINER RPC exposes only the information
+       * needed by the join screen.
        */
-      const {
-        data: groupData,
-        error: groupError,
-      } = await supabase
-        .from("contribution_groups")
-        .select(`
-          id,
-          group_number,
-          name,
-          member_limit,
-          approved_member_limit,
-          contribution_amount,
-          frequency,
-          start_date,
-          status
-        `)
-        .eq("group_number", code)
-        .eq("status", "forming")
-        .maybeSingle()
 
-      if (groupError) {
-        throw groupError
+      const {
+        data: discoveryData,
+        error: discoveryError,
+      } = await supabase.rpc(
+        "discover_merry_go_round_for_join",
+        {
+          p_group_number: code,
+        }
+      )
+
+      console.log(
+        "MERRY-GO-ROUND DISCOVERY:",
+        discoveryData
+      )
+
+      console.log(
+        "MERRY-GO-ROUND DISCOVERY ERROR:",
+        discoveryError
+      )
+
+      if (discoveryError) {
+        throw discoveryError
       }
 
-      if (!groupData) {
+      if (!discoveryData?.group) {
         setError(
-          "No active forming group was found with that group number."
+          "No Merry-Go-Round group was found with that group number."
         )
         return
       }
 
-      /*
-       * ----------------------------------------------------------
-       * 3. LOAD CURRENT ACTIVE MEMBERS
-       * ----------------------------------------------------------
-       */
-      const {
-        data: memberData,
-        error: memberError,
-      } = await supabase
-        .from("contribution_members")
-        .select(`
-          id,
-          user_id,
-          member_number,
-          member_code,
-          display_name,
-          phone_verified,
-          status
-        `)
-        .eq("group_id", groupData.id)
-        .eq("status", "active")
-        .order("member_number", {
-          ascending: true,
-        })
+      const response =
+        discoveryData as DiscoveryResponse
 
-      if (memberError) {
-        throw memberError
-      }
-
-      const activeMembers = memberData || []
+      const groupData = response.group
+      const activeMembers = response.members || []
 
       /*
        * ----------------------------------------------------------
-       * 4. DETERMINE APPROVED MEMBER LIMIT
+       * 3. CHECK GROUP CAPACITY
        * ----------------------------------------------------------
+       *
+       * The RPC calculates the authoritative active member
+       * count and remaining slots.
        */
+
       const approvedMemberLimit =
         groupData.approved_member_limit ??
         groupData.member_limit
 
-      /*
-       * ----------------------------------------------------------
-       * 5. CHECK GROUP CAPACITY
-       * ----------------------------------------------------------
-       */
-      if (activeMembers.length >= approvedMemberLimit) {
+      if (
+        groupData.remaining_slots <= 0 ||
+        groupData.active_member_count >=
+          approvedMemberLimit
+      ) {
         setError(
           groupData.approved_member_limit != null &&
-            groupData.approved_member_limit >
-              groupData.member_limit
+          groupData.approved_member_limit >
+            groupData.member_limit
             ? "This group has reached the member limit approved by StreetGO Admin. Please contact the organizer for further expansion approval."
             : "This Merry-Go-Round is already full."
         )
@@ -186,27 +174,10 @@ export default function JoinMerryGoRoundPage() {
 
       /*
        * ----------------------------------------------------------
-       * 6. CHECK WHETHER CURRENT USER IS ALREADY A MEMBER
+       * 4. SHOW GROUP
        * ----------------------------------------------------------
        */
-      const alreadyMember = activeMembers.some(
-        (member: Member) =>
-          member.user_id === user.id
-      )
 
-      if (alreadyMember) {
-        setError(
-          "You are already a member of this Merry-Go-Round."
-        )
-
-        return
-      }
-
-      /*
-       * ----------------------------------------------------------
-       * 7. SHOW GROUP
-       * ----------------------------------------------------------
-       */
       setGroup(groupData)
       setMembers(activeMembers)
 
@@ -236,13 +207,18 @@ export default function JoinMerryGoRoundPage() {
     0
 
   const remainingSlots =
-    group
+    group?.remaining_slots ??
+    (group
       ? approvedMemberLimit - members.length
-      : 0
+      : 0)
+
+  const activeMemberCount =
+    group?.active_member_count ??
+    members.length
 
   const pool =
     group
-      ? members.length *
+      ? activeMemberCount *
         Number(group.contribution_amount)
       : 0
 
@@ -406,7 +382,7 @@ export default function JoinMerryGoRoundPage() {
                     </p>
 
                     <p className="mt-1 text-xl font-black">
-                      {members.length} /{" "}
+                      {activeMemberCount} /{" "}
                       {approvedMemberLimit}
                     </p>
                   </div>
@@ -472,7 +448,7 @@ export default function JoinMerryGoRoundPage() {
                   {members.map((member) => (
 
                     <div
-                      key={member.id}
+                      key={member.member_number}
                       className="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-3"
                     >
 
@@ -489,26 +465,9 @@ export default function JoinMerryGoRoundPage() {
                               `Member #${member.member_number}`}
                           </p>
 
-                          {member.member_code && (
-                            <p className="text-[10px] text-slate-500">
-                              Code: {member.member_code}
-                            </p>
-                          )}
-
-                          {member.phone_verified && (
-                            <p className="mt-1 text-[10px] font-bold text-emerald-400">
-                              ✓ Safaricom Verified
-                            </p>
-                          )}
-
                         </div>
 
                       </div>
-
-                      <CheckCircle2
-                        size={18}
-                        className="text-emerald-400"
-                      />
 
                     </div>
 

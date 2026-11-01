@@ -1,6 +1,7 @@
 
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -13,6 +14,9 @@ import {
   LifeBuoy,
   LogOut,
   User,
+  ChevronDown,
+  Users,
+  WalletCards,
 } from 'lucide-react'
 
 import type { ComponentType } from 'react'
@@ -68,6 +72,11 @@ export default function AdminLayout({
 }) {
   const pathname = usePathname()
 
+  const [groupsOpen, setGroupsOpen] = useState(
+    pathname.startsWith('/admin/groups') ||
+      pathname.startsWith('/admin/merry-go-round')
+  )
+
   return (
     <div className="flex min-h-screen bg-zinc-950 text-zinc-50 antialiased">
 
@@ -102,9 +111,180 @@ export default function AdminLayout({
           {navigation.map((item) => {
             const Icon = item.icon
 
+            const isGroups = item.name === 'Groups'
+
             const isActive =
               pathname === item.href ||
               pathname.startsWith(item.href + '/')
+
+            /*
+             * ---------------------------------------------------------
+             * GROUPS DROPDOWN
+             * ---------------------------------------------------------
+             */
+            if (isGroups) {
+              const groupsActive =
+                pathname.startsWith('/admin/groups') ||
+                pathname.startsWith('/admin/merry-go-round')
+
+              return (
+                <div key={item.name}>
+
+                  {/* GROUPS BUTTON */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setGroupsOpen((current) => !current)
+                    }
+                    className={`
+                      group
+                      flex w-full items-center justify-between
+                      rounded-lg px-4 py-3
+                      text-sm font-medium
+                      transition-all duration-200
+
+                      ${
+                        groupsActive
+                          ? `
+                            bg-zinc-800
+                            text-white
+                            shadow-sm
+                            ring-1 ring-zinc-700
+                          `
+                          : `
+                            text-zinc-400
+                            hover:bg-zinc-800/50
+                            hover:text-zinc-200
+                          `
+                      }
+                    `}
+                  >
+
+                    <span className="flex items-center gap-3">
+
+                      <Icon
+                        className={`
+                          h-4 w-4 shrink-0
+
+                          ${
+                            groupsActive
+                              ? 'text-white'
+                              : 'text-zinc-500 group-hover:text-zinc-300'
+                          }
+                        `}
+                      />
+
+                      Groups
+
+                    </span>
+
+                    <ChevronDown
+                      className={`
+                        h-4 w-4
+                        text-zinc-500
+                        transition-transform duration-200
+                        ${
+                          groupsOpen
+                            ? 'rotate-180'
+                            : ''
+                        }
+                      `}
+                    />
+
+                  </button>
+
+                  {/* GROUPS DROPDOWN */}
+                  {groupsOpen && (
+                    <div
+                      className="
+                        mt-1
+                        ml-4
+                        border-l
+                        border-zinc-800
+                        pl-3
+                        space-y-1
+                      "
+                    >
+
+                      {/* ALL GROUPS */}
+                      <Link
+                        href="/admin/groups"
+                        className={`
+                          flex items-center gap-3
+                          rounded-lg
+                          px-3 py-2.5
+                          text-xs font-medium
+                          transition-colors
+
+                          ${
+                            pathname === '/admin/groups' ||
+                            (
+                              pathname.startsWith('/admin/groups/')
+                            )
+                              ? `
+                                bg-zinc-800/80
+                                text-white
+                              `
+                              : `
+                                text-zinc-500
+                                hover:bg-zinc-800/50
+                                hover:text-zinc-300
+                              `
+                          }
+                        `}
+                      >
+
+                        <Users className="h-3.5 w-3.5" />
+
+                        All Groups
+
+                      </Link>
+
+                      {/* MERRY-GO-ROUND */}
+                      <Link
+                        href="/admin/merry-go-round"
+                        className={`
+                          flex items-center gap-3
+                          rounded-lg
+                          px-3 py-2.5
+                          text-xs font-medium
+                          transition-colors
+
+                          ${
+                            pathname.startsWith(
+                              '/admin/merry-go-round'
+                            )
+                              ? `
+                                bg-zinc-800/80
+                                text-white
+                              `
+                              : `
+                                text-zinc-500
+                                hover:bg-zinc-800/50
+                                hover:text-zinc-300
+                              `
+                          }
+                        `}
+                      >
+
+                        <WalletCards className="h-3.5 w-3.5" />
+
+                        Merry-Go-Round
+
+                      </Link>
+
+                    </div>
+                  )}
+
+                </div>
+              )
+            }
+
+            /*
+             * ---------------------------------------------------------
+             * NORMAL NAVIGATION ITEM
+             * ---------------------------------------------------------
+             */
 
             return (
               <Link
@@ -133,6 +313,7 @@ export default function AdminLayout({
                   }
                 `}
               >
+
                 <Icon
                   className={`
                     h-4 w-4 shrink-0
@@ -146,6 +327,7 @@ export default function AdminLayout({
                 />
 
                 {item.name}
+
               </Link>
             )
           })}
@@ -160,6 +342,7 @@ export default function AdminLayout({
             pt-6
           "
         >
+
           <div
             className="
               flex items-center
@@ -222,6 +405,7 @@ export default function AdminLayout({
             </button>
 
           </div>
+
         </div>
 
       </aside>
@@ -236,6 +420,7 @@ export default function AdminLayout({
           pl-64
         "
       >
+
         <main
           className="
             relative
@@ -246,6 +431,7 @@ export default function AdminLayout({
         >
           {children}
         </main>
+
       </div>
 
     </div>

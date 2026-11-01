@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Suspense, useState } from "react"
@@ -37,10 +38,27 @@ function JoinSuccessContent() {
         return
       }
 
+      /*
+       * ----------------------------------------------------------
+       * JOIN MERRY-GO-ROUND
+       * ----------------------------------------------------------
+       *
+       * The database function now requires:
+       *
+       *   p_group_number
+       *   p_phone
+       *
+       * The phone is stored as phone_number with
+       * phone_verified = false.
+       *
+       * Entering a phone number is NOT the same as
+       * admin verification.
+       */
       const { data, error: joinError } = await supabase.rpc(
         "join_merry_go_round",
         {
           p_group_number: groupNumber,
+          p_phone: phone,
         }
       )
 
@@ -49,6 +67,7 @@ function JoinSuccessContent() {
           "JOIN MERRY-GO-ROUND ERROR:",
           joinError
         )
+
         throw joinError
       }
 
@@ -59,6 +78,11 @@ function JoinSuccessContent() {
           "The group membership could not be created."
         )
       }
+
+      console.log(
+        "MERRY-GO-ROUND JOIN SUCCESS:",
+        result
+      )
 
       router.push(
         `/contributions/merry-go-round/group?groupId=${encodeURIComponent(
@@ -95,7 +119,7 @@ function JoinSuccessContent() {
           </div>
 
           <p className="mt-6 text-xs font-black tracking-[0.2em] text-emerald-400">
-            NUMBER VERIFIED
+            PHONE NUMBER PROVIDED
           </p>
 
           <h1 className="mt-2 text-3xl font-black">
@@ -103,7 +127,7 @@ function JoinSuccessContent() {
           </h1>
 
           <p className="mt-3 text-sm leading-6 text-slate-400">
-            Your Safaricom number has been verified.
+            Your Safaricom number has been provided.
             Review the group details before joining.
           </p>
         </div>
@@ -170,8 +194,9 @@ function JoinSuccessContent() {
             </p>
 
             <p className="mt-2 text-xs leading-5 text-amber-100/70">
-              Once you join, your membership will be recorded
-              for this contribution group.
+              Your phone number will be recorded for this
+              contribution group. Phone verification is handled
+              separately by StreetGO.
             </p>
           </div>
 
