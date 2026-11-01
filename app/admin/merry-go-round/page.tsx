@@ -469,71 +469,96 @@ export default function MerryGoRoundAdminPage() {
   // It never creates a second disbursement.
   // -------------------------------------------------------------
 
-  async function triggerB2C(roundId: string) {
-    const selected = rounds.find((round) => round.id === roundId)
 
-    if (!selected) {
-      return
-    }
+async function triggerB2C(roundId: string) {
+  const selected = rounds.find((round) => round.id === roundId)
 
-    if (selected.outstanding_amount > 0) {
-      setError(
-        `B2C is blocked because Round #${selected.round_number} still has ${formatAmount(selected.outstanding_amount)} outstanding.`
-      )
-      return
-    }
-
-    if (selected.payout_amount > 0 && selected.payout_amount > selected.verified_paid) {
-      setError(
-        'B2C is blocked because the recorded payout is greater than verified contribution money.'
-      )
-      return
-    }
-
-    setTriggeringB2C(true)
-    setError(null)
-    setNotice(null)
-
-    try {
-      const { data, error: rpcError } = await supabase.rpc(
-        'retry_contribution_payout_job',
-        {
-          p_round_id: roundId,
-        }
-      )
-
-      if (rpcError) {
-        throw rpcError
-      }
-
-      setNotice(
-        `B2C payout recovery queued for Round #${selected.round_number}. The existing payout will be processed through the normal B2C pipeline.`
-      )
-
-      await loadFinanceAudit()
-    } catch (err: any) {
-      console.error('B2C RETRY ERROR RAW:', err)
-      console.error(
-        'B2C RETRY ERROR JSON:',
-        JSON.stringify(err, null, 2)
-      )
-      console.error('B2C RETRY ERROR MESSAGE:', err?.message)
-      console.error('B2C RETRY ERROR DETAILS:', err?.details)
-      console.error('B2C RETRY ERROR HINT:', err?.hint)
-      console.error('B2C RETRY ERROR CODE:', err?.code)
-
-      setError(
-        err?.message ||
-          err?.details ||
-          err?.hint ||
-          'Unable to trigger B2C payout.'
-      )
-    } finally {
-      setTriggeringB2C(false)
-    }
+  if (!selected) {
+    setError('Selected round could not be found.')
+    return
   }
 
-  // -------------------------------------------------------------
+  setTriggeringB2C(true)
+  setError(null)
+  setNotice(null)
+
+  try {
+    console.log('========== B2C PAYOUT RECOVERY START ==========')
+    console.log('ROUND ID:', roundId)
+    console.log('ROUND NUMBER:', selected.round_number)
+    console.log('TARGET:', selected.target_amount)
+    console.log('VERIFIED PAID:', selected.verified_paid)
+    console.log('PAYOUT:', selected.payout_amount)
+    console.log('OUTSTANDING:', selected.outstanding_amount)
+
+    const { data, error: rpcError } = await supabase.rpc(
+      'retry_contribution_payout_job',
+      {
+        p_round_id: roundId,
+      }
+    )
+
+    console.log('B2C RPC DATA:', data)
+    console.log('B2C RPC ERROR:', rpcError)
+
+    if (rpcError) {
+      console.error('========== B2C RPC ERROR ==========')
+      console.error('RPC ERROR OBJECT:', rpcError)
+      console.error('RPC ERROR MESSAGE:', rpcError.message)
+      console.error('RPC ERROR DETAILS:', rpcError.details)
+      console.error('RPC ERROR HINT:', rpcError.hint)
+      console.error('RPC ERROR CODE:', rpcError.code)
+      console.error('RPC ERROR JSON:', JSON.stringify(rpcError, null, 2))
+
+      throw rpcError
+    }
+
+    console.log('========== B2C PAYOUT RECOVERY QUEUED ==========')
+    console.log('RESULT:', data)
+
+    setNotice(
+      `B2C payout recovery queued successfully for Round #${selected.round_number}. ` +
+        `The existing payout will now continue through the normal B2C pipeline.`
+    )
+
+    await loadFinanceAudit()
+  } catch (err: unknown) {
+    console.error('========== B2C RETRY FAILED ==========')
+    console.error('RAW ERROR:', err)
+
+    if (err instanceof Error) {
+      console.error('ERROR NAME:', err.name)
+      console.error('ERROR MESSAGE:', err.message)
+      console.error('ERROR STACK:', err.stack)
+    }
+
+    const supabaseError = err as {
+      message?: string
+      details?: string
+      hint?: string
+      code?: string
+      status?: number
+    }
+
+    console.error('SUPABASE MESSAGE:', supabaseError?.message)
+    console.error('SUPABASE DETAILS:', supabaseError?.details)
+    console.error('SUPABASE HINT:', supabaseError?.hint)
+    console.error('SUPABASE CODE:', supabaseError?.code)
+    console.error('SUPABASE STATUS:', supabaseError?.status)
+
+    const exactMessage =
+      supabaseError?.message ||
+      supabaseError?.details ||
+      supabaseError?.hint ||
+      'Unable to trigger B2C payout. Check the browser console for the exact error.'
+
+    setError(exactMessage)
+  } finally {
+    setTriggeringB2C(false)
+  }
+}
+
+ 
   // ACTIVE QUEUE
   //
   // Healthy rounds are deliberately removed from this queue.
