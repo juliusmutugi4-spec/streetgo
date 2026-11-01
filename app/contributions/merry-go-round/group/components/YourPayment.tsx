@@ -1,14 +1,23 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { CheckCircle2, Clock3, AlertCircle } from "lucide-react"
-
+import {
+  CheckCircle2,
+  Clock3,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react"
+import { supabase } from "@/app/lib/supabase"
 type Props = {
   myPaymentStatus: string
   receipt: string | null
   contributionAmount: number
   amountToPay: number
   groupId: string
+  roundId?: string
+  isCurrentRecipient: boolean
+  payoutStuck: boolean
 }
 
 const STATUS_CONFIG: Record<
@@ -46,8 +55,14 @@ export default function YourPayment({
   contributionAmount,
   amountToPay,
   groupId,
+  roundId,
+  isCurrentRecipient,
+  payoutStuck,
 }: Props) {
   const router = useRouter()
+
+  const [requestingRetry, setRequestingRetry] = useState(false)
+  const [retryMessage, setRetryMessage] = useState<string | null>(null)
 
   const state =
     STATUS_CONFIG[myPaymentStatus] || STATUS_CONFIG.due
@@ -59,6 +74,43 @@ export default function YourPayment({
 
   const isPaid =
     myPaymentStatus === "paid"
+
+  const requestPayoutRetry = async () => {
+    if (!roundId || requestingRetry) return
+
+    setRequestingRetry(true)
+    setRetryMessage(null)
+
+    try {
+      const { error } = await supabase.rpc(
+        "request_merry_go_round_payout_retry",
+        {
+          p_round_id: roundId,
+        }
+      )
+
+      if (error) {
+        console.error(
+          "PAYOUT RETRY REQUEST FAILED:",
+          error
+        )
+
+        setRetryMessage(
+          error.message || "Unable to request payout retry."
+        )
+
+        return
+      }
+
+      setRetryMessage(
+        "Payout retry requested. Please wait for M-PESA processing."
+      )
+
+      router.refresh()
+    } finally {
+      setRequestingRetry(false)
+    }
+  }
 
   return (
     <section className="mt-5 space-y-3">
@@ -86,7 +138,7 @@ export default function YourPayment({
         </div>
       </div>
 
-      {/* PAYMENT BUTTON */}
+      {/* NORMAL CONTRIBUTION BUTTON */}
       {!isPaid && (
         <button
           type="button"
@@ -110,6 +162,42 @@ export default function YourPayment({
               : "Contribution Covered"}
         </button>
       )}
+
+      {/* RECIPIENT PAYOUT RECOVERY */}
+      {isCurrentRecipient &&
+        payoutStuck &&
+        !isPaid &&
+        roundId && (
+          <div className="space-y-2 pt-1">
+
+            <button
+              type="button"
+              onClick={requestPayoutRetry}
+              disabled={requestingRetry}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 py-2.5 text-xs font-bold text-amber-300 transition hover:bg-amber-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw
+                size={14}
+                className={
+                  requestingRetry
+                    ? "animate-spin"
+                    : ""
+                }
+              />
+
+              {requestingRetry
+                ? "Requesting Retry..."
+                : "Request Payout Retry"}
+            </button>
+
+            {retryMessage && (
+              <p className="text-center text-[10px] leading-relaxed text-slate-500">
+                {retryMessage}
+              </p>
+            )}
+
+          </div>
+        )}
 
     </section>
   )

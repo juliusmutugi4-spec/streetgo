@@ -107,7 +107,12 @@ const [paymentSummary, setPaymentSummary] = useState<PaymentSummary>({
   const [memberPaymentStatuses, setMemberPaymentStatuses] = useState<
     MemberPaymentStatus[]
   >([]);
-
+const [payoutState, setPayoutState] = useState<{
+  status: string | null
+  jobStatus: string | null
+  lastError: string | null
+  createdAt: string | null
+} | null>(null)
   const [loading, setLoading] = useState(true);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -293,11 +298,12 @@ const { data: roundData, error: roundError } =
       `
     )
     .eq("group_id", resolvedGroupId)
-    .in("status", [
-      "collecting",
-      "ready",
-      "processing",
-    ])
+ .in("status", [
+  "collecting",
+  "ready",
+  "processing",
+  "failed",
+])
     .order("round_number", {
       ascending: false,
     })
@@ -307,6 +313,44 @@ const { data: roundData, error: roundError } =
 if (roundError) {
   throw roundError;
 }
+
+
+if (roundData?.id) {
+  const { data: payoutStatus, error: payoutStatusError } =
+    await supabase.rpc(
+      "get_merry_go_round_member_payout_status",
+      {
+        p_round_id: roundData.id,
+      }
+    );
+
+  if (payoutStatusError) {
+    console.error(
+      "Failed to load member payout status:",
+      payoutStatusError
+    );
+
+    setPayoutState(null);
+  } else {
+    const payout = payoutStatus?.[0] ?? null;
+
+    if (payout) {
+      setPayoutState({
+        status: payout.payout_status,
+        jobStatus: null,
+        lastError: null,
+        createdAt:
+          payout.payout_created_at ??
+          null,
+      });
+    } else {
+      setPayoutState(null);
+    }
+  }
+} else {
+  setPayoutState(null);
+}
+
 
 setCurrentRound(roundData || null);
 console.log("CURRENT ROUND:", roundData);
@@ -447,6 +491,26 @@ const recipientMember = currentRound?.recipient_member_id
     )
   : null;
 
+
+const isCurrentRecipient =
+  !!myMember &&
+  !!recipientMember &&
+  myMember.id === recipientMember.id;
+
+const payoutAgeMs = payoutState?.createdAt
+  ? Date.now() - new Date(payoutState.createdAt).getTime()
+  : 0;
+
+const payoutStuck =
+  isCurrentRecipient &&
+  !!payoutState &&
+  payoutAgeMs >= 5 * 60 * 1000 &&
+  (
+    payoutState.status === "processing" ||
+    payoutState.status === "failed"
+  );
+
+
 const recipientName = recipientMember
   ? [
       recipientMember.mpesa_first_name,
@@ -571,6 +635,9 @@ const nextRecipientAmount = Number(
   contributionAmount={contributionAmount}
   amountToPay={amountToPay}
   groupId={group.id}
+  roundId={currentRound?.id}
+  isCurrentRecipient={isCurrentRecipient}
+  payoutStuck={payoutStuck}
 />
         <GroupInfo
           group={group}
