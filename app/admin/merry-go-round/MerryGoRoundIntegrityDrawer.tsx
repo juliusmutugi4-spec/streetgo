@@ -2198,7 +2198,12 @@ export default function MerryGoRoundIntegrityDrawer({
 )}
 
 
-{onTriggerB2C && (
+{onTriggerB2C &&
+  history?.payouts?.length === 1 &&
+  ["pending", "processing", "failed"].includes(
+    String(history.payouts[0]?.status || "").toLowerCase()
+  ) &&
+  !history.payouts[0]?.mpesa_transaction_id && (
   <section>
     <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
       <div className="flex items-start gap-3">
