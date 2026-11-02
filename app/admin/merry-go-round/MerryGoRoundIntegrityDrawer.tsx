@@ -13,6 +13,7 @@ import {
   FileWarning,
   Loader2,
   Search,
+  RefreshCw,
   ShieldAlert,
   Smartphone,
   User,
@@ -1447,6 +1448,8 @@ export default function MerryGoRoundIntegrityDrawer({
   repairing = false,
   onTriggerB2C,
   triggeringB2C = false,
+  onCreatePayoutJob,
+  creatingPayoutJob = false,
 }: {
   round: RoundRow | null
   onClose: () => void
@@ -1454,6 +1457,8 @@ export default function MerryGoRoundIntegrityDrawer({
   repairing?: boolean
   onTriggerB2C?: (roundId: string) => Promise<void> | void
   triggeringB2C?: boolean
+  onCreatePayoutJob?: (roundId: string) => Promise<void> | void
+  creatingPayoutJob?: boolean
 }) {
   const [history, setHistory] =
     useState<RoundHistory | null>(null)
@@ -2198,53 +2203,115 @@ export default function MerryGoRoundIntegrityDrawer({
 )}
 
 
-{onTriggerB2C &&
-  history?.payouts?.length === 1 &&
-  ["pending", "processing", "failed"].includes(
-    String(history.payouts[0]?.status || "").toLowerCase()
-  ) &&
-  !history.payouts[0]?.mpesa_transaction_id && (
-  <section>
-    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-      <div className="flex items-start gap-3">
-        <Smartphone
-          size={21}
-          className="mt-0.5 shrink-0 text-emerald-600"
-        />
+{(() => {
+  const recoverablePayout =
+    history?.payouts?.length === 1
+      ? history.payouts[0]
+      : null
 
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-bold text-emerald-900">
-            B2C Payout Recovery
+  const payoutCanBeRecovered =
+    !!recoverablePayout &&
+    ['pending', 'processing'].includes(
+      String(recoverablePayout.status || '').toLowerCase()
+    ) &&
+    !recoverablePayout.mpesa_transaction_id &&
+    !recoverablePayout.originator_conversation_id &&
+    !recoverablePayout.conversation_id
+
+  if (!payoutCanBeRecovered) {
+    return null
+  }
+
+  return (
+    <>
+      {onCreatePayoutJob && (
+        <section>
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-3">
+              <RefreshCw
+                size={21}
+                className="mt-0.5 shrink-0 text-amber-600"
+              />
+
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-amber-900">
+                  Payout Job Recovery
+                </div>
+
+                <p className="mt-1 text-sm leading-6 text-amber-800">
+                  The existing payout is eligible for processing. Create or confirm
+                  its payout job without creating another disbursement.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => void onCreatePayoutJob(round.id)}
+                  disabled={creatingPayoutJob || triggeringB2C}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-amber-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {creatingPayoutJob ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Creating Payout Job...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4" />
+                      Create Payout Job
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
+        </section>
+      )}
 
-          <p className="mt-1 text-sm leading-6 text-emerald-800">
-            Retry the existing unpaid payout through the normal
-            B2C pipeline. This does not create another payout.
-          </p>
+      {onTriggerB2C && (
+        <section>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex items-start gap-3">
+              <Smartphone
+                size={21}
+                className="mt-0.5 shrink-0 text-emerald-600"
+              />
 
-          <button
-            type="button"
-            onClick={() => void onTriggerB2C(round.id)}
-            disabled={triggeringB2C}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {triggeringB2C ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Triggering B2C...
-              </>
-            ) : (
-              <>
-                <Smartphone className="h-4 w-4" />
-                Trigger B2C
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  </section>
-)}
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-emerald-900">
+                  B2C Payout Recovery
+                </div>
+
+                <p className="mt-1 text-sm leading-6 text-emerald-800">
+                  Retry the existing unpaid payout through the normal B2C pipeline.
+                  This does not create another disbursement.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => void onTriggerB2C(round.id)}
+                  disabled={triggeringB2C || creatingPayoutJob}
+                  className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-black uppercase tracking-wider text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {triggeringB2C ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Triggering B2C...
+                    </>
+                  ) : (
+                    <>
+                      <Smartphone className="h-4 w-4" />
+                      Trigger B2C
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+    </>
+  )
+})()}
 
 
 
