@@ -124,7 +124,14 @@ export default function MerryGoRoundAdminPage() {
           .from('contribution_groups')
           .select('id, group_number, name')
           .in('id', groupIdBatch)
-
+console.log('[MGR GROUP LOOKUP]', {
+  error: groupError,
+  groupCount: groupData?.length,
+targetGroup: groupData?.find(
+  (group: Group) =>
+    group.id === '71c645e6-c178-454c-8902-2e9c4c4abd78'
+),
+})
         if (groupError) {
           throw groupError
         }
@@ -137,9 +144,40 @@ export default function MerryGoRoundAdminPage() {
           })
         }
       }
+      const targetGroupId =
+        '71c645e6-c178-454c-8902-2e9c4c4abd78'
 
+      console.log('[MGR ROUND CHECK]', {
+        targetRound: rawRounds.find(
+          (round: { id: string }) =>
+            round.id === 'af68d37e-101e-433c-85a6-dd28a5936a1c'
+        ),
+        targetIdIncluded: groupIds.includes(targetGroupId),
+        requestedGroupIds: groupIds,
+      })
+
+      const {
+        data: directGroupData,
+        error: directGroupError,
+      } = await supabase
+        .from('contribution_groups')
+        .select('id, group_number, name')
+        .eq('id', targetGroupId)
+        .maybeSingle()
+
+      console.log('[MGR DIRECT GROUP CHECK]', {
+        error: directGroupError,
+        group: directGroupData,
+      })
       setGroups(groupMap)
-
+console.log('[MGR GROUP MAP]', {
+  hasTargetGroup: groupMap.has(
+    '71c645e6-c178-454c-8902-2e9c4c4abd78'
+  ),
+  targetGroup: groupMap.get(
+    '71c645e6-c178-454c-8902-2e9c4c4abd78'
+  ),
+})
       const roundIds = rawRounds.map((round: { id: string }) => round.id)
 
       const {
