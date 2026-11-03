@@ -41,13 +41,13 @@ export default function ContributionsPage() {
 
       if (memberError) throw memberError
 
-      const groupIds = [
-        ...new Set(
-          (members || []).map(
+      const groupIds: string[] = Array.from(
+        new Set(
+          (members ?? []).map(
             (member: { group_id: string }) => member.group_id
           )
-        ),
-      ]
+        )
+      )
 
       if (groupIds.length === 0) {
         setGroups([])
@@ -58,11 +58,22 @@ export default function ContributionsPage() {
         .from("contribution_groups")
         .select("id, name, status, progression_status")
         .in("id", groupIds)
-        .in("status", ["forming", "active"])
+        .in("status", ["forming", "active", "formed"])
         .order("created_at", { ascending: false })
 
       if (error) throw error
-      setGroups(data || [])
+
+      console.log("[CONTRIBUTIONS GROUP CHECK]", {
+        userId: session.user.id,
+        groupIds,
+        groupsFound: data?.length ?? 0,
+        targetGroup: data?.find(
+          (group: Group) =>
+            group.id === "71c645e6-c178-454e-8902-2e9c4c4abd78"
+        ),
+      })
+
+      setGroups((data ?? []) as Group[])
     } catch (error) {
       console.error("Failed to load contribution groups:", error)
     } finally {
