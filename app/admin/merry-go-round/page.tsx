@@ -74,26 +74,9 @@ export default function MerryGoRoundAdminPage() {
     try {
       setError(null)
 
-      const { data: groupData, error: groupError } = await supabase
-        .from('contribution_groups')
-        .select('id, group_number, name')
-
-      if (groupError) {
-        throw groupError
-      }
-
-      const groupMap = new Map<string, Group>()
-
-      for (const group of groupData ?? []) {
-        groupMap.set(group.id, {
-          id: group.id,
-          group_number: group.group_number,
-          name: group.name,
-        })
-      }
-
-      setGroups(groupMap)
-
+      // Load rounds first. Fetching the entire groups table here is unsafe:
+      // Supabase applies a row limit, so older groups can be omitted from the
+      // result and then incorrectly rendered as "Unknown Group".
       const { data: roundData, error: roundError } = await supabase
         .from('contribution_rounds')
         .select(`
@@ -114,8 +97,48 @@ export default function MerryGoRoundAdminPage() {
 
       if (rawRounds.length === 0) {
         setRounds([])
+        setGroups(new Map())
         return
       }
+
+      // Resolve only groups referenced by the loaded rounds. Use small batches
+      // to avoid oversized PostgREST URL/query payloads as the platform grows.
+      const groupIds = Array.from(
+        new Set(
+          rawRounds
+            .map((round: { group_id: string | null }) => round.group_id)
+            .filter((groupId: string | null): groupId is string => Boolean(groupId))
+        )
+      )
+
+      const groupMap = new Map<string, Group>()
+      const GROUP_LOOKUP_BATCH_SIZE = 100
+
+      for (let index = 0; index < groupIds.length; index += GROUP_LOOKUP_BATCH_SIZE) {
+        const groupIdBatch = groupIds.slice(
+          index,
+          index + GROUP_LOOKUP_BATCH_SIZE
+        )
+
+        const { data: groupData, error: groupError } = await supabase
+          .from('contribution_groups')
+          .select('id, group_number, name')
+          .in('id', groupIdBatch)
+
+        if (groupError) {
+          throw groupError
+        }
+
+        for (const group of groupData ?? []) {
+          groupMap.set(group.id, {
+            id: group.id,
+            group_number: group.group_number,
+            name: group.name,
+          })
+        }
+      }
+
+      setGroups(groupMap)
 
       const roundIds = rawRounds.map((round: { id: string }) => round.id)
 
