@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-export default function SplashScreen() {
+export default function SplashScreen(_props: { progress?: number; status?: string }) {
   return (
     <main 
       className="streetgo-splash" 
@@ -119,6 +119,7 @@ export default function SplashScreen() {
     </main>
   )
 }
+
 
 
 
