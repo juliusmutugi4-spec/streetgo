@@ -37,14 +37,19 @@ export default function ProfileButton({
       aria-label={username ? `Open ${username}'s profile` : 'Open profile'}
       className="group flex w-full min-w-0 flex-col items-center justify-center gap-0.5 py-1 transition-colors duration-150 hover:text-[var(--foreground)] active:scale-95 focus:outline-none disabled:pointer-events-none"
     >
-      <div className="relative flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] transition-transform duration-150 group-hover:scale-105">
-
+      {/* ROTATING CONTAINER: Added "animate-[spin_3s_linear_infinite]" when loading */}
+      <div 
+        className={`relative flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] transition-transform duration-150 group-hover:scale-105 ${
+          isPending ? 'animate-[spin_3s_linear_infinite]' : ''
+        }`}
+      >
         {isPending ? (
+          /* 6 MICRO BARS VISUALIZER (Wobbling inside the rotating circle) */
           <div className="flex h-3 w-4 items-end justify-between gap-[1px]">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="h-2 w-[1.5px] bg-[var(--foreground)] animate-[wobble_1s_ease-in-out_infinite]"
+                className="w-[1.5px] bg-[var(--foreground)] animate-[wobble_1s_ease-in-out_infinite]"
                 style={{ animationDelay: `${i * 0.15}s` }}
               />
             ))}
