@@ -1124,8 +1124,6 @@ return (
 
 
 
-
-
 <div className="relative w-full">
   {/* IMAGE */}
   <PostCardMedia
@@ -1134,44 +1132,46 @@ return (
     setCurrentImage={setCurrentImage}
     setShowImageViewer={setShowImageViewer}
     onOpenImageViewer={(index) => {
-      onOpenImageViewer?.(imageUrls, index, username, avatarUrl)
+      onOpenImageViewer?.(imageUrls, index, username, avatarUrl);
     }}
     post={post}
   />
 
-  {/* SELLING OVERLAY — ATTACHED TO IMAGE */}
+  {/* MICRO SELLING OVERLAY — PROFESSIONAL LEFT-FIXED BADGE */}
   {post.is_for_sale && (
-    <div className="absolute bottom-4 left-4 right-4 z-50">
-      <div className="rounded-2xl border border-white/10 bg-black/40 p-4 shadow-xl backdrop-blur-xl">
-        <div className="flex items-center justify-between gap-4">
-          
-          {/* PRODUCT */}
-          <div className="min-w-0">
-            <span className="inline-flex items-center rounded-md bg-white/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-200">
-              For Sale
-            </span>
-            <p className="mt-1.5 truncate text-base font-bold text-white tracking-tight">
-              {post.item_name || "Item"}
-            </p>
-            <p className="mt-0.5 text-lg font-extrabold text-white">
-              KES {Number(post.price ?? 0).toLocaleString()}
-            </p>
-          </div>
-
-          {/* ORDER */}
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              // ORDER action later
-            }}
-            className="shrink-0 rounded-xl bg-white px-5 py-3 text-sm font-bold text-black shadow-md transition-all hover:bg-neutral-100 active:scale-95"
-          >
-            ORDER
-          </button>
-          
+    <div className="absolute left-3 top-3 z-50 flex flex-col gap-1.5 rounded-xl border border-white/10 bg-black/70 p-2.5 shadow-lg backdrop-blur-md transition-all hover:bg-black/80 max-w-[140px]">
+      {/* MARKET STATUS & PRICE */}
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5">
+          {/* MICRO PULSING MARKET COLOR (EMERALD) */}
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+            Live Market
+          </span>
         </div>
+        
+        <p className="mt-1 truncate text-xs font-semibold text-neutral-200">
+          {post.item_name || "Item"}
+        </p>
+        <p className="text-sm font-black text-white">
+          K{Number(post.price ?? 0).toLocaleString()}
+        </p>
       </div>
+
+      {/* COMPACT ACTION BUTTON */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          // ORDER action later
+        }}
+        className="w-full rounded-lg bg-white py-1.5 text-center text-[11px] font-bold uppercase tracking-wide text-black transition-all hover:bg-neutral-100 active:scale-95"
+      >
+        Buy
+      </button>
     </div>
   )}
 </div>
