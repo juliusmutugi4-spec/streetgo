@@ -37,20 +37,44 @@ export default function ProfileButton({
       aria-label={username ? `Open ${username}'s profile` : 'Open profile'}
       className="group flex w-full min-w-0 flex-col items-center justify-center gap-0.5 py-1 transition-colors duration-150 hover:text-[var(--foreground)] active:scale-95 focus:outline-none disabled:pointer-events-none"
     >
-      {/* ROTATING CONTAINER: Added "animate-[spin_3s_linear_infinite]" when loading */}
-      <div 
-        className={`relative flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] transition-transform duration-150 group-hover:scale-105 ${
-          isPending ? 'animate-[spin_3s_linear_infinite]' : ''
+      {/* INJECTED ANIMATION KEYFRAMES */}
+      <style>{`
+        @keyframes mini-fluid-pulse {
+          0%, 100% { transform: scaleY(0.4) rotate(0deg); opacity: 0.35; }
+          50% { transform: scaleY(1.3) rotate(6deg); opacity: 1; }
+        }
+        .profile-bar-anim {
+          animation: mini-fluid-pulse 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          will-change: transform, opacity;
+          transform-origin: center;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .profile-bar-anim {
+            animation: mini-fluid-fade 2s ease-in-out infinite alternate !important;
+            transform: scaleY(1) rotate(0deg) !important;
+          }
+          @keyframes mini-fluid-fade {
+            from { opacity: 0.3; }
+            to { opacity: 0.9; }
+          }
+        }
+      `}</style>
+
+      {/* PROFILE LOADING VISUALIZER */}
+      <div
+        className={`relative flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] transition-transform duration-150 ${
+          isPending ? '' : 'group-hover:scale-105'
         }`}
       >
         {isPending ? (
-          /* 6 MICRO BARS VISUALIZER (Wobbling inside the rotating circle) */
-          <div className="flex h-3 w-4 items-end justify-between gap-[1px]">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="flex h-3 w-4 items-center justify-between gap-[0.5px]">
+            {Array.from({ length: 5 }).map((_, i) => (
               <div
                 key={i}
-                className="w-[1.5px] bg-[var(--foreground)] animate-[wobble_1s_ease-in-out_infinite]"
-                style={{ animationDelay: `${i * 0.15}s` }}
+                className="profile-bar-anim w-[1.5px] h-[8px] rounded-full bg-[#00e694]"
+                style={{
+                  animationDelay: `${i * 0.12}s`,
+                }}
               />
             ))}
           </div>
@@ -71,6 +95,7 @@ export default function ProfileButton({
         )}
       </div>
 
+      {/* USERNAME */}
       <span className="max-w-[65px] truncate font-['Courier_New'] text-[8px] font-bold leading-none tracking-tight text-[var(--muted)] group-hover:text-[var(--foreground)]">
         {isPending ? 'Loading...' : username || 'Profile'}
       </span>
