@@ -91,7 +91,6 @@ const {
   setPendingRideCount,
 
   loadPendingRideCount,
-  loadDriver,
   toggleDriverOnline,
 } = useDriver(user)
 
@@ -367,7 +366,6 @@ useEffect(() => {
   const initializeApp = async () => {
     try {
       setLoadingProgress(10);
-      await loadDriver();
       if (!isMounted) return;
 
       setLoadingProgress(40);
