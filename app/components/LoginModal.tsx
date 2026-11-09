@@ -254,22 +254,6 @@ if (data.user) {
 
 
 
-      if(data.session){
-
-        await supabaseBrowser.auth.setSession({
-
-          access_token:
-          data.session.access_token,
-
-          refresh_token:
-          data.session.refresh_token
-
-        })
-
-      }
-
-
-
       await new Promise(resolve =>
         setTimeout(resolve,500)
       )
