@@ -94,14 +94,15 @@ export async function generateMetadata({
   // --------------------------------------------------
 
   const progressDescription =
-    `📊 ${percentage}% funded • ` +
-    `💰 KES ${raisedAmount.toLocaleString("en-KE")} / ` +
-    `KES ${targetAmount.toLocaleString("en-KE")} • ` +
-    `👥 ${contributorCount} contributor${
-      contributorCount === 1 ? "" : "s"
-    }`;
+  `${percentage}% funded | ` +
+  `KES ${raisedAmount.toLocaleString("en-KE")} raised | ` +
+  `KES ${targetAmount.toLocaleString("en-KE")} goal | ` +
+  `${contributorCount} contributor${
+    contributorCount === 1 ? "" : "s"
+  }`;
+
 const displayDescription =
-  `${progressDescription} • ${description}`;
+  `${progressDescription} | ${description}`;
 
   // --------------------------------------------------
   // 6. URLS
@@ -113,8 +114,7 @@ const displayDescription =
   const imageUrl =
     `${baseUrl}/fund/${slug}/opengraph-image`;
 
-  const dynamicTitle =
-    `❤️ ${cleanTitle}`;
+  const dynamicTitle = cleanTitle;
 
   // --------------------------------------------------
   // 7. METADATA

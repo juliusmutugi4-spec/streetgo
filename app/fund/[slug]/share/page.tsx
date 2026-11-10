@@ -12,9 +12,7 @@ const supabase = createClient(
 );
 
 function cleanTitle(title: string) {
-  return title
-    .replace(/^(❤️|%EF%B8%8F|❤️%EF%B8%8F)\s*/u, "")
-    .trim();
+  return title.trim();
 }
 
 export async function generateMetadata({
@@ -97,15 +95,14 @@ export async function generateMetadata({
    * so the most important information must come first.
    */
   const socialDescription =
-    `📊 ${percentage}% funded • ` +
-    `💰 KES ${raisedFormatted} / KES ${targetFormatted} • ` +
-    `👥 ${contributorCount} contributor${
-      contributorCount === 1 ? "" : "s"
-    } • ` +
-    `${description}`;
+  `${percentage}% funded | ` +
+  `KES ${raisedFormatted} raised / KES ${targetFormatted} goal | ` +
+  `${contributorCount} contributor${
+    contributorCount === 1 ? "" : "s"
+  } | ` +
+  `${description}`;
 
-  const displayTitle =
-    `❤️ ${title}`;
+const displayTitle = title;
 
   return {
     metadataBase: new URL(baseUrl),
