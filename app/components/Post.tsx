@@ -587,11 +587,17 @@ if (error) {
 
   // Likes count
   // Likes count
-    const { count } = await supabase
-      .from('likes')
-      .select('*', { count: 'exact', head: true })
-      .eq('post_id', post.id)
-    setLikes(count || 0)
+// Public like count — works for logged-out visitors too
+const { data: likeCount, error: likeCountError } =
+  await supabase.rpc('get_post_likes_count', {
+    target_post_id: post.id,
+  })
+
+if (likeCountError) {
+  console.error('LOAD PUBLIC LIKE COUNT ERROR:', likeCountError)
+} else {
+  setLikes(Number(likeCount) || 0)
+}
 
     if (user) {
       const { data } = await supabase
