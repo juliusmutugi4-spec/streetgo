@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from './lib/supabase'
 import PostCard from './components/PostCard'
@@ -62,11 +62,15 @@ type PredictionType = {
 
 export default function Home() {
 const router = useRouter()
+const feedLoaderRef = useRef<HTMLDivElement | null>(null)
   const {
   posts,
   setPosts,
   loading,
   fetchPosts,
+  loadMore,
+  hasMore,
+  loadingMore,
 } = useFeed()
 const {
   user,
@@ -202,7 +206,7 @@ const onCreateSelect = (
 const loadLiveSessions = async () => {
   // Do not contact the Live API while offline.
   if (!navigator.onLine) {
-    console.log('STREETGO: Offline — skipping live sessions')
+    console.log('STREETGO: Offline â€” skipping live sessions')
     return
   }
 
@@ -462,6 +466,32 @@ useEffect(() => {
 
 
 
+
+
+useEffect(() => {
+  const loader = feedLoaderRef.current
+
+  if (!loader || !hasMore) return
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        loadMore()
+      }
+    },
+    {
+      root: null,
+      rootMargin: "800px",
+      threshold: 0,
+    }
+  )
+
+  observer.observe(loader)
+
+  return () => {
+    observer.disconnect()
+  }
+}, [loadMore, hasMore])
 
 
 const resolvePrediction = async (
@@ -934,6 +964,24 @@ const counts = imageUrls.map(
         }}
       />
     ))}
+
+    <div
+      ref={feedLoaderRef}
+      className="flex min-h-12 items-center justify-center py-4"
+    >
+      {loadingMore && (
+        <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+          Loading more posts...
+        </div>
+      )}
+
+      {!hasMore && posts.length > 0 && (
+        <p className="text-xs text-zinc-500">
+          You're all caught up.
+        </p>
+      )}
+    </div>
   </div>
 )}
 
@@ -1052,7 +1100,7 @@ const counts = imageUrls.map(
     shadow-lg
   "
 >
-  ✕
+  âœ•
 </button>
 
 {user && (
@@ -1090,7 +1138,7 @@ const counts = imageUrls.map(
         onClick={() => setCreateMode('none')}
         className="absolute right-4 top-4 text-red-400 font-bold"
       >
-        ✕
+        âœ•
       </button>
 
 {user && (
@@ -1176,4 +1224,6 @@ setImageCommentText={setImageCommentText}
     </main>
   )
 }
+
+
 
