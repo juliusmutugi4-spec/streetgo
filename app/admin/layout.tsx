@@ -1,4 +1,4 @@
-
+﻿
 'use client'
 
 import { useState } from 'react'
@@ -10,6 +10,7 @@ import {
   Film,
   CircleDollarSign,
   UsersRound,
+  Monitor,
   Satellite,
   LifeBuoy,
   LogOut,
@@ -49,14 +50,19 @@ const navigation: NavigationItem[] = [
     icon: CircleDollarSign,
   },
   {
-    name: 'Groups',
-    href: '/admin/groups',
-    icon: UsersRound,
-  },
-  {
     name: 'Satellite Radar',
     href: '/admin/satellite',
     icon: Satellite,
+  },
+  {
+    name: 'Cyber Services',
+    href: '/admin/cyber',
+    icon: Monitor,
+  },
+  {
+    name: 'Groups',
+    href: '/admin/groups',
+    icon: UsersRound,
   },
   {
     name: 'Support',
@@ -437,3 +443,5 @@ export default function AdminLayout({
     </div>
   )
 }
+
+

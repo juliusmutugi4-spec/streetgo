@@ -159,16 +159,14 @@ if (entry.isIntersecting) {
 // =====================================================
 
 useEffect(() => {
-  if (post.is_live === true) {
-    return
-  }
+  // Only the post currently in view needs a viewer query
+  // or a Realtime subscription.
+  if (!isActive || post.is_live === true) return
+  if (!navigator.onLine) return
 
-  // Never contact Supabase while offline
-  if (!navigator.onLine) {
-    return
-  }
+  let isMounted = true
 
-  loadViewerCount()
+  void loadViewerCount()
 
   const channel = supabase
     .channel(`viewers-${post.id}`)
@@ -181,19 +179,18 @@ useEffect(() => {
         filter: `post_id=eq.${post.id}`,
       },
       () => {
-        // Connection may have disappeared after
-        // the subscription was created.
-        if (navigator.onLine) {
-          loadViewerCount()
+        if (isMounted && navigator.onLine) {
+          void loadViewerCount()
         }
       }
     )
     .subscribe()
 
   return () => {
-    supabase.removeChannel(channel)
+    isMounted = false
+    void supabase.removeChannel(channel)
   }
-}, [post.id, post.is_live])
+}, [isActive, post.id, post.is_live])
 const loadReaxCount = async () => {
   if (!post?.id) {
     setReaxCount(0)
@@ -266,90 +263,11 @@ const loadReaxCount = async () => {
 // REGISTER CURRENT VIEWER
 // =====================================================
 
-useEffect(() => {
-  if (!isActive || !user) {
-    setShowAIBubble(false)
-    return
-  }
-
-  if (post.is_live === true) {
-    return
-  }
-
-  // OFFLINE = do nothing
-  if (!navigator.onLine) {
-    return
-  }
-
-  const registerViewer = async () => {
-    if (!navigator.onLine) {
-      return
-    }
-
-    await supabase
-      .from("post_viewers")
-      .upsert(
-        {
-          post_id: post.id,
-          user_id: user.id,
-          last_seen: new Date().toISOString(),
-        },
-        {
-          onConflict: "post_id,user_id",
-          ignoreDuplicates: true,
-        }
-      )
-      .select()
-  }
-
-  registerViewer()
-
-  return () => {
-    // Do not send cleanup request while offline
-    if (!navigator.onLine) {
-      return
-    }
-
-    supabase
-      .from("post_viewers")
-      .delete()
-      .eq("post_id", post.id)
-      .eq("user_id", user.id)
-  }
-}, [isActive, user, post.id, post.is_live])
-
 
 // =====================================================
 // VIEWER HEARTBEAT
 // =====================================================
 
-useEffect(() => {
-  if (!isActive || !user || post.is_live === true) {
-    return
-  }
-
-  // OFFLINE = no heartbeat
-  if (!navigator.onLine) {
-    return
-  }
-
-  const heartbeat = setInterval(async () => {
-    if (!navigator.onLine) {
-      return
-    }
-
-    await supabase
-      .from("post_viewers")
-      .update({
-        last_seen: new Date().toISOString(),
-      })
-      .eq("post_id", post.id)
-      .eq("user_id", user.id)
-  }, 30000)
-
-  return () => clearInterval(heartbeat)
-}, [isActive, user, post.id, post.is_live])
-
 
 
 useEffect(() => {
@@ -357,6 +275,9 @@ useEffect(() => {
     setShowAIBubble(false)
     return
   }
+
+  // Do not start viewer writes while offline.
+  if (!navigator.onLine) return
 
   // LIVE sessions do NOT use post_viewers.
   // Their viewers are handled by the live engine.
@@ -402,13 +323,19 @@ useEffect(() => {
   }
 
   const heartbeat = setInterval(async () => {
-    await supabase
+    if (!navigator.onLine) return
+
+    const { error } = await supabase
       .from("post_viewers")
       .update({
         last_seen: new Date().toISOString(),
       })
       .eq("post_id", post.id)
       .eq("user_id", user.id)
+
+    if (error) {
+      console.warn("VIEWER HEARTBEAT FAILED:", error.message)
+    }
   }, 30000)
 
   return () => clearInterval(heartbeat)
@@ -598,11 +525,16 @@ if (error) {
       target_post_id: post.id,
     })
 
-    if (likeCountError) {
-      console.error('LOAD PUBLIC LIKE COUNT ERROR:', likeCountError)
-    } else {
-      setLikes(Number(likeCount) || 0)
-    }
+if (likeCountError) {
+  // Log the original Supabase error object as well as its fields.
+  console.error('PUBLIC LIKE COUNT ERROR:', likeCountError)
+  console.error('PUBLIC LIKE COUNT MESSAGE:', likeCountError.message)
+  console.error('PUBLIC LIKE COUNT CODE:', likeCountError.code)
+  console.error('PUBLIC LIKE COUNT DETAILS:', likeCountError.details)
+  console.error('PUBLIC LIKE COUNT HINT:', likeCountError.hint)
+} else {
+  setLikes(Number(likeCount) || 0)
+}
 
     // Load the current visitor's like status.
     if (user) {
@@ -829,13 +761,14 @@ useEffect(() => {
   loadReaxCount()
 }, [post.id])
 
+// Image engagement counts are only needed when the image viewer
+// is open. Avoid issuing several extra requests for every feed card.
 useEffect(() => {
-  loadImageCommentCounts()
-}, [post.id])
+  if (!showImageViewer || imageUrls.length === 0) return
 
-useEffect(() => {
-  loadImageLikes()
-}, [post.id, user?.id])
+  void loadImageCommentCounts()
+  void loadImageLikes()
+}, [showImageViewer, post.id, user?.id])
 
 
 useEffect(() => {
@@ -851,6 +784,9 @@ useEffect(() => {
 
   
   useEffect(() => {
+    // Only subscribe to live comment events for the active feed card.
+    if (!isActive) return
+
     const channel = supabase
       .channel(`comments-${post.id}`)
       .on(
@@ -870,7 +806,7 @@ useEffect(() => {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [post.id])
+  }, [post.id, isActive])
 
 
 

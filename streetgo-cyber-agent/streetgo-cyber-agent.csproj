@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-streetgo_cyber_agent-6ed0df8e-4f08-4e65-8a21-bfb7791f2ef1</UserSecretsId>
+    <RootNamespace>streetgo_cyber_agent</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.15" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="11.0.0" />
+  </ItemGroup>
+</Project>
