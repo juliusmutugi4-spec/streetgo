@@ -1,3 +1,4 @@
+
 'use client'
 
 import {
@@ -15,9 +16,7 @@ interface PostActionsProps {
   reaxCount: number
   toggleLike: () => void
   handleSendReax: () => Promise<void>
-  setOpenRoom: (
-    open: boolean
-  ) => void | Promise<void>
+  setOpenRoom: (open: boolean) => void | Promise<void>
   post: {
     id: string
     content: string
@@ -26,52 +25,20 @@ interface PostActionsProps {
   onRequireAuth?: () => void
 }
 
-/*
- * =====================================================
- * COUNT FORMAT
- * =====================================================
- */
+function formatCount(value: number): string {
+  const count = Math.max(0, Number(value) || 0)
 
-function formatCount(
-  value: number
-): string {
-  const safeValue = Math.max(
-    0,
-    Number(value) || 0
-  )
-
-  if (safeValue < 1000) {
-    return safeValue.toLocaleString()
+  if (count < 1000) return count.toLocaleString()
+  if (count < 10000) {
+    return `${(count / 1000).toFixed(1).replace('.0', '')}k`
+  }
+  if (count < 1000000) return `${Math.round(count / 1000)}k`
+  if (count < 1000000000) {
+    return `${(count / 1000000).toFixed(1).replace('.0', '')}M`
   }
 
-  if (safeValue < 10000) {
-    return `${(safeValue / 1000)
-      .toFixed(1)
-      .replace('.0', '')}k`
-  }
-
-  if (safeValue < 1000000) {
-    return `${Math.round(
-      safeValue / 1000
-    )}k`
-  }
-
-  if (safeValue < 1000000000) {
-    return `${(safeValue / 1000000)
-      .toFixed(1)
-      .replace('.0', '')}M`
-  }
-
-  return `${(safeValue / 1000000000)
-    .toFixed(1)
-    .replace('.0', '')}B`
+  return `${(count / 1000000000).toFixed(1).replace('.0', '')}B`
 }
-
-/*
- * =====================================================
- * COMPONENT
- * =====================================================
- */
 
 export default function PostActions({
   liked,
@@ -84,171 +51,70 @@ export default function PostActions({
   post,
   onOpenDispatch,
 }: PostActionsProps) {
-  const safeLikes = Math.max(
-    0,
-    Number(likes) || 0
-  )
+  const safeLikes = Math.max(0, Number(likes) || 0)
+  const safeReax = Math.max(0, Number(reaxCount) || 0)
+  const commentsCount = Array.isArray(comments) ? comments.length : 0
 
-  const commentsCount =
-    Array.isArray(comments)
-      ? comments.length
-      : 0
-
-  const safeReax = Math.max(
-    0,
-    Number(reaxCount) || 0
-  )
-
-  /*
-   * =====================================================
-   * SOUND
-   * =====================================================
-   */
-
-  const playSound = (
-    type:
-      | 'click'
-      | 'success'
-      | 'pop'
-  ) => {
+  const playSound = (type: 'click' | 'success' | 'pop') => {
     try {
-      const AudioContext =
-        window.AudioContext ||
-        (
-          window as any
-        ).webkitAudioContext
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext
 
-      if (!AudioContext) {
-        return
-      }
+      if (!AudioContextClass) return
 
-      const ctx =
-        new AudioContext()
-
-      const oscillator =
-        ctx.createOscillator()
-
-      const gain =
-        ctx.createGain()
+      const ctx = new AudioContextClass()
+      const oscillator = ctx.createOscillator()
+      const gain = ctx.createGain()
 
       oscillator.connect(gain)
-      gain.connect(
-        ctx.destination
-      )
+      gain.connect(ctx.destination)
 
       if (type === 'click') {
         oscillator.type = 'sine'
-
-        oscillator.frequency.setValueAtTime(
-          400,
-          ctx.currentTime
-        )
-
+        oscillator.frequency.setValueAtTime(400, ctx.currentTime)
         oscillator.frequency.exponentialRampToValueAtTime(
           100,
           ctx.currentTime + 0.05
         )
-
-        gain.gain.setValueAtTime(
-          0.04,
-          ctx.currentTime
-        )
-
-        gain.gain.linearRampToValueAtTime(
-          0.001,
-          ctx.currentTime + 0.05
-        )
-
+        gain.gain.setValueAtTime(0.04, ctx.currentTime)
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.05)
         oscillator.start()
-        oscillator.stop(
-          ctx.currentTime + 0.05
-        )
+        oscillator.stop(ctx.currentTime + 0.05)
       }
 
       if (type === 'success') {
-        oscillator.type =
-          'triangle'
-
-        oscillator.frequency.setValueAtTime(
-          523.25,
-          ctx.currentTime
-        )
-
-        oscillator.frequency.setValueAtTime(
-          659.25,
-          ctx.currentTime + 0.06
-        )
-
-        gain.gain.setValueAtTime(
-          0.06,
-          ctx.currentTime
-        )
-
-        gain.gain.linearRampToValueAtTime(
-          0.001,
-          ctx.currentTime + 0.15
-        )
-
+        oscillator.type = 'triangle'
+        oscillator.frequency.setValueAtTime(523.25, ctx.currentTime)
+        oscillator.frequency.setValueAtTime(659.25, ctx.currentTime + 0.06)
+        gain.gain.setValueAtTime(0.06, ctx.currentTime)
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.15)
         oscillator.start()
-        oscillator.stop(
-          ctx.currentTime + 0.15
-        )
+        oscillator.stop(ctx.currentTime + 0.15)
       }
 
       if (type === 'pop') {
         oscillator.type = 'sine'
-
-        oscillator.frequency.setValueAtTime(
-          150,
-          ctx.currentTime
-        )
-
+        oscillator.frequency.setValueAtTime(150, ctx.currentTime)
         oscillator.frequency.exponentialRampToValueAtTime(
           600,
           ctx.currentTime + 0.08
         )
-
-        gain.gain.setValueAtTime(
-          0.05,
-          ctx.currentTime
-        )
-
-        gain.gain.linearRampToValueAtTime(
-          0.001,
-          ctx.currentTime + 0.08
-        )
-
+        gain.gain.setValueAtTime(0.05, ctx.currentTime)
+        gain.gain.linearRampToValueAtTime(0.001, ctx.currentTime + 0.08)
         oscillator.start()
-        oscillator.stop(
-          ctx.currentTime + 0.08
-        )
+        oscillator.stop(ctx.currentTime + 0.08)
       }
 
       window.setTimeout(() => {
-        try {
-          void ctx.close()
-        } catch {
-          // Ignore cleanup.
-        }
-      }, 200)
+        void ctx.close().catch(() => {})
+      }, 250)
     } catch {
-      // Sound should never affect the UI.
+      // Sound must never interrupt an action.
     }
   }
 
-  /*
-   * =====================================================
-   * ACTIONS
-   * =====================================================
-   */
-
   const handleLikeClick = () => {
-    playSound(
-      liked
-        ? 'click'
-        : 'pop'
-    )
-
+    playSound(liked ? 'click' : 'pop')
     toggleLike()
   }
 
@@ -262,233 +128,103 @@ export default function PostActions({
     onOpenDispatch(post)
   }
 
-  /*
-   * =====================================================
-   * MICRO BUTTON
-   * =====================================================
-   */
-
   const buttonBase = `
-    group
-    flex
-    h-7
-    min-w-0
-    flex-1
-    items-center
-    justify-center
-    gap-1
-    rounded-md
-    px-1
-    font-['Courier_New']
-    text-[9px]
-    font-bold
-    leading-none
-    tracking-tight
-    text-[var(--muted)]
-    transition-colors
-    duration-150
-    touch-manipulation
-    select-none
+    group flex min-w-0 flex-1 items-center justify-center
+    gap-1.5 rounded-lg px-1
+    min-h-10
+    font-sans text-[11px] sm:text-xs font-semibold
+    leading-none text-[var(--muted)]
+    transition-colors duration-150
+    touch-manipulation select-none
     active:scale-[0.97]
-    focus:outline-none
-    focus-visible:ring-1
-    focus-visible:ring-[var(--accent)]/40
+    focus-visible:outline-none
+    focus-visible:ring-2
+    focus-visible:ring-[var(--accent)]/50
     hover:bg-[var(--surface-hover)]
   `
 
   return (
-    <div
-      className="
-        w-full
-        bg-[var(--surface)]
-        px-1.5
-        py-0.5
-        select-none
-      "
-    >
-      <div
-        className="
-          flex
-          w-full
-          items-center
-          gap-0.5
-        "
-      >
+    <div className="w-full bg-[var(--surface)] px-2 py-1">
+      <div className="flex w-full items-center gap-1">
 
-        {/* =================================================
-            IGNITE
-            ================================================= */}
-
+        {/* IGNITE */}
         <button
           type="button"
           onClick={handleLikeClick}
-          aria-label={
-            liked
-              ? `Remove Ignite. ${safeLikes}`
-              : `Ignite post. ${safeLikes}`
-          }
+          aria-label={liked
+            ? `Remove Ignite. ${safeLikes} likes`
+            : `Ignite post. ${safeLikes} likes`}
           aria-pressed={liked}
           className={`
             ${buttonBase}
-
-            ${
-              liked
-                ? `
-                  text-rose-500
-                  hover:bg-rose-500/10
-                `
-                : `
-                  hover:text-rose-500
-                `
-            }
+            ${liked
+              ? 'text-rose-500 hover:bg-rose-500/10'
+              : 'hover:text-rose-500'}
           `}
         >
           <Flame
-            size={13}
+            size={17}
             strokeWidth={2}
             className={`
-              shrink-0
-              transition-transform
-              duration-150
-
-              ${
-                liked
-                  ? `
-                    fill-current
-                    scale-105
-                  `
-                  : `
-                    group-hover:scale-105
-                  `
-              }
+              shrink-0 transition-transform
+              ${liked
+                ? 'fill-current scale-105'
+                : 'group-hover:scale-110'}
             `}
           />
-
-          <span className="truncate">
-            Ignite
-          </span>
-
-          <span
-            className={`
-              shrink-0
-              tabular-nums
-
-              ${
-                liked
-                  ? 'text-rose-500'
-                  : 'text-[var(--muted)]'
-              }
-            `}
-          >
-            {formatCount(
-              safeLikes
-            )}
+          <span className="truncate">Ignite</span>
+          <span className="shrink-0 tabular-nums">
+            {formatCount(safeLikes)}
           </span>
         </button>
 
-        {/* =================================================
-            DISCUSS
-            ================================================= */}
-
+        {/* DISCUSS */}
         <button
           type="button"
-          onClick={
-            handleCommentClick
-          }
-          aria-label={`Open comments. ${commentsCount}`}
-          className={`
-            ${buttonBase}
-
-            hover:text-[var(--accent)]
-          `}
+          onClick={handleCommentClick}
+          aria-label={`Open comments. ${commentsCount} comments`}
+          className={`${buttonBase} hover:text-[var(--accent)]`}
         >
           <MessageSquare
-            size={13}
+            size={17}
             strokeWidth={2}
-            className="
-              shrink-0
-              transition-transform
-              duration-150
-              group-hover:scale-105
-            "
+            className="shrink-0 transition-transform group-hover:scale-110"
           />
-
-          <span className="truncate">
-            Discuss
-          </span>
-
-          <span
-            className="
-              shrink-0
-              tabular-nums
-              text-[var(--muted)]
-            "
-          >
-            {formatCount(
-              commentsCount
-            )}
+          <span className="truncate">Discuss</span>
+          <span className="shrink-0 tabular-nums">
+            {formatCount(commentsCount)}
           </span>
         </button>
 
-        {/* =================================================
-            REAX
-            ================================================= */}
-
-        <div
-          className="
-            flex
-            h-7
-            min-w-0
-            flex-1
-            items-center
-            justify-center
-            overflow-hidden
-            rounded-md
-            hover:bg-emerald-500/[0.04]
-          "
-        >
+        {/* REAX */}
+        <div className="
+          flex min-h-10 min-w-0 flex-1 items-center
+          justify-center overflow-hidden rounded-lg
+          hover:bg-emerald-500/5
+        ">
           <ReactionButton
-            handleSendReax={
-              handleSendReax
-            }
-            reaxCount={
-              safeReax
-            }
+            handleSendReax={handleSendReax}
+            reaxCount={safeReax}
           />
         </div>
 
-        {/* =================================================
-            DISPATCH
-            ================================================= */}
-
+        {/* DISPATCH */}
         <button
           type="button"
-          onClick={
-            handleDispatch
-          }
+          onClick={handleDispatch}
           aria-label="Dispatch post"
-          className={`
-            ${buttonBase}
-
-            hover:text-emerald-500
-            hover:bg-emerald-500/[0.04]
-          `}
+          className={`${buttonBase} hover:text-emerald-500`}
         >
           <Send
-            size={13}
+            size={17}
             strokeWidth={2}
             className="
-              shrink-0
-              transition-transform
-              duration-150
+              shrink-0 transition-transform
               group-hover:-translate-y-0.5
               group-hover:translate-x-0.5
             "
           />
-
-          <span className="truncate">
-            Dispatch
-          </span>
+          <span className="truncate">Dispatch</span>
         </button>
 
       </div>

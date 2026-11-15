@@ -1,6 +1,7 @@
+
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Check,
   Loader2,
@@ -21,408 +22,161 @@ export default function ReactionButton({
   const [sent, setSent] = useState(false)
   const [error, setError] = useState(false)
 
-  /*
-   * =====================================================
-   * SOUND
-   * =====================================================
-   */
+  const count = Math.max(0, Number(reaxCount) || 0)
 
-  const playClickSound = (
-    type: 'click' | 'success' | 'error'
-  ) => {
+  const playSound = (type: 'click' | 'success' | 'error') => {
     try {
-      const AudioContext =
-        window.AudioContext ||
-        (window as any).webkitAudioContext
+      const AudioContextClass =
+        window.AudioContext || (window as any).webkitAudioContext
 
-      if (!AudioContext) return
+      if (!AudioContextClass) return
 
-      const ctx = new AudioContext()
+      const ctx = new AudioContextClass()
       const oscillator = ctx.createOscillator()
       const gain = ctx.createGain()
 
       oscillator.connect(gain)
       gain.connect(ctx.destination)
 
-      if (type === 'click') {
-        oscillator.type = 'sine'
+      const settings = {
+        click: { start: 400, end: 800, duration: 0.08, volume: 0.04 },
+        success: { start: 600, end: 1200, duration: 0.2, volume: 0.06 },
+        error: { start: 180, end: 90, duration: 0.15, volume: 0.05 },
+      }[type]
 
-        oscillator.frequency.setValueAtTime(
-          400,
-          ctx.currentTime
-        )
+      oscillator.type = 'sine'
+      oscillator.frequency.setValueAtTime(settings.start, ctx.currentTime)
+      oscillator.frequency.exponentialRampToValueAtTime(
+        settings.end,
+        ctx.currentTime + settings.duration
+      )
 
-        oscillator.frequency.exponentialRampToValueAtTime(
-          800,
-          ctx.currentTime + 0.05
-        )
+      gain.gain.setValueAtTime(settings.volume, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + settings.duration
+      )
 
-        gain.gain.setValueAtTime(
-          0.04,
-          ctx.currentTime
-        )
+      oscillator.start()
+      oscillator.stop(ctx.currentTime + settings.duration)
 
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          ctx.currentTime + 0.08
-        )
-
-        oscillator.start()
-        oscillator.stop(
-          ctx.currentTime + 0.08
-        )
-      }
-
-      if (type === 'success') {
-        oscillator.type = 'sine'
-
-        oscillator.frequency.setValueAtTime(
-          600,
-          ctx.currentTime
-        )
-
-        oscillator.frequency.exponentialRampToValueAtTime(
-          1200,
-          ctx.currentTime + 0.1
-        )
-
-        gain.gain.setValueAtTime(
-          0.06,
-          ctx.currentTime
-        )
-
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          ctx.currentTime + 0.2
-        )
-
-        oscillator.start()
-        oscillator.stop(
-          ctx.currentTime + 0.2
-        )
-      }
-
-      if (type === 'error') {
-        oscillator.type = 'sine'
-
-        oscillator.frequency.setValueAtTime(
-          180,
-          ctx.currentTime
-        )
-
-        oscillator.frequency.linearRampToValueAtTime(
-          90,
-          ctx.currentTime + 0.12
-        )
-
-        gain.gain.setValueAtTime(
-          0.05,
-          ctx.currentTime
-        )
-
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          ctx.currentTime + 0.15
-        )
-
-        oscillator.start()
-        oscillator.stop(
-          ctx.currentTime + 0.15
-        )
-      }
-
-      setTimeout(() => {
-        try {
-          void ctx.close()
-        } catch {}
-      }, 250)
+      window.setTimeout(() => {
+        void ctx.close().catch(() => {})
+      }, 300)
     } catch {
-      // Sound must never break the button.
+      // Audio is optional.
     }
   }
-
-  /*
-   * =====================================================
-   * SENT STATE
-   * =====================================================
-   */
 
   useEffect(() => {
     if (!sent) return
 
-    const timer = window.setTimeout(() => {
-      setSent(false)
-    }, 1800)
-
-    return () => {
-      window.clearTimeout(timer)
-    }
+    const timer = window.setTimeout(() => setSent(false), 1800)
+    return () => window.clearTimeout(timer)
   }, [sent])
-
-  /*
-   * =====================================================
-   * ERROR STATE
-   * =====================================================
-   */
 
   useEffect(() => {
     if (!error) return
 
-    const timer = window.setTimeout(() => {
-      setError(false)
-    }, 2500)
-
-    return () => {
-      window.clearTimeout(timer)
-    }
+    const timer = window.setTimeout(() => setError(false), 2500)
+    return () => window.clearTimeout(timer)
   }, [error])
-
-  /*
-   * =====================================================
-   * SEND REAX
-   * =====================================================
-   */
 
   const clickReax = async () => {
     if (sending) return
 
     setSending(true)
     setError(false)
+    setSent(false)
 
-    playClickSound('click')
+    playSound('click')
 
     try {
       await handleSendReax()
 
       setSent(true)
-
-      playClickSound('success')
+      playSound('success')
     } catch (err: any) {
-      playClickSound('error')
+      const message = err?.message || ''
 
-      const message =
-        err?.message || ''
+      // Authentication modal has already been requested by Post.tsx.
+      if (message === 'AUTH_REQUIRED') return
 
-      if (
-        message
-          .toLowerCase()
-          .includes('insufficient reax')
-      ) {
+      playSound('error')
+
+      if (message.toLowerCase().includes('insufficient reax')) {
         setError(true)
       } else {
-        alert(
-          message || 'Unable to send Reax.'
-        )
+        alert(message || 'Unable to send REAX.')
       }
     } finally {
       setSending(false)
     }
   }
 
-  /*
-   * =====================================================
-   * DISPLAY COUNT
-   * =====================================================
-   */
-
-  const displayCount =
-    sent
-      ? reaxCount + 1
-      : reaxCount
-
-  /*
-   * =====================================================
-   * RENDER
-   * =====================================================
-   */
-
   return (
     <button
       type="button"
       onClick={clickReax}
       disabled={sending}
-      aria-label={`Send Reax. Current count: ${displayCount}`}
+      aria-label={`Send REAX. Current count: ${count}`}
       className={`
-        group
-        relative
-        flex
-        h-10
-        w-full
-        items-center
-        justify-center
-        gap-2
-        rounded-lg
-        px-2
-        font-['Courier_New']
-        text-[11px]
-        font-bold
-        tracking-wide
-        select-none
-        touch-manipulation
-        transition-all
-        duration-150
+        group relative flex h-10 w-full min-w-0
+        items-center justify-center gap-1.5
+        rounded-lg px-1
+        font-sans text-[11px] sm:text-xs font-semibold
+        leading-none
+        transition-colors duration-150
+        touch-manipulation select-none
         active:scale-[0.97]
-        focus:outline-none
-        focus-visible:ring-2
-
+        focus-visible:outline-none
+        focus-visible:ring-2 focus-visible:ring-emerald-400/50
+        disabled:cursor-wait disabled:opacity-80
         ${
           sending
-            ? `
-              text-purple-500
-              focus-visible:ring-purple-400/40
-            `
+            ? 'text-purple-500'
             : error
-              ? `
-                text-rose-500
-                focus-visible:ring-rose-400/40
-              `
-              : sent
-                ? `
-                  text-emerald-500
-                  focus-visible:ring-emerald-400/40
-                `
-                : `
-                  text-emerald-500
-                  hover:bg-emerald-500/10
-                  hover:text-emerald-400
-                  focus-visible:ring-emerald-400/40
-                `
+              ? 'text-rose-500'
+              : 'text-emerald-500 hover:bg-emerald-500/10'
         }
-
-        disabled:cursor-wait
-        disabled:opacity-90
       `}
     >
-
-      {/* =================================================
-          ICON
-          ================================================= */}
-
-      <span
-        className="
-          flex
-          h-5
-          w-5
-          shrink-0
-          items-center
-          justify-center
-        "
-      >
+      <span className="flex h-[18px] w-[18px] shrink-0 items-center justify-center">
         {sending ? (
-          <Loader2
-            size={17}
-            strokeWidth={2.2}
-            className="
-              animate-spin
-              text-purple-500
-            "
-          />
+          <Loader2 size={17} className="animate-spin" />
         ) : error ? (
-          <Wallet
-            size={17}
-            strokeWidth={2}
-            className="
-              text-rose-500
-            "
-          />
+          <Wallet size={17} />
         ) : sent ? (
-          <Check
-            size={17}
-            strokeWidth={2.5}
-            className="
-              text-emerald-500
-              animate-[scale_0.2s_ease-out]
-            "
-          />
+          <Check size={17} strokeWidth={2.5} />
         ) : (
           <Sparkles
             size={17}
             strokeWidth={2}
-            className="
-              text-emerald-500
-              transition-all
-              duration-150
-              group-hover:scale-110
-              group-hover:text-emerald-400
-            "
+            className="transition-transform group-hover:scale-110"
           />
         )}
       </span>
 
-      {/* =================================================
-          LABEL
-          ================================================= */}
-
-      <span className="whitespace-nowrap">
-        {sending
-          ? 'Sending'
-          : error
-            ? 'Empty'
-            : sent
-              ? 'Sent'
-              : 'Reax'}
+      <span className="truncate">
+        {sending ? 'Sending' : error ? 'Empty' : sent ? 'Sent' : 'REAX'}
       </span>
 
-      {/* =================================================
-          COUNT
-          ================================================= */}
-
-      <span
-        className={`
-          min-w-[18px]
-          text-left
-          tabular-nums
-
-          ${
-            sending
-              ? 'text-purple-500'
-              : error
-                ? 'text-rose-500'
-                : 'text-emerald-500'
-          }
-        `}
-      >
-        {displayCount.toLocaleString()}
+      {/* Use the parent count directly; never add another +1 here. */}
+      <span className="shrink-0 tabular-nums">
+        {count.toLocaleString()}
       </span>
 
-      {/* =================================================
-          STATUS LINE
-          ================================================= */}
+      {sending && (
+        <span className="absolute bottom-0 left-2 right-2 h-0.5 animate-pulse rounded-full bg-purple-500" />
+      )}
 
-      <span
-        className={`
-          pointer-events-none
-          absolute
-          bottom-0
-          left-2
-          right-2
-          h-[2px]
-          rounded-full
-          transition-all
-          duration-300
+      {sent && (
+        <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-emerald-500" />
+      )}
 
-          ${
-            sending
-              ? `
-                bg-purple-500
-                animate-pulse
-              `
-              : sent
-                ? `
-                  bg-emerald-500
-                `
-                : error
-                  ? `
-                    bg-rose-500
-                  `
-                  : `
-                    scale-x-0
-                    bg-transparent
-                  `
-          }
-        `}
-      />
-
+      {error && (
+        <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-rose-500" />
+      )}
     </button>
   )
 }

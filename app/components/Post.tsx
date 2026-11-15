@@ -21,7 +21,7 @@ import ImageViewer from "./ImageViewer"
 import PostCardHeader from './PostCardHeader'
 import PostCardContent from './PostCardContent'
 import PostCardMedia from './PostCardMedia'
-import PostCardMeta from './PostCardMeta'
+
 import PostCardViewer from './PostCardViewer'
 import {
   Heart,
@@ -101,6 +101,8 @@ function Post({
   const [likes, setLikes] = useState(0)
   const [displayLikes, setDisplayLikes] = useState(0)
   const [liked, setLiked] = useState(false)
+  const [likeStatusReady, setLikeStatusReady] = useState(false)
+  const likeRequestRef = useRef(false)
   const [comments, setComments] = useState<any[]>([])
 
   const username = post.username || 'Anonymous'
@@ -475,7 +477,7 @@ useEffect(() => {
 const toggleImageLike = async () => {
 if (!user) {
   onRequireAuth?.()
-  return
+  throw new Error('AUTH_REQUIRED')
 }
 
 
@@ -577,44 +579,64 @@ if (error) {
 }
 
   const loadPostData = async () => {
-  // LIVE SESSIONS DO NOT USE THE NORMAL POST TABLES
-  if (post.is_live === true) {
-    setLikes(0)
-    setLiked(false)
-    setComments([])
-    return
-  }
+    setLikeStatusReady(false)
 
-  // Likes count
-  // Likes count
-// Public like count — works for logged-out visitors too
-const { data: likeCount, error: likeCountError } =
-  await supabase.rpc('get_post_likes_count', {
-    target_post_id: post.id,
-  })
+    // LIVE SESSIONS DO NOT USE THE NORMAL POST TABLES
+    if (post.is_live === true) {
+      setLikes(0)
+      setLiked(false)
+      setComments([])
+      setLikeStatusReady(true)
+      return
+    }
 
-if (likeCountError) {
-  console.error('LOAD PUBLIC LIKE COUNT ERROR:', likeCountError)
-} else {
-  setLikes(Number(likeCount) || 0)
-}
+    // Public like count — works for logged-out visitors too.
+    const {
+      data: likeCount,
+      error: likeCountError,
+    } = await supabase.rpc('get_post_likes_count', {
+      target_post_id: post.id,
+    })
 
+    if (likeCountError) {
+      console.error('LOAD PUBLIC LIKE COUNT ERROR:', likeCountError)
+    } else {
+      setLikes(Number(likeCount) || 0)
+    }
+
+    // Load the current visitor's like status.
     if (user) {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('likes')
         .select('id')
         .eq('post_id', post.id)
         .eq('user_id', user.id)
         .maybeSingle()
-      setLiked(!!data)
+
+      if (error) {
+        console.error('LOAD USER LIKE STATUS ERROR:', error)
+        setLikeStatusReady(false)
+      } else {
+        setLiked(!!data)
+        setLikeStatusReady(true)
+      }
+    } else {
+      setLiked(false)
+      setLikeStatusReady(true)
     }
-  // Load comments
-    const { data: commentsData } = await supabase
+
+    // Load comments.
+    const { data: commentsData, error: commentsError } = await supabase
       .from('comments')
       .select('*')
       .eq('post_id', post.id)
       .order('created_at', { ascending: false })
-    setComments(commentsData || [])
+
+    if (commentsError) {
+      console.error('LOAD POST COMMENTS ERROR:', commentsError)
+    } else {
+      setComments(commentsData || [])
+    }
   }
 
 const addImageComment = async () => {
@@ -781,30 +803,31 @@ const loadPortalVideos = async () => {
 }
 
 const handleSendReax = async () => {
-if (!user) {
-  onRequireAuth?.()
-  return
-}
+  if (!user) {
+    onRequireAuth?.()
+    throw new Error('AUTH_REQUIRED')
+  }
 
-await sendPostReax({
-  senderId: user.id,
-  receiverId: post.user_id,
-  postId: post.id,
+  await sendPostReax({
+    senderId: user.id,
+    receiverId: post.user_id,
+    postId: post.id,
 
-  onSuccess: () => {
-    setReaxCount((prev) => prev + 1)
-  },
+    onSuccess: () => {
+      setReaxCount((prev) => prev + 1)
+    },
 
-  onRollback: () => {
-    setReaxCount((prev) =>
-      Math.max(0, prev - 1)
-    )
-  },
-})
+    // No optimistic increment was made, so nothing to roll back.
+    onRollback: () => {},
+  })
 }
 useEffect(() => {
   loadPostData()
 }, [post.id, user?.id])
+
+useEffect(() => {
+  loadReaxCount()
+}, [post.id])
 
 useEffect(() => {
   loadImageCommentCounts()
@@ -948,55 +971,68 @@ useEffect(() => {
 }, [])
 
 const toggleLike = async () => {
+  if (post.is_live === true) return
 
-if (post.is_live === true) {
-  return
-}
+  if (!user) {
+    onRequireAuth?.()
+    return
+  }
 
-if (!user) {
-  onRequireAuth?.()
-  return
-}
-  // USER ALREADY LIKED -> REMOVE LIKE
-  if (liked) {
-    const { error } = await supabase
-      .from("likes")
-      .delete()
-      .eq("post_id", post.id)
-      .eq("user_id", user.id)
+  // Wait for the current like status and prevent rapid duplicate requests.
+  if (!likeStatusReady || likeRequestRef.current) return
 
-    
+  likeRequestRef.current = true
 
-    if (error) {
-      alert(error.message)
+  try {
+    if (liked) {
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .eq('post_id', post.id)
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      setLiked(false)
+      setLikes((previous) => Math.max(0, previous - 1))
       return
     }
 
-    setLiked(false)
-    
-    setLikes((p) => Math.max(0, p - 1))
-    return
+    const { error } = await supabase
+      .from('likes')
+      .insert({
+        post_id: post.id,
+        user_id: user.id,
+      })
+
+    if (error) {
+      // Recover if the database reports an already-existing like.
+      if (error.code === '23505' || error.code === '409' || error.status === 409) {
+        setLiked(true)
+
+        const { data, error: countError } = await supabase.rpc(
+          'get_post_likes_count',
+          { target_post_id: post.id }
+        )
+
+        if (!countError) {
+          setLikes(Number(data) || 0)
+        }
+
+        return
+      }
+
+      throw error
+    }
+
+    setLiked(true)
+    setLikes((previous) => previous + 1)
+  } catch (error: any) {
+    console.error('IGNITE FAILED:', error)
+    alert(error?.message || 'Unable to update Ignite.')
+  } finally {
+    likeRequestRef.current = false
   }
-
-  // USER HAS NOT LIKED -> ADD LIKE
-  const { data, error } = await supabase
-    .from("likes")
-    .insert({
-      post_id: post.id,
-      user_id: user.id,
-    })
-
-  
-  
-
-  if (error) {
-    alert(error.message)
-    return
-  }
-
-  setLiked(true)
-  
-  setLikes((p) => p + 1)
 }
 
   // Add comment
@@ -1213,12 +1249,7 @@ return (
 */}
 
 
-<PostCardMeta
-  likes={likes}
-  reaxCount={reaxCount}
-  commentsCount={comments.length}
-/>
- 
+
 
 <PostActions
   liked={liked}
