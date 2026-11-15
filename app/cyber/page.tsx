@@ -1,4 +1,7 @@
-﻿import Link from "next/link"
+﻿"use client"
+
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import {
   Monitor,
   ShieldCheck,
@@ -9,7 +12,39 @@ import {
   Clock3,
 } from "lucide-react"
 
+interface Merchant {
+  business_name: string
+  status: string
+}
+
+interface DashboardData {
+  registered: boolean
+  merchant: Merchant | null
+}
+
 export default function CyberLandingPage() {
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [checked, setChecked] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/cyber/dashboard", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return null
+        return await response.json()
+      })
+      .then((result) => {
+        if (result?.registered && result?.merchant) {
+          setData(result)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setChecked(true))
+  }, [])
+
+  const merchant = data?.merchant
+  const status = merchant?.status?.toLowerCase()
+  const active = status === "active"
+
   return (
     <main className="min-h-screen bg-[#080d18] text-white">
       <header className="border-b border-white/10">
@@ -24,12 +59,21 @@ export default function CyberLandingPage() {
             </div>
           </Link>
 
-          <Link
-            href="/login?next=/cyber/dashboard"
-            className="rounded-xl border border-white/15 px-5 py-2.5 text-sm font-semibold hover:bg-white/10"
-          >
-            Owner Login
-          </Link>
+          {active ? (
+            <Link
+              href="/cyber/dashboard"
+              className="rounded-xl bg-emerald-500 px-5 py-3 text-sm font-bold text-black hover:bg-emerald-400"
+            >
+              Business Dashboard →
+            </Link>
+          ) : (
+            <Link
+              href="/login?next=/cyber/dashboard"
+              className="rounded-xl border border-white/15 px-5 py-2.5 text-sm font-semibold hover:bg-white/10"
+            >
+              Owner Login
+            </Link>
+          )}
         </div>
       </header>
 
@@ -52,25 +96,72 @@ export default function CyberLandingPage() {
             business operations from one simple dashboard.
           </p>
 
-          <div className="mt-9 flex flex-col gap-4 sm:flex-row">
-            <Link
-              href="/cyber/register"
-              className="inline-flex items-center justify-center gap-3 rounded-xl bg-emerald-500 px-7 py-4 font-bold text-black transition hover:bg-emerald-400"
-            >
-              Register Your Cyber
-              <ArrowRight size={19} />
-            </Link>
+          {merchant && (
+            <div className="mt-8 rounded-2xl border border-white/10 bg-[#101a2b] p-5">
+              <p className="text-sm text-slate-400">Your registered business</p>
+              <h3 className="mt-1 text-xl font-bold">{merchant.business_name}</h3>
 
-            <Link
-              href="/login?next=/cyber/dashboard"
-              className="inline-flex items-center justify-center rounded-xl border border-white/15 px-7 py-4 font-semibold transition hover:bg-white/10"
-            >
-              Existing Owner? Sign In
-            </Link>
-          </div>
+              {active ? (
+                <>
+                  <p className="mt-3 text-sm text-emerald-400">
+                    Congratulations! Your cyber business has been approved.
+                    You can now manage your business on StreetGO.
+                  </p>
+                  <Link
+                    href="/cyber/dashboard"
+                    className="mt-5 inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 font-bold text-black hover:bg-emerald-400"
+                  >
+                    Open Business Dashboard
+                    <ArrowRight size={18} />
+                  </Link>
+                </>
+              ) : (
+                <div className="mt-4 rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+                  <p className="font-semibold text-amber-400">
+                    Application {status === "rejected" ? "not approved" : "under review"}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-300">
+                    {status === "rejected"
+                      ? "Your application was not approved. Please contact StreetGO support for assistance."
+                      : "StreetGO is reviewing your registration. Your business management tools will become available after approval."}
+                  </p>
+                  <Link
+                    href="/cyber/dashboard"
+                    className="mt-4 inline-block text-sm font-semibold text-emerald-400 hover:underline"
+                  >
+                    View application status →
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!merchant && checked && (
+            <div className="mt-9 flex flex-col gap-4 sm:flex-row">
+              <Link
+                href="/cyber/register"
+                className="inline-flex items-center justify-center gap-3 rounded-xl bg-emerald-500 px-7 py-4 font-bold text-black transition hover:bg-emerald-400"
+              >
+                Register Your Cyber
+                <ArrowRight size={19} />
+              </Link>
+              <Link
+                href="/login?next=/cyber/dashboard"
+                className="inline-flex items-center justify-center rounded-xl border border-white/15 px-7 py-4 font-semibold transition hover:bg-white/10"
+              >
+                Existing Owner? Sign In
+              </Link>
+            </div>
+          )}
+
+          {!checked && (
+            <p className="mt-8 text-sm text-slate-400">
+              Checking your business account...
+            </p>
+          )}
 
           <p className="mt-5 text-sm text-slate-500">
-            Start from your cyber café computer. No technical expertise required.
+            Manage your cyber café from one simple control centre.
           </p>
         </div>
 
