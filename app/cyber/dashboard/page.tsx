@@ -1,4 +1,5 @@
-﻿"use client"
+﻿
+"use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -9,6 +10,7 @@ interface Merchant {
   business_name: string
   business_phone: string | null
   business_email: string | null
+  payout_phone: string | null
   status: string
   created_at: string
 }
@@ -29,6 +31,10 @@ export default function CyberDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [payoutPhone, setPayoutPhone] = useState("")
+  const [savingPayout, setSavingPayout] = useState(false)
+  const [payoutMessage, setPayoutMessage] = useState("")
+  const [payoutError, setPayoutError] = useState("")
 
   useEffect(() => {
     async function loadDashboard() {
@@ -40,7 +46,7 @@ export default function CyberDashboardPage() {
         const result = await response.json()
 
         if (response.status === 401) {
-          router.replace('/login?next=/cyber/dashboard')
+          router.replace("/login?next=/cyber/dashboard")
           return
         }
 
@@ -49,6 +55,10 @@ export default function CyberDashboardPage() {
         }
 
         setData(result)
+
+        if (result.merchant?.payout_phone) {
+          setPayoutPhone(result.merchant.payout_phone)
+        }
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "Something went wrong."
@@ -60,6 +70,51 @@ export default function CyberDashboardPage() {
 
     loadDashboard()
   }, [router])
+
+  async function savePayoutPhone(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSavingPayout(true)
+    setPayoutMessage("")
+    setPayoutError("")
+
+    try {
+      const response = await fetch("/api/cyber/dashboard", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ payout_phone: payoutPhone }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || "Unable to save payout number.")
+      }
+
+      setPayoutPhone(result.merchant.payout_phone)
+
+      setData((current) =>
+        current?.merchant
+          ? {
+              ...current,
+              merchant: {
+                ...current.merchant,
+                payout_phone: result.merchant.payout_phone,
+              },
+            }
+          : current
+      )
+
+      setPayoutMessage("Your M-Pesa payout number has been saved.")
+    } catch (err) {
+      setPayoutError(
+        err instanceof Error ? err.message : "Something went wrong."
+      )
+    } finally {
+      setSavingPayout(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -134,6 +189,67 @@ export default function CyberDashboardPage() {
           </div>
         </section>
 
+        <section className="mt-6 rounded-2xl border border-white/10 bg-[#101a2b] p-6">
+          <div>
+            <h2 className="text-xl font-bold">Payout settings</h2>
+            <p className="mt-2 text-sm text-slate-400">
+              Set the M-Pesa number where your cyber business earnings
+              will be sent.
+            </p>
+          </div>
+
+          <form onSubmit={savePayoutPhone} className="mt-6 max-w-xl">
+            <label
+              htmlFor="payout-phone"
+              className="mb-2 block text-sm font-semibold text-slate-300"
+            >
+              Owner's M-Pesa phone number
+            </label>
+
+            <input
+              id="payout-phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              value={payoutPhone}
+              onChange={(event) => setPayoutPhone(event.target.value)}
+              placeholder="0712345678"
+              required
+              className="w-full rounded-xl border border-white/10 bg-[#080d18] px-4 py-3 text-white outline-none focus:border-emerald-500"
+            />
+
+            <p className="mt-2 text-xs text-slate-500">
+              Enter a Kenyan M-Pesa number, for example 0712345678
+              or 254712345678.
+            </p>
+
+            {payoutMessage && (
+              <p className="mt-4 text-sm text-emerald-400">
+                {payoutMessage}
+              </p>
+            )}
+
+            {payoutError && (
+              <p className="mt-4 text-sm text-red-400">
+                {payoutError}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={savingPayout || !payoutPhone.trim()}
+              className="mt-5 rounded-xl bg-emerald-500 px-6 py-3 font-bold text-black transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {savingPayout ? "Saving..." : "Save payout number"}
+            </button>
+          </form>
+
+          <p className="mt-5 text-xs text-amber-300">
+            Payouts are not automatic yet. This setting only saves
+            your preferred destination.
+          </p>
+        </section>
+
         {!active && (
           <div className="mt-6 rounded-xl border border-amber-500/20 bg-amber-500/10 p-5">
             <h3 className="font-bold text-amber-400">
@@ -162,8 +278,9 @@ export default function CyberDashboardPage() {
                   {section.description}
                 </p>
                 <p className="mt-5 text-xs text-emerald-400">
-                  {enabled ? "Open management →" :
-                    section.href === null
+                  {enabled
+                    ? "Open management →"
+                    : section.href === null
                       ? "Coming soon"
                       : "Available after approval"}
                 </p>
@@ -192,6 +309,3 @@ export default function CyberDashboardPage() {
     </main>
   )
 }
-
-
-

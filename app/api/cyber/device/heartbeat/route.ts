@@ -38,6 +38,12 @@ export async function POST(req: Request) {
       .maybeSingle()
 
     if (deviceError || !device || device.revoked_at) {
+      console.error("CYBER DEVICE AUTH DEBUG:", {
+        deviceError: deviceError?.message ?? null,
+        deviceFound: !!device,
+        revoked: device?.revoked_at ?? null,
+      })
+
       return NextResponse.json(
         { error: "Device authentication failed." },
         { status: 401 }
@@ -165,3 +171,4 @@ export async function POST(req: Request) {
     )
   }
 }
+
