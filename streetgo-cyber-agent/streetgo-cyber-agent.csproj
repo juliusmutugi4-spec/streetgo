@@ -1,7 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk.Worker">
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <UseWindowsForms>true</UseWindowsForms>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-streetgo_cyber_agent-6ed0df8e-4f08-4e65-8a21-bfb7791f2ef1</UserSecretsId>
@@ -12,4 +19,5 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.15" />
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="11.0.0" />
   </ItemGroup>
+
 </Project>
