@@ -6,13 +6,13 @@ export default function CyberLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-[#080d18] text-white">
+    <div className="flex h-screen overflow-hidden bg-[#080d18] text-white">
 
-      {/* LEFT SIDEBAR */}
+      {/* FIXED SIDEBAR */}
       <CyberSidebar />
 
-      {/* MAIN CONTENT */}
-      <main className="min-w-0 flex-1 overflow-x-hidden">
+      {/* INDEPENDENT SCROLLING CONTENT */}
+      <main className="min-w-0 flex-1 h-screen overflow-y-auto overflow-x-hidden">
         {children}
       </main>
 
