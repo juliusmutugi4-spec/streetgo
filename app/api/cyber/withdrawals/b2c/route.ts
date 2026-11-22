@@ -117,7 +117,7 @@ export async function POST(req: Request) {
         .maybeSingle()
 
     console.error("CYBER WITHDRAWAL RESERVE DEBUG:", {
-      reserveError,
+      reserveError: reserveError ? { message: reserveError.message, code: reserveError.code, details: reserveError.details, hint: reserveError.hint } : null,
       withdrawalId: withdrawal.id,
       merchantId: merchant.id,
       currentStatus: withdrawal.status,
@@ -233,4 +233,5 @@ export async function POST(req: Request) {
     )
   }
 }
+
 
