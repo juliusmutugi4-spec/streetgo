@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
 const supabase = createClient(
@@ -182,6 +182,100 @@ export async function POST(req: Request) {
     }
 
     // ==================================================
+    // ==================================================
+    // STREETGO CYBER MERCHANT PAYMENT
+    // ==================================================
+
+    if (accountNumber.trim().toUpperCase().startsWith("CYB-")) {
+      const cyberPaymentCode = accountNumber.trim().toUpperCase()
+
+      console.log("STREETGO CYBER MERCHANT PAYMENT:", {
+        paymentCode: cyberPaymentCode,
+        amount,
+        receipt,
+        msisdn,
+      })
+
+      if (!receipt || amount <= 0) {
+        console.log("Invalid Cyber payment details.")
+
+        return NextResponse.json({
+          ResultCode: 0,
+          ResultDesc: "Success",
+        })
+      }
+
+      const { data: cyberMerchant, error: cyberMerchantError } =
+        await supabase
+          .from("cyber_merchants")
+          .select("id, payment_code, status")
+          .eq("payment_code", cyberPaymentCode)
+          .maybeSingle()
+
+      if (cyberMerchantError || !cyberMerchant) {
+        console.error("Cyber merchant lookup failed:", cyberMerchantError)
+
+        return NextResponse.json({
+          ResultCode: 0,
+          ResultDesc: "Success",
+        })
+      }
+
+      if (cyberMerchant.status !== "active") {
+        console.log("Cyber payment received for inactive merchant:", {
+          paymentCode: cyberPaymentCode,
+          status: cyberMerchant.status,
+        })
+
+        return NextResponse.json({
+          ResultCode: 0,
+          ResultDesc: "Success",
+        })
+      }
+
+      const payerName = [firstName, middleName, lastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim()
+
+      const transactionTime = String(body.TransTime || "")
+      let transactionDate = new Date().toISOString()
+
+      if (/^\d{14}$/.test(transactionTime)) {
+        const year = transactionTime.slice(0, 4)
+        const month = transactionTime.slice(4, 6)
+        const day = transactionTime.slice(6, 8)
+        const hour = transactionTime.slice(8, 10)
+        const minute = transactionTime.slice(10, 12)
+        const second = transactionTime.slice(12, 14)
+
+        transactionDate =
+          `${year}-${month}-${day}T${hour}:${minute}:${second}+03:00`
+      }
+
+      const { data: cyberCreditResult, error: cyberCreditError } =
+        await supabase.rpc("credit_cyber_payment", {
+          p_merchant_id: cyberMerchant.id,
+          p_receipt_number: receipt,
+          p_payer_phone: msisdn,
+          p_payer_name: payerName || null,
+          p_amount: amount,
+          p_transaction_date: transactionDate,
+          p_account_reference: cyberPaymentCode,
+          p_raw_callback: body,
+        })
+
+      if (cyberCreditError) {
+        console.error("CYBER PAYMENT CREDIT FAILED:", cyberCreditError)
+      } else {
+        console.log("CYBER PAYMENT CREDIT RESULT:", cyberCreditResult)
+      }
+
+      return NextResponse.json({
+        ResultCode: 0,
+        ResultDesc: "Success",
+      })
+    }
     // 2. VALIDATE MERRY-GO-ROUND PAYMENT
     // ==================================================
 
