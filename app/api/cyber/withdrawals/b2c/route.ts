@@ -172,8 +172,8 @@ export async function POST(req: Request) {
             PartyA: process.env.MPESA_B2C_SHORTCODE,
             PartyB: phone,
             Remarks: "StreetGO Cyber Withdrawal",
-            QueueTimeOutURL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/cyber/withdrawals/b2c/timeout`,
-            ResultURL: `${process.env.NEXT_PUBLIC_SITE_URL}/api/cyber/withdrawals/b2c/result`,
+QueueTimeOutURL: "https://streetgo.app/api/cyber/withdrawals/b2c/timeout",
+ResultURL: "https://streetgo.app/api/cyber/withdrawals/b2c/result",
             Occasion: "Cyber Merchant Withdrawal",
           }),
         }
