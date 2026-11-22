@@ -1,6 +1,6 @@
-﻿
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { createServerSupabase } from "../../../lib/serverSupabase"
+import { createAdminSupabase } from "../../../lib/adminSupabase"
 
 function normalizeKenyanPhone(value: unknown): string | null {
   if (typeof value !== "string") return null
@@ -54,6 +54,12 @@ export async function GET() {
       return NextResponse.json({
         registered: false,
         merchant: null,
+        financials: {
+          totalEarnings: 0,
+          availableBalance: 0,
+          pendingPayouts: 0,
+          totalWithdrawn: 0,
+        },
         permissions: {
           canManageBranches: false,
           canManageComputers: false,
@@ -63,11 +69,74 @@ export async function GET() {
       })
     }
 
+    // Admin client is used only after the authenticated owner is verified.
+    const admin = createAdminSupabase()
+
+    const [ledgerResult, withdrawalsResult] = await Promise.all([
+      admin
+        .from("cyber_merchant_ledger")
+        .select("transaction_type, amount_kes")
+        .eq("merchant_id", merchant.id),
+
+      admin
+        .from("cyber_withdrawals")
+        .select("amount_kes, status")
+        .eq("merchant_id", merchant.id),
+    ])
+
+    if (ledgerResult.error || withdrawalsResult.error) {
+      console.error("CYBER FINANCIAL DATA ERROR:", {
+        ledgerError: ledgerResult.error,
+        withdrawalsError: withdrawalsResult.error,
+      })
+
+      return NextResponse.json(
+        { error: "Unable to load your financial information." },
+        { status: 500 }
+      )
+    }
+
+    const ledger = ledgerResult.data ?? []
+    const withdrawals = withdrawalsResult.data ?? []
+
+    const totalEarnings = ledger
+      .filter((entry) => entry.transaction_type === "earning")
+      .reduce((total, entry) => total + Number(entry.amount_kes || 0), 0)
+
+    const totalWithdrawn = withdrawals
+      .filter((withdrawal) => withdrawal.status === "completed")
+      .reduce(
+        (total, withdrawal) => total + Number(withdrawal.amount_kes || 0),
+        0
+      )
+
+    const pendingPayouts = withdrawals
+      .filter(
+        (withdrawal) =>
+          withdrawal.status === "pending" ||
+          withdrawal.status === "processing"
+      )
+      .reduce(
+        (total, withdrawal) => total + Number(withdrawal.amount_kes || 0),
+        0
+      )
+
+    const availableBalance = Math.max(
+      0,
+      totalEarnings - totalWithdrawn - pendingPayouts
+    )
+
     const isActive = merchant.status === "active"
 
     return NextResponse.json({
       registered: true,
       merchant,
+      financials: {
+        totalEarnings,
+        availableBalance,
+        pendingPayouts,
+        totalWithdrawn,
+      },
       permissions: {
         canManageBranches: isActive,
         canManageComputers: isActive,
@@ -77,6 +146,7 @@ export async function GET() {
     })
   } catch (error) {
     console.error("CYBER DASHBOARD ERROR:", error)
+
     return NextResponse.json(
       { error: "An unexpected error occurred while loading the dashboard." },
       { status: 500 }
@@ -119,6 +189,7 @@ export async function PUT(request: Request) {
 
     if (merchantError) {
       console.error("CYBER PAYOUT PHONE UPDATE ERROR:", merchantError)
+
       return NextResponse.json(
         { error: "Unable to save your payout phone number." },
         { status: 500 }
@@ -139,6 +210,7 @@ export async function PUT(request: Request) {
     })
   } catch (error) {
     console.error("CYBER PAYOUT PHONE ERROR:", error)
+
     return NextResponse.json(
       { error: "An unexpected error occurred while saving your payout number." },
       { status: 500 }
