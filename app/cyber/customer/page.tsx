@@ -123,7 +123,7 @@ export default function CyberCustomerPage() {
   }, [paymentId, token, paymentStatus])
 
   const selected = packages.find((item) => item.id === selectedPackage)
-  const validPhone = /^(?:254|0)7\d{8}$/.test(phone.replace(/\s/g, ''))
+  const validPhone = /^(?:254|0)(?:7|1)\d{8}$/.test(phone.replace(/\s/g, ''))
 
   async function payWithMpesa() {
     if (!token || !selectedPackage || !validPhone) return
@@ -313,3 +313,4 @@ export default function CyberCustomerPage() {
     </main>
   )
 }
+
