@@ -82,36 +82,64 @@ export default function CyberDashboardPage() {
   }, [router])
 
   async function requestWithdrawal(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!data?.merchant?.id) {
-      setWithdrawError("Merchant account not found.")
-      return
-    }
-    setWithdrawing(true)
-    setWithdrawMessage("")
-    setWithdrawError("")
+  event.preventDefault()
 
-    try {
-      const response = await fetch("/api/cyber/withdrawals", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ merchant_id: data.merchant.id, amount_kes: Number(withdrawAmount) }),
-      })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || "Withdrawal request failed.")
-      }
-
-      setWithdrawMessage("Withdrawal request submitted successfully.")
-      setWithdrawAmount("")
-    } catch (error) {
-      setWithdrawError(error instanceof Error ? error.message : "Withdrawal failed.")
-    } finally {
-      setWithdrawing(false)
-    }
+  if (!data?.merchant?.id) {
+    setWithdrawError("Merchant account not found.")
+    return
   }
+
+  setWithdrawing(true)
+  setWithdrawMessage("")
+  setWithdrawError("")
+
+  try {
+    const response = await fetch("/api/cyber/withdrawals", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        merchant_id: data.merchant.id,
+        amount_kes: Number(withdrawAmount),
+      }),
+    })
+
+    const result = await response.json()
+
+    if (!response.ok || !result.withdrawal_id) {
+      throw new Error(result.error || "Withdrawal request failed.")
+    }
+
+    const payoutResponse = await fetch("/api/cyber/withdrawals/b2c", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        withdrawalId: result.withdrawal_id,
+      }),
+    })
+
+    const payoutResult = await payoutResponse.json()
+
+    if (!payoutResponse.ok) {
+      throw new Error(
+        payoutResult.error?.ResponseDescription ||
+        payoutResult.error?.errorMessage ||
+        payoutResult.error ||
+        "Withdrawal created, but M-Pesa payout could not be initiated."
+      )
+    }
+
+    setWithdrawMessage(
+      "Withdrawal submitted to M-Pesa successfully. Payment is processing."
+    )
+    setWithdrawAmount("")
+  } catch (error) {
+    setWithdrawError(
+      error instanceof Error ? error.message : "Withdrawal failed."
+    )
+  } finally {
+    setWithdrawing(false)
+  }
+}
   async function savePayoutPhone(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSavingPayout(true)
@@ -483,6 +511,7 @@ const financialCards = [
     </main>
   )
 }
+
 
 
 
