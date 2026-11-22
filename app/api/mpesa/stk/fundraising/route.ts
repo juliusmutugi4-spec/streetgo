@@ -58,7 +58,7 @@ export async function POST(req: Request) {
 
     const formattedPhone = formatPhone(phone)
 
-    if (!/^2547\d{8}$/.test(formattedPhone)) {
+    if (!/^254[17]\d{8}$/.test(formattedPhone)) {
       return NextResponse.json(
         {
           success: false,
