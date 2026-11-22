@@ -12,7 +12,7 @@ function normalizePhone(value: unknown) {
   const phone = String(value ?? "").replace(/\D/g, "")
 
   if (phone.startsWith("0")) return `254${phone.slice(1)}`
-  if (phone.startsWith("7")) return `254${phone}`
+  if (phone.startsWith("7") || phone.startsWith("1")) return `254${phone}`
 
   return phone
 }
@@ -71,13 +71,13 @@ export async function POST(req: Request) {
       !Number.isFinite(amount) ||
       amount <= 0 ||
       !receipt ||
-      !/^2547\d{8}$/.test(phone)
+      !/^254[17]\d{8}$/.test(phone)
     ) {
       console.error("CYBER CALLBACK: Invalid payment metadata", {
         checkoutRequestId,
         amount,
         receiptPresent: Boolean(receipt),
-        phoneValid: /^2547\d{8}$/.test(phone),
+        phoneValid: /^254[17]\d{8}$/.test(phone),
       })
 
       return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" })
@@ -118,3 +118,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ ResultCode: 0, ResultDesc: "Accepted" })
   }
 }
+

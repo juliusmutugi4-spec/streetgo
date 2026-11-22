@@ -38,7 +38,7 @@ function formatPhone(phone: string) {
   const clean = phone.replace(/\D/g, "")
 
   if (clean.startsWith("0")) return `254${clean.slice(1)}`
-  if (clean.startsWith("7")) return `254${clean}`
+  if (clean.startsWith("7") || clean.startsWith("1")) return `254${clean}`
   return clean
 }
 
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       )
     }
 
-    if (!/^2547\d{8}$/.test(phone)) {
+    if (!/^254[17]\d{8}$/.test(phone)) {
       return NextResponse.json(
         { error: "Enter a valid Kenyan M-Pesa phone number." },
         { status: 400 }
@@ -299,4 +299,5 @@ export async function POST(req: Request) {
     )
   }
 }
+
 
