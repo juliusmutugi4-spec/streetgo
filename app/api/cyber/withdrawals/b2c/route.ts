@@ -116,6 +116,13 @@ export async function POST(req: Request) {
         .select()
         .maybeSingle()
 
+    console.error("CYBER WITHDRAWAL RESERVE DEBUG:", {
+      reserveError,
+      withdrawalId: withdrawal.id,
+      merchantId: merchant.id,
+      currentStatus: withdrawal.status,
+      reservedWithdrawal,
+    })
     if (reserveError || !reservedWithdrawal) {
       return NextResponse.json(
         { error: "Withdrawal is already processing or unavailable" },
@@ -226,3 +233,4 @@ export async function POST(req: Request) {
     )
   }
 }
+
