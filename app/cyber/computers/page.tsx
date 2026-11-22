@@ -255,6 +255,7 @@ export default function CyberComputersPage() {
   >({})
 
   const [pairingLoading, setPairingLoading] = useState<string | null>(null)
+  const [customerPageLoading, setCustomerPageLoading] = useState<string | null>(null)
   const [copiedComputer, setCopiedComputer] = useState<string | null>(null)
 
   const canRegister = merchantStatus.toLowerCase() === "active"
@@ -400,6 +401,46 @@ export default function CyberComputersPage() {
     }
   }
 
+  async function handleOpenCustomerPage(computerId: string) {
+    try {
+      setCustomerPageLoading(computerId)
+      setError("")
+      setSuccess("")
+
+      const newTab = window.open("about:blank", "_blank")
+
+      const response = await fetch("/api/cyber/computers/customer-link", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          computer_id: computerId,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        newTab?.close()
+        throw new Error(result.error || "Unable to open customer page.")
+      }
+
+      if (newTab) {
+        newTab.location.href = result.customer_url
+      } else {
+        window.location.href = result.customer_url
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to open customer page."
+      )
+    } finally {
+      setCustomerPageLoading(null)
+    }
+  }
   async function handleGeneratePairing(computerId: string) {
     try {
       setPairingLoading(computerId)
@@ -911,6 +952,19 @@ export default function CyberComputersPage() {
                       </div>
                     </div>
 
+                    {/* Customer Page */}
+                    <div className="border-t border-zinc-800 p-5">
+                      <button
+                        type="button"
+                        onClick={() => void handleOpenCustomerPage(computer.id)}
+                        disabled={customerPageLoading !== null}
+                        className="w-full rounded-xl border border-sky-500/20 bg-sky-500/10 px-4 py-3 text-sm font-semibold text-sky-300 transition hover:bg-sky-500/15 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {customerPageLoading === computer.id
+                          ? "Opening customer page…"
+                          : "Open Customer Page"}
+                      </button>
+                    </div>
                     {/* Pairing */}
                     <div className="border-t border-zinc-800 p-5">
                       <div className="mb-4">
@@ -1005,3 +1059,5 @@ export default function CyberComputersPage() {
     </main>
   )
 }
+
+
