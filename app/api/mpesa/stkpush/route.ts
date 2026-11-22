@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+﻿import { NextResponse } from 'next/server'
 import axios from 'axios'
 
 async function getAccessToken() {
@@ -89,14 +89,14 @@ export async function POST(req: Request) {
 
     if (cleanPhone.startsWith('0')) {
       formattedPhone = `254${cleanPhone.slice(1)}`
-    } else if (cleanPhone.startsWith('7')) {
+    } else if (cleanPhone.startsWith('7') || cleanPhone.startsWith('1')) {
       formattedPhone = `254${cleanPhone}`
     } else if (cleanPhone.startsWith('254')) {
       formattedPhone = cleanPhone
     }
 
     // Basic Kenyan phone validation
-    if (!/^2547\d{8}$/.test(formattedPhone)) {
+    if (!/^254[17]\d{8}$/.test(formattedPhone)) {
       return NextResponse.json(
         {
           success: false,
